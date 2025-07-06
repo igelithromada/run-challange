@@ -152,8 +152,8 @@ function nactiRealtime() {
       if(z.km >= 42) odznaky[z.jmeno].add("🏅");
       if(z.tempo < 4.5) odznaky[z.jmeno].add("⚡");
       if(z.tempo > 9) odznaky[z.jmeno].add("🐌");
-      sumTempo+=parseFloat(z.tempo);
-      sumCas+=parseFloat(z.cas);
+      sumTempo+=(parseFloat(z.tempo) || 0);
+      sumCas+=(parseFloat(z.cas) || 0);
       countTempo++;
     });
     let i=1;
