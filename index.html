@@ -105,11 +105,17 @@ function nactiBehy() {
       let sumTempo=0, sumCas=0, count=0;
       snapshot.forEach(doc => {
         const z = doc.data();
-        soucty[z.jmeno] = (soucty[z.jmeno]||0) + z.km;
+        if (!soucty[z.jmeno]) soucty[z.jmeno] = { km:0, cas:0, tempo:0, pocet:0 };
+        soucty[z.jmeno].km += z.km;
+        soucty[z.jmeno].cas += z.cas;
+        soucty[z.jmeno].tempo += parseFloat(z.tempo) || 0;
+        soucty[z.jmeno].pocet++;
+
         if (!odznaky[z.jmeno]) odznaky[z.jmeno] = new Set();
         if (z.km >= 42) odznaky[z.jmeno].add("🏅");
         if (z.tempo < 4.5) odznaky[z.jmeno].add("⚡");
         if (z.tempo > 9) odznaky[z.jmeno].add("🐌");
+
         sumTempo += parseFloat(z.tempo) || 0;
         sumCas += parseFloat(z.cas) || 0;
         count++;
@@ -121,9 +127,11 @@ function nactiBehy() {
         <strong>Počet běhů:</strong> ${count}`;
 
       document.getElementById('stavUzivatelu').innerHTML = Object.entries(soucty)
-        .sort((a,b)=>b[1]-a[1])
-        .map(([j,k])=>`<div class='card'>${j}: ${k} km ${[...odznaky[j]].map(o=>"<span>"+o+"</span>").join('')}</div>`)
-        .join('');
+        .sort((a,b)=>b[1].km - a[1].km)
+        .map(([j, data])=>{
+          const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
+          return `<div class='card'><strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km ${[...odznaky[j]].map(o=>"<span>"+o+"</span>").join('')}</div>`;
+        }).join('');
     });
 }
 </script>
