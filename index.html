@@ -20,6 +20,7 @@ button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
 </head>
 <body>
 <h1>Dolní Lhota Run</h1>
+
 <div id="login">
   <h2>Přihlášení</h2>
   <input type="email" id="emailLogin" placeholder="Email">
@@ -32,18 +33,25 @@ button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
   <h3>nebo</h3>
   <button onclick="prihlasitGoogle()">Přihlásit přes Google</button>
 </div>
+
 <div id="app" style="display:none;">
   <button onclick="odhlasit()">Odhlásit se</button>
+  <button onclick="nactiMojeBehy()">Moje běhy</button>
   <h2>Zadat nový běh</h2>
   <input type="number" id="km" placeholder="Kolik km?">
   <input type="number" id="cas" placeholder="Čas v minutách">
   <button onclick="pridat()">Přidat běh</button>
+
   <h2>Celkové pořadí</h2>
   <div id="zebricek"></div>
+
   <div class="chart-container">
     <canvas id="myChart"></canvas>
   </div>
+
+  <div id="mojeBehy"></div>
 </div>
+
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyDHGzESwHUmmyy0_txyWL7VCp7eWFmtE9w",
@@ -58,6 +66,7 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 let unsubscribe = () => {};
 let chart;
+
 auth.onAuthStateChanged(user => {
   if (user) {
     document.getElementById('login').style.display = 'none';
@@ -69,6 +78,7 @@ auth.onAuthStateChanged(user => {
     unsubscribe();
   }
 });
+
 function prihlasit() {
   const email = document.getElementById('emailLogin').value;
   const password = document.getElementById('passwordLogin').value;
@@ -84,6 +94,7 @@ function prihlasitGoogle() {
   auth.signInWithPopup(provider).catch(err => alert(err.message));
 }
 function odhlasit() { auth.signOut(); }
+
 function pridat() {
   const km = parseFloat(document.getElementById('km').value);
   const cas = parseFloat(document.getElementById('cas').value);
@@ -93,6 +104,7 @@ function pridat() {
   db.collection("behy").add({ jmeno, km, cas, tempo, datum: new Date().toLocaleDateString() });
   document.getElementById('km').value=''; document.getElementById('cas').value='';
 }
+
 function nactiRealtime() {
   unsubscribe();
   unsubscribe = db.collection("behy").onSnapshot(snapshot => {
@@ -110,6 +122,23 @@ function nactiRealtime() {
     const ctx = document.getElementById('myChart').getContext('2d');
     if(chart)chart.destroy();
     chart = new Chart(ctx,{type:'bar',data:{labels:Object.keys(soucty),datasets:[{label:"km",data:Object.values(soucty),backgroundColor:"#ff6600"}]},options:{responsive:true}});
+  });
+}
+
+function nactiMojeBehy() {
+  const jmeno = auth.currentUser.email.split('@')[0];
+  db.collection("behy").where("jmeno","==",jmeno).get().then(snapshot => {
+    let obsah = "<h2>Moje běhy</h2>";
+    let sumKm = 0; let sumTempo = 0;
+    snapshot.forEach(doc => {
+      const z = doc.data();
+      obsah += `<div class='card'>${z.datum}: ${z.km} km, ${z.cas} min (tempo ${z.tempo})</div>`;
+      sumKm += z.km;
+      sumTempo += parseFloat(z.tempo);
+    });
+    const avgTempo = (snapshot.size>0 ? (sumTempo/snapshot.size).toFixed(2) : 0);
+    obsah += `<div class='card'><strong>Celkem: ${sumKm} km</strong><br>Průměrné tempo: ${avgTempo}</div>`;
+    document.getElementById('mojeBehy').innerHTML = obsah;
   });
 }
 </script>
