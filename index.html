@@ -241,7 +241,7 @@ function zobrazInfoUzivatele() {
   db.collection("uzivatele").doc(nick).get().then(doc => {
     const data = doc.data();
     aktualniTym = data ? data.tym : null;
-    document.getElementById('userInfo').innerHTML = `<strong>${nick}</strong><br>Tým: ${aktualniTym || "Žádný tým"}`;
+    document.getElementById('userInfo').innerHTML; if (aktualniTym) zobrazBehyTymu(aktualniTym); = `<strong>${nick}</strong><br>Tým: ${aktualniTym || "Žádný tým"}`;
   });
 }
 
@@ -274,7 +274,7 @@ auth.onAuthStateChanged(user => {
     ['dashboard','mojeBehy','tymMain','tymVytvor','tymPridat'].forEach(s=>{
       document.getElementById(s+'Section').classList.add('hidden');
     });
-    document.getElementById('userInfo').innerHTML = '';
+    document.getElementById('userInfo').innerHTML; if (aktualniTym) zobrazBehyTymu(aktualniTym); = '';
   }
 });
 
