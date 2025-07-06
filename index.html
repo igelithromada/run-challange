@@ -3,37 +3,46 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8" />
-<title>Run Challange Modern Auth</title>
+<title>Dolní Lhota Run</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; background: #f8f8f8; }
+body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; background: #f8f8f8; }
 h1, h2 { text-align: center; }
 input, button { padding: 10px; margin: 5px 0; width: 100%; border-radius: 8px; border: 1px solid #ccc; }
 button { background: #ff6600; color: white; font-weight: bold; border: none; cursor: pointer; }
-.zaznam { background: white; border: 1px solid #ddd; padding: 12px; margin: 8px 0; border-radius: 8px; }
-#logout { margin-top: 10px; }
+.card { background: white; border: 1px solid #ddd; padding: 12px; margin: 8px 0; border-radius: 8px; }
+.chart-container { margin: 20px 0; }
 </style>
 </head>
 <body>
-<h1>Run Challange</h1>
+<h1>Dolní Lhota Run</h1>
 
 <div id="login">
   <input type="email" id="email" placeholder="Email">
   <input type="password" id="password" placeholder="Heslo">
   <button onclick="prihlasit()">Přihlásit / Registrovat</button>
+  <button onclick="prihlasitGoogle()">Přihlásit přes Google</button>
 </div>
 
 <div id="app" style="display:none;">
-  <button id="logout" onclick="odhlasit()">Odhlásit se</button>
-  <h2>Nový běh</h2>
-  <input type="text" id="jmeno" placeholder="Jméno a příjmení">
+  <button onclick="odhlasit()">Odhlásit se</button>
+  <h2>Zadání běhu</h2>
   <input type="number" id="km" placeholder="Kolik km?">
   <input type="number" id="cas" placeholder="Čas v minutách">
-  <button onclick="pridat()">Přidat záznam</button>
-  <h2>Žebříček</h2>
+  <button onclick="pridat()">Přidat běh</button>
+
+  <h2>Žebříček podle km</h2>
   <div id="zebricek"></div>
+
+  <div class="chart-container">
+    <canvas id="myChart"></canvas>
+  </div>
+
+  <h2>Běhy podle uživatelů</h2>
+  <div id="behypodlez"></div>
 </div>
 
 <script>
@@ -48,8 +57,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
-
 let unsubscribe = () => {};
+let chart;
 
 auth.onAuthStateChanged(user => {
   if (user) {
@@ -71,32 +80,42 @@ function prihlasit() {
     .catch(err => alert(err.message));
 }
 
-function odhlasit() {
-  auth.signOut();
+function prihlasitGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(err => alert(err.message));
 }
 
+function odhlasit() { auth.signOut(); }
+
 function pridat() {
-  const jmeno = document.getElementById('jmeno').value;
   const km = parseFloat(document.getElementById('km').value);
   const cas = parseFloat(document.getElementById('cas').value);
-  const uid = auth.currentUser.uid;
-  if (!jmeno || isNaN(km) || isNaN(cas) || km <= 0 || cas <= 0) return alert('Vyplň správně.');
+  const jmeno = auth.currentUser.email.split('@')[0];
+  if (isNaN(km) || isNaN(cas) || km <= 0 || cas <= 0) return alert('Vyplň správně.');
   const tempo = (cas / km).toFixed(2);
-  db.collection("behy").add({ jmeno, km, cas, tempo, datum: new Date().toLocaleDateString(), uid });
-  document.getElementById('jmeno').value='';
-  document.getElementById('km').value='';
-  document.getElementById('cas').value='';
+  db.collection("behy").add({ jmeno, km, cas, tempo, datum: new Date().toLocaleDateString() });
+  document.getElementById('km').value=''; document.getElementById('cas').value='';
 }
 
 function nactiRealtime() {
   unsubscribe();
   unsubscribe = db.collection("behy").onSnapshot(snapshot => {
-    const zaznamy = [];
-    snapshot.forEach(doc => zaznamy.push({ id: doc.id, ...doc.data() }));
-    zaznamy.sort((a,b)=>b.km - a.km);
-    document.getElementById('zebricek').innerHTML = zaznamy.map(z =>
-      `<div class='zaznam'>${z.jmeno} - ${z.km} km za ${z.cas} min (tempo ${z.tempo} min/km) (${z.datum})</div>`
-    ).join('');
+    const zaznamy = []; snapshot.forEach(doc => zaznamy.push(doc.data()));
+    const soucty = {}; zaznamy.forEach(z => { soucty[z.jmeno] = (soucty[z.jmeno]||0)+z.km; });
+
+    document.getElementById('zebricek').innerHTML = Object.entries(soucty).sort((a,b)=>b[1]-a[1])
+      .map(([j,k])=>`<div class='card'>${j}: ${k} km</div>`).join('');
+
+    const ctx = document.getElementById('myChart').getContext('2d');
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, { type: 'bar',
+      data: { labels: Object.keys(soucty), datasets:[{label:"km",data:Object.values(soucty),backgroundColor:"#ff6600"}]},
+      options: { responsive:true } 
+    });
+
+    const behyU = {}; zaznamy.forEach(z => { if(!behyU[z.jmeno])behyU[z.jmeno]=[]; behyU[z.jmeno].push(z); });
+    document.getElementById('behypodlez').innerHTML = Object.entries(behyU)
+      .map(([j,bs])=>`<div class='card'><strong>${j}</strong><br>${bs.map(b=>`${b.km}km za ${b.cas}min (${b.tempo} min/km) - ${b.datum}`).join('<br>')}</div>`).join('');
   });
 }
 </script>
