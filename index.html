@@ -11,14 +11,14 @@
 <style>
 body { font-family: sans-serif; background: #f8f8f8; color: #222; padding: 20px; max-width: 800px; margin: auto; transition: background 0.3s, color 0.3s; }
 h1, h2 { text-align: center; color: #ff6600; }
-input, button { font-size: 1.3em; padding: 14px; margin: 10px 0; width: 100%; border-radius: 12px; border: 1px solid #aaa; }
+input, button { font-size: 1.4em; padding: 16px; margin: 12px 0; width: 100%; border-radius: 14px; border: 1px solid #aaa; }
 button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
-.card { background: #fff; border: 1px solid #ccc; padding: 18px; margin: 12px 0; border-radius: 12px; }
+.card { background: #fff; border: 1px solid #ccc; padding: 20px; margin: 14px 0; border-radius: 14px; }
 .chart-container { margin: 25px 0; }
-.badge { font-size: 1.6em; margin-left: 8px; }
-#menu { position: fixed; left: -100%; top: 0; width: 220px; height: 100%; background: #333; color: #fff; padding: 30px; transition: left 0.3s; }
-#menu a { display: block; color: #fff; text-decoration: none; margin: 25px 0; font-size: 1.6em; }
-#hamburger { position: fixed; top: 15px; left: 15px; font-size: 2.4em; cursor: pointer; z-index: 1000; }
+.badge { font-size: 1.8em; margin-left: 10px; }
+#menu { position: fixed; left: -100%; top: 0; width: 240px; height: 100%; background: #333; color: #fff; padding: 35px; transition: left 0.3s; }
+#menu a { display: block; color: #fff; text-decoration: none; margin: 35px 0; font-size: 2em; padding: 18px 0; border-bottom: 1px solid #555; }
+#hamburger { position: fixed; top: 15px; left: 15px; font-size: 2.8em; cursor: pointer; z-index: 1000; }
 </style>
 </head>
 <body>
@@ -26,6 +26,8 @@ button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
 <div id="menu">
   <a href="#" onclick="zobrazSekci('dashboard')">🏠 Dashboard</a>
   <a href="#" onclick="zobrazSekci('moje')">🏃 Moje běhy</a>
+  <a href="#" onclick="zobrazSekci('vytvoritTym')">➕ Vytvořit tým</a>
+  <a href="#" onclick="zobrazSekci('pridatDoTymu')">👥 Přidat se do týmu</a>
   <a href="#" onclick="odhlasit()">🚪 Odhlásit se</a>
 </div>
 
@@ -60,6 +62,14 @@ button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
   <div id="mojeSekce" style="display:none;">
     <div id="mojeBehy"></div>
   </div>
+  <div id="vytvoritTymSekce" style="display:none;">
+    <h2>Vytvořit tým</h2>
+    <p>(zatím jen demo sekce)</p>
+  </div>
+  <div id="pridatDoTymuSekce" style="display:none;">
+    <h2>Přidat se do týmu</h2>
+    <p>(zatím jen demo sekce)</p>
+  </div>
 </div>
 
 <script>
@@ -85,7 +95,8 @@ function toggleMenu() {
 function zobrazSekci(sekce) {
   document.getElementById('dashboardSekce').style.display = sekce==='dashboard'?'block':'none';
   document.getElementById('mojeSekce').style.display = sekce==='moje'?'block':'none';
-  if(sekce==='moje') nactiMojeBehy();
+  document.getElementById('vytvoritTymSekce').style.display = sekce==='vytvoritTym'?'block':'none';
+  document.getElementById('pridatDoTymuSekce').style.display = sekce==='pridatDoTymu'?'block':'none';
   toggleMenu();
 }
 
@@ -133,39 +144,21 @@ function nactiRealtime() {
   unsubscribe();
   unsubscribe = db.collection("behy").onSnapshot(snapshot => {
     const zaznamy = []; snapshot.forEach(doc => zaznamy.push(doc.data()));
-    const soucty = {}; const souctyCas = {}; const souctyTempo = {}; const odznaky = {};
+    const soucty = {}; const odznaky = {}; let sumTempo=0;
     zaznamy.forEach(z => {
       soucty[z.jmeno] = (soucty[z.jmeno]||0)+z.km;
-      souctyCas[z.jmeno] = (souctyCas[z.jmeno]||0)+z.cas;
-      souctyTempo[z.jmeno] = (souctyTempo[z.jmeno]||0)+parseFloat(z.tempo);
       if(!odznaky[z.jmeno]) odznaky[z.jmeno]=new Set();
       if(z.km >= 42) odznaky[z.jmeno].add("🏅");
       if(z.tempo < 4.5) odznaky[z.jmeno].add("⚡");
       if(z.tempo > 9) odznaky[z.jmeno].add("🐌");
+      sumTempo+=parseFloat(z.tempo);
     });
     let i=1;
-    document.getElementById('zebricek').innerHTML = Object.keys(soucty).sort((a,b)=>soucty[b]-soucty[a])
-      .map(jmeno=>`<div class='card'>${i++}. ${jmeno}: ${soucty[jmeno]} km, ${souctyCas[jmeno]} min, prům. tempo ${(souctyTempo[jmeno]/(souctyCas[jmeno]/(soucty[jmeno]/(soucty[jmeno]/soucty[jmeno])))).toFixed(2)} ${[...odznaky[jmeno]].map(o=>"<span class='badge'>"+o+"</span>").join('')}</div>`).join('');
+    document.getElementById('zebricek').innerHTML = Object.entries(soucty).sort((a,b)=>b[1]-a[1])
+      .map(([j,k])=>`<div class='card'>${i++}. ${j}: ${k} km ${[...odznaky[j]].map(o=>"<span class='badge'>"+o+"</span>").join('')}</div>`).join('');
     const ctx = document.getElementById('myChart').getContext('2d');
     if(chart)chart.destroy();
     chart = new Chart(ctx,{type:'bar',data:{labels:Object.keys(soucty),datasets:[{label:"km",data:Object.values(soucty),backgroundColor:"#ff6600"}]},options:{responsive:true}});
-  });
-}
-
-function nactiMojeBehy() {
-  const jmeno = auth.currentUser.email.split('@')[0];
-  db.collection("behy").where("jmeno","==",jmeno).get().then(snapshot => {
-    let obsah = "<h2>Moje běhy</h2>"; let sumKm=0; let sumTempo=0; let sumCas=0;
-    snapshot.forEach(doc => {
-      const z=doc.data();
-      obsah += `<div class='card'>${z.datum}: ${z.km} km, ${z.cas} min (tempo ${z.tempo})</div>`;
-      sumKm+=z.km; sumTempo+=parseFloat(z.tempo); sumCas+=z.cas;
-    });
-    const avgTempo = (snapshot.size>0?(sumTempo/snapshot.size).toFixed(2):0);
-    const avgKm = (snapshot.size>0?(sumKm/snapshot.size).toFixed(2):0);
-    const avgCas = (snapshot.size>0?(sumCas/snapshot.size).toFixed(2):0);
-    obsah += `<div class='card'><strong>Celkem: ${sumKm} km, ${sumCas} min</strong><br>Průměrné tempo: ${avgTempo}<br>Průměrná vzdálenost: ${avgKm} km<br>Průměrný čas: ${avgCas} min</div>`;
-    document.getElementById('mojeBehy').innerHTML = obsah;
   });
 }
 </script>
