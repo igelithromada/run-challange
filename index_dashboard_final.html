@@ -140,58 +140,64 @@ function pridat() {
   document.getElementById('km').value=''; document.getElementById('cas').value='';
 }
 
-
-
 function nactiRealtime() {
   unsubscribe();
   unsubscribe = db.collection("behy").onSnapshot(snapshot => {
     const zaznamy = []; snapshot.forEach(doc => zaznamy.push(doc.data()));
-    const soucty = {}; const odznaky = {}; let sumTempo=0; let countTempo=0;
+    const soucty = {}; const odznaky = {}; let sumTempo=0;
+    const zaznamy = [];
+    snapshot.forEach(doc => zaznamy.push(doc.data()));
+    const soucty = {};
+    const casy = {};
+    const odznaky = {};
+    let sumTempo = 0;
     let sumCas = 0;
+    let countTempo = 0;
     zaznamy.forEach(z => {
       soucty[z.jmeno] = (soucty[z.jmeno]||0)+z.km;
       if(!odznaky[z.jmeno]) odznaky[z.jmeno]=new Set();
+      soucty[z.jmeno] = (soucty[z.jmeno] || 0) + z.km;
+      casy[z.jmeno] = (casy[z.jmeno] || 0) + z.cas;
+      if(!odznaky[z.jmeno]) odznaky[z.jmeno] = new Set();
       if(z.km >= 42) odznaky[z.jmeno].add("🏅");
       if(z.tempo < 4.5) odznaky[z.jmeno].add("⚡");
       if(z.tempo > 9) odznaky[z.jmeno].add("🐌");
       sumTempo+=parseFloat(z.tempo);
-      sumCas+=parseFloat(z.cas);
+      sumTempo += parseFloat(z.tempo);
+      sumCas += parseFloat(z.cas);
       countTempo++;
     });
     let i=1;
     document.getElementById('zebricek').innerHTML = Object.entries(soucty).sort((a,b)=>b[1]-a[1])
       .map(([j,k])=>`<div class='card'>${i++}. ${j}: ${k} km ${[...odznaky[j]].map(o=>"<span class='badge'>"+o+"</span>").join('')}</div>`).join('');
+
+    const avgTempoUser = {};
+    Object.keys(soucty).forEach(j => {
+      avgTempoUser[j] = (casy[j] / soucty[j]).toFixed(2);
+    });
+
+    let i = 1;
+    document.getElementById('zebricek').innerHTML = Object.entries(soucty)
+      .sort((a,b) => b[1] - a[1])
+      .map(([j,k]) => `<div class='card'>${i++}. ${j}: ${k} km, ${casy[j]} min, ${avgTempoUser[j]} min/km ${[...odznaky[j]].map(o => "<span class='badge'>" + o + "</span>").join('')}</div>`)
+      .join('');
+
     const ctx = document.getElementById('myChart').getContext('2d');
     if(chart)chart.destroy();
     chart = new Chart(ctx,{type:'bar',data:{labels:Object.keys(soucty),datasets:[{label:"km",data:Object.values(soucty),backgroundColor:"#ff6600"}]},options:{responsive:true}});
-    
+    if(chart) chart.destroy();
+    chart = new Chart(ctx, {
+      type:'bar',
+      data:{labels:Object.keys(soucty),datasets:[{label:"km",data:Object.values(soucty),backgroundColor:"#ff6600"}]},
+      options:{responsive:true}
+    });
+
     const avgTempo = countTempo > 0 ? (sumTempo / countTempo).toFixed(2) : "0";
-    document.getElementById('avgTempo').innerHTML = `<div class='card'><h3>DASHBOARD STATISTIKY</h3>`
-      <strong>Průměrné tempo:</strong> ${avgTempo} min/km<br>
-      <strong>Celkový čas:</strong> ${sumCas} min<br>
-      <strong>Celkový počet běhů:</strong> ${countTempo}
-    </div>`;
-  });
-}
-;
-    let i=1;
-    document.getElementById('zebricek').innerHTML = Object.entries(soucty).sort((a,b)=>b[1]-a[1])
-      .map(([j,k])=>`<div class='card'>${i++}. ${j}: ${k} km ${[...odznaky[j]].map(o=>"<span class='badge'>"+o+"</span>").join('')}</div>`).join('');
-    const ctx = document.getElementById('myChart').getContext('2d');
-    if(chart)chart.destroy();
-    chart = new Chart(ctx,{type:'bar',data:{labels:Object.keys(soucty),datasets:[{label:"km",data:Object.values(soucty),backgroundColor:"#ff6600"}]},options:{responsive:true}});
-    
-    const avgTempo = countTempo > 0 ? (sumTempo / countTempo).toFixed(2) : "0";
-    document.getElementById('avgTempo').innerHTML = `<div class='card'><h3>DASHBOARD STATISTIKY</h3>`<strong>Průměrné tempo:</strong> ${avgTempo} min/km</div>`;
-  });
-}
-;
-    let i=1;
-    document.getElementById('zebricek').innerHTML = Object.entries(soucty).sort((a,b)=>b[1]-a[1])
-      .map(([j,k])=>`<div class='card'>${i++}. ${j}: ${k} km ${[...odznaky[j]].map(o=>"<span class='badge'>"+o+"</span>").join('')}</div>`).join('');
-    const ctx = document.getElementById('myChart').getContext('2d');
-    if(chart)chart.destroy();
-    chart = new Chart(ctx,{type:'bar',data:{labels:Object.keys(soucty),datasets:[{label:"km",data:Object.values(soucty),backgroundColor:"#ff6600"}]},options:{responsive:true}});
+    document.getElementById('avgTempo').innerHTML = `<div class='card'><h3>DASHBOARD STATISTIKY</h3>`+
+      `<strong>Průměrné tempo:</strong> ${avgTempo} min/km<br>`+
+      `<strong>Celkový čas:</strong> ${sumCas} min<br>`+
+      `<strong>Celkový počet běhů:</strong> ${countTempo}`+
+      `</div>`;
   });
 }
 </script>
