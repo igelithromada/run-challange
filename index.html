@@ -2,48 +2,51 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    <meta charset="UTF-8">
-    <title>Run Challange</title>
-    <style>
-        body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; }
-        input, button { padding: 8px; margin: 5px 0; width: 100%; }
-        .zaznam { border: 1px solid #ccc; padding: 10px; margin: 5px 0; border-radius: 5px; }
-    </style>
+<meta charset="UTF-8" />
+<title>Run Challange - vylepšená verze</title>
+<style>
+  body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; background: #f5f5f5; }
+  input, button { padding: 10px; margin: 5px 0; width: 100%; border-radius: 8px; border: 1px solid #ccc; }
+  button { background: orange; color: white; font-weight: bold; border: none; }
+  .zaznam { background: white; border: 1px solid #ddd; padding: 12px; margin: 8px 0; border-radius: 8px; }
+</style>
 </head>
 <body>
-    <h1>Run Challange</h1>
-    <input type="text" id="jmeno" placeholder="Jméno a příjmení">
-    <input type="number" id="km" placeholder="Kolik km?">
-    <input type="text" id="cas" placeholder="Jak dlouho? (např. 45 min)">
-    <button onclick="pridat()">Přidat záznam</button>
-    <h2>Žebříček</h2>
-    <div id="zebricek"></div>
+<h1>Run Challange</h1>
+<input type="text" id="jmeno" placeholder="Jméno a příjmení" />
+<input type="number" id="km" placeholder="Kolik km?" />
+<input type="number" id="cas" placeholder="Čas v minutách" />
+<button onclick="pridat()">Přidat záznam</button>
 
-    <script>
-        let zaznamy = [];
-        function pridat() {
-            const jmeno = document.getElementById('jmeno').value;
-            const km = document.getElementById('km').value;
-            const cas = document.getElementById('cas').value;
-            if(!jmeno || !km || !cas) return alert('Vyplň vše');
-            zaznamy.push({ jmeno, km: parseFloat(km), cas, datum: new Date().toLocaleDateString() });
-            zobraz();
-            document.getElementById('jmeno').value='';
-            document.getElementById('km').value='';
-            document.getElementById('cas').value='';
-        }
-        function zobraz() {
-            zaznamy.sort((a,b)=>b.km - a.km);
-            document.getElementById('zebricek').innerHTML = zaznamy.map((z,i)=>
-                `<div class="zaznam">${z.jmeno} - ${z.km} km za ${z.cas} (${z.datum})
-                <button onclick="smaz(${i})">Smazat</button></div>`
-            ).join('');
-        }
-        function smaz(i) {
-            zaznamy.splice(i,1);
-            zobraz();
-        }
-    </script>
+<h2>Žebříček</h2>
+<div id="zebricek"></div>
+
+<script>
+let zaznamy = [];
+function pridat() {
+    const jmeno = document.getElementById('jmeno').value;
+    const km = parseFloat(document.getElementById('km').value);
+    const cas = parseFloat(document.getElementById('cas').value);
+    if (!jmeno || isNaN(km) || isNaN(cas) || km <= 0 || cas <= 0) return alert('Vyplň všechny údaje správně.');
+
+    const tempo = cas / km;
+    zaznamy.push({ jmeno, km, cas, tempo: tempo.toFixed(2), datum: new Date().toLocaleDateString() });
+    zobraz();
+    document.getElementById('jmeno').value = '';
+    document.getElementById('km').value = '';
+    document.getElementById('cas').value = '';
+}
+function zobraz() {
+    zaznamy.sort((a, b) => b.km - a.km);
+    document.getElementById('zebricek').innerHTML = zaznamy.map((z, i) =>
+        `<div class="zaznam">${z.jmeno} - ${z.km} km za ${z.cas} min (tempo ${z.tempo} min/km) (${z.datum})
+        <button onclick="smaz(${i})">Smazat</button></div>`
+    ).join('');
+}
+function smaz(i) {
+    zaznamy.splice(i, 1);
+    zobraz();
+}
+</script>
 </body>
 </html>
-    
