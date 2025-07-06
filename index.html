@@ -35,8 +35,23 @@ button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
 
 <div id="login">
   <h2>Přihlášení</h2>
+  <input type="email" id="emailLogin" placeholder="Email">
+  <input type="password" id="passwordLogin" placeholder="Heslo">
+  <button onclick="prihlasit()">Přihlásit</button>
+  <h2>Registrace</h2>
+  <input type="email" id="emailReg" placeholder="Email">
+  <input type="password" id="passwordReg" placeholder="Heslo">
+  <button onclick="registruj()">Registrovat</button>
+  <h3>nebo</h3>
   
-  <button onclick="prihlasitGoogle()">Přihlásit přes Google</button>
+  <h2>Přihlášení</h2>
+  <input type="email" id="emailLogin" placeholder="Email">
+  <input type="password" id="passwordLogin" placeholder="Heslo">
+  <button onclick="prihlasit()">Přihlásit</button>
+  <h2>Registrace</h2>
+  <input type="email" id="emailReg" placeholder="Email">
+  <input type="password" id="passwordReg" placeholder="Heslo">
+  <button onclick="registruj()">Registrovat</button>
 </div>
 
 <div id="app" style="display:none;">
@@ -93,30 +108,60 @@ function zobrazSekci(sekce) {
   toggleMenu();
 }
 
-
 auth.onAuthStateChanged(user => {
   if (user) {
-    console.log("Přihlášený Google uživatel:", user.email);
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     document.getElementById('dashboardSekce').style.display = 'block';
     document.getElementById('mojeSekce').style.display = 'none';
     nactiRealtime();
   } else {
-    console.log("Nepřihlášený uživatel");
     document.getElementById('login').style.display = 'block';
     document.getElementById('app').style.display = 'none';
     unsubscribe();
   }
 });
 
-
-
-
+function prihlasit() {
+  const email = document.getElementById('emailLogin').value;
+  const password = document.getElementById('passwordLogin').value;
+  auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
+}
+function registruj() {
+  const email = document.getElementById('emailReg').value;
+  const password = document.getElementById('passwordReg').value;
+  auth.createUserWithEmailAndPassword(email, password).catch(err => alert(err.message));
+}
 function prihlasitGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
   auth.signInWithPopup(provider).catch(err => alert(err.message));
 }
+
+function prihlasit() {
+  const email = document.getElementById('emailLogin').value;
+  const password = document.getElementById('passwordLogin').value;
+  auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
+}
+
+function registruj() {
+  const email = document.getElementById('emailReg').value;
+  const password = document.getElementById('passwordReg').value;
+  auth.createUserWithEmailAndPassword(email, password).catch(err => alert(err.message));
+}
+
+
+function prihlasit() {
+  const email = document.getElementById('emailLogin').value;
+  const password = document.getElementById('passwordLogin').value;
+  auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
+}
+
+function registruj() {
+  const email = document.getElementById('emailReg').value;
+  const password = document.getElementById('passwordReg').value;
+  auth.createUserWithEmailAndPassword(email, password).catch(err => alert(err.message));
+}
+
 function odhlasit() { auth.signOut(); }
 
 function pridat() {
