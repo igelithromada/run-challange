@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -8,7 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-body { font-family: sans-serif; background: #f8f8f8; color: #222; padding: 20px; max-width: 800px; margin: auto; }
+body { font-family: sans-serif; background: #f8f8f8; color: #222; padding: 20px; max-width: 800px; margin: auto; transition: background 0.3s, color 0.3s; }
 h1, h2 { text-align: center; color: #ff6600; }
 input, button { font-size: 1.4em; padding: 16px; margin: 12px 0; width: 100%; border-radius: 14px; border: 1px solid #aaa; }
 button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
@@ -63,17 +64,103 @@ button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
   </div>
   <div id="vytvoritTymSekce" style="display:none;">
     <h2>Vytvořit tým</h2>
-    <input type="text" id="novyTym" placeholder="Název týmu">
-    <button onclick="vytvoritTym()">Vytvořit tým</button>
+    <p>(zatím jen demo sekce)</p>
   </div>
   <div id="pridatDoTymuSekce" style="display:none;">
     <h2>Přidat se do týmu</h2>
-    <div id="seznamTymu"></div>
+    <p>(zatím jen demo sekce)</p>
   </div>
 </div>
 
 <script>
-// (Firebase config + funkce zůstávají, doplnil jsem výpočty pro dashboard)
+const firebaseConfig = {
+  apiKey: "AIzaSyDHGzESwHUmmyy0_txyWL7VCp7eWFmtE9w",
+  authDomain: "run-challange.firebaseapp.com",
+  projectId: "run-challange",
+  storageBucket: "run-challange.firebasestorage.app",
+  messagingSenderId: "501821296976",
+  appId: "1:501821296976:web:e470e5d221d1b1fbb21c55"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+let unsubscribe = () => {};
+let chart;
+
+function toggleMenu() {
+  const menu = document.getElementById('menu');
+  menu.style.left = menu.style.left === '0px' ? '-100%' : '0px';
+}
+
+function zobrazSekci(sekce) {
+  document.getElementById('dashboardSekce').style.display = sekce==='dashboard'?'block':'none';
+  document.getElementById('mojeSekce').style.display = sekce==='moje'?'block':'none';
+  document.getElementById('vytvoritTymSekce').style.display = sekce==='vytvoritTym'?'block':'none';
+  document.getElementById('pridatDoTymuSekce').style.display = sekce==='pridatDoTymu'?'block':'none';
+  toggleMenu();
+}
+
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('dashboardSekce').style.display = 'block';
+    document.getElementById('mojeSekce').style.display = 'none';
+    nactiRealtime();
+  } else {
+    document.getElementById('login').style.display = 'block';
+    document.getElementById('app').style.display = 'none';
+    unsubscribe();
+  }
+});
+
+function prihlasit() {
+  const email = document.getElementById('emailLogin').value;
+  const password = document.getElementById('passwordLogin').value;
+  auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
+}
+function registruj() {
+  const email = document.getElementById('emailReg').value;
+  const password = document.getElementById('passwordReg').value;
+  auth.createUserWithEmailAndPassword(email, password).catch(err => alert(err.message));
+}
+function prihlasitGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(err => alert(err.message));
+}
+function odhlasit() { auth.signOut(); }
+
+function pridat() {
+  const km = parseFloat(document.getElementById('km').value);
+  const cas = parseFloat(document.getElementById('cas').value);
+  const jmeno = auth.currentUser.email.split('@')[0];
+  if (isNaN(km) || isNaN(cas) || km <= 0 || cas <= 0) return alert('Vyplň správně.');
+  const tempo = (cas / km).toFixed(2);
+  db.collection("behy").add({ jmeno, km, cas, tempo, datum: new Date().toLocaleDateString() });
+  document.getElementById('km').value=''; document.getElementById('cas').value='';
+}
+
+function nactiRealtime() {
+  unsubscribe();
+  unsubscribe = db.collection("behy").onSnapshot(snapshot => {
+    const zaznamy = []; snapshot.forEach(doc => zaznamy.push(doc.data()));
+    const soucty = {}; const odznaky = {}; let sumTempo=0;
+    zaznamy.forEach(z => {
+      soucty[z.jmeno] = (soucty[z.jmeno]||0)+z.km;
+      if(!odznaky[z.jmeno]) odznaky[z.jmeno]=new Set();
+      if(z.km >= 42) odznaky[z.jmeno].add("🏅");
+      if(z.tempo < 4.5) odznaky[z.jmeno].add("⚡");
+      if(z.tempo > 9) odznaky[z.jmeno].add("🐌");
+      sumTempo+=parseFloat(z.tempo);
+    });
+    let i=1;
+    document.getElementById('zebricek').innerHTML = Object.entries(soucty).sort((a,b)=>b[1]-a[1])
+      .map(([j,k])=>`<div class='card'>${i++}. ${j}: ${k} km ${[...odznaky[j]].map(o=>"<span class='badge'>"+o+"</span>").join('')}</div>`).join('');
+    const ctx = document.getElementById('myChart').getContext('2d');
+    if(chart)chart.destroy();
+    chart = new Chart(ctx,{type:'bar',data:{labels:Object.keys(soucty),datasets:[{label:"km",data:Object.values(soucty),backgroundColor:"#ff6600"}]},options:{responsive:true}});
+  });
+}
 </script>
 </body>
 </html>
