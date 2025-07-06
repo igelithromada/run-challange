@@ -185,7 +185,7 @@ function pridatBeh() {
   #sidebar a:hover { background: #ddd; }
   #hamburger { position: fixed; top: 15px; left: 15px; font-size: 2.2em; cursor: pointer; z-index: 101; }
   #odhlasBtn { position: absolute; top: 10px; right: 10px; font-size: 1.1em; cursor: pointer; }
-  #userInfo { padding: 0 32px 10px 32px; font-size: 1em; }
+  #userInfo { padding-top: 80px; padding: 0 32px 10px 32px; font-size: 1em; }
 </style>
 </head>
 <body>
@@ -317,7 +317,7 @@ function zobrazTymy() {
         html += `<div class='card'>${t.nazev} <button onclick="pripojSe('${t.nazev}')">Přidat do týmu</button></div>`;
       }
     });
-    document.getElementById('seznamTymu').innerHTML = html;
+    document.getElementById('seznamTymu').innerHTML = \"<button onclick='zobrazVytvorTym()'>Vytvořit tým</button> <button onclick='zobrazSeznamTymu()'>Přidat do týmu</button><div id='vytvorTymForm' class='hidden'><input type='text' id='nazevTymu' placeholder='Název týmu'><button onclick='vytvorTym()'>Vytvořit</button></div>\" + html;
   });
 }
 
@@ -458,5 +458,41 @@ function pridatBeh() {
 
 
 
+
+<div id="vsichniSection" class="hidden">
+  <h2>Všichni běžci</h2>
+  <div id="vsichniBehy"></div>
+</div>
+<script>
+function zobrazSekci(sekce) {
+  ['dashboard','mojeBehy','tym','vsichni'].forEach(s=>{
+    var el = document.getElementById(s+'Section');
+    if(el) el.style.display = (s===sekce)?'block':'none';
+  });
+  if(sekce==='mojeBehy') zobrazMojeBehy();
+  if(sekce==='tym' && aktualniTym) zobrazBehyTymu(aktualniTym);
+  if(sekce==='vsichni') zobrazVsechny();
+}
+function zobrazVsechny() {
+  db.collection("behy").onSnapshot(snapshot => {
+    const soucty = {};
+    snapshot.forEach(doc => {
+      const z = doc.data();
+      if (!soucty[z.jmeno]) soucty[z.jmeno] = { km:0, cas:0, tempo:0, pocet:0 };
+      soucty[z.jmeno].km += z.km;
+      soucty[z.jmeno].cas += z.cas;
+      soucty[z.jmeno].tempo += parseFloat(z.tempo) || 0;
+      soucty[z.jmeno].pocet++;
+    });
+    let i=1;
+    document.getElementById('vsichniBehy').innerHTML = Object.entries(soucty)
+      .sort((a,b)=>b[1].km - a[1].km)
+      .map(([j, data])=>{
+        const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
+        return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km</div>`;
+      }).join('');
+  });
+}
+</script>
 </body>
 </html>
