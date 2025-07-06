@@ -39,7 +39,25 @@ function pridatBeh() {
       zobrazMojeBehy();
     });
 }
+
+function pridatBeh() {
+  const km = parseFloat(document.getElementById('km').value);
+  const cas = parseFloat(document.getElementById('cas').value);
+  if (!km || !cas) return alert("Zadej správně km a čas");
+  const tempo = (cas / km).toFixed(2);
+  const datum = new Date().toLocaleDateString();
+  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
+    .then(() => {
+      document.getElementById('km').value = '';
+      document.getElementById('cas').value = '';
+      setTimeout(() => {
+        nactiBehy();
+        zobrazMojeBehy();
+      }, 300);
+    });
+}
 </script>
+
 
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js">
@@ -77,7 +95,25 @@ function pridatBeh() {
       zobrazMojeBehy();
     });
 }
+
+function pridatBeh() {
+  const km = parseFloat(document.getElementById('km').value);
+  const cas = parseFloat(document.getElementById('cas').value);
+  if (!km || !cas) return alert("Zadej správně km a čas");
+  const tempo = (cas / km).toFixed(2);
+  const datum = new Date().toLocaleDateString();
+  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
+    .then(() => {
+      document.getElementById('km').value = '';
+      document.getElementById('cas').value = '';
+      setTimeout(() => {
+        nactiBehy();
+        zobrazMojeBehy();
+      }, 300);
+    });
+}
 </script>
+
 
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js">
@@ -115,7 +151,25 @@ function pridatBeh() {
       zobrazMojeBehy();
     });
 }
+
+function pridatBeh() {
+  const km = parseFloat(document.getElementById('km').value);
+  const cas = parseFloat(document.getElementById('cas').value);
+  if (!km || !cas) return alert("Zadej správně km a čas");
+  const tempo = (cas / km).toFixed(2);
+  const datum = new Date().toLocaleDateString();
+  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
+    .then(() => {
+      document.getElementById('km').value = '';
+      document.getElementById('cas').value = '';
+      setTimeout(() => {
+        nactiBehy();
+        zobrazMojeBehy();
+      }, 300);
+    });
+}
 </script>
+
 
 
 <style>
@@ -382,7 +436,25 @@ function pridatBeh() {
       zobrazMojeBehy();
     });
 }
+
+function pridatBeh() {
+  const km = parseFloat(document.getElementById('km').value);
+  const cas = parseFloat(document.getElementById('cas').value);
+  if (!km || !cas) return alert("Zadej správně km a čas");
+  const tempo = (cas / km).toFixed(2);
+  const datum = new Date().toLocaleDateString();
+  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
+    .then(() => {
+      document.getElementById('km').value = '';
+      document.getElementById('cas').value = '';
+      setTimeout(() => {
+        nactiBehy();
+        zobrazMojeBehy();
+      }, 300);
+    });
+}
 </script>
+
 
 
 
