@@ -16,10 +16,11 @@
   .hidden { display: none; }
   .badge { cursor: pointer; font-size: 1.5em; margin-left: 5px; }
   .popis { font-size: 0.9em; color: #555; margin-top: 5px; }
-  #sidebar { height: 100%; width: 0; position: fixed; z-index: 100; top: 0; left: 0; background: #f0f0f0; overflow-x: hidden; transition: 0.3s; padding-top: 60px; display: flex; flex-direction: column; justify-content: space-between; }
+  #sidebar { height: 100%; width: 0; position: fixed; z-index: 100; top: 0; left: 0; background: #f0f0f0; overflow-x: auto; transition: 0.3s; padding-top: 60px; display: flex; flex-direction: column; justify-content: space-between; }
   #sidebar a { padding: 8px 8px 8px 32px; text-decoration: none; font-size: 1.2em; color: #333; display: block; transition: 0.3s; }
   #sidebar a:hover { background: #ddd; }
   #hamburger { position: fixed; top: 15px; left: 15px; font-size: 2.2em; cursor: pointer; z-index: 101; }
+  #myRuns { padding: 10px 32px; font-size: 0.95em; }
 </style>
 </head>
 <body>
@@ -29,7 +30,8 @@
 <div id="sidebar">
   <div>
     <a href="#">Dashboard</a>
-    <a href="#">Moje běhy</a>
+    <a href="#" onclick="zobrazMojeBehy()">Moje běhy</a>
+    <div id="myRuns"></div>
   </div>
   <div>
     <a href="#" onclick="odhlasit()">Odhlásit se</a>
@@ -132,6 +134,24 @@ function pridatBeh() {
       document.getElementById('km').value=''; 
       document.getElementById('cas').value='';
     });
+}
+
+function zobrazMojeBehy() {
+  const jmeno = auth.currentUser.email.split('@')[0];
+  db.collection("behy").where("jmeno","==",jmeno).onSnapshot(snapshot => {
+    let html = "", sumKm=0, sumCas=0, sumTempo=0, count=0;
+    snapshot.forEach(doc => {
+      const z = doc.data();
+      html += `${z.datum}: ${z.km} km za ${z.cas} min (${z.tempo} min/km)<br>`;
+      sumKm += z.km;
+      sumCas += z.cas;
+      sumTempo += parseFloat(z.tempo) || 0;
+      count++;
+    });
+    const avgTempo = count > 0 ? (sumTempo / count).toFixed(2) : "0";
+    html += `<hr>Součet: ${sumKm} km, ${sumCas} min, průměrné tempo: ${avgTempo} min/km`;
+    document.getElementById('myRuns').innerHTML = html;
+  });
 }
 
 function nactiBehy() {
