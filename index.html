@@ -14,6 +14,8 @@
   button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
   .card { background: #fff; border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 10px; }
   .hidden { display: none; }
+  .badge { cursor: pointer; font-size: 1.5em; margin-left: 5px; }
+  .popis { font-size: 0.9em; color: #555; margin-top: 5px; }
 </style>
 </head>
 <body>
@@ -94,6 +96,19 @@ function pridatBeh() {
     });
 }
 
+function ukazPopis(typ, el) {
+  const map = {
+    "🏅": "Uběhl jsi maraton! Více než 42 km v jednom běhu.",
+    "⚡": "Rychlejší než smrt! Tempo pod 4.5 min/km.",
+    "🐌": "Pomalý jak šnek! Tempo nad 9 min/km."
+  };
+  const d = document.createElement('div');
+  d.className = 'popis';
+  d.innerText = map[typ];
+  el.parentNode.appendChild(d);
+  el.removeAttribute('onclick');
+}
+
 function nactiBehy() {
   db.collection("behy")
     .onSnapshot(snapshot => {
@@ -118,7 +133,8 @@ function nactiBehy() {
         .sort((a,b)=>b[1].km - a[1].km)
         .map(([j, data])=>{
           const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
-          return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km ${[...odznaky[j]].map(o=>"<span>"+o+"</span>").join('')}</div>`;
+          const badges = [...odznaky[j]].map(o=>`<span class='badge' onclick="ukazPopis('${o}', this)">${o}</span>`).join('');
+          return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km ${badges}</div>`;
         }).join('');
     });
 }
