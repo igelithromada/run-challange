@@ -3,7 +3,7 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8" />
-<title>Dolní Lhota Run</title>
+<title>Dolní Lhota Run - Týmy</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -14,8 +14,6 @@
   button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
   .card { background: #fff; border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 10px; }
   .hidden { display: none; }
-  .badge { cursor: pointer; font-size: 1.5em; margin-left: 5px; }
-  .popis { font-size: 0.9em; color: #555; margin-top: 5px; }
   #sidebar { height: 100%; width: 0; position: fixed; z-index: 100; top: 0; left: 0; background: #f0f0f0; overflow-x: auto; transition: 0.3s; padding-top: 20px; display: flex; flex-direction: column; }
   #sidebar a { padding: 8px 8px 8px 32px; text-decoration: none; font-size: 1.2em; color: #333; display: block; transition: 0.3s; }
   #sidebar a:hover { background: #ddd; }
@@ -63,9 +61,11 @@
 </div>
 
 <div id="tymSection" class="hidden">
-  <h2>Můj tým</h2>
-  <button onclick="alert('Vytvořit tým - funkce zatím demo')">Vytvořit tým</button>
-  <button onclick="alert('Přidat do týmu - funkce zatím demo')">Přidat do týmu</button>
+  <h2>Tým</h2>
+  <input type="text" id="nazevTymu" placeholder="Název týmu">
+  <button onclick="vytvorTym()">Vytvořit tým</button>
+  <h3>Existující týmy</h3>
+  <div id="seznamTymu"></div>
 </div>
 
 <script>
@@ -112,45 +112,32 @@ function zobrazSekci(sekce) {
   document.getElementById('tymSection').style.display = sekce==='tym'?'block':'none';
   toggleSidebar();
   if(sekce==='mojeBehy') zobrazMojeBehy();
+  if(sekce==='tym') zobrazTymy();
 }
 
-function ukazPopis(typ, el) {
-  const map = {
-    "🏅": "Uběhl jsi maraton! Více než 42 km v jednom běhu.",
-    "⚡": "Rychlejší než smrt! Tempo pod 4.5 min/km.",
-    "🐌": "Pomalý jak šnek! Tempo nad 9 min/km."
-  };
-  const d = document.createElement('div');
-  d.className = 'popis';
-  d.innerText = map[typ];
-  el.parentNode.appendChild(d);
-  el.removeAttribute('onclick');
-}
-
-auth.onAuthStateChanged(user => {
-  if (user) {
-    document.getElementById('loginSection').classList.add('hidden');
-    document.getElementById('dashboardSection').classList.remove('hidden');
-    nactiBehy();
-  } else {
-    document.getElementById('loginSection').classList.remove('hidden');
-    document.getElementById('dashboardSection').classList.add('hidden');
-    document.getElementById('mojeBehySection').classList.add('hidden');
-    document.getElementById('tymSection').classList.add('hidden');
-  }
-});
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (isNaN(km) || isNaN(cas) || km <= 0 || cas <= 0) return alert('Vyplň správně.');
-  const tempo = (cas / km).toFixed(2);
-  const jmeno = auth.currentUser.email.split('@')[0];
-  db.collection("behy").add({ jmeno, km, cas, tempo, datum: new Date().toLocaleDateString() })
+function vytvorTym() {
+  const nazev = document.getElementById('nazevTymu').value.trim();
+  if (!nazev) return alert('Zadej název týmu.');
+  db.collection("tymy").add({ nazev })
     .then(() => {
-      document.getElementById('km').value=''; 
-      document.getElementById('cas').value='';
+      document.getElementById('nazevTymu').value='';
+      zobrazTymy();
     });
+}
+
+function zobrazTymy() {
+  db.collection("tymy").onSnapshot(snapshot => {
+    let html = "";
+    snapshot.forEach(doc => {
+      const t = doc.data();
+      html += `<div class='card'>${t.nazev} <button onclick="pripojSe('${t.nazev}')">Přidat do týmu</button></div>`;
+    });
+    document.getElementById('seznamTymu').innerHTML = html;
+  });
+}
+
+function pripojSe(nazevTymu) {
+  alert('Přidal ses do týmu: ' + nazevTymu);
 }
 
 function zobrazMojeBehy() {
@@ -171,6 +158,19 @@ function zobrazMojeBehy() {
   });
 }
 
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById('loginSection').classList.add('hidden');
+    document.getElementById('dashboardSection').classList.remove('hidden');
+    nactiBehy();
+  } else {
+    document.getElementById('loginSection').classList.remove('hidden');
+    document.getElementById('dashboardSection').classList.add('hidden');
+    document.getElementById('mojeBehySection').classList.add('hidden');
+    document.getElementById('tymSection').classList.add('hidden');
+  }
+});
+
 function nactiBehy() {
   db.collection("behy")
     .onSnapshot(snapshot => {
@@ -183,20 +183,13 @@ function nactiBehy() {
         soucty[z.jmeno].cas += z.cas;
         soucty[z.jmeno].tempo += parseFloat(z.tempo) || 0;
         soucty[z.jmeno].pocet++;
-
-        if (!odznaky[z.jmeno]) odznaky[z.jmeno] = new Set();
-        if (z.km >= 42) odznaky[z.jmeno].add("🏅");
-        if (z.tempo < 4.5) odznaky[z.jmeno].add("⚡");
-        if (z.tempo > 9) odznaky[z.jmeno].add("🐌");
       });
-
       let i=1;
       document.getElementById('stavUzivatelu').innerHTML = Object.entries(soucty)
         .sort((a,b)=>b[1].km - a[1].km)
         .map(([j, data])=>{
           const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
-          const badges = [...odznaky[j]].map(o=>`<span class='badge' onclick="ukazPopis('${o}', this)">${o}</span>`).join('');
-          return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km ${badges}</div>`;
+          return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km</div>`;
         }).join('');
     });
 }
