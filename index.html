@@ -31,6 +31,7 @@
   <div id="odhlasBtn" onclick="odhlasit()">🚪</div>
   <a href="#" onclick="zobrazSekci('dashboard')">Dashboard</a>
   <a href="#" onclick="zobrazSekci('mojeBehy')">Moje běhy</a>
+  <a href="#" onclick="zobrazSekci('tym')">Tým</a>
 </div>
 
 <h1>Dolní Lhota Run</h1>
@@ -59,6 +60,12 @@
 <div id="mojeBehySection" class="hidden">
   <h2>Moje běhy</h2>
   <div id="mojeBehy"></div>
+</div>
+
+<div id="tymSection" class="hidden">
+  <h2>Můj tým</h2>
+  <button onclick="alert('Vytvořit tým - funkce zatím demo')">Vytvořit tým</button>
+  <button onclick="alert('Přidat do týmu - funkce zatím demo')">Přidat do týmu</button>
 </div>
 
 <script>
@@ -102,6 +109,7 @@ function odhlasit() {
 function zobrazSekci(sekce) {
   document.getElementById('dashboardSection').style.display = sekce==='dashboard'?'block':'none';
   document.getElementById('mojeBehySection').style.display = sekce==='mojeBehy'?'block':'none';
+  document.getElementById('tymSection').style.display = sekce==='tym'?'block':'none';
   toggleSidebar();
   if(sekce==='mojeBehy') zobrazMojeBehy();
 }
@@ -128,6 +136,7 @@ auth.onAuthStateChanged(user => {
     document.getElementById('loginSection').classList.remove('hidden');
     document.getElementById('dashboardSection').classList.add('hidden');
     document.getElementById('mojeBehySection').classList.add('hidden');
+    document.getElementById('tymSection').classList.add('hidden');
   }
 });
 
