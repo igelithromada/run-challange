@@ -3,7 +3,7 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8" />
-<title>Dolní Lhota Run - Týmy</title>
+<title>Dolní Lhota Run</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -14,13 +14,54 @@
   button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
   .card { background: #fff; border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 10px; }
   .hidden { display: none; }
+  #sidebar { height: 100%; width: 0; position: fixed; z-index: 100; top: 0; left: 0; background: #f0f0f0; overflow-x: auto; transition: 0.3s; padding-top: 20px; display: flex; flex-direction: column; }
+  #sidebar a { padding: 8px 8px 8px 32px; text-decoration: none; font-size: 1.2em; color: #333; display: block; transition: 0.3s; }
+  #sidebar a:hover { background: #ddd; }
+  #hamburger { position: fixed; top: 15px; left: 15px; font-size: 2.2em; cursor: pointer; z-index: 101; }
+  #odhlasBtn { position: absolute; top: 10px; right: 10px; font-size: 1.1em; cursor: pointer; }
 </style>
 </head>
 <body>
 
-<h1>Dolní Lhota Run - Týmy</h1>
+<div id="hamburger" onclick="toggleSidebar()">☰</div>
 
-<div id="tymSekce">
+<div id="sidebar">
+  <div id="odhlasBtn" onclick="odhlasit()">🚪</div>
+  <a href="#" onclick="zobrazSekci('dashboard')">Dashboard</a>
+  <a href="#" onclick="zobrazSekci('mojeBehy')">Moje běhy</a>
+  <a href="#" onclick="zobrazSekci('tym')">Tým</a>
+</div>
+
+<h1>Dolní Lhota Run</h1>
+
+<div id="loginSection">
+  <h2>Přihlášení</h2>
+  <input type="email" id="emailLogin" placeholder="Email">
+  <input type="password" id="passwordLogin" placeholder="Heslo">
+  <button onclick="prihlasit()">Přihlásit</button>
+  <h2>Registrace</h2>
+  <input type="email" id="emailReg" placeholder="Email">
+  <input type="password" id="passwordReg" placeholder="Heslo">
+  <button onclick="registruj()">Registrovat</button>
+</div>
+
+<div id="dashboardSection" class="hidden">
+  <h2>Zadat nový běh</h2>
+  <input type="number" id="km" placeholder="Kolik km?">
+  <input type="number" id="cas" placeholder="Čas v minutách">
+  <button onclick="pridatBeh()">Přidat běh</button>
+
+  <h2>Pořadí uživatelů</h2>
+  <div id="stavUzivatelu"></div>
+</div>
+
+<div id="mojeBehySection" class="hidden">
+  <h2>Moje běhy</h2>
+  <div id="mojeBehy"></div>
+</div>
+
+<div id="tymSection" class="hidden">
+  <h2>Tým</h2>
   <input type="text" id="nazevTymu" placeholder="Název týmu">
   <button onclick="vytvorTym()">Vytvořit tým</button>
   <h3>Existující týmy</h3>
@@ -40,13 +81,39 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-auth.onAuthStateChanged(user => {
-  if (user) {
-    zobrazTymy();
+function toggleSidebar() {
+  const sb = document.getElementById("sidebar");
+  if (sb.style.width === "250px") {
+    sb.style.width = "0";
+    document.body.style.marginLeft= "0";
   } else {
-    alert('Musíš být přihlášen');
+    sb.style.width = "250px";
+    document.body.style.marginLeft = "250px";
   }
-});
+}
+
+function prihlasit() {
+  const email = document.getElementById('emailLogin').value;
+  const password = document.getElementById('passwordLogin').value;
+  auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
+}
+function registruj() {
+  const email = document.getElementById('emailReg').value;
+  const password = document.getElementById('passwordReg').value;
+  auth.createUserWithEmailAndPassword(email, password).catch(err => alert(err.message));
+}
+function odhlasit() {
+  auth.signOut();
+}
+
+function zobrazSekci(sekce) {
+  document.getElementById('dashboardSection').style.display = sekce==='dashboard'?'block':'none';
+  document.getElementById('mojeBehySection').style.display = sekce==='mojeBehy'?'block':'none';
+  document.getElementById('tymSection').style.display = sekce==='tym'?'block':'none';
+  toggleSidebar();
+  if(sekce==='mojeBehy') zobrazMojeBehy();
+  if(sekce==='tym') zobrazTymy();
+}
 
 function vytvorTym() {
   const nazev = document.getElementById('nazevTymu').value.trim();
@@ -73,6 +140,59 @@ function pripojSe(nazevTymu) {
   const jmeno = auth.currentUser.email.split('@')[0];
   db.collection("uzivatele").doc(jmeno).set({ tym: nazevTymu })
     .then(() => alert('Přidal ses do týmu: ' + nazevTymu));
+}
+
+function zobrazMojeBehy() {
+  const jmeno = auth.currentUser.email.split('@')[0];
+  db.collection("behy").where("jmeno","==",jmeno).onSnapshot(snapshot => {
+    let html = "", sumKm=0, sumCas=0, sumTempo=0, count=0;
+    snapshot.forEach(doc => {
+      const z = doc.data();
+      html += `<div class='card'>${z.datum}: ${z.km} km za ${z.cas} min (${z.tempo} min/km)</div>`;
+      sumKm += z.km;
+      sumCas += z.cas;
+      sumTempo += parseFloat(z.tempo) || 0;
+      count++;
+    });
+    const avgTempo = count > 0 ? (sumTempo / count).toFixed(2) : "0";
+    html += `<hr><div class='card'><strong>Součet:</strong> ${sumKm} km, ${sumCas} min, průměrné tempo: ${avgTempo} min/km</div>`;
+    document.getElementById('mojeBehy').innerHTML = html;
+  });
+}
+
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById('loginSection').classList.add('hidden');
+    document.getElementById('dashboardSection').classList.remove('hidden');
+    nactiBehy();
+  } else {
+    document.getElementById('loginSection').classList.remove('hidden');
+    document.getElementById('dashboardSection').classList.add('hidden');
+    document.getElementById('mojeBehySection').classList.add('hidden');
+    document.getElementById('tymSection').classList.add('hidden');
+  }
+});
+
+function nactiBehy() {
+  db.collection("behy")
+    .onSnapshot(snapshot => {
+      const soucty = {};
+      snapshot.forEach(doc => {
+        const z = doc.data();
+        if (!soucty[z.jmeno]) soucty[z.jmeno] = { km:0, cas:0, tempo:0, pocet:0 };
+        soucty[z.jmeno].km += z.km;
+        soucty[z.jmeno].cas += z.cas;
+        soucty[z.jmeno].tempo += parseFloat(z.tempo) || 0;
+        soucty[z.jmeno].pocet++;
+      });
+      let i=1;
+      document.getElementById('stavUzivatelu').innerHTML = Object.entries(soucty)
+        .sort((a,b)=>b[1].km - a[1].km)
+        .map(([j, data])=>{
+          const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
+          return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km</div>`;
+        }).join('');
+    });
 }
 </script>
 
