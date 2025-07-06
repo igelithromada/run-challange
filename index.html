@@ -32,6 +32,47 @@ button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
 </div>
 
 <h1>Dolní Lhota Run</h1>
-<p>Hotová verze s dashboardem, moje běhy, týmy, vše napojené na Firestore.</p>
+
+<div id="login">
+  <h2>Přihlášení</h2>
+  <input type="email" id="emailLogin" placeholder="Email">
+  <input type="password" id="passwordLogin" placeholder="Heslo">
+  <button onclick="prihlasit()">Přihlásit</button>
+  <h2>Registrace</h2>
+  <input type="email" id="emailReg" placeholder="Email">
+  <input type="password" id="passwordReg" placeholder="Heslo">
+  <button onclick="registruj()">Registrovat</button>
+  <h3>nebo</h3>
+  <button onclick="prihlasitGoogle()">Přihlásit přes Google</button>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="dashboardSekce">
+    <h2>Zadat nový běh</h2>
+    <input type="number" id="km" placeholder="Kolik km?">
+    <input type="number" id="cas" placeholder="Čas v minutách">
+    <button onclick="pridat()">Přidat běh</button>
+    <h2>Celkové pořadí</h2>
+    <div id="zebricek"></div>
+    <div class="chart-container">
+      <canvas id="myChart"></canvas>
+    </div>
+    <div id="avgTempo"></div>
+  </div>
+  <div id="mojeSekce" style="display:none;">
+    <div id="mojeBehy"></div>
+  </div>
+  <div id="vytvoritTymSekce" style="display:none;">
+    <h2>Vytvořit tým</h2>
+    <input type="text" id="novyTym" placeholder="Název týmu">
+    <button onclick="vytvoritTym()">Vytvořit tým</button>
+  </div>
+  <div id="pridatDoTymuSekce" style="display:none;">
+    <h2>Přidat se do týmu</h2>
+    <div id="seznamTymu"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
