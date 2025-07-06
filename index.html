@@ -9,7 +9,7 @@ function pripojSe(nazevTymu) {
   db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
     .then(() => {
       aktualniTym = nazevTymu;
-      zobrazInfoUzivatele();
+      zobrazInfoUzivatele(); zobrazTymy();
       zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
       alert('Přidal ses do týmu: ' + nazevTymu);
     });
@@ -19,7 +19,7 @@ function odstranZtýmu() {
   db.collection("uzivatele").doc(nick).delete()
     .then(() => {
       aktualniTym = null;
-      zobrazInfoUzivatele();
+      zobrazInfoUzivatele(); zobrazTymy();
       zobrazTymy();
       alert('Odešel jsi z týmu');
     });
@@ -31,7 +31,7 @@ function pripojSe(nazevTymu) {
   db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
     .then(() => {
       aktualniTym = nazevTymu;
-      zobrazInfoUzivatele();
+      zobrazInfoUzivatele(); zobrazTymy();
       zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
       alert('Přidal ses do týmu: ' + nazevTymu);
     });
@@ -41,7 +41,7 @@ function odstranZtýmu() {
   db.collection("uzivatele").doc(nick).delete()
     .then(() => {
       aktualniTym = null;
-      zobrazInfoUzivatele();
+      zobrazInfoUzivatele(); zobrazTymy();
       zobrazTymy();
       alert('Odešel jsi z týmu');
     });
@@ -53,7 +53,7 @@ function pripojSe(nazevTymu) {
   db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
     .then(() => {
       aktualniTym = nazevTymu;
-      zobrazInfoUzivatele();
+      zobrazInfoUzivatele(); zobrazTymy();
       zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
       alert('Přidal ses do týmu: ' + nazevTymu);
     });
@@ -63,7 +63,7 @@ function odstranZtýmu() {
   db.collection("uzivatele").doc(nick).delete()
     .then(() => {
       aktualniTym = null;
-      zobrazInfoUzivatele();
+      zobrazInfoUzivatele(); zobrazTymy();
       zobrazTymy();
       alert('Odešel jsi z týmu');
     });
@@ -215,7 +215,7 @@ function zobrazTymy() {
         html += `<div class='card'>${t.nazev} <button onclick="pripojSe('${t.nazev}')">Přidat do týmu</button></div>`;
       }
     });
-    document.getElementById('seznamTymu').innerHTML = html;
+    document.getElementById('seznamTymu').innerHTML = \"<button onclick=\\\"zobrazVytvorTym()\\\">Vytvořit tým</button> <button onclick=\\\"zobrazSeznamTymu()\\\">Přidat do týmu</button><div id='vytvorTymForm' class='hidden'><input type='text' id='nazevTymu' placeholder='Název týmu'><button onclick='vytvorTym()'>Vytvořit</button></div>\" + html;
   });
 }
 
@@ -223,7 +223,7 @@ function pripojSe(nazevTymu) {
   db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
     .then(() => {
       aktualniTym = nazevTymu;
-      zobrazInfoUzivatele();
+      zobrazInfoUzivatele(); zobrazTymy();
       alert('Přidal ses do týmu: ' + nazevTymu);
     });
 }
@@ -232,7 +232,7 @@ function odstranZtýmu() {
   db.collection("uzivatele").doc(nick).delete()
     .then(() => {
       aktualniTym = null;
-      zobrazInfoUzivatele();
+      zobrazInfoUzivatele(); zobrazTymy();
       alert('Odešel jsi z týmu');
     });
 }
@@ -267,7 +267,7 @@ auth.onAuthStateChanged(user => {
     nick = user.email.split('@')[0];
     document.getElementById('loginSection').classList.add('hidden');
     document.getElementById('dashboardSection').classList.remove('hidden');
-    zobrazInfoUzivatele();
+    zobrazInfoUzivatele(); zobrazTymy();
     nactiBehy();
   } else {
     document.getElementById('loginSection').classList.remove('hidden');
@@ -304,7 +304,7 @@ function pripojSe(nazevTymu) {
   db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
     .then(() => {
       aktualniTym = nazevTymu;
-      zobrazInfoUzivatele();
+      zobrazInfoUzivatele(); zobrazTymy();
       zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
       alert('Přidal ses do týmu: ' + nazevTymu);
     });
@@ -314,7 +314,7 @@ function odstranZtýmu() {
   db.collection("uzivatele").doc(nick).delete()
     .then(() => {
       aktualniTym = null;
-      zobrazInfoUzivatele();
+      zobrazInfoUzivatele(); zobrazTymy();
       zobrazTymy();
       alert('Odešel jsi z týmu');
     });
