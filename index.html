@@ -3,62 +3,9 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8" />
-<title>Run Challange - Firestore</title>
-<script type="module">
-  // Import Firebase
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDHGzESwHUmmyy0_txyWL7VCp7eWFmtE9w",
-    authDomain: "run-challange.firebaseapp.com",
-    projectId: "run-challange",
-    storageBucket: "run-challange.firebasestorage.app",
-    messagingSenderId: "501821296976",
-    appId: "1:501821296976:web:e470e5d221d1b1fbb21c55",
-    measurementId: "G-ZBBC0TWX7C"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  let zaznamy = [];
-
-  async function pridej() {
-    const jmeno = document.getElementById('jmeno').value;
-    const km = parseFloat(document.getElementById('km').value);
-    const cas = parseFloat(document.getElementById('cas').value);
-    if (!jmeno || isNaN(km) || isNaN(cas) || km <= 0 || cas <= 0) return alert('Vyplň všechna pole správně.');
-    const tempo = cas / km;
-    await addDoc(collection(db, "behy"), { jmeno, km, cas, tempo: tempo.toFixed(2), datum: new Date().toLocaleDateString() });
-    document.getElementById('jmeno').value = '';
-    document.getElementById('km').value = '';
-    document.getElementById('cas').value = '';
-    nacti();
-  }
-
-  async function nacti() {
-    const querySnapshot = await getDocs(collection(db, "behy"));
-    zaznamy = [];
-    querySnapshot.forEach((docu) => zaznamy.push({ id: docu.id, ...docu.data() }));
-    zaznamy.sort((a, b) => b.km - a.km);
-    zobraz();
-  }
-
-  async function smaz(id) {
-    await deleteDoc(doc(db, "behy", id));
-    nacti();
-  }
-
-  function zobraz() {
-    document.getElementById('zebricek').innerHTML = zaznamy.map(z =>
-      `<div class='zaznam'>${z.jmeno} - ${z.km} km za ${z.cas} min (tempo ${z.tempo} min/km) (${z.datum})
-       <button onclick="smaz('${z.id}')">Smazat</button></div>`
-    ).join('');
-  }
-
-  window.onload = nacti;
-</script>
+<title>Run Challange - Firestore CDN</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
 body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; background: #f0f0f0; }
 input, button { padding: 10px; margin: 5px 0; width: 100%; border-radius: 8px; border: 1px solid #ccc; }
@@ -67,13 +14,71 @@ button { background: orange; color: white; font-weight: bold; border: none; }
 </style>
 </head>
 <body>
-<h1>Run Challange s Firestore</h1>
+<h1>Run Challange s Firestore (CDN)</h1>
 <input type="text" id="jmeno" placeholder="Jméno a příjmení">
 <input type="number" id="km" placeholder="Kolik km?">
 <input type="number" id="cas" placeholder="Čas v minutách">
-<button onclick="pridej()">Přidat záznam</button>
+<button onclick="pridat()">Přidat záznam</button>
 
 <h2>Žebříček</h2>
 <div id="zebricek"></div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDHGzESwHUmmyy0_txyWL7VCp7eWFmtE9w",
+  authDomain: "run-challange.firebaseapp.com",
+  projectId: "run-challange",
+  storageBucket: "run-challange.firebasestorage.app",
+  messagingSenderId: "501821296976",
+  appId: "1:501821296976:web:e470e5d221d1b1fbb21c55",
+  measurementId: "G-ZBBC0TWX7C"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let zaznamy = [];
+
+function pridat() {
+    const jmeno = document.getElementById('jmeno').value;
+    const km = parseFloat(document.getElementById('km').value);
+    const cas = parseFloat(document.getElementById('cas').value);
+    if (!jmeno || isNaN(km) || isNaN(cas) || km <= 0 || cas <= 0) return alert('Vyplň všechna pole správně.');
+    const tempo = (cas / km).toFixed(2);
+    db.collection("behy").add({ jmeno, km, cas, tempo, datum: new Date().toLocaleDateString() })
+      .then(() => {
+        document.getElementById('jmeno').value = '';
+        document.getElementById('km').value = '';
+        document.getElementById('cas').value = '';
+        nacti();
+      });
+}
+
+function nacti() {
+    db.collection("behy").get().then((querySnapshot) => {
+        zaznamy = [];
+        querySnapshot.forEach((doc) => {
+            zaznamy.push({ id: doc.id, ...doc.data() });
+        });
+        zaznamy.sort((a, b) => b.km - a.km);
+        zobraz();
+    });
+}
+
+function smaz(id) {
+    db.collection("behy").doc(id).delete().then(() => {
+        nacti();
+    });
+}
+
+function zobraz() {
+    document.getElementById('zebricek').innerHTML = zaznamy.map(z =>
+        `<div class='zaznam'>${z.jmeno} - ${z.km} km za ${z.cas} min (tempo ${z.tempo} min/km) (${z.datum})
+        <button onclick="smaz('${z.id}')">Smazat</button></div>`
+    ).join('');
+}
+
+window.onload = nacti;
+</script>
 </body>
 </html>
