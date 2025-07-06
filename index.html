@@ -19,6 +19,7 @@
   #sidebar a:hover { background: #ddd; }
   #hamburger { position: fixed; top: 15px; left: 15px; font-size: 2.2em; cursor: pointer; z-index: 101; }
   #odhlasBtn { position: absolute; top: 10px; right: 10px; font-size: 1.1em; cursor: pointer; }
+  #userInfo { padding: 0 32px 10px 32px; font-size: 1em; }
 </style>
 </head>
 <body>
@@ -27,6 +28,7 @@
 
 <div id="sidebar">
   <div id="odhlasBtn" onclick="odhlasit()">🚪</div>
+  <div id="userInfo"></div>
   <a href="#" onclick="zobrazSekci('dashboard')">Dashboard</a>
   <a href="#" onclick="zobrazSekci('mojeBehy')">Moje běhy</a>
   <a href="#" onclick="zobrazSekci('tym')">Tým</a>
@@ -139,7 +141,19 @@ function zobrazTymy() {
 function pripojSe(nazevTymu) {
   const jmeno = auth.currentUser.email.split('@')[0];
   db.collection("uzivatele").doc(jmeno).set({ tym: nazevTymu })
-    .then(() => alert('Přidal ses do týmu: ' + nazevTymu));
+    .then(() => {
+      zobrazInfoUzivatele();
+      alert('Přidal ses do týmu: ' + nazevTymu);
+    });
+}
+
+function zobrazInfoUzivatele() {
+  const jmeno = auth.currentUser.email.split('@')[0];
+  db.collection("uzivatele").doc(jmeno).get().then(doc => {
+    const data = doc.data();
+    const tym = data ? data.tym : 'Žádný tým';
+    document.getElementById('userInfo').innerHTML = `<strong>${jmeno}</strong><br>Tým: ${tym}`;
+  });
 }
 
 function zobrazMojeBehy() {
@@ -164,12 +178,14 @@ auth.onAuthStateChanged(user => {
   if (user) {
     document.getElementById('loginSection').classList.add('hidden');
     document.getElementById('dashboardSection').classList.remove('hidden');
+    zobrazInfoUzivatele();
     nactiBehy();
   } else {
     document.getElementById('loginSection').classList.remove('hidden');
     document.getElementById('dashboardSection').classList.add('hidden');
     document.getElementById('mojeBehySection').classList.add('hidden');
     document.getElementById('tymSection').classList.add('hidden');
+    document.getElementById('userInfo').innerHTML = '';
   }
 });
 
