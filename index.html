@@ -100,19 +100,24 @@ function zobrazSekci(sekce) {
   toggleMenu();
 }
 
+
 auth.onAuthStateChanged(user => {
+  console.log("Auth změna:", user);
   if (user) {
+    console.log("Přihlášený uživatel:", user.email);
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     document.getElementById('dashboardSekce').style.display = 'block';
     document.getElementById('mojeSekce').style.display = 'none';
     nactiRealtime();
   } else {
+    console.log("Nepřihlášený uživatel");
     document.getElementById('login').style.display = 'block';
     document.getElementById('app').style.display = 'none';
     unsubscribe();
   }
 });
+
 
 function prihlasit() {
   const email = document.getElementById('emailLogin').value;
