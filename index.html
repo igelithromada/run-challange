@@ -196,7 +196,7 @@ function pridatBeh() {
   <div id="odhlasBtn" onclick="odhlasit()">🚪</div>
   <div id="userInfo"></div>
   <a href="#" onclick="zobrazSekci('dashboard')">Dashboard</a>
-  <a href="#" onclick="zobrazSekci('vsichni')">🌍 Všichni běžci</a>
+  <a href="#" onclick="zobrazSekci('vsichni')">Všichni běžci</a>
   <a href="#" onclick="zobrazSekci('mojeBehy')">Moje běhy</a>
   <a href="#" onclick="zobrazSekci('tymMain')">Tým</a>
 </div>
@@ -394,9 +394,10 @@ function nactiBehy() {
         soucty[z.jmeno].pocet++;
       });
       let i=1;
-      document.getElementById('stavUzivatelu').innerHTML = Object.entries(soucty)
+      document.getElementById('stavUzivatelu').innerHTML = Object.entries(soucty).sort((a,b)=>b[1].km - a[1].km).slice(0,10)
         .sort((a,b)=>b[1].km - a[1].km)
-        .slice(0,10).map(([j, data])=>{
+        // slice vložený jen do dashboardu
+.map(([j, data])=>{
           const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
           return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km</div>`;
         }).join('');
@@ -488,7 +489,8 @@ function zobrazVsechny() {
     let i=1;
     document.getElementById('vsichniBehy').innerHTML = Object.entries(soucty)
       .sort((a,b)=>b[1].km - a[1].km)
-      .slice(0,10).map(([j, data])=>{
+      // slice vložený jen do dashboardu
+.map(([j, data])=>{
         const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
         return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km</div>`;
       }).join('');
