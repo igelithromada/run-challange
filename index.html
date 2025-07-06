@@ -37,10 +37,7 @@
   <input type="number" id="cas" placeholder="Čas v minutách">
   <button onclick="pridatBeh()">Přidat běh</button>
 
-  <h2>Dashboard statistiky</h2>
-  <div id="statistiky" class="card"></div>
-
-  <h2>Celkový stav uživatelů</h2>
+  <h2>Pořadí uživatelů</h2>
   <div id="stavUzivatelu"></div>
 
   <button onclick="odhlasit()">Odhlásit se</button>
@@ -102,7 +99,6 @@ function nactiBehy() {
     .onSnapshot(snapshot => {
       const soucty = {};
       const odznaky = {};
-      let sumTempo=0, sumCas=0, count=0;
       snapshot.forEach(doc => {
         const z = doc.data();
         if (!soucty[z.jmeno]) soucty[z.jmeno] = { km:0, cas:0, tempo:0, pocet:0 };
@@ -115,22 +111,14 @@ function nactiBehy() {
         if (z.km >= 42) odznaky[z.jmeno].add("🏅");
         if (z.tempo < 4.5) odznaky[z.jmeno].add("⚡");
         if (z.tempo > 9) odznaky[z.jmeno].add("🐌");
-
-        sumTempo += parseFloat(z.tempo) || 0;
-        sumCas += parseFloat(z.cas) || 0;
-        count++;
       });
 
-      const avgTempo = count > 0 ? (sumTempo / count).toFixed(2) : "0";
-      document.getElementById('statistiky').innerHTML = `<strong>Průměrné tempo:</strong> ${avgTempo} min/km<br>
-        <strong>Celkový čas:</strong> ${sumCas} min<br>
-        <strong>Počet běhů:</strong> ${count}`;
-
+      let i=1;
       document.getElementById('stavUzivatelu').innerHTML = Object.entries(soucty)
         .sort((a,b)=>b[1].km - a[1].km)
         .map(([j, data])=>{
           const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
-          return `<div class='card'><strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km ${[...odznaky[j]].map(o=>"<span>"+o+"</span>").join('')}</div>`;
+          return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km ${[...odznaky[j]].map(o=>"<span>"+o+"</span>").join('')}</div>`;
         }).join('');
     });
 }
