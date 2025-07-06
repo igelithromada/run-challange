@@ -40,7 +40,7 @@
   <h2>Dashboard statistiky</h2>
   <div id="statistiky" class="card"></div>
 
-  <h2>Moje běhy</h2>
+  <h2>Všechny běhy</h2>
   <div id="mojeBehy"></div>
 
   <button onclick="odhlasit()">Odhlásit se</button>
@@ -98,14 +98,14 @@ function pridatBeh() {
 }
 
 function nactiBehy() {
-  db.collection("behy").where("jmeno", "==", auth.currentUser.email.split('@')[0])
+  db.collection("behy")
     .orderBy("datum", "desc")
     .onSnapshot(snapshot => {
       let html = "";
       let sumTempo = 0, sumCas = 0, count = 0;
       snapshot.forEach(doc => {
         const z = doc.data();
-        html += `<div class='card'>${z.datum}: ${z.km} km za ${z.cas} min (${z.tempo} min/km)</div>`;
+        html += `<div class='card'>${z.jmeno} - ${z.datum}: ${z.km} km za ${z.cas} min (${z.tempo} min/km)</div>`;
         sumTempo += parseFloat(z.tempo) || 0;
         sumCas += parseFloat(z.cas) || 0;
         count++;
