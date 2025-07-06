@@ -36,7 +36,7 @@ button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
 
 <div id="app" style="display:none;">
   <button onclick="odhlasit()">Odhlásit se</button>
-  <button onclick="nactiMojeBehy()">Moje běhy</button>
+  <button onclick="zobrazMoje()">Moje běhy</button>
   <h2>Zadat nový běh</h2>
   <input type="number" id="km" placeholder="Kolik km?">
   <input type="number" id="cas" placeholder="Čas v minutách">
@@ -49,6 +49,11 @@ button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
     <canvas id="myChart"></canvas>
   </div>
 
+  <div id="avgTempo"></div>
+</div>
+
+<div id="mojeSekce" style="display:none;">
+  <button onclick="zpetNaHlavni()">Zpět na hlavní stránku</button>
   <div id="mojeBehy"></div>
 </div>
 
@@ -71,10 +76,12 @@ auth.onAuthStateChanged(user => {
   if (user) {
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+    document.getElementById('mojeSekce').style.display = 'none';
     nactiRealtime();
   } else {
     document.getElementById('login').style.display = 'block';
     document.getElementById('app').style.display = 'none';
+    document.getElementById('mojeSekce').style.display = 'none';
     unsubscribe();
   }
 });
@@ -110,8 +117,10 @@ function nactiRealtime() {
   unsubscribe = db.collection("behy").onSnapshot(snapshot => {
     const zaznamy = []; snapshot.forEach(doc => zaznamy.push(doc.data()));
     const soucty = {}; const odznaky = {};
+    let sumTempo = 0;
     zaznamy.forEach(z => {
       soucty[z.jmeno] = (soucty[z.jmeno]||0)+z.km;
+      sumTempo += parseFloat(z.tempo);
       if(!odznaky[z.jmeno]) odznaky[z.jmeno]=[];
       if(z.km >= 42) odznaky[z.jmeno].push("🏅Maratonec");
       if(z.tempo < 4.5) odznaky[z.jmeno].push("⚡Rychlejší než smrt");
@@ -119,13 +128,16 @@ function nactiRealtime() {
     });
     document.getElementById('zebricek').innerHTML = Object.entries(soucty).sort((a,b)=>b[1]-a[1])
       .map(([j,k])=>`<div class='card'>${j}: ${k} km ${odznaky[j]?.map(o=>"<span class='badge' title='"+o+"'>"+o+"</span>").join('')}</div>`).join('');
+    document.getElementById('avgTempo').innerHTML = `<div class='card'><strong>Průměrné tempo všech běhů: ${(zaznamy.length>0?(sumTempo/zaznamy.length).toFixed(2):0)} min/km</strong></div>`;
     const ctx = document.getElementById('myChart').getContext('2d');
     if(chart)chart.destroy();
     chart = new Chart(ctx,{type:'bar',data:{labels:Object.keys(soucty),datasets:[{label:"km",data:Object.values(soucty),backgroundColor:"#ff6600"}]},options:{responsive:true}});
   });
 }
 
-function nactiMojeBehy() {
+function zobrazMoje() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('mojeSekce').style.display = 'block';
   const jmeno = auth.currentUser.email.split('@')[0];
   db.collection("behy").where("jmeno","==",jmeno).get().then(snapshot => {
     let obsah = "<h2>Moje běhy</h2>";
@@ -140,6 +152,10 @@ function nactiMojeBehy() {
     obsah += `<div class='card'><strong>Celkem: ${sumKm} km</strong><br>Průměrné tempo: ${avgTempo}</div>`;
     document.getElementById('mojeBehy').innerHTML = obsah;
   });
+}
+function zpetNaHlavni() {
+  document.getElementById('mojeSekce').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
 }
 </script>
 </body>
