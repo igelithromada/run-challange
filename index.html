@@ -8,7 +8,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
-  body { font-family: sans-serif; background: #f8f8f8; color: #222; padding: 20px; max-width: 400px; margin: auto; }
+  body { font-family: sans-serif; background: #f8f8f8; color: #222; padding: 20px; max-width: 400px; margin: auto; transition: margin-left 0.3s; }
   h1, h2 { text-align: center; color: #ff6600; }
   input, button { font-size: 1.2em; padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: 1px solid #aaa; }
   button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
@@ -16,9 +16,22 @@
   .hidden { display: none; }
   .badge { cursor: pointer; font-size: 1.5em; margin-left: 5px; }
   .popis { font-size: 0.9em; color: #555; margin-top: 5px; }
+  #sidebar { height: 100%; width: 0; position: fixed; z-index: 100; top: 0; left: 0; background: #f0f0f0; overflow-x: hidden; transition: 0.3s; padding-top: 60px; }
+  #sidebar a { padding: 8px 8px 8px 32px; text-decoration: none; font-size: 1.2em; color: #333; display: block; transition: 0.3s; }
+  #sidebar a:hover { background: #ddd; }
+  #hamburger { position: fixed; top: 15px; left: 15px; font-size: 2.2em; cursor: pointer; z-index: 101; }
 </style>
 </head>
 <body>
+
+<div id="hamburger" onclick="toggleSidebar()">☰</div>
+
+<div id="sidebar">
+  <a href="#" onclick="toggleSidebar()">Zavřít ✖</a>
+  <a href="#">Dashboard</a>
+  <a href="#">Statistiky</a>
+  <a href="#">Nastavení</a>
+</div>
 
 <h1>Dolní Lhota Run</h1>
 
@@ -58,6 +71,17 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+function toggleSidebar() {
+  const sb = document.getElementById("sidebar");
+  if (sb.style.width === "250px") {
+    sb.style.width = "0";
+    document.body.style.marginLeft= "0";
+  } else {
+    sb.style.width = "250px";
+    document.body.style.marginLeft = "250px";
+  }
+}
+
 function prihlasit() {
   const email = document.getElementById('emailLogin').value;
   const password = document.getElementById('passwordLogin').value;
@@ -70,6 +94,19 @@ function registruj() {
 }
 function odhlasit() {
   auth.signOut();
+}
+
+function ukazPopis(typ, el) {
+  const map = {
+    "🏅": "Uběhl jsi maraton! Více než 42 km v jednom běhu.",
+    "⚡": "Rychlejší než smrt! Tempo pod 4.5 min/km.",
+    "🐌": "Pomalý jak šnek! Tempo nad 9 min/km."
+  };
+  const d = document.createElement('div');
+  d.className = 'popis';
+  d.innerText = map[typ];
+  el.parentNode.appendChild(d);
+  el.removeAttribute('onclick');
 }
 
 auth.onAuthStateChanged(user => {
@@ -94,19 +131,6 @@ function pridatBeh() {
       document.getElementById('km').value=''; 
       document.getElementById('cas').value='';
     });
-}
-
-function ukazPopis(typ, el) {
-  const map = {
-    "🏅": "Uběhl jsi maraton! Více než 42 km v jednom běhu.",
-    "⚡": "Rychlejší než smrt! Tempo pod 4.5 min/km.",
-    "🐌": "Pomalý jak šnek! Tempo nad 9 min/km."
-  };
-  const d = document.createElement('div');
-  d.className = 'popis';
-  d.innerText = map[typ];
-  el.parentNode.appendChild(d);
-  el.removeAttribute('onclick');
 }
 
 function nactiBehy() {
