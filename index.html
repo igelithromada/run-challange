@@ -397,11 +397,7 @@ function nactiBehy() {
         .sort((a,b)=>b[1].km - a[1].km)
         .map(([j, data])=>{
           const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
-          return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km ${
-          [...(odznaky[j]||[])]
-            .concat(data.km >= 200 ? "🥇" : data.km >= 100 ? "🥈" : data.km >= 50 ? "🥉" : [])
-            .join(' ')
-        }</div>`;
+          return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km</div>`;
         }).join('');
     });
 }
