@@ -122,7 +122,7 @@ function nactiRealtime() {
     });
     let i=1;
     document.getElementById('zebricek').innerHTML = Object.keys(soucty).sort((a,b)=>soucty[b]-soucty[a])
-    .map(jmeno=>`<div class='card'>${i++}. ${jmeno}: ${soucty[jmeno]} km, ${souctyCas[jmeno]} min, prům. tempo ${(souctyTempo[jmeno]/souctyCas[jmeno]*soucty[jmeno]).toFixed(2)} ${[...odznaky[jmeno]].map(o=>"<span class='badge'>"+o+"</span>").join('')}</div>`).join('');
+    .map(jmeno=><div class='card'>${i++}. ${jmeno}: ${soucty[jmeno]} km, ${souctyCas[jmeno]} min, prům. tempo ${(souctyTempo[jmeno]/souctyCas[jmeno]*soucty[jmeno]).toFixed(2)} ${[...odznaky[jmeno]].map(o=>"<span class='badge'>"+o+"</span>").join('')}</div>).join('');
   });
 }
 </script>
