@@ -144,7 +144,7 @@ function nactiRealtime() {
   unsubscribe();
   unsubscribe = db.collection("behy").onSnapshot(snapshot => {
     const zaznamy = []; snapshot.forEach(doc => zaznamy.push(doc.data()));
-    const soucty = {}; const odznaky = {}; let sumTempo=0; let countTempo=0;
+    const soucty = {}; const odznaky = {}; let sumTempo=0;
     zaznamy.forEach(z => {
       soucty[z.jmeno] = (soucty[z.jmeno]||0)+z.km;
       if(!odznaky[z.jmeno]) odznaky[z.jmeno]=new Set();
@@ -152,18 +152,13 @@ function nactiRealtime() {
       if(z.tempo < 4.5) odznaky[z.jmeno].add("⚡");
       if(z.tempo > 9) odznaky[z.jmeno].add("🐌");
       sumTempo+=parseFloat(z.tempo);
-      countTempo++;
     });
     let i=1;
     document.getElementById('zebricek').innerHTML = Object.entries(soucty).sort((a,b)=>b[1]-a[1])
-      .map(([j,k])=><div class='card'>${i++}. ${j}: ${k} km ${[...odznaky[j]].map(o=>"<span class='badge'>"+o+"</span>").join('')}</div>).join('');
+      .map(([j,k])=>`<div class='card'>${i++}. ${j}: ${k} km ${[...odznaky[j]].map(o=>"<span class='badge'>"+o+"</span>").join('')}</div>`).join('');
     const ctx = document.getElementById('myChart').getContext('2d');
     if(chart)chart.destroy();
     chart = new Chart(ctx,{type:'bar',data:{labels:Object.keys(soucty),datasets:[{label:"km",data:Object.values(soucty),backgroundColor:"#ff6600"}]},options:{responsive:true}});
-    
-    // přidaný výpis průměrného tempa
-    const avgTempo = countTempo > 0 ? (sumTempo / countTempo).toFixed(2) : "0";
-    document.getElementById('avgTempo').innerHTML = <div class='card'><strong>Průměrné tempo:</strong> ${avgTempo} min/km</div>;
   });
 }
 </script>
