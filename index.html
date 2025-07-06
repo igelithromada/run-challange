@@ -243,7 +243,10 @@ function pridatBeh() {
 
 <div id="tymPridatSection" class="hidden">
   <h2>Vyber tým</h2>
-  <div id="seznamTymu"></div>
+  <button onclick="zobrazVytvorTym()">Vytvořit tým</button>
+<button onclick="zobrazSeznamTymu()">Přidat do týmu</button>
+<div id="vytvorTymForm" class="hidden"><input type="text" id="nazevTymu" placeholder="Název týmu"><button onclick="vytvorTym()">Vytvořit</button></div>
+<div id="seznamTymu"></div>
 </div>
 
 <script>
