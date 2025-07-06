@@ -24,7 +24,23 @@ function odstranZtýmu() {
       alert('Odešel jsi z týmu');
     });
 }
+
+function pridatBeh() {
+  const km = parseFloat(document.getElementById('km').value);
+  const cas = parseFloat(document.getElementById('cas').value);
+  if (!km || !cas) return alert("Zadej správně km a čas");
+  const tempo = (cas / km).toFixed(2);
+  const datum = new Date().toLocaleDateString();
+  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
+    .then(() => {
+      document.getElementById('km').value = '';
+      document.getElementById('cas').value = '';
+      nactiBehy();
+      zobrazMojeBehy();
+    });
+}
 </script>
+
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js">
 function pripojSe(nazevTymu) {
@@ -46,7 +62,23 @@ function odstranZtýmu() {
       alert('Odešel jsi z týmu');
     });
 }
+
+function pridatBeh() {
+  const km = parseFloat(document.getElementById('km').value);
+  const cas = parseFloat(document.getElementById('cas').value);
+  if (!km || !cas) return alert("Zadej správně km a čas");
+  const tempo = (cas / km).toFixed(2);
+  const datum = new Date().toLocaleDateString();
+  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
+    .then(() => {
+      document.getElementById('km').value = '';
+      document.getElementById('cas').value = '';
+      nactiBehy();
+      zobrazMojeBehy();
+    });
+}
 </script>
+
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js">
 function pripojSe(nazevTymu) {
@@ -68,7 +100,23 @@ function odstranZtýmu() {
       alert('Odešel jsi z týmu');
     });
 }
+
+function pridatBeh() {
+  const km = parseFloat(document.getElementById('km').value);
+  const cas = parseFloat(document.getElementById('cas').value);
+  if (!km || !cas) return alert("Zadej správně km a čas");
+  const tempo = (cas / km).toFixed(2);
+  const datum = new Date().toLocaleDateString();
+  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
+    .then(() => {
+      document.getElementById('km').value = '';
+      document.getElementById('cas').value = '';
+      nactiBehy();
+      zobrazMojeBehy();
+    });
+}
 </script>
+
 
 <style>
   body { font-family: sans-serif; background: #f8f8f8; color: #222; padding: 20px; max-width: 400px; margin: auto; transition: margin-left 0.3s; }
@@ -319,7 +367,23 @@ function odstranZtýmu() {
       alert('Odešel jsi z týmu');
     });
 }
+
+function pridatBeh() {
+  const km = parseFloat(document.getElementById('km').value);
+  const cas = parseFloat(document.getElementById('cas').value);
+  if (!km || !cas) return alert("Zadej správně km a čas");
+  const tempo = (cas / km).toFixed(2);
+  const datum = new Date().toLocaleDateString();
+  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
+    .then(() => {
+      document.getElementById('km').value = '';
+      document.getElementById('cas').value = '';
+      nactiBehy();
+      zobrazMojeBehy();
+    });
+}
 </script>
+
 
 
 </body>
