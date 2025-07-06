@@ -4,93 +4,9 @@
 <head>
 <meta charset="UTF-8" />
 <title>Dolní Lhota Run</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
-function pripojSe(nazevTymu) {
-  db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
-    .then(() => {
-      aktualniTym = nazevTymu;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
-      alert('Přidal ses do týmu: ' + nazevTymu);
-    });
-}
-
-function odstranZtýmu() {
-  db.collection("uzivatele").doc(nick).delete()
-    .then(() => {
-      aktualniTym = null;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy();
-      alert('Odešel jsi z týmu');
-    });
-}
-
-function zobrazVytvorTym() {
-  document.getElementById('vytvorTymForm').classList.toggle('hidden');
-}
-function zobrazSeznamTymu() {
-  document.getElementById('seznamTymu').classList.remove('hidden');
-}
-</script>
-
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js">
-function pripojSe(nazevTymu) {
-  db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
-    .then(() => {
-      aktualniTym = nazevTymu;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
-      alert('Přidal ses do týmu: ' + nazevTymu);
-    });
-}
-
-function odstranZtýmu() {
-  db.collection("uzivatele").doc(nick).delete()
-    .then(() => {
-      aktualniTym = null;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy();
-      alert('Odešel jsi z týmu');
-    });
-}
-
-function zobrazVytvorTym() {
-  document.getElementById('vytvorTymForm').classList.toggle('hidden');
-}
-function zobrazSeznamTymu() {
-  document.getElementById('seznamTymu').classList.remove('hidden');
-}
-</script>
-
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js">
-function pripojSe(nazevTymu) {
-  db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
-    .then(() => {
-      aktualniTym = nazevTymu;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
-      alert('Přidal ses do týmu: ' + nazevTymu);
-    });
-}
-
-function odstranZtýmu() {
-  db.collection("uzivatele").doc(nick).delete()
-    .then(() => {
-      aktualniTym = null;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy();
-      alert('Odešel jsi z týmu');
-    });
-}
-
-function zobrazVytvorTym() {
-  document.getElementById('vytvorTymForm').classList.toggle('hidden');
-}
-function zobrazSeznamTymu() {
-  document.getElementById('seznamTymu').classList.remove('hidden');
-}
-</script>
-
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
   body { font-family: sans-serif; background: #f8f8f8; color: #222; padding: 20px; max-width: 400px; margin: auto; transition: margin-left 0.3s; }
   h1, h2 { text-align: center; color: #ff6600; }
@@ -244,7 +160,7 @@ function pripojSe(nazevTymu) {
   db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
     .then(() => {
       aktualniTym = nazevTymu;
-      zobrazInfoUzivatele(); zobrazTymy();
+      zobrazInfoUzivatele();
       alert('Přidal ses do týmu: ' + nazevTymu);
     });
 }
@@ -253,7 +169,7 @@ function odstranZtýmu() {
   db.collection("uzivatele").doc(nick).delete()
     .then(() => {
       aktualniTym = null;
-      zobrazInfoUzivatele(); zobrazTymy();
+      zobrazInfoUzivatele();
       alert('Odešel jsi z týmu');
     });
 }
@@ -288,7 +204,7 @@ auth.onAuthStateChanged(user => {
     nick = user.email.split('@')[0];
     document.getElementById('loginSection').classList.add('hidden');
     document.getElementById('dashboardSection').classList.remove('hidden');
-    zobrazInfoUzivatele(); zobrazTymy();
+    zobrazInfoUzivatele();
     nactiBehy();
   } else {
     document.getElementById('loginSection').classList.remove('hidden');
@@ -320,35 +236,7 @@ function nactiBehy() {
         }).join('');
     });
 }
-
-function pripojSe(nazevTymu) {
-  db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
-    .then(() => {
-      aktualniTym = nazevTymu;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
-      alert('Přidal ses do týmu: ' + nazevTymu);
-    });
-}
-
-function odstranZtýmu() {
-  db.collection("uzivatele").doc(nick).delete()
-    .then(() => {
-      aktualniTym = null;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy();
-      alert('Odešel jsi z týmu');
-    });
-}
-
-function zobrazVytvorTym() {
-  document.getElementById('vytvorTymForm').classList.toggle('hidden');
-}
-function zobrazSeznamTymu() {
-  document.getElementById('seznamTymu').classList.remove('hidden');
-}
 </script>
-
 
 </body>
 </html>
