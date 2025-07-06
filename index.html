@@ -16,11 +16,11 @@
   .hidden { display: none; }
   .badge { cursor: pointer; font-size: 1.5em; margin-left: 5px; }
   .popis { font-size: 0.9em; color: #555; margin-top: 5px; }
-  #sidebar { height: 100%; width: 0; position: fixed; z-index: 100; top: 0; left: 0; background: #f0f0f0; overflow-x: auto; transition: 0.3s; padding-top: 60px; display: flex; flex-direction: column; justify-content: space-between; }
+  #sidebar { height: 100%; width: 0; position: fixed; z-index: 100; top: 0; left: 0; background: #f0f0f0; overflow-x: auto; transition: 0.3s; padding-top: 20px; display: flex; flex-direction: column; }
   #sidebar a { padding: 8px 8px 8px 32px; text-decoration: none; font-size: 1.2em; color: #333; display: block; transition: 0.3s; }
   #sidebar a:hover { background: #ddd; }
   #hamburger { position: fixed; top: 15px; left: 15px; font-size: 2.2em; cursor: pointer; z-index: 101; }
-  #myRuns { padding: 10px 32px; font-size: 0.95em; }
+  #odhlasBtn { position: absolute; top: 10px; right: 10px; font-size: 1.1em; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -28,14 +28,9 @@
 <div id="hamburger" onclick="toggleSidebar()">☰</div>
 
 <div id="sidebar">
-  <div>
-    <a href="#">Dashboard</a>
-    <a href="#" onclick="zobrazMojeBehy()">Moje běhy</a>
-    <div id="myRuns"></div>
-  </div>
-  <div>
-    <a href="#" onclick="odhlasit()">Odhlásit se</a>
-  </div>
+  <div id="odhlasBtn" onclick="odhlasit()">🚪</div>
+  <a href="#" onclick="zobrazSekci('dashboard')">Dashboard</a>
+  <a href="#" onclick="zobrazSekci('mojeBehy')">Moje běhy</a>
 </div>
 
 <h1>Dolní Lhota Run</h1>
@@ -51,7 +46,7 @@
   <button onclick="registruj()">Registrovat</button>
 </div>
 
-<div id="appSection" class="hidden">
+<div id="dashboardSection" class="hidden">
   <h2>Zadat nový běh</h2>
   <input type="number" id="km" placeholder="Kolik km?">
   <input type="number" id="cas" placeholder="Čas v minutách">
@@ -59,6 +54,11 @@
 
   <h2>Pořadí uživatelů</h2>
   <div id="stavUzivatelu"></div>
+</div>
+
+<div id="mojeBehySection" class="hidden">
+  <h2>Moje běhy</h2>
+  <div id="mojeBehy"></div>
 </div>
 
 <script>
@@ -99,6 +99,13 @@ function odhlasit() {
   auth.signOut();
 }
 
+function zobrazSekci(sekce) {
+  document.getElementById('dashboardSection').style.display = sekce==='dashboard'?'block':'none';
+  document.getElementById('mojeBehySection').style.display = sekce==='mojeBehy'?'block':'none';
+  toggleSidebar();
+  if(sekce==='mojeBehy') zobrazMojeBehy();
+}
+
 function ukazPopis(typ, el) {
   const map = {
     "🏅": "Uběhl jsi maraton! Více než 42 km v jednom běhu.",
@@ -115,11 +122,12 @@ function ukazPopis(typ, el) {
 auth.onAuthStateChanged(user => {
   if (user) {
     document.getElementById('loginSection').classList.add('hidden');
-    document.getElementById('appSection').classList.remove('hidden');
+    document.getElementById('dashboardSection').classList.remove('hidden');
     nactiBehy();
   } else {
     document.getElementById('loginSection').classList.remove('hidden');
-    document.getElementById('appSection').classList.add('hidden');
+    document.getElementById('dashboardSection').classList.add('hidden');
+    document.getElementById('mojeBehySection').classList.add('hidden');
   }
 });
 
@@ -142,15 +150,15 @@ function zobrazMojeBehy() {
     let html = "", sumKm=0, sumCas=0, sumTempo=0, count=0;
     snapshot.forEach(doc => {
       const z = doc.data();
-      html += `${z.datum}: ${z.km} km za ${z.cas} min (${z.tempo} min/km)<br>`;
+      html += `<div class='card'>${z.datum}: ${z.km} km za ${z.cas} min (${z.tempo} min/km)</div>`;
       sumKm += z.km;
       sumCas += z.cas;
       sumTempo += parseFloat(z.tempo) || 0;
       count++;
     });
     const avgTempo = count > 0 ? (sumTempo / count).toFixed(2) : "0";
-    html += `<hr>Součet: ${sumKm} km, ${sumCas} min, průměrné tempo: ${avgTempo} min/km`;
-    document.getElementById('myRuns').innerHTML = html;
+    html += `<hr><div class='card'><strong>Součet:</strong> ${sumKm} km, ${sumCas} min, průměrné tempo: ${avgTempo} min/km</div>`;
+    document.getElementById('mojeBehy').innerHTML = html;
   });
 }
 
