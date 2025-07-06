@@ -4,9 +4,72 @@
 <head>
 <meta charset="UTF-8" />
 <title>Dolní Lhota Run</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
+function pripojSe(nazevTymu) {
+  db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
+    .then(() => {
+      aktualniTym = nazevTymu;
+      zobrazInfoUzivatele();
+      zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
+      alert('Přidal ses do týmu: ' + nazevTymu);
+    });
+}
+
+function odstranZtýmu() {
+  db.collection("uzivatele").doc(nick).delete()
+    .then(() => {
+      aktualniTym = null;
+      zobrazInfoUzivatele();
+      zobrazTymy();
+      alert('Odešel jsi z týmu');
+    });
+}
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js">
+function pripojSe(nazevTymu) {
+  db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
+    .then(() => {
+      aktualniTym = nazevTymu;
+      zobrazInfoUzivatele();
+      zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
+      alert('Přidal ses do týmu: ' + nazevTymu);
+    });
+}
+
+function odstranZtýmu() {
+  db.collection("uzivatele").doc(nick).delete()
+    .then(() => {
+      aktualniTym = null;
+      zobrazInfoUzivatele();
+      zobrazTymy();
+      alert('Odešel jsi z týmu');
+    });
+}
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js">
+function pripojSe(nazevTymu) {
+  db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
+    .then(() => {
+      aktualniTym = nazevTymu;
+      zobrazInfoUzivatele();
+      zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
+      alert('Přidal ses do týmu: ' + nazevTymu);
+    });
+}
+
+function odstranZtýmu() {
+  db.collection("uzivatele").doc(nick).delete()
+    .then(() => {
+      aktualniTym = null;
+      zobrazInfoUzivatele();
+      zobrazTymy();
+      alert('Odešel jsi z týmu');
+    });
+}
+</script>
+
 <style>
   body { font-family: sans-serif; background: #f8f8f8; color: #222; padding: 20px; max-width: 400px; margin: auto; transition: margin-left 0.3s; }
   h1, h2 { text-align: center; color: #ff6600; }
@@ -236,7 +299,28 @@ function nactiBehy() {
         }).join('');
     });
 }
+
+function pripojSe(nazevTymu) {
+  db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
+    .then(() => {
+      aktualniTym = nazevTymu;
+      zobrazInfoUzivatele();
+      zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
+      alert('Přidal ses do týmu: ' + nazevTymu);
+    });
+}
+
+function odstranZtýmu() {
+  db.collection("uzivatele").doc(nick).delete()
+    .then(() => {
+      aktualniTym = null;
+      zobrazInfoUzivatele();
+      zobrazTymy();
+      alert('Odešel jsi z týmu');
+    });
+}
 </script>
+
 
 </body>
 </html>
