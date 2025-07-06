@@ -3,37 +3,32 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8" />
-<title>Dolní Lhota Run - Tým</title>
+<title>Moje běhy - Dolní Lhota Run</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
-  body { font-family: sans-serif; background: #f8f8f8; color: #222; padding: 20px; max-width: 400px; margin: auto; transition: margin-left 0.3s; }
+  body { font-family: sans-serif; background: #f8f8f8; color: #222; padding: 20px; max-width: 400px; margin: auto; }
   h1, h2 { text-align: center; color: #ff6600; }
   input, button { font-size: 1.2em; padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: 1px solid #aaa; }
   button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
-  .leave-btn { background: #999 !important; }
   .card { background: #fff; border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 10px; }
-  .hidden { display: none; }
 </style>
 </head>
 <body>
 
-<h1>Dolní Lhota Run - Tým</h1>
+<h1>Moje běhy</h1>
 
-<div id="userInfo"></div>
-
-<button onclick="zobrazVytvorTym()">Vytvořit tým</button>
-<div id="vytvorTymForm" class="hidden">
-  <input type="text" id="nazevTymu" placeholder="Název týmu">
-  <button onclick="vytvorTym()">Vytvořit</button>
+<div id="loginSection">
+  <h2>Přihlášení</h2>
+  <input type="email" id="emailLogin" placeholder="Email">
+  <input type="password" id="passwordLogin" placeholder="Heslo">
+  <button onclick="prihlasit()">Přihlásit</button>
 </div>
 
-<button onclick="zobrazSeznamTymu()">Přidat do týmu</button>
-<div id="seznamTymu" class="hidden"></div>
-
-<h2 id="tymTitle"></h2>
-<div id="tymBehy"></div>
+<div id="myRunsSection" class="hidden">
+  <div id="mojeBehy"></div>
+</div>
 
 <script>
 const firebaseConfig = {
@@ -48,117 +43,34 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-let aktualniTym = null;
-let nick = "";
+function prihlasit() {
+  const email = document.getElementById('emailLogin').value;
+  const password = document.getElementById('passwordLogin').value;
+  auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
+}
 
 auth.onAuthStateChanged(user => {
   if (user) {
-    nick = user.email.split('@')[0];
-    zobrazInfoUzivatele();
-  } else {
-    alert('Musíš být přihlášen');
+    document.getElementById('loginSection').classList.add('hidden');
+    document.getElementById('myRunsSection').classList.remove('hidden');
+    zobrazMojeBehy(user.email.split('@')[0]);
   }
 });
 
-function zobrazVytvorTym() {
-  document.getElementById('vytvorTymForm').classList.toggle('hidden');
-}
-
-function vytvorTym() {
-  const nazev = document.getElementById('nazevTymu').value.trim();
-  if (!nazev) return alert('Zadej název týmu.');
-  db.collection("tymy").add({ nazev })
-    .then(() => {
-      document.getElementById('nazevTymu').value='';
-      alert('Tým vytvořen');
-      document.getElementById('vytvorTymForm').classList.add('hidden');
-      zobrazSeznamTymu();
-    });
-}
-
-function zobrazSeznamTymu() {
-  db.collection("tymy").onSnapshot(snapshot => {
-    let html = "";
+function zobrazMojeBehy(nick) {
+  db.collection("behy").where("jmeno","==",nick).onSnapshot(snapshot => {
+    let html = "", sumKm=0, sumCas=0, sumTempo=0, count=0;
     snapshot.forEach(doc => {
-      const t = doc.data();
-      if (t.nazev === aktualniTym) {
-        html += `<div class='card'>${t.nazev} 
-        <button class='leave-btn' onclick="odstranZtýmu()">Odejít z týmu</button>
-        <button onclick="zobrazBehyTymu('${t.nazev}')">Zobrazit běhy týmu</button>
-        </div>`;
-      } else {
-        html += `<div class='card'>${t.nazev} 
-        <button onclick="pripojSe('${t.nazev}')">Přidat do týmu</button>
-        <button onclick="zobrazBehyTymu('${t.nazev}')">Zobrazit běhy týmu</button>
-        </div>`;
-      }
+      const z = doc.data();
+      html += `<div class='card'>${z.datum}: ${z.km} km za ${z.cas} min (${z.tempo} min/km)</div>`;
+      sumKm += z.km;
+      sumCas += z.cas;
+      sumTempo += parseFloat(z.tempo) || 0;
+      count++;
     });
-    document.getElementById('seznamTymu').innerHTML = html;
-    document.getElementById('seznamTymu').classList.remove('hidden');
-  });
-}
-
-function pripojSe(nazevTymu) {
-  db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
-    .then(() => {
-      aktualniTym = nazevTymu;
-      zobrazInfoUzivatele();
-      alert('Přidal ses do týmu: ' + nazevTymu);
-    });
-}
-
-function odstranZtýmu() {
-  db.collection("uzivatele").doc(nick).delete()
-    .then(() => {
-      aktualniTym = null;
-      zobrazInfoUzivatele();
-      alert('Odešel jsi z týmu');
-    });
-}
-
-function zobrazInfoUzivatele() {
-  db.collection("uzivatele").doc(nick).get().then(doc => {
-    const data = doc.data();
-    aktualniTym = data ? data.tym : null;
-    document.getElementById('userInfo').innerHTML = `<strong>${nick}</strong><br>Tým: ${aktualniTym || "Žádný tým"}`;
-    if (aktualniTym) {
-      zobrazBehyTymu(aktualniTym);
-    } else {
-      document.getElementById('tymTitle').innerText = "Nejsi v žádném týmu";
-      document.getElementById('tymBehy').innerHTML = "";
-    }
-  });
-}
-
-function zobrazBehyTymu(tym) {
-  db.collection("uzivatele").where("tym","==",tym).get().then(snapshot=>{
-    const clenove = snapshot.docs.map(doc=>doc.id);
-    if(clenove.length==0) {
-      document.getElementById('tymTitle').innerText = `Tým ${tym}`;
-      document.getElementById('tymBehy').innerHTML = "<p>V týmu zatím nejsou žádní členové.</p>";
-      return;
-    }
-    db.collection("behy").where("jmeno","in",clenove).get().then(bsnapshot=>{
-      const soucty = {};
-      bsnapshot.forEach(doc=>{
-        const z = doc.data();
-        if (!soucty[z.jmeno]) soucty[z.jmeno] = { km:0, cas:0, tempo:0, pocet:0 };
-        soucty[z.jmeno].km += z.km;
-        soucty[z.jmeno].cas += z.cas;
-        soucty[z.jmeno].tempo += parseFloat(z.tempo) || 0;
-        soucty[z.jmeno].pocet++;
-      });
-      let html = "";
-      let i=1;
-      html += Object.entries(soucty)
-        .sort((a,b)=>b[1].km - a[1].km)
-        .map(([j,data])=>{
-          const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
-          return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km</div>`;
-        }).join('');
-      document.getElementById('tymTitle').innerText = `Běhy členů týmu ${tym}`;
-      document.getElementById('tymBehy').innerHTML = html;
-    });
+    const avgTempo = count > 0 ? (sumTempo / count).toFixed(2) : "0";
+    html += `<hr><div class='card'><strong>Součet:</strong> ${sumKm} km, ${sumCas} min, průměrné tempo: ${avgTempo} min/km</div>`;
+    document.getElementById('mojeBehy').innerHTML = html;
   });
 }
 </script>
