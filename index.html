@@ -24,41 +24,7 @@ function odstranZtýmu() {
       alert('Odešel jsi z týmu');
     });
 }
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      nactiBehy();
-      zobrazMojeBehy();
-    });
-}
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      setTimeout(() => {
-        nactiBehy();
-        zobrazMojeBehy();
-      }, 300);
-    });
-}
 </script>
-
-
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js">
 function pripojSe(nazevTymu) {
@@ -80,41 +46,7 @@ function odstranZtýmu() {
       alert('Odešel jsi z týmu');
     });
 }
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      nactiBehy();
-      zobrazMojeBehy();
-    });
-}
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      setTimeout(() => {
-        nactiBehy();
-        zobrazMojeBehy();
-      }, 300);
-    });
-}
 </script>
-
-
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js">
 function pripojSe(nazevTymu) {
@@ -136,41 +68,7 @@ function odstranZtýmu() {
       alert('Odešel jsi z týmu');
     });
 }
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      nactiBehy();
-      zobrazMojeBehy();
-    });
-}
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      setTimeout(() => {
-        nactiBehy();
-        zobrazMojeBehy();
-      }, 300);
-    });
-}
 </script>
-
-
 
 <style>
   body { font-family: sans-serif; background: #f8f8f8; color: #222; padding: 20px; max-width: 400px; margin: auto; transition: margin-left 0.3s; }
@@ -185,7 +83,7 @@ function pridatBeh() {
   #sidebar a:hover { background: #ddd; }
   #hamburger { position: fixed; top: 15px; left: 15px; font-size: 2.2em; cursor: pointer; z-index: 101; }
   #odhlasBtn { position: absolute; top: 10px; right: 10px; font-size: 1.1em; cursor: pointer; }
-  #userInfo { padding: 0 32px 10px 32px; font-size: 1em; }
+  #userInfo { padding-top: 80px; padding: 0 32px 10px 32px; font-size: 1em; }
 </style>
 </head>
 <body>
@@ -196,7 +94,6 @@ function pridatBeh() {
   <div id="odhlasBtn" onclick="odhlasit()">🚪</div>
   <div id="userInfo"></div>
   <a href="#" onclick="zobrazSekci('dashboard')">Dashboard</a>
-  <a href="#" onclick="zobrazSekci('vsichni')">Všichni běžci</a>
   <a href="#" onclick="zobrazSekci('mojeBehy')">Moje běhy</a>
   <a href="#" onclick="zobrazSekci('tymMain')">Tým</a>
 </div>
@@ -318,7 +215,7 @@ function zobrazTymy() {
         html += `<div class='card'>${t.nazev} <button onclick="pripojSe('${t.nazev}')">Přidat do týmu</button></div>`;
       }
     });
-    document.getElementById('seznamTymu').innerHTML = html;
+    document.getElementById('seznamTymu').innerHTML = \"<button onclick=\\\"zobrazVytvorTym()\\\">Vytvořit tým</button> <button onclick=\\\"zobrazSeznamTymu()\\\">Přidat do týmu</button><div id='vytvorTymForm' class='hidden'><input type='text' id='nazevTymu' placeholder='Název týmu'><button onclick='vytvorTym()'>Vytvořit</button></div>\" + html;
   });
 }
 
@@ -394,10 +291,9 @@ function nactiBehy() {
         soucty[z.jmeno].pocet++;
       });
       let i=1;
-      document.getElementById('stavUzivatelu').innerHTML = Object.entries(soucty).sort((a,b)=>b[1].km - a[1].km).slice(0,10)
+      document.getElementById('stavUzivatelu').innerHTML = Object.entries(soucty)
         .sort((a,b)=>b[1].km - a[1].km)
-        // slice vložený jen do dashboardu
-.map(([j, data])=>{
+        .map(([j, data])=>{
           const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
           return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km</div>`;
         }).join('');
@@ -423,79 +319,8 @@ function odstranZtýmu() {
       alert('Odešel jsi z týmu');
     });
 }
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      nactiBehy();
-      zobrazMojeBehy();
-    });
-}
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      setTimeout(() => {
-        nactiBehy();
-        zobrazMojeBehy();
-      }, 300);
-    });
-}
 </script>
 
 
-
-
-
-<div id="vsichniSection" class="hidden">
-  <h2>Všichni běžci</h2>
-  <div id="vsichniBehy"></div>
-</div>
-<script>
-function zobrazSekci(sekce) {
-  ['dashboard','mojeBehy','tym','vsichni'].forEach(s=>{
-    var el = document.getElementById(s+'Section');
-    if(el) el.style.display = (s===sekce)?'block':'none';
-  });
-  if(sekce==='mojeBehy') zobrazMojeBehy();
-  if(sekce==='tym' && aktualniTym) zobrazBehyTymu(aktualniTym);
-  if(sekce==='vsichni') zobrazVsechny();
-}
-function zobrazVsechny() {
-  db.collection("behy").onSnapshot(snapshot => {
-    const soucty = {};
-    snapshot.forEach(doc => {
-      const z = doc.data();
-      if (!soucty[z.jmeno]) soucty[z.jmeno] = { km:0, cas:0, tempo:0, pocet:0 };
-      soucty[z.jmeno].km += z.km;
-      soucty[z.jmeno].cas += z.cas;
-      soucty[z.jmeno].tempo += parseFloat(z.tempo) || 0;
-      soucty[z.jmeno].pocet++;
-    });
-    let i=1;
-    document.getElementById('vsichniBehy').innerHTML = Object.entries(soucty)
-      .sort((a,b)=>b[1].km - a[1].km)
-      // slice vložený jen do dashboardu
-.map(([j, data])=>{
-        const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
-        return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km</div>`;
-      }).join('');
-  });
-}
-</script>
 </body>
 </html>
