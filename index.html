@@ -185,7 +185,7 @@ function pridatBeh() {
   #sidebar a:hover { background: #ddd; }
   #hamburger { position: fixed; top: 15px; left: 15px; font-size: 2.2em; cursor: pointer; z-index: 101; }
   #odhlasBtn { position: absolute; top: 10px; right: 10px; font-size: 1.1em; cursor: pointer; }
-  #userInfo { padding-top: 80px; padding: 0 32px 10px 32px; font-size: 1em; }
+  #userInfo { padding-top: 100px; text-align: center; padding: 0 32px 10px 32px; font-size: 1em; }
 </style>
 </head>
 <body>
@@ -243,7 +243,34 @@ function pridatBeh() {
 
 <div id="tymPridatSection" class="hidden">
   <h2>Vyber tým</h2>
-  <div id="seznamTymu"></div>
+  <button onclick="prihlasit()">Přihlásit</button>
+  <h2>Registrace</h2>
+  <input type="email" id="emailReg" placeholder="Email">
+  <input type="password" id="passwordReg" placeholder="Heslo">
+  <button onclick="registruj()">Registrovat</button>
+</div>
+
+<div id="dashboardSection" class="hidden">
+  <h2>Zadat nový běh</h2>
+  <input type="number" id="km" placeholder="Kolik km?">
+  <input type="number" id="cas" placeholder="Čas v minutách">
+  <button onclick="pridatBeh()">Přidat běh</button>
+
+  <h2>Pořadí uživatelů</h2>
+  <div id="stavUzivatelu"></div>
+</div>
+
+<div id="mojeBehySection" class="hidden">
+  <h2>Moje běhy</h2>
+  <div id="mojeBehy"></div>
+</div>
+
+<div id="tymMainSection" class="hidden">
+  <h2>Tým</h2>
+  <button onclick="zobrazSekci('tymVytvor')">Vytvořit tým</button>
+  <button onclick="zobrazSekci('tymPridat')">Přidat do týmu</button>
+</div>
+<div id="seznamTymu"></div>
 </div>
 
 <script>
