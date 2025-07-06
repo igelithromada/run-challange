@@ -278,10 +278,12 @@ auth.onAuthStateChanged(user => {
   }
 });
 
+
 function nactiBehy() {
   db.collection("behy")
     .onSnapshot(snapshot => {
       const soucty = {};
+      const odznaky = {};
       snapshot.forEach(doc => {
         const z = doc.data();
         if (!soucty[z.jmeno]) soucty[z.jmeno] = { km:0, cas:0, tempo:0, pocet:0 };
@@ -289,13 +291,23 @@ function nactiBehy() {
         soucty[z.jmeno].cas += z.cas;
         soucty[z.jmeno].tempo += parseFloat(z.tempo) || 0;
         soucty[z.jmeno].pocet++;
+
+        if (!odznaky[z.jmeno]) odznaky[z.jmeno] = new Set();
+        if (z.km >= 42) odznaky[z.jmeno].add("🏅");
+        if (z.tempo < 4.5) odznaky[z.jmeno].add("⚡");
+        if (z.tempo > 9) odznaky[z.jmeno].add("🐌");
       });
+
       let i=1;
       document.getElementById('stavUzivatelu').innerHTML = Object.entries(soucty)
         .sort((a,b)=>b[1].km - a[1].km)
         .map(([j, data])=>{
           const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
-          return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km</div>`;
+          const badges = [...(odznaky[j]||[])];
+          if (data.km >= 200) badges.push("🥇");
+          else if (data.km >= 100) badges.push("🥈");
+          else if (data.km >= 50) badges.push("🥉");
+          return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km ${badges.join(' ')}</div>`;
         }).join('');
     });
 }
