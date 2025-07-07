@@ -1,129 +1,76 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8" />
-  <title>Dolní Lhota run - přihlášení & registrace</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f4f8;
-      color: #333;
-      padding: 20px;
-      max-width: 400px;
-      margin: auto;
-    }
-    h1, h2 {
-      text-align: center;
-      color: #2a6fdb;
-    }
-    input, button {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      box-sizing: border-box;
-      font-size: 1em;
-    }
-    button {
-      background-color: #2a6fdb;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button:hover {
-      background-color: #235bb5;
-    }
-    #output {
-      margin-top: 15px;
-      font-weight: bold;
-      color: #e33;
-      min-height: 1.2em;
-      text-align: center;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hamburger menu fullscreen</title>
+<style>
+  body {
+    margin: 0; font-family: Arial, sans-serif;
+  }
+  header {
+    height: 50px;
+    background: #2e5dbd;
+    color: white;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+  }
+  #hamburger {
+    font-size: 28px;
+    cursor: pointer;
+    user-select: none;
+  }
+  #sidePanel {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background-color: rgba(46, 93, 189, 0.95);
+    color: white;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    padding: 2rem;
+    box-sizing: border-box;
+  }
+  #sidePanel.active {
+    transform: translateX(0);
+  }
+  #closePanel {
+    position: absolute;
+    top: 20px; right: 25px;
+    font-size: 28px;
+    cursor: pointer;
+    user-select: none;
+  }
+</style>
 </head>
 <body>
-  <h1>Dolní Lhota Run</h1>
 
-  <h2>Registrace</h2>
-  <input type="email" id="reg-email" placeholder="Email" />
-  <input type="password" id="reg-password" placeholder="Heslo" />
-  <button id="register-btn">Registrovat</button>
+<header>
+  <div id="hamburger">&#9776;</div>
+  <h1 style="margin-left: 15px;">Moje Appka</h1>
+</header>
 
-  <h2>Přihlášení</h2>
-  <input type="email" id="login-email" placeholder="Email" />
-  <input type="password" id="login-password" placeholder="Heslo" />
-  <button id="login-btn">Přihlásit se</button>
+<div id="sidePanel">
+  <div id="closePanel">&times;</div>
+  <h2>Menu</h2>
+  <p>Tady můžeš dát odkazy nebo další obsah.</p>
+</div>
 
-  <h2>Odhlášení</h2>
-  <button id="logout-btn">Odhlásit</button>
+<script>
+  const hamburger = document.getElementById('hamburger');
+  const sidePanel = document.getElementById('sidePanel');
+  const closePanel = document.getElementById('closePanel');
 
-  <p id="output"></p>
+  hamburger.addEventListener('click', () => {
+    sidePanel.classList.add('active');
+  });
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  closePanel.addEventListener('click', () => {
+    sidePanel.classList.remove('active');
+  });
+</script>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
-      authDomain: "dolni-lhota-run.firebaseapp.com",
-      projectId: "dolni-lhota-run",
-      storageBucket: "dolni-lhota-run.appspot.com",
-      messagingSenderId: "549134031482",
-      appId: "1:549134031482:web:41205785ed5b4e275a79c3",
-      measurementId: "G-E7N1HJ4BEZ"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const output = document.getElementById("output");
-
-    document.getElementById("register-btn").addEventListener("click", async () => {
-      const email = document.getElementById("reg-email").value;
-      const password = document.getElementById("reg-password").value;
-      try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        output.style.color = 'green';
-        output.textContent = `Registrován: ${userCredential.user.email}`;
-      } catch (error) {
-        output.style.color = 'red';
-        output.textContent = `Chyba při registraci: ${error.message}`;
-      }
-    });
-
-    document.getElementById("login-btn").addEventListener("click", async () => {
-      const email = document.getElementById("login-email").value;
-      const password = document.getElementById("login-password").value;
-      try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        output.style.color = 'green';
-        output.textContent = `Přihlášen: ${userCredential.user.email}`;
-      } catch (error) {
-        output.style.color = 'red';
-        output.textContent = `Chyba při přihlášení: ${error.message}`;
-      }
-    });
-
-    document.getElementById("logout-btn").addEventListener("click", async () => {
-      try {
-        await signOut(auth);
-        output.style.color = 'green';
-        output.textContent = "Odhlášen.";
-      } catch (error) {
-        output.style.color = 'red';
-        output.textContent = `Chyba při odhlášení: ${error.message}`;
-      }
-    });
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        output.style.color = 'green';
-        output.textContent = `Aktuálně přihlášen: ${user.email}`;
-      } else {
-        output.style.color = '#333';
-        output.textContent = "Nikdo není přihlášen.";
-      }
-    });
-  </script>
 </body>
 </html>
