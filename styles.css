@@ -1,149 +1,179 @@
-body {
-  margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
-  color: #222;
+async function createTeam() {
+  const teamName = prompt('Zadej název nového týmu:');
+  if (!teamName || teamName.trim().length < 3) {
+    alert('Název týmu musí mít alespoň 3 znaky.');
+    return;
+  }
+
+  const teamRef = await addDoc(collection(db, 'teams'), {
+    name: teamName.trim(),
+    creatorId: currentUser.uid,
+    creatorNickname: userNickEl.textContent,
+    members: [currentUser.uid],
+    createdAt: Date.now()
+  });
+
+  await updateUserTeam(teamRef.id, teamName.trim());
+
+  alert(`Tým "${teamName}" vytvořen a přidán.`);
+  renderTeams();
+  updateUserTeamDisplay(teamName.trim());
 }
 
-header {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: 60px;
-  background: #2e5dbd;
-  color: white;
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  z-index: 1000;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+async function joinTeam() {
+  const teamsSnapshot = await getDocs(collection(db, 'teams'));
+  if (teamsSnapshot.empty) {
+    alert('Žádné týmy nejsou vytvořené.');
+    return;
+  }
+
+  let teamNames = [];
+  let teamIds = [];
+  teamsSnapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    teamNames.push(data.name);
+    teamIds.push(docSnap.id);
+  });
+
+  const teamChoice = prompt(`Vyber si tým podle čísla:\n${teamNames.map((n,i) => `${i+1}: ${n}`).join('\n')}`);
+  const idx = parseInt(teamChoice) - 1;
+  if (idx < 0 || idx >= teamIds.length) {
+    alert('Neplatná volba.');
+    return;
+  }
+
+  const chosenTeamId = teamIds[idx];
+  const teamDocRef = doc(db, 'teams', chosenTeamId);
+  const teamDocSnap = await getDoc(teamDocRef);
+  if (!teamDocSnap.exists()) {
+    alert('Tým nenalezen.');
+    return;
+  }
+
+  const teamData = teamDocSnap.data();
+  if (teamData.members && teamData.members.includes(currentUser.uid)) {
+    alert('Již jsi v tomto týmu.');
+    return;
+  }
+
+  const newMembers = teamData.members ? [...teamData.members, currentUser.uid] : [currentUser.uid];
+  await updateDoc(teamDocRef, { members: newMembers });
+  await updateUserTeam(chosenTeamId, teamData.name);
+
+  alert(`Přidán jsi do týmu "${teamData.name}".`);
+  renderTeams();
+  updateUserTeamDisplay(teamData.name);
 }
 
-#hamburger {
-  font-size: 30px;
-  cursor: pointer;
-  user-select: none;
-  background: none;
-  border: none;
-  color: white;
+async function leaveTeam(teamId) {
+  const teamDocRef = doc(db, 'teams', teamId);
+  const teamDocSnap = await getDoc(teamDocRef);
+  if (!teamDocSnap.exists()) {
+    alert('Tým nenalezen.');
+    return;
+  }
+
+  const teamData = teamDocSnap.data();
+
+  if (teamData.creatorId === currentUser.uid) {
+    const confirmDelete = confirm('Jste tvůrcem týmu. Opravdu chcete tým smazat?');
+    if (!confirmDelete) return;
+
+    // Smažeme tým i běhy členů (pokud chceš, můžeš přidat mazání běhů)
+    await deleteDoc(teamDocRef);
+    await updateUserTeam(null, 'žádný');
+    alert('Tým byl smazán.');
+    renderTeams();
+    updateUserTeamDisplay('žádný');
+    return;
+  }
+
+  const newMembers = teamData.members.filter(uid => uid !== currentUser.uid);
+  await updateDoc(teamDocRef, { members: newMembers });
+  await updateUserTeam(null, 'žádný');
+
+  alert('Opustil jsi tým.');
+  renderTeams();
+  updateUserTeamDisplay('žádný');
 }
 
-header h1 {
-  flex-grow: 1;
-  text-align: center;
-  font-weight: 700;
-  font-size: 1.6em;
-  margin: 0;
+async function updateUserTeam(teamId, teamName) {
+  const userDocRef = doc(db, 'users', currentUser.uid);
+  await updateDoc(userDocRef, { teamId: teamId || null, teamName: teamName || 'žádný' });
+  userTeamEl.textContent = `Tým: ${teamName || 'žádný'}`;
 }
 
-#sidePanel {
-  position: fixed;
-  top: 0; left: 0; bottom: 0; right: 0;
-  background: rgba(46, 93, 189, 0.95);
-  color: white;
-  transform: translateX(-100%);
-  transition: transform 0.3s ease;
-  z-index: 1100;
-  display: flex;
-  flex-direction: column;
-  padding: 30px 40px;
-  overflow-y: auto;
+function updateUserTeamDisplay(teamName) {
+  userTeamEl.textContent = `Tým: ${teamName}`;
 }
 
-#sidePanel.open {
-  transform: translateX(0);
+async function addRun(km, min) {
+  if (!km || !min) {
+    alert('Vyplň prosím km i čas.');
+    return;
+  }
+  await addDoc(collection(db, 'runs'), {
+    userId: currentUser.uid,
+    km,
+    min,
+    timestamp: Date.now()
+  });
+  alert('Běh přidán!');
+  renderDashboard();
+  renderMyRuns();
 }
 
-#closePanel {
-  align-self: flex-end;
-  font-size: 36px;
-  cursor: pointer;
-  user-select: none;
-  background: none;
-  border: none;
-  color: white;
-  margin-bottom: 20px;
-}
+onAuthStateChanged(auth, async user => {
+  if (!user) {
+    // Přesměruj na přihlášení, pokud chceš, nebo řeš logout tady
+    window.location.href = 'login.html';
+    return;
+  }
+  currentUser = user;
 
-.user-nick {
-  font-weight: 700;
-  font-size: 1.4em;
-  margin-bottom: 40px;
-  text-align: center;
-  letter-spacing: 1px;
-}
+  // Načteme uživatelská data
+  const userDocRef = doc(db, 'users', currentUser.uid);
+  const userDocSnap = await getDoc(userDocRef);
 
-.menu-list {
-  list-style: none;
-  padding-left: 0;
-}
+  if (!userDocSnap.exists()) {
+    // Pokud uživatel ještě nemá profil, vytvoříme ho
+    await setDoc(userDocRef, {
+      email: user.email,
+      nickname: user.email.split('@')[0],
+      teamId: null,
+      teamName: 'žádný'
+    });
+  }
 
-.menu-list li {
-  margin-bottom: 25px;
-}
+  const userData = (await getDoc(userDocRef)).data();
+  userNickEl.textContent = userData.nickname || currentUser.email;
+  userTeamEl.textContent = `Tým: ${userData.teamName || 'žádný'}`;
 
-.menu-list button {
-  background: transparent;
-  border: none;
-  color: white;
-  text-align: left;
-  cursor: pointer;
-  padding: 12px 8px;
-  border-radius: 8px;
-  font-size: 1.2em;
-  transition: background-color 0.25s ease;
-}
+  renderDashboard();
+});
 
-.menu-list button:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-}
+document.getElementById('btnDashboard').addEventListener('click', () => {
+  renderDashboard();
+  sidePanel.classList.add('hidden');
+});
 
-main {
-  margin-top: 70px;
-  padding: 20px 30px;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
+document.getElementById('btnMyRuns').addEventListener('click', () => {
+  renderMyRuns();
+  sidePanel.classList.add('hidden');
+});
 
-.input-group {
-  margin-bottom: 20px;
-}
+document.getElementById('btnSettings').addEventListener('click', () => {
+  renderSettings();
+  sidePanel.classList.add('hidden');
+});
 
-.input-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-}
+document.getElementById('btnTeams').addEventListener('click', () => {
+  renderTeams();
+  sidePanel.classList.add('hidden');
+});
 
-.input-group input {
-  width: 100%;
-  padding: 12px;
-  font-size: 1.1em;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  transition: border-color 0.3s;
-}
-
-.input-group input:focus {
-  border-color: #2e5dbd;
-  outline: none;
-}
-
-#addRunBtn {
-  width: 100%;
-  padding: 14px;
-  font-size: 1.3em;
-  background: #2e5dbd;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-#addRunBtn:hover {
-  background: #1c3a82;
-}
+document.getElementById('addRunBtn').addEventListener('click', () => {
+  const km = parseFloat(document.getElementById('inputKm')?.value);
+  const min = parseInt(document.getElementById('inputMin')?.value);
+  addRun(km, min);
+});
