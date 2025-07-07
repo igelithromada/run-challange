@@ -138,72 +138,6 @@
     display: none;
   }
   .card.active { display: block; }
-  label {
-    display: block;
-    margin: 12px 0 6px 0;
-    font-weight: 600;
-    text-align: left;
-  }
-  input, select {
-    font-size: 1.1em;
-    padding: 12px;
-    width: 100%;
-    border-radius: 8px;
-    border: 1px solid #aaa;
-    outline: none;
-    box-sizing: border-box;
-    transition: border-color 0.3s ease-in-out;
-  }
-  input:focus, select:focus {
-    border-color: var(--primary);
-  }
-  button.primary-btn {
-    background-color: var(--primary);
-    color: var(--card-bg);
-    font-weight: bold;
-    border: none;
-    padding: 14px;
-    margin-top: 20px;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: background-color 0.3s, transform 0.1s;
-    font-size: 1.1em;
-    width: 100%;
-  }
-  button.primary-btn:hover {
-    background-color: var(--accent);
-    transform: scale(1.03);
-  }
-  ul.run-list {
-    list-style: none;
-    padding-left: 0;
-    margin-top: 30px;
-    text-align: left;
-    max-height: 300px;
-    overflow-y: auto;
-    border-top: 1px solid #ccc;
-  }
-  ul.run-list li {
-    padding: 10px 8px;
-    border-bottom: 1px solid #ddd;
-    font-size: 1.04em;
-    color: var(--text);
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 30px;
-    font-size: 1.05em;
-  }
-  th, td {
-    padding: 10px 8px;
-    border-bottom: 1px solid #ddd;
-    text-align: center;
-  }
-  th {
-    background-color: var(--primary);
-    color: var(--card-bg);
-  }
 </style>
 </head>
 <body data-theme="light">
@@ -223,4 +157,232 @@
     </button>
     <button class="sidebar-btn" id="menu-team" onclick="showSection('team')">
       <svg width="22" height="22" fill="none" stroke="#8b96ab" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-        <path d="M17 21v-2a4 4 0 0 0-
+        <path d="M17 21v-2a4 4 0 0 0-3-3.87"/><path d="M7 21v-2a4 4 0 0 1 3-3.87"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+      Tým
+    </button>
+    <button class="sidebar-btn" id="menu-allrunners" onclick="showSection('allrunners')">
+      <svg width="22" height="22" fill="none" stroke="#8b96ab" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+      </svg>
+      Všichni běžci
+    </button>
+    <button class="sidebar-btn" id="logoutBtn" onclick="logout()">
+      <svg width="22" height="22" fill="none" stroke="#8b96ab" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      Odhlásit
+    </button>
+    <button class="theme-switch" onclick="switchTheme()" id="themeToggleBtn">🌙 Tmavý režim</button>
+  </div>
+  <main>
+    <div class="card active" id="section-dashboard">
+      <h2>Vítej v běžecké výzvě Dolní Lhoty!</h2>
+      <p>Tady budeš zadávat své běhy, sledovat pořadí, tým a statistiky.</p>
+    </div>
+    <div class="card" id="section-myruns">
+      <h2>Zadat nový běh</h2>
+      <label for="input-km">Kolik km?</label>
+      <input type="number" id="input-km" min="0" step="0.01" placeholder="např. 5.3" oninput="updatePace()" />
+      <label for="input-min">Čas v minutách</label>
+      <input type="number" id="input-min" min="1" step="1" placeholder="např. 30" oninput="updatePace()" />
+      <label for="input-pace">Průměrné tempo (min/km)</label>
+      <input type="text" id="input-pace" disabled placeholder="0.00" />
+      <button class="primary-btn" onclick="addRun()">Přidat běh</button>
+      <h3>Seznam běhů</h3>
+      <ul id="myRunsList" class="run-list"></ul>
+    </div>
+
+    <div class="card" id="section-team">
+      <h2>Tým</h2>
+      <label for="select-team">Vyber tým</label>
+      <select id="select-team"></select>
+      <button class="primary-btn" onclick="joinTeam()">Přidat se do týmu</button>
+      <h3>Členové týmu</h3>
+      <ul id="teamMembersList" class="run-list"></ul>
+      <label for="input-new-team">Vytvořit nový tým</label>
+      <input type="text" id="input-new-team" placeholder="Název nového týmu" />
+      <button class="primary-btn" onclick="createTeam()">Vytvořit tým</button>
+    </div>
+
+    <div class="card" id="section-allrunners">
+      <h2>Tabulka běžců</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Jméno</th><th>Celkem km</th><th>Celkem min</th><th>Průměrné tempo</th>
+          </tr>
+        </thead>
+        <tbody id="runnersTableBody"></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    let runs = [];
+    let runners = {
+      'Alena': { km: 15, min: 90 },
+      'Karel': { km: 20, min: 100 }
+    };
+    let teams = {
+      'Brouci': ['Alena'],
+      'Lesní běžci': ['Karel']
+    };
+    let currentTeam = null;
+
+    function showSection(id) {
+      document.querySelectorAll('.card').forEach(e => e.classList.remove('active'));
+      document.querySelectorAll('.sidebar-btn').forEach(e => e.classList.remove('active'));
+      document.getElementById('section-' + id).classList.add('active');
+      document.getElementById('menu-' + (id === 'myruns' ? 'my' : id)).classList.add('active');
+
+      if (id === 'myruns') renderMyRuns();
+      if (id === 'team') {
+        renderTeamSelect();
+        renderTeamMembers();
+      }
+      if (id === 'allrunners') renderRunnersTable();
+    }
+
+    function switchTheme() {
+      const html = document.documentElement;
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      document.getElementById('themeToggleBtn').textContent = isDark ? '🌙 Tmavý režim' : '☀️ Světlý režim';
+    }
+
+    function updatePace() {
+      const km = parseFloat(document.getElementById('input-km').value);
+      const min = parseInt(document.getElementById('input-min').value);
+      if (km > 0 && min > 0) {
+        document.getElementById('input-pace').value = (min / km).toFixed(2);
+      } else {
+        document.getElementById('input-pace').value = '';
+      }
+    }
+
+    function addRun() {
+      const km = parseFloat(document.getElementById('input-km').value);
+      const min = parseInt(document.getElementById('input-min').value);
+      if (!km || !min || km <= 0 || min <= 0) {
+        alert('Prosím, zadej platné km i minuty.');
+        return;
+      }
+      const pace = min / km;
+      runs.push({ km, min, pace });
+
+      renderMyRuns();
+
+      if (!runners['Ty']) {
+        runners['Ty'] = { km: 0, min: 0 };
+      }
+      runners['Ty'].km += km;
+      runners['Ty'].min += min;
+
+      renderRunnersTable();
+
+      document.getElementById('input-km').value = '';
+      document.getElementById('input-min').value = '';
+      document.getElementById('input-pace').value = '';
+    }
+
+    function renderMyRuns() {
+      const ul = document.getElementById('myRunsList');
+      ul.innerHTML = '';
+      runs.forEach((run, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${i + 1}. ${run.km.toFixed(2)} km, ${run.min} min, tempo ${run.pace.toFixed(2)} min/km`;
+        ul.appendChild(li);
+      });
+    }
+
+    function renderTeamSelect() {
+      const select = document.getElementById('select-team');
+      select.innerHTML = '';
+      for (const teamName in teams) {
+        const option = document.createElement('option');
+        option.value = teamName;
+        option.textContent = teamName;
+        select.appendChild(option);
+      }
+    }
+
+    function joinTeam() {
+      const select = document.getElementById('select-team');
+      const chosenTeam = select.value;
+      if (!chosenTeam) return alert('Vyber tým.');
+
+      for (const teamName in teams) {
+        const idx = teams[teamName].indexOf('Ty');
+        if (idx !== -1 && teamName !== chosenTeam) {
+          teams[teamName].splice(idx, 1);
+        }
+      }
+
+      if (!teams[chosenTeam].includes('Ty')) {
+        teams[chosenTeam].push('Ty');
+      }
+
+      currentTeam = chosenTeam;
+      renderTeamMembers();
+      alert(`Přidán do týmu ${chosenTeam}`);
+    }
+
+    function renderTeamMembers() {
+      const ul = document.getElementById('teamMembersList');
+      ul.innerHTML = '';
+      if (!currentTeam || !teams[currentTeam] || teams[currentTeam].length === 0) {
+        ul.textContent = 'Nejsi zatím v žádném týmu.';
+        return;
+      }
+      teams[currentTeam].forEach(member => {
+        const li = document.createElement('li');
+        li.textContent = member;
+        ul.appendChild(li);
+      });
+    }
+
+    function createTeam() {
+      const input = document.getElementById('input-new-team');
+      const teamName = input.value.trim();
+      if (!teamName) {
+        alert('Zadej název týmu.');
+        return;
+      }
+      if (teams[teamName]) {
+        alert('Tým s tímto názvem už existuje.');
+        return;
+      }
+      teams[teamName] = [];
+      input.value = '';
+      alert(`Tým "${teamName}" byl vytvořen.`);
+      renderTeamSelect();
+    }
+
+    function renderRunnersTable() {
+      const tbody = document.getElementById('runnersTableBody');
+      tbody.innerHTML = '';
+      const sorted = Object.entries(runners).sort((a,b) => b[1].km - a[1].km);
+      sorted.forEach(([name, stats], index) => {
+        const tr = document.createElement('tr');
+        const pace = (stats.min / stats.km).toFixed(2);
+        tr.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${name}</td>
+          <td>${stats.km.toFixed(2)}</td>
+          <td>${stats.min}</td>
+          <td>${pace}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function logout() {
+      alert('Odhlášen (demo).');
+      // Zde by se přidalo odhlášení Firebase nebo jiné logiky
+    }
+
+    // Na začátku zobraz dashboard
+    showSection('dashboard');
+  </script>
+</body>
+</html>
