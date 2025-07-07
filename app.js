@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import {
   getAuth,
   onAuthStateChanged,
-  signOut
+  signOut,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   getFirestore,
@@ -95,7 +95,6 @@ async function renderDashboard() {
   const inputMin = document.getElementById('inputMin');
   const addRunMessage = document.getElementById('addRunMessage');
 
-  // Načteme všechny běhy a sečteme podle uživatele
   const runsSnapshot = await getDocs(collection(db, 'runs'));
   const usersStats = {};
 
@@ -105,131 +104,4 @@ async function renderDashboard() {
       usersStats[data.userId] = { km: 0, min: 0 };
     }
     usersStats[data.userId].km += data.km;
-    usersStats[data.userId].min += data.min;
-  });
-
-  // Načteme uživatelská data
-  const userIds = Object.keys(usersStats);
-  if (userIds.length === 0) {
-    dashboardBody.innerHTML = '<tr><td colspan="5">Žádné záznamy</td></tr>';
-  } else {
-    const usersQuery = query(collection(db, 'users'), where('__name__', 'in', userIds));
-    const usersSnapshot = await getDocs(usersQuery);
-    const usersData = {};
-    usersSnapshot.forEach(u => usersData[u.id] = u.data());
-
-    dashboardBody.innerHTML = '';
-    let index = 1;
-    userIds.forEach(userId => {
-      const user = usersData[userId];
-      const stat = usersStats[userId];
-      const nickname = user?.nickname || user?.email || 'Neznámý';
-      const pace = calculatePace(stat.min, stat.km);
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${index++}</td>
-        <td>${nickname}</td>
-        <td>${formatNumber(stat.km)}</td>
-        <td>${Math.round(stat.min)}</td>
-        <td>${pace}</td>
-      `;
-      dashboardBody.appendChild(row);
-    });
-  }
-
-  addRunBtn.onclick = async () => {
-    const km = parseFloat(inputKm.value);
-    const min = parseInt(inputMin.value);
-    addRunMessage.textContent = '';
-    addRunMessage.className = '';
-
-    if (!km || !min) {
-      addRunMessage.textContent = 'Vyplň prosím km i čas správně.';
-      addRunMessage.className = 'alert error';
-      return;
-    }
-    try {
-      await addDoc(collection(db, 'runs'), {
-        userId: currentUser.uid,
-        km,
-        min,
-        timestamp: Date.now()
-      });
-      addRunMessage.textContent = 'Běh přidán!';
-      addRunMessage.className = 'alert success';
-      inputKm.value = '';
-      inputMin.value = '';
-      renderDashboard();
-    } catch (e) {
-      addRunMessage.textContent = 'Chyba při přidání běhu.';
-      addRunMessage.className = 'alert error';
-    }
-  };
-}
-
-async function renderMyRuns() {
-  mainContent.innerHTML = `
-    <h2>Moje běhy</h2>
-    <ul id="myRunsList">Načítám...</ul>
-  `;
-  const myRunsList = document.getElementById('myRunsList');
-
-  const runsQuery = query(collection(db, 'runs'), where('userId', '==', currentUser.uid), orderBy('timestamp', 'desc'));
-  const runsSnapshot = await getDocs(runsQuery);
-
-  myRunsList.innerHTML = '';
-
-  let totalKm = 0;
-  let totalMin = 0;
-
-  runsSnapshot.forEach(docSnap => {
-    const run = docSnap.data();
-    totalKm += run.km;
-    totalMin += run.min;
-
-    const li = document.createElement('li');
-    li.textContent = `${formatNumber(run.km)} km, ${run.min} min, tempo: ${calculatePace(run.min, run.km)} min/km`;
-    myRunsList.appendChild(li);
-  });
-
-  if (runsSnapshot.empty) {
-    myRunsList.textContent = 'Nemáš zatím žádné běhy.';
-  } else {
-    const summary = document.createElement('p');
-    summary.style.fontWeight = 'bold';
-    summary.style.marginTop = '15px';
-    summary.textContent = `Celkem: ${formatNumber(totalKm)} km, ${Math.round(totalMin)} minut, průměrné tempo: ${calculatePace(totalMin, totalKm)} min/km`;
-    mainContent.appendChild(summary);
-  }
-}
-
-async function renderSettings() {
-  mainContent.innerHTML = `
-    <h2>Nastavení</h2>
-    <label for="nicknameInput">Změna přezdívky:</label>
-    <input type="text" id="nicknameInput" placeholder="Zadej novou přezdívku" />
-    <button id="saveNicknameBtn">Uložit přezdívku</button>
-    <p id="settingsMessage"></p>
-  `;
-
-  const nicknameInput = document.getElementById('nicknameInput');
-  const saveBtn = document.getElementById('saveNicknameBtn');
-  const settingsMessage = document.getElementById('settingsMessage');
-
-  const userDocRef = doc(db, 'users', currentUser.uid);
-  const userDocSnap = await getDoc(userDocRef);
-  if (userDocSnap.exists()) {
-    const userData = userDocSnap.data();
-    nicknameInput.value = userData.nickname || '';
-  }
-
-  saveBtn.onclick = async () => {
-    const newNick = nicknameInput.value.trim();
-    if (newNick.length < 2) {
-      settingsMessage.style.color = 'red';
-      settingsMessage.textContent = 'Přezdívka musí mít alespoň 2 znaky.';
-      return;
-    }
-    try {
-      await updateDoc(userDocRef, { nickname: newNick });
-      user
+    usersStats[data.userId].min +=
