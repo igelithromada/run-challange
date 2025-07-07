@@ -7,54 +7,139 @@
   <style>
     body {
       font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
       background: #f0f4ff;
-      margin: 0;
-      padding: 20px;
       color: #222;
-      max-width: 800px;
-      margin-left: auto;
-      margin-right: auto;
+      display: flex;
+      min-height: 100vh;
     }
-    header {
+    nav {
+      width: 250px;
       background: #2e5dbd;
       color: white;
-      padding: 15px 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+    nav h2 {
+      margin: 0 0 20px;
+    }
+    nav button {
+      background: none;
+      border: none;
+      color: white;
+      padding: 15px 10px;
+      text-align: left;
+      font-size: 1.1em;
+      cursor: pointer;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    nav button.active, nav button:hover {
+      background: #1c3a82;
+    }
+    main {
+      flex-grow: 1;
+      padding: 20px;
+      background: white;
+      box-shadow: inset 0 0 15px #ccc;
     }
     h1 {
-      margin: 0;
+      color: #2e5dbd;
     }
-    #logoutBtn {
-      margin-top: 20px;
-      padding: 10px 15px;
-      background-color: #e53935;
+    .form-group {
+      margin-bottom: 15px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      font-size: 1.1em;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    button.add-run {
+      background: #2e5dbd;
       color: white;
       border: none;
-      border-radius: 6px;
+      padding: 15px 20px;
+      font-size: 1.1em;
+      border-radius: 5px;
       cursor: pointer;
-      font-weight: bold;
-      font-size: 1rem;
-      transition: background-color 0.3s;
+      margin-bottom: 30px;
     }
-    #logoutBtn:hover {
-      background-color: #b71c1c;
+    button.add-run:hover {
+      background: #1c3a82;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background: #e3e9ff;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Dolní Lhota Run - Hlavní stránka</h1>
-  </header>
+  <nav>
+    <h2>Dolní Lhota Run</h2>
+    <button id="btnDashboard" class="active">Hlavní stránka</button>
+    <button id="btnMyRuns">Moje běhy</button>
+    <button id="btnTeam">Tým</button>
+    <button id="btnLogout">Odhlásit se</button>
+  </nav>
+  <main id="mainContent">
+    <h1>Vítej v běžecké výzvě Dolní Lhoty!</h1>
+    <p>Zde můžeš zadat nový běh a sledovat své výsledky i výsledky týmu.</p>
 
-  <main>
-    <p>Vítej v aplikaci! Jsi přihlášený.</p>
-    <button id="logoutBtn">Odhlásit se</button>
+    <div id="dashboardSection">
+      <div class="form-group">
+        <label for="inputKm">Kolik km?</label>
+        <input type="number" id="inputKm" min="0" step="0.01" />
+      </div>
+      <div class="form-group">
+        <label for="inputMin">Čas v minutách</label>
+        <input type="number" id="inputMin" min="0" step="1" />
+      </div>
+      <button class="add-run" id="addRunBtn">Přidat běh</button>
+
+      <h2>Pořadí uživatelů</h2>
+      <table id="runnersTable">
+        <thead>
+          <tr><th>Pořadí</th><th>Jméno</th><th>Km</th><th>Minuty</th><th>Průměr min/km</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="myRunsSection" style="display:none;">
+      <h2>Moje běhy</h2>
+      <ul id="myRunsList"></ul>
+    </div>
+
+    <div id="teamSection" style="display:none;">
+      <h2>Tým</h2>
+      <p>Zde budou informace o týmu a členství</p>
+    </div>
   </main>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getAuth, onAuthStateChanged, signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    import {
+      getFirestore, collection, addDoc, query, where, getDocs, orderBy
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
@@ -68,23 +153,143 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    const logoutBtn = document.getElementById('logoutBtn');
+    const btnDashboard = document.getElementById("btnDashboard");
+    const btnMyRuns = document.getElementById("btnMyRuns");
+    const btnTeam = document.getElementById("btnTeam");
+    const btnLogout = document.getElementById("btnLogout");
+
+    const dashboardSection = document.getElementById("dashboardSection");
+    const myRunsSection = document.getElementById("myRunsSection");
+    const teamSection = document.getElementById("teamSection");
+
+    const runnersTableBody = document.querySelector("#runnersTable tbody");
+    const myRunsList = document.getElementById("myRunsList");
+    const addRunBtn = document.getElementById("addRunBtn");
+    const inputKm = document.getElementById("inputKm");
+    const inputMin = document.getElementById("inputMin");
+
+    let currentUser = null;
+
+    function showSection(section) {
+      dashboardSection.style.display = "none";
+      myRunsSection.style.display = "none";
+      teamSection.style.display = "none";
+      section.style.display = "block";
+
+      btnDashboard.classList.remove("active");
+      btnMyRuns.classList.remove("active");
+      btnTeam.classList.remove("active");
+
+      if(section === dashboardSection) btnDashboard.classList.add("active");
+      else if(section === myRunsSection) btnMyRuns.classList.add("active");
+      else if(section === teamSection) btnTeam.classList.add("active");
+    }
+
+    btnDashboard.addEventListener("click", () => {
+      showSection(dashboardSection);
+      loadLeaderboard();
+    });
+
+    btnMyRuns.addEventListener("click", () => {
+      showSection(myRunsSection);
+      loadMyRuns();
+    });
+
+    btnTeam.addEventListener("click", () => {
+      showSection(teamSection);
+      // Tady bude funkce pro načtení týmů apod.
+    });
+
+    btnLogout.addEventListener("click", async () => {
+      await signOut(auth);
+    });
 
     onAuthStateChanged(auth, user => {
       if (!user) {
-        // Uživateli není přihlášen -> přesměruj na přihlašovací stránku
-        window.location.href = 'login.html';
+        window.location.href = "login.html";
+      } else {
+        currentUser = user;
+        showSection(dashboardSection);
+        loadLeaderboard();
       }
     });
 
-    logoutBtn.addEventListener('click', async () => {
-      try {
-        await signOut(auth);
-        window.location.href = 'login.html';
-      } catch (error) {
-        alert('Chyba při odhlášení: ' + error.message);
+    async function loadLeaderboard() {
+      runnersTableBody.innerHTML = '<tr><td colspan="5">Načítám...</td></tr>';
+
+      const runsSnapshot = await getDocs(query(collection(db, "runs"), orderBy("timestamp", "desc")));
+
+      // Sčítání podle uživatele
+      const stats = {};
+      runsSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (!stats[data.userId]) {
+          stats[data.userId] = { km: 0, min: 0 };
+        }
+        stats[data.userId].km += data.km;
+        stats[data.userId].min += data.min;
+      });
+
+      // Načíst jména uživatelů
+      const userIds = Object.keys(stats);
+      const usersSnapshot = await getDocs(query(collection(db, "users"), where("__name__", "in", userIds)));
+
+      const users = {};
+      usersSnapshot.forEach(doc => {
+        users[doc.id] = doc.data();
+      });
+
+      // Vytvořit řádky tabulky seřazené podle km sestupně
+      const sortedUsers = Object.entries(stats).sort((a, b) => b[1].km - a[1].km);
+
+      runnersTableBody.innerHTML = "";
+
+      sortedUsers.forEach(([userId, stat], idx) => {
+        const userName = users[userId]?.nickname || users[userId]?.email || "Neznámý";
+        const pace = stat.min / stat.km;
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${idx+1}</td><td>${userName}</td><td>${stat.km.toFixed(2)}</td><td>${stat.min}</td><td>${pace.toFixed(2)}</td>`;
+        runnersTableBody.appendChild(row);
+      });
+    }
+
+    async function loadMyRuns() {
+      myRunsList.innerHTML = "Načítám...";
+      const runsSnapshot = await getDocs(query(collection(db, "runs"), where("userId", "==", currentUser.uid), orderBy("timestamp", "desc")));
+
+      myRunsList.innerHTML = "";
+      runsSnapshot.forEach(doc => {
+        const run = doc.data();
+        const li = document.createElement("li");
+        li.textContent = `${run.km} km, ${run.min} min, průměr: ${(run.min / run.km).toFixed(2)} min/km`;
+        myRunsList.appendChild(li);
+      });
+    }
+
+    addRunBtn.addEventListener("click", async () => {
+      const km = parseFloat(inputKm.value);
+      const min = parseInt(inputMin.value);
+
+      if (!km || !min) {
+        alert("Vyplň prosím km a čas správně.");
+        return;
       }
+
+      await addDoc(collection(db, "runs"), {
+        userId: currentUser.uid,
+        km,
+        min,
+        timestamp: Date.now()
+      });
+
+      inputKm.value = "";
+      inputMin.value = "";
+      alert("Běh přidán!");
+      loadLeaderboard();
+      loadMyRuns();
+      showSection(dashboardSection);
     });
   </script>
 </body>
