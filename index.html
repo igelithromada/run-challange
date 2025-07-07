@@ -1,127 +1,147 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dolní Lhota Run ONLINE</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dolní Lhota Run - Přihlášení</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 400px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f0f4ff;
+      color: #222;
+    }
+    input, button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #2e5dbd;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #436aff;
+    }
+    #message {
+      margin: 15px 0;
+      min-height: 20px;
+      font-weight: bold;
+      color: red;
+    }
+    #logoutBtn {
+      background-color: #d32f2f;
+    }
+    #logoutBtn:hover {
+      background-color: #b71c1c;
+    }
+  </style>
 </head>
 <body>
-  <h1>Dolní Lhota Run</h1>
-  <div id="auth"></div>
-  <div id="app" style="display:none;">
-    <p id="welcome"></p>
-    <button onclick="logout()">Odhlásit se</button>
-    <h3>Přidat běh</h3>
-    <input id="km" type="number" placeholder="km" step="0.01">
-    <input id="min" type="number" placeholder="min">
-    <button onclick="addRun()">Uložit</button>
-    <h3>Moje běhy</h3>
-    <ul id="runs"></ul>
+
+  <div id="authSection">
+    <h1>Přihlášení</h1>
+    <input type="email" id="loginEmail" placeholder="Email" />
+    <input type="password" id="loginPassword" placeholder="Heslo" />
+    <button id="loginBtn">Přihlásit se</button>
+
+    <h2>Registrace</h2>
+    <input type="email" id="regEmail" placeholder="Email" />
+    <input type="password" id="regPassword" placeholder="Heslo" />
+    <button id="registerBtn">Registrovat</button>
+
+    <div id="message"></div>
+  </div>
+
+  <div id="mainSection" style="display:none;">
+    <h1>Vítej v Dolní Lhotě!</h1>
+    <p>Jsi přihlášený.</p>
+    <button id="logoutBtn">Odhlásit se</button>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "TVŮJ_API_KEY",
-      authDomain: "TVŮJ_AUTH_DOMAIN",
-      projectId: "TVŮJ_PROJECT_ID",
-      storageBucket: "TVŮJ_BUCKET",
-      messagingSenderId: "TVŮJ_SENDER_ID",
-      appId: "TVŮJ_APP_ID"
+      apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
+      authDomain: "dolni-lhota-run.firebaseapp.com",
+      projectId: "dolni-lhota-run",
+      storageBucket: "dolni-lhota-run.appspot.com",
+      messagingSenderId: "549134031482",
+      appId: "1:549134031482:web:41205785ed5b4e275a79c3",
+      measurementId: "G-E7N1HJ4BEZ"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
 
-    const authDiv = document.getElementById('auth');
-    const appDiv = document.getElementById('app');
-    const welcome = document.getElementById('welcome');
-    const runsUl = document.getElementById('runs');
+    const loginEmail = document.getElementById('loginEmail');
+    const loginPassword = document.getElementById('loginPassword');
+    const loginBtn = document.getElementById('loginBtn');
 
-    let currentUser = null;
+    const regEmail = document.getElementById('regEmail');
+    const regPassword = document.getElementById('regPassword');
+    const registerBtn = document.getElementById('registerBtn');
 
-    function showAuth() {
-      authDiv.innerHTML = `
-        <input type="email" id="email" placeholder="email"><br>
-        <input type="password" id="pass" placeholder="heslo"><br>
-        <button onclick="login()">Přihlásit</button>
-        <button onclick="register()">Registrovat</button>
-      `;
-      appDiv.style.display = "none";
-    }
+    const message = document.getElementById('message');
 
-    async function login() {
-      const email = document.getElementById('email').value;
-      const pass = document.getElementById('pass').value;
+    const authSection = document.getElementById('authSection');
+    const mainSection = document.getElementById('mainSection');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    registerBtn.addEventListener('click', async () => {
+      message.textContent = '';
       try {
-        await signInWithEmailAndPassword(auth, email, pass);
-      } catch (e) {
-        alert("Chyba přihlášení: " + e.message);
-      }
-    }
-
-    async function register() {
-      const email = document.getElementById('email').value;
-      const pass = document.getElementById('pass').value;
-      try {
-        await createUserWithEmailAndPassword(auth, email, pass);
-      } catch (e) {
-        alert("Chyba registrace: " + e.message);
-      }
-    }
-
-    async function logout() {
-      await signOut(auth);
-    }
-
-    async function addRun() {
-      if (!currentUser) return alert("Nejste přihlášen.");
-      const km = parseFloat(document.getElementById('km').value);
-      const min = parseInt(document.getElementById('min').value);
-      if (isNaN(km) || isNaN(min)) return alert("Vyplň km i min.");
-      try {
-        await addDoc(collection(db, "runs"), {
-          userId: currentUser.uid,
-          km, min,
-          pace: min / km,
-          timestamp: serverTimestamp()
-        });
-        loadRuns();
-      } catch (e) {
-        alert("Chyba při ukládání: " + e.message);
-      }
-    }
-
-    async function loadRuns() {
-      if (!currentUser) return;
-      const q = query(collection(db, "runs"), where("userId", "==", currentUser.uid), orderBy("timestamp", "desc"));
-      const snapshot = await getDocs(q);
-      runsUl.innerHTML = "";
-      snapshot.forEach(doc => {
-        const r = doc.data();
-        const li = document.createElement('li');
-        li.textContent = `${(r.km ?? 0).toFixed(2)} km, ${r.min ?? 0} min, ${(r.pace ?? 0).toFixed(2)} min/km`;
-        runsUl.appendChild(li);
-      });
-    }
-
-    onAuthStateChanged(auth, user => {
-      currentUser = user;
-      if (user) {
-        welcome.textContent = "Vítej " + user.email;
-        appDiv.style.display = "block";
-        authDiv.innerHTML = "";
-        loadRuns();
-      } else {
-        showAuth();
+        await createUserWithEmailAndPassword(auth, regEmail.value, regPassword.value);
+        message.style.color = 'green';
+        message.textContent = 'Registrace proběhla úspěšně. Přihlaste se.';
+        regEmail.value = '';
+        regPassword.value = '';
+      } catch (error) {
+        message.style.color = 'red';
+        message.textContent = error.message;
       }
     });
 
-    showAuth();
+    loginBtn.addEventListener('click', async () => {
+      message.textContent = '';
+      try {
+        await signInWithEmailAndPassword(auth, loginEmail.value, loginPassword.value);
+        loginEmail.value = '';
+        loginPassword.value = '';
+      } catch (error) {
+        message.style.color = 'red';
+        message.textContent = error.message;
+      }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await signOut(auth);
+    });
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        authSection.style.display = 'none';
+        mainSection.style.display = 'block';
+        message.textContent = '';
+      } else {
+        authSection.style.display = 'block';
+        mainSection.style.display = 'none';
+      }
+    });
   </script>
+
 </body>
 </html>
