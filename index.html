@@ -3,74 +3,58 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dolní Lhota Run - Přihlášení a Registrace</title>
+  <title>Dolní Lhota Run - Hlavní stránka</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 400px;
-      margin: 40px auto;
-      padding: 20px;
       background: #f0f4ff;
+      margin: 0;
+      padding: 20px;
       color: #222;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
     }
-    h1, h2 {
-      text-align: center;
-      color: #2a6fdb;
+    header {
+      background: #2e5dbd;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
     }
-    input, button {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      box-sizing: border-box;
-      font-size: 1em;
-      border-radius: 5px;
-      border: 1px solid #ccc;
+    h1 {
+      margin: 0;
     }
-    button {
-      background-color: #2a6fdb;
+    #logoutBtn {
+      margin-top: 20px;
+      padding: 10px 15px;
+      background-color: #e53935;
       color: white;
       border: none;
+      border-radius: 6px;
       cursor: pointer;
       font-weight: bold;
+      font-size: 1rem;
       transition: background-color 0.3s;
     }
-    button:hover {
-      background-color: #235bb5;
-    }
-    #message {
-      margin-top: 15px;
-      font-weight: bold;
-      color: #e33;
-      min-height: 1.2em;
-      text-align: center;
-    }
-    #register-form {
-      display: none;
+    #logoutBtn:hover {
+      background-color: #b71c1c;
     }
   </style>
 </head>
 <body>
-  <h1>Dolní Lhota Run</h1>
+  <header>
+    <h1>Dolní Lhota Run - Hlavní stránka</h1>
+  </header>
 
-  <button id="showRegisterBtn">Chci se zaregistrovat</button>
-
-  <div id="register-form">
-    <h2>Registrace</h2>
-    <input type="email" id="reg-email" placeholder="Email" />
-    <input type="password" id="reg-password" placeholder="Heslo" />
-    <button id="register-btn">Registrovat</button>
-  </div>
-
-  <h2>Přihlášení</h2>
-  <input type="email" id="login-email" placeholder="Email" />
-  <input type="password" id="login-password" placeholder="Heslo" />
-  <button id="login-btn">Přihlásit se</button>
-
-  <p id="message"></p>
+  <main>
+    <p>Vítej v aplikaci! Jsi přihlášený.</p>
+    <button id="logoutBtn">Odhlásit se</button>
+  </main>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
@@ -85,56 +69,23 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    const message = document.getElementById('message');
-    const registerForm = document.getElementById('register-form');
-    const showRegisterBtn = document.getElementById('showRegisterBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
 
-    showRegisterBtn.addEventListener('click', () => {
-      registerForm.style.display = 'block';
-      showRegisterBtn.style.display = 'none';
-      message.textContent = '';
-    });
-
-    document.getElementById('register-btn').addEventListener('click', async () => {
-      const email = document.getElementById('reg-email').value;
-      const password = document.getElementById('reg-password').value;
-      message.textContent = '';
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        message.style.color = 'green';
-        message.textContent = 'Registrace proběhla úspěšně. Nyní se přihlas.';
-        document.getElementById('reg-email').value = '';
-        document.getElementById('reg-password').value = '';
-      } catch (error) {
-        message.style.color = 'red';
-        if (error.code === 'auth/email-already-in-use') {
-          message.textContent = 'Tento email se již používá.';
-        } else {
-          message.textContent = `Chyba registrace: ${error.message}`;
-        }
-      }
-    });
-
-    document.getElementById('login-btn').addEventListener('click', async () => {
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-      message.textContent = '';
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        message.style.color = 'green';
-        message.textContent = `Přihlášen: ${email}`;
-        setTimeout(() => {
-          window.location.href = 'index.html'; // uprav podle své hlavní stránky
-        }, 1000);
-      } catch (error) {
-        message.style.color = 'red';
-        message.textContent = `Chyba přihlášení: ${error.message}`;
-      }
-    });
-
+    // Kontrola stavu přihlášení
     onAuthStateChanged(auth, user => {
-      if (user) {
-        window.location.href = 'index.html'; // uprav podle své hlavní stránky
+      if (!user) {
+        // Uživateli není přihlášen -> přesměruj na přihlašovací stránku
+        window.location.href = 'login.html';
+      }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await signOut(auth);
+        // Po odhlášení přesměruj na login
+        window.location.href = 'login.html';
+      } catch (error) {
+        alert('Chyba při odhlášení: ' + error.message);
       }
     });
   </script>
