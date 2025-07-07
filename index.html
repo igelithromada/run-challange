@@ -1,471 +1,144 @@
-
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8" />
-<title>Dolní Lhota Run</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
-function pripojSe(nazevTymu) {
-  db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
-    .then(() => {
-      aktualniTym = nazevTymu;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
-      alert('Přidal ses do týmu: ' + nazevTymu);
-    });
-}
+  <meta charset="UTF-8" />
+  <title>Dolní Lhota Run</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --primary: #2779e2;
+      --accent: #ffac33;
+      --bg: #f7fafc;
+      --sidebar-bg: linear-gradient(180deg, #2779e2 70%, #48c3cb 130%);
+      --card-bg: #fff;
+      --text: #212529;
+      --sidebar-width: 220px;
+    }
+    [data-theme="dark"] {
+      --primary: #8ab8fa;
+      --accent: #ffa338;
+      --bg: #181c24;
+      --sidebar-bg: linear-gradient(180deg, #22243c 80%, #2779e2 150%);
+      --card-bg: #24283b;
+      --text: #f3f7fa;
+    }
 
-function odstranZtýmu() {
-  db.collection("uzivatele").doc(nick).delete()
-    .then(() => {
-      aktualniTym = null;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy();
-      alert('Odešel jsi z týmu');
-    });
-}
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      nactiBehy();
-      zobrazMojeBehy();
-    });
-}
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      setTimeout(() => {
-        nactiBehy();
-        zobrazMojeBehy();
-      }, 300);
-    });
-}
-</script>
-
-
-
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js">
-function pripojSe(nazevTymu) {
-  db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
-    .then(() => {
-      aktualniTym = nazevTymu;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
-      alert('Přidal ses do týmu: ' + nazevTymu);
-    });
-}
-
-function odstranZtýmu() {
-  db.collection("uzivatele").doc(nick).delete()
-    .then(() => {
-      aktualniTym = null;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy();
-      alert('Odešel jsi z týmu');
-    });
-}
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      nactiBehy();
-      zobrazMojeBehy();
-    });
-}
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      setTimeout(() => {
-        nactiBehy();
-        zobrazMojeBehy();
-      }, 300);
-    });
-}
-</script>
-
-
-
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js">
-function pripojSe(nazevTymu) {
-  db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
-    .then(() => {
-      aktualniTym = nazevTymu;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
-      alert('Přidal ses do týmu: ' + nazevTymu);
-    });
-}
-
-function odstranZtýmu() {
-  db.collection("uzivatele").doc(nick).delete()
-    .then(() => {
-      aktualniTym = null;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy();
-      alert('Odešel jsi z týmu');
-    });
-}
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      nactiBehy();
-      zobrazMojeBehy();
-    });
-}
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      setTimeout(() => {
-        nactiBehy();
-        zobrazMojeBehy();
-      }, 300);
-    });
-}
-</script>
-
-
-
-<style>
-  body { font-family: sans-serif; background: #f8f8f8; color: #222; padding: 20px; max-width: 400px; margin: auto; transition: margin-left 0.3s; }
-  h1, h2 { text-align: center; color: #ff6600; }
-  input, button { font-size: 1.2em; padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: 1px solid #aaa; }
-  button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
-  .leave-btn { background: #999 !important; }
-  .card { background: #fff; border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 10px; }
-  .hidden { display: none; }
-  #sidebar { height: 100%; width: 0; position: fixed; z-index: 100; top: 0; left: 0; background: #f0f0f0; overflow-x: auto; transition: 0.3s; padding-top: 20px; display: flex; flex-direction: column; }
-  #sidebar a { padding: 8px 8px 8px 32px; text-decoration: none; font-size: 1.2em; color: #333; display: block; transition: 0.3s; }
-  #sidebar a:hover { background: #ddd; }
-  #hamburger { position: fixed; top: 15px; left: 15px; font-size: 2.2em; cursor: pointer; z-index: 101; }
-  #odhlasBtn { position: absolute; top: 10px; right: 10px; font-size: 1.1em; cursor: pointer; }
-  #userInfo { padding: 0 32px 10px 32px; font-size: 1em; }
-</style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background .2s, color .2s;
+    }
+    #sidebar {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: var(--sidebar-width);
+      background: var(--sidebar-bg);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 36px 0 0 0;
+      z-index: 10;
+      box-shadow: 3px 0 18px rgba(39,121,226,.08);
+      transition: background .2s;
+    }
+    .sidebar-logo {
+      font-size: 1.38em;
+      font-weight: 700;
+      margin: 0 0 32px 34px;
+      letter-spacing: 1px;
+      color: #fff;
+      text-shadow: 0 2px 10px #2779e245;
+    }
+    .sidebar-btn {
+      width: 90%;
+      margin: 7px 0 0 0;
+      padding: 14px 32px;
+      border: none;
+      background: none;
+      color: #fff;
+      border-radius: 11px;
+      font-size: 1.14em;
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background .13s, color .12s;
+    }
+    .sidebar-btn:hover {
+      background: rgba(255,255,255,0.13);
+      color: var(--accent);
+    }
+    .theme-switch {
+      margin: 40px 0 0 34px;
+      cursor: pointer;
+      background: #fff2;
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 20px;
+      font-size: 1.08em;
+      transition: background .15s, color .13s;
+      border: none;
+    }
+    .theme-switch:hover { background: #fff3; color: var(--accent);}
+    main {
+      margin-left: var(--sidebar-width);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      justify-content: center;
+    }
+    .card {
+      margin-top: 80px;
+      background: var(--card-bg);
+      border-radius: 17px;
+      box-shadow: 0 8px 36px #2779e215;
+      padding: 38px 28px;
+      max-width: 400px;
+      width: 90vw;
+      font-size: 1.18em;
+      color: var(--text);
+      text-align: center;
+    }
+    @media (max-width:650px) {
+      #sidebar { width: 100vw; min-height: 64px; flex-direction: row; align-items: center; padding:0 0 0 0;}
+      .sidebar-logo {margin: 0 18px 0 18px;}
+      .sidebar-btn, .theme-switch {margin: 0 7px; padding: 12px 12px; font-size:1em;}
+      main {margin-left: 0; margin-top: 90px;}
+      .card {margin-top: 8px;}
+    }
+  </style>
 </head>
 <body>
-
-<div id="hamburger" onclick="toggleSidebar()">☰</div>
-
-<div id="sidebar">
-  <div id="odhlasBtn" onclick="odhlasit()">🚪</div>
-  
-  <a href="#" onclick="zobrazSekci('dashboard')">Dashboard</a>
-  <a href="#" onclick="zobrazSekci('mojeBehy')">Moje běhy</a>
-  <a href="#" onclick="zobrazSekci('tymMain')">Tým</a>
-</div>
-
-<h1>Dolní Lhota Run</h1>
-
-<div id="loginSection">
-  <h2>Přihlášení</h2>
-  <input type="email" id="emailLogin" placeholder="Email">
-  <input type="password" id="passwordLogin" placeholder="Heslo">
-  <button onclick="prihlasit()">Přihlásit</button>
-  <h2>Registrace</h2>
-  <input type="email" id="emailReg" placeholder="Email">
-  <input type="password" id="passwordReg" placeholder="Heslo">
-  <button onclick="registruj()">Registrovat</button>
-</div>
-
-<div id="dashboardSection" class="hidden">
-  <h2>Zadat nový běh</h2>
-  <input type="number" id="km" placeholder="Kolik km?">
-  <input type="number" id="cas" placeholder="Čas v minutách">
-  <button onclick="pridatBeh()">Přidat běh</button>
-
-  <h2>Pořadí uživatelů</h2>
-  <div id="stavUzivatelu"></div>
-</div>
-
-<div id="mojeBehySection" class="hidden">
-  <h2>Moje běhy</h2>
-  <div id="mojeBehy"></div>
-</div>
-
-<div id="tymMainSection" class="hidden">
-  <h2>Tým</h2>
-  <button onclick="zobrazSekci('tymVytvor')">Vytvořit tým</button>
-  <button onclick="zobrazSekci('tymPridat')">Přidat do týmu</button>
-</div>
-
-<div id="tymVytvorSection" class="hidden">
-  <h2>Vytvořit tým</h2>
-  <input type="text" id="nazevTymu" placeholder="Název týmu">
-  <button onclick="vytvorTym()">Vytvořit</button>
-</div>
-
-<div id="tymPridatSection" class="hidden">
-  <h2>Vyber tým</h2>
-  <div id="seznamTymu"></div>
-</div>
-
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDHGzESwHUmmyy0_txyWL7VCp7eWFmtE9w",
-  authDomain: "run-challange.firebaseapp.com",
-  projectId: "run-challange",
-  storageBucket: "run-challange.firebasestorage.app",
-  messagingSenderId: "501821296976",
-  appId: "1:501821296976:web:e470e5d221d1b1fbb21c55"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-let aktualniTym = null;
-let nick = "";
-
-function toggleSidebar() {
-  const sb = document.getElementById("sidebar");
-  if (sb.style.width === "250px") {
-    sb.style.width = "0";
-    document.body.style.marginLeft= "0";
-  } else {
-    sb.style.width = "250px";
-    document.body.style.marginLeft = "250px";
-  }
-}
-
-function prihlasit() {
-  const email = document.getElementById('emailLogin').value;
-  const password = document.getElementById('passwordLogin').value;
-  auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
-}
-function registruj() {
-  const email = document.getElementById('emailReg').value;
-  const password = document.getElementById('passwordReg').value;
-  auth.createUserWithEmailAndPassword(email, password).catch(err => alert(err.message));
-}
-function odhlasit() {
-  auth.signOut();
-}
-
-function zobrazSekci(sekce) {
-  ['dashboard','mojeBehy','tymMain','tymVytvor','tymPridat'].forEach(s=>{
-    document.getElementById(s+'Section').style.display = (s===sekce)?'block':'none';
-  });
-  toggleSidebar();
-  if(sekce==='mojeBehy') zobrazMojeBehy();
-  if(sekce==='tymPridat') zobrazTymy();
-}
-
-function vytvorTym() {
-  const nazev = document.getElementById('nazevTymu').value.trim();
-  if (!nazev) return alert('Zadej název týmu.');
-  db.collection("tymy").add({ nazev })
-    .then(() => {
-      document.getElementById('nazevTymu').value='';
-      alert('Tým vytvořen');
-      zobrazSekci('tymMain');
-    });
-}
-
-function zobrazTymy() {
-  db.collection("tymy").onSnapshot(snapshot => {
-    let html = "";
-    snapshot.forEach(doc => {
-      const t = doc.data();
-      if (t.nazev === aktualniTym) {
-        html += `<div class='card'>${t.nazev} <button class='leave-btn' onclick="odstranZtýmu()">Odejít z týmu</button></div>`;
-      } else {
-        html += `<div class='card'>${t.nazev} <button onclick="pripojSe('${t.nazev}')">Přidat do týmu</button></div>`;
-      }
-    });
-    document.getElementById('seznamTymu').innerHTML = html;
-  });
-}
-
-function pripojSe(nazevTymu) {
-  db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
-    .then(() => {
-      aktualniTym = nazevTymu;
-      zobrazInfoUzivatele(); zobrazTymy();
-      alert('Přidal ses do týmu: ' + nazevTymu);
-    });
-}
-
-function odstranZtýmu() {
-  db.collection("uzivatele").doc(nick).delete()
-    .then(() => {
-      aktualniTym = null;
-      zobrazInfoUzivatele(); zobrazTymy();
-      alert('Odešel jsi z týmu');
-    });
-}
-
-function zobrazInfoUzivatele() {
-  db.collection("uzivatele").doc(nick).get().then(doc => {
-    const data = doc.data();
-    aktualniTym = data ? data.tym : null;
-    document.getElementById('userInfo').innerHTML = `<strong>${nick}</strong><br>Tým: ${aktualniTym || "Žádný tým"}`;
-  });
-}
-
-function zobrazMojeBehy() {
-  db.collection("behy").where("jmeno","==",nick).onSnapshot(snapshot => {
-    let html = "", sumKm=0, sumCas=0, sumTempo=0, count=0;
-    snapshot.forEach(doc => {
-      const z = doc.data();
-      html += `<div class='card'>${z.datum}: ${z.km} km za ${z.cas} min (${z.tempo} min/km)</div>`;
-      sumKm += z.km;
-      sumCas += z.cas;
-      sumTempo += parseFloat(z.tempo) || 0;
-      count++;
-    });
-    const avgTempo = count > 0 ? (sumTempo / count).toFixed(2) : "0";
-    html += `<hr><div class='card'><strong>Součet:</strong> ${sumKm} km, ${sumCas} min, průměrné tempo: ${avgTempo} min/km</div>`;
-    document.getElementById('mojeBehy').innerHTML = html;
-  });
-}
-
-auth.onAuthStateChanged(user => {
-  if (user) {
-    nick = user.email.split('@')[0];
-    document.getElementById('loginSection').classList.add('hidden');
-    document.getElementById('dashboardSection').classList.remove('hidden');
-    zobrazInfoUzivatele(); zobrazTymy();
-    nactiBehy();
-  } else {
-    document.getElementById('loginSection').classList.remove('hidden');
-    ['dashboard','mojeBehy','tymMain','tymVytvor','tymPridat'].forEach(s=>{
-      document.getElementById(s+'Section').classList.add('hidden');
-    });
-    document.getElementById('userInfo').innerHTML = '';
-  }
-});
-
-function nactiBehy() {
-  db.collection("behy")
-    .onSnapshot(snapshot => {
-      const soucty = {};
-      snapshot.forEach(doc => {
-        const z = doc.data();
-        if (!soucty[z.jmeno]) soucty[z.jmeno] = { km:0, cas:0, tempo:0, pocet:0 };
-        soucty[z.jmeno].km += z.km;
-        soucty[z.jmeno].cas += z.cas;
-        soucty[z.jmeno].tempo += parseFloat(z.tempo) || 0;
-        soucty[z.jmeno].pocet++;
-      });
-      let i=1;
-      document.getElementById('stavUzivatelu').innerHTML = Object.entries(soucty)
-        .sort((a,b)=>b[1].km - a[1].km)
-        .map(([j, data])=>{
-          const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
-          return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km</div>`;
-        }).join('');
-    });
-}
-
-function pripojSe(nazevTymu) {
-  db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
-    .then(() => {
-      aktualniTym = nazevTymu;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy(); // aby se hned změnilo tlačítko na Odejít z týmu
-      alert('Přidal ses do týmu: ' + nazevTymu);
-    });
-}
-
-function odstranZtýmu() {
-  db.collection("uzivatele").doc(nick).delete()
-    .then(() => {
-      aktualniTym = null;
-      zobrazInfoUzivatele(); zobrazTymy();
-      zobrazTymy();
-      alert('Odešel jsi z týmu');
-    });
-}
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      nactiBehy();
-      zobrazMojeBehy();
-    });
-}
-
-function pridatBeh() {
-  const km = parseFloat(document.getElementById('km').value);
-  const cas = parseFloat(document.getElementById('cas').value);
-  if (!km || !cas) return alert("Zadej správně km a čas");
-  const tempo = (cas / km).toFixed(2);
-  const datum = new Date().toLocaleDateString();
-  db.collection("behy").add({ jmeno: nick, km, cas, tempo, datum })
-    .then(() => {
-      document.getElementById('km').value = '';
-      document.getElementById('cas').value = '';
-      setTimeout(() => {
-        nactiBehy();
-        zobrazMojeBehy();
-      }, 300);
-    });
-}
-</script>
-
-
-
-
-
-<script>
-function zobrazNickTym() {
-  document.getElementById('nickDisplay').textContent = (typeof nick !== "undefined" ? nick : "");
-  document.getElementById('tymDisplay').textContent = (typeof aktualniTym !== "undefined" && aktualniTym ? "Tým: " + aktualniTym : "");
-}
-window.addEventListener("DOMContentLoaded", zobrazNickTym);
-</script>
+  <div id="sidebar">
+    <div class="sidebar-logo">🏃 Dolní Lhota Run</div>
+    <button class="sidebar-btn" onclick="zobrazDashboard()">Dashboard</button>
+    <button class="theme-switch" onclick="switchTheme()" id="themeToggleBtn">🌙 Tmavý režim</button>
+  </div>
+  <main>
+    <div class="card" id="dashboardCard">
+      <h2>Vítej v běžecké výzvě Dolní Lhoty!</h2>
+      <p>Tady budeš zadávat své běhy, sledovat pořadí, tým a statistiky.<br>
+      Design je minimalistický a moderní – zkus přepnout tmavý/světlý režim ☀️/🌙.</p>
+    </div>
+  </main>
+  <script>
+    function switchTheme() {
+      const html = document.documentElement;
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      document.getElementById('themeToggleBtn').textContent = isDark ? '🌙 Tmavý režim' : '☀️ Světlý režim';
+    }
+    function zobrazDashboard() {
+      document.getElementById('dashboardCard').style.display = '';
+    }
+    // Po načtení – defaultně světlý režim:
+    document.documentElement.setAttribute('data-theme', 'light');
+  </script>
 </body>
-
 </html>
