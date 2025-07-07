@@ -3,131 +3,31 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dolní Lhota Run</title>
-
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
+<title>Dolní Lhota Run - Firebase modular SDK</title>
 <style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0; background: #f0f4ff; color: #222;
-    transition: background 0.3s, color 0.3s;
-  }
-  body.dark {
-    background: #121417;
-    color: #eee;
-  }
-  header {
-    background: linear-gradient(90deg, #2e5dbd, #5786ff);
-    color: white; padding: 10px 20px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  body.dark header {
-    background: linear-gradient(90deg, #4a63d4, #7ea1ff);
-  }
-  header h1 {
-    margin: 0; font-size: 1.5rem;
-  }
-  nav {
-    background: white;
-    display: flex; justify-content: center; gap: 10px;
-    padding: 10px 0;
-    box-shadow: 0 2px 5px rgb(0 0 0 / 0.1);
-  }
-  body.dark nav {
-    background: #20232a;
-    box-shadow: 0 2px 5px rgb(255 255 255 / 0.1);
-  }
-  nav button {
-    background: #5786ff;
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background-color 0.3s;
-  }
-  body.dark nav button {
-    background: #7ea1ff;
-    color: #20232a;
-  }
-  nav button:hover, nav button.active {
-    background: #2e5dbd;
-  }
-  body.dark nav button:hover, body.dark nav button.active {
-    background: #436aff;
-    color: white;
-  }
-  main {
-    max-width: 900px;
-    margin: 20px auto;
-    padding: 0 20px;
-  }
-  section {
-    display: none;
-  }
-  section.active {
-    display: block;
-  }
-  h2 {
-    color: #2e5dbd;
-    transition: color 0.3s;
-  }
-  body.dark h2 {
-    color: #7ea1ff;
-  }
-  label {
-    display: block;
-    margin-top: 15px;
-    font-weight: 600;
-  }
-  input[type=number], input[type=email], input[type=password] {
-    width: 100%; max-width: 300px;
-    padding: 8px;
-    margin-top: 5px;
-    border: 1px solid #bbb;
-    border-radius: 4px;
-    font-size: 1rem;
-    background: white;
-    color: black;
-    transition: background 0.3s, color 0.3s;
-  }
-  body.dark input[type=number], body.dark input[type=email], body.dark input[type=password] {
-    background: #2a2c33;
-    color: #eee;
-    border-color: #555;
-  }
-  button {
-    margin-top: 20px;
-    background: #2e5dbd;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background 0.3s;
-  }
-  button:hover {
-    background: #436aff;
-  }
-  body.dark button {
-    background: #436aff;
-  }
-  body.dark button:hover {
-    background: #2e5dbd;
-  }
-  ul {
-    list-style: none;
-    padding-left: 0;
-  }
-  ul li {
-    margin-bottom: 8px;
-  }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin:0; background:#f0f4ff; color:#222; transition: background 0.3s, color 0.3s;}
+  body.dark { background:#121417; color:#eee; }
+  header { background: linear-gradient(90deg, #2e5dbd, #5786ff); color:white; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; }
+  nav { background:white; display:flex; justify-content:center; gap:10px; padding:10px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+  body.dark nav { background:#20232a; box-shadow: 0 2px 5px rgba(255,255,255,0.1); }
+  nav button { background:#5786ff; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:600; transition: background-color 0.3s;}
+  body.dark nav button { background:#7ea1ff; color:#20232a; }
+  nav button:hover, nav button.active { background:#2e5dbd; }
+  body.dark nav button:hover, body.dark nav button.active { background:#436aff; color:white; }
+  main { max-width:900px; margin:20px auto; padding:0 20px; }
+  section { display:none; }
+  section.active { display:block; }
+  h2 { color:#2e5dbd; transition: color 0.3s;}
+  body.dark h2 { color:#7ea1ff; }
+  label { display:block; margin-top:15px; font-weight:600; }
+  input[type=number], input[type=email], input[type=password] { width:100%; max-width:300px; padding:8px; margin-top:5px; border:1px solid #bbb; border-radius:4px; font-size:1rem; background:white; color:black; transition: background 0.3s, color 0.3s; }
+  body.dark input[type=number], body.dark input[type=email], body.dark input[type=password] { background:#2a2c33; color:#eee; border-color:#555; }
+  button { margin-top:20px; background:#2e5dbd; color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-size:1rem; transition: background 0.3s;}
+  button:hover { background:#436aff; }
+  body.dark button { background:#436aff; }
+  body.dark button:hover { background:#2e5dbd; }
+  ul { list-style:none; padding-left:0; }
+  ul li { margin-bottom:8px; }
 </style>
 </head>
 <body>
@@ -170,19 +70,23 @@
   </section>
 </main>
 
-<script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+  import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
   const firebaseConfig = {
     apiKey: "TVŮJ_API_KEY",
     authDomain: "TVŮJ_AUTH_DOMAIN",
     projectId: "TVŮJ_PROJECT_ID",
     storageBucket: "TVŮJ_STORAGE_BUCKET",
-    messagingSenderId: "TVŮJ_SENDER_ID",
+    messagingSenderId: "TVŮJ_MESSAGING_SENDER_ID",
     appId: "TVŮJ_APP_ID"
   };
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
   const btnToggleTheme = document.getElementById('btnToggleTheme');
   const btnLogout = document.getElementById('btnLogout');
@@ -213,26 +117,25 @@
   };
 
   btnLogout.onclick = () => {
-    auth.signOut();
+    signOut(auth);
   };
 
-  btnLoginSubmit.onclick = () => {
+  btnLoginSubmit.onclick = async () => {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value.trim();
     if (!email || !password) {
       alert('Vyplňte email i heslo.');
       return;
     }
-    auth.signInWithEmailAndPassword(email, password)
-      .then(() => {
-        alert('Přihlášení úspěšné!');
-      })
-      .catch(error => {
-        alert('Chyba přihlášení: ' + error.message);
-      });
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      alert('Přihlášení úspěšné!');
+    } catch (error) {
+      alert('Chyba přihlášení: ' + error.message);
+    }
   };
 
-  btnAddRun.onclick = () => {
+  btnAddRun.onclick = async () => {
     const km = parseFloat(document.getElementById('runKm').value);
     const min = parseInt(document.getElementById('runMin').value);
     if (!km || !min) {
@@ -245,82 +148,24 @@
       alert('Nejste přihlášen.');
       return;
     }
-    db.collection('runs').add({
-      userId: user.uid,
-      km,
-      min,
-      pace,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
+    try {
+      await addDoc(collection(db, 'runs'), {
+        userId: user.uid,
+        km,
+        min,
+        pace,
+        timestamp: serverTimestamp()
+      });
       alert('Běh přidán.');
       document.getElementById('runKm').value = '';
       document.getElementById('runMin').value = '';
       loadRuns(user.uid);
-    }).catch(error => {
+    } catch (error) {
       alert('Chyba při přidávání běhu: ' + error.message);
-    });
-  };
-
-  function loadRuns(uid) {
-    runsList.innerHTML = 'Načítám...
-      <script>
-  function loadRuns(uid) {
-    runsList.innerHTML = 'Načítám...';
-    db.collection('runs')
-      .where('userId', '==', uid)
-      .orderBy('timestamp', 'desc')
-      .get()
-      .then(snapshot => {
-        runsList.innerHTML = '';
-        if (snapshot.empty) {
-          runsList.innerHTML = '<li>Žádné běhy zatím nejsou.</li>';
-          return;
-        }
-        snapshot.forEach(doc => {
-          const run = doc.data();
-          const li = document.createElement('li');
-          li.textContent = `${run.km.toFixed(2)} km, ${run.min} min, tempo ${run.pace.toFixed(2)} min/km`;
-          runsList.appendChild(li);
-        });
-      })
-      .catch(error => {
-        runsList.innerHTML = '<li>Chyba při načítání běhů.</li>';
-        console.error(error);
-      });
-  }
-
-  btnToggleTheme.onclick = () => {
-    document.body.classList.toggle('dark');
-    const isDark = document.body.classList.contains('dark');
-    localStorage.setItem('darkMode', isDark ? 'true' : 'false');
-    btnToggleTheme.textContent = isDark ? '☀️' : '🌙';
-  };
-
-  // Načtení uloženého nastavení tmavého režimu
-  window.onload = () => {
-    const darkMode = localStorage.getItem('darkMode');
-    if (darkMode === 'true') {
-      document.body.classList.add('dark');
-      btnToggleTheme.textContent = '☀️';
-    } else {
-      btnToggleTheme.textContent = '🌙';
     }
-    // Přihlášení stav
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        btnLogout.style.display = 'inline-block';
-        btnLogin.style.display = 'none';
-        btnMyRuns.style.display = 'inline-block';
-        showSection(myRunsSection);
-        loadRuns(user.uid);
-      } else {
-        btnLogout.style.display = 'none';
-        btnLogin.style.display = 'inline-block';
-        btnMyRuns.style.display = 'none';
-        showSection(loginSection);
-      }
-    });
   };
-</script>
-</body>
-</html>
+
+  async function loadRuns(uid) {
+    runsList.innerHTML = 'Načítám...';
+    try {
+      const q = query(collection(db, 'runs'), where('userId
