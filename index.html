@@ -288,3 +288,215 @@
     }
   };
 </script>
+<script>
+  // Firebase config - vlož sem svůj config
+  const firebaseConfig = {
+    apiKey: "TVŮJ_API_KEY",
+    authDomain: "TVŮJ_AUTH_DOMAIN",
+    projectId: "TVŮJ_PROJECT_ID",
+    storageBucket: "TVŮJ_STORAGE_BUCKET",
+    messagingSenderId: "TVŮJ_MESSAGING_SENDER_ID",
+    appId: "TVŮJ_APP_ID"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  const btnToggleTheme = document.getElementById('btnToggleTheme');
+  const btnLogout = document.getElementById('btnLogout');
+  const btnLogin = document.getElementById('btnLogin');
+  const btnDashboard = document.getElementById('btnDashboard');
+  const btnMyRuns = document.getElementById('btnMyRuns');
+  const btnTeams = document.getElementById('btnTeams');
+  const btnAllRunners = document.getElementById('btnAllRunners');
+  const btnBadges = document.getElementById('btnBadges');
+  const btnProfile = document.getElementById('btnProfile');
+  const btnLoginSubmit = document.getElementById('btnLoginSubmit');
+  const btnAddRun = document.getElementById('btnAddRun');
+
+  const sections = {
+    dashboard: document.getElementById('dashboard'),
+    loginSection: document.getElementById('loginSection'),
+    myRunsSection: document.getElementById('myRunsSection'),
+    // další sekce doplníme postupně
+  };
+
+  function showSection(section) {
+    for (const sec in sections) {
+      sections[sec].style.display = 'none';
+    }
+    section.style.display = 'block';
+  }
+
+  btnDashboard.onclick = () => showSection(sections.dashboard);
+  btnLogin.onclick = () => showSection(sections.loginSection);
+  btnMyRuns.onclick = () => showSection(sections.myRunsSection);
+
+  btnLogout.onclick = () => {
+    auth.signOut();
+  };
+
+  btnLoginSubmit.onclick = () => {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    if (!email || !password) {
+      alert('Vyplňte email i heslo.');
+      return;
+    }
+    auth.signInWithEmailAndPassword(email, password)
+      .then(() => alert('Přihlášení úspěšné!'))
+      .catch(error => alert('Chyba přihlášení: ' + error.message));
+  };
+
+  btnAddRun.onclick = () => {
+    const km = parseFloat(document.getElementById('runKm').value);
+    const min = parseInt(document.getElementById('runMin').value);
+    if (!km || !min) {
+      alert('Vyplňte km i čas.');
+      return;
+    }
+    const pace = min / km;
+    const user = auth.currentUser;
+    if (!user) {
+      alert('Nejste přihlášen.');
+      return;
+    }
+    db.collection('runs').add({
+      userId: user.uid,
+      km,
+      min,
+      pace,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+      alert('Běh přidán.');
+      document.getElementById('runKm').value = '';
+      document.getElementById('runMin').value = '';
+      loadRuns(user.uid);
+      showSection(sections.myRunsSection);
+    }).catch(error => {
+      alert('Chyba při přidávání běhu: ' + error.message);
+    });
+  };
+
+  function loadRuns(uid) {
+    const runsList = document.getElementById('runsList');
+    runsList.innerHTML = 'Načítám...';
+    db.collection('runs').where('userId', '==', uid).orderBy('timestamp', 'desc').get()
+      .then(snapshot => {
+        runsList.innerHTML = '';
+        if (snapshot.empty) {
+          runsList.innerHTML = '<li>Žádné běhy zatím nejsou.</li>';
+          return;
+        }
+        snapshot.forEach(doc => {
+          const run = doc.data();
+          const li = document.createElement('li');
+          li.textContent = `${run.km.toFixed(2)} km, ${run.min} min, tempo ${run.pace.toFixed(2)} min/km`;
+          runsList.appendChild(li);
+        });
+      }).catch(error => {
+        runsList.innerHTML = '<li>Chyba při načítání běhů.</li>';
+        console.error(error);
+      });
+  }
+
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      btnLogout.style.display = 'inline-block';
+      btnLogin.style.display = 'none';
+      btnMyRuns.style.display = 'inline-block';
+      showSection(sections.myRunsSection);
+      loadRuns(user.uid);
+    } else {
+      btnLogout.style.display = 'none';
+      btnLogin.style.display = 'inline-block';
+      btnMyRuns.style.display = 'none';
+      showSection(sections.loginSection);
+    }
+  });
+
+  btnToggleTheme.onclick = () => {
+    document.body.classList.toggle('dark');
+    const isDark = document.body.classList.contains('dark');
+    localStorage.setItem('darkMode', isDark ? 'true' : 'false');
+    btnToggleTheme.textContent = isDark ? '☀️' : '🌙';
+  };
+
+  window.onload = () => {
+    const darkMode = localStorage.getItem('darkMode');
+    if (darkMode === 'true') {
+      document.body.classList.add('dark');
+      btnToggleTheme.textContent = '☀️';
+    } else {
+      btnToggleTheme.textContent = '🌙';
+    }
+  };
+</script>
+<section id="teamsSection" style="display:none;">
+  <h2>Týmy</h2>
+  <label for="teamNameInput">Název nového týmu:</label>
+  <input type="text" id="teamNameInput" placeholder="Zadej název týmu" />
+  <button id="btnCreateTeam">Vytvořit tým</button>
+
+  <h3>Moje týmy</h3>
+  <ul id="myTeamsList"></ul>
+
+  <h3>Přidat se do týmu</h3>
+  <select id="teamSelect"></select>
+  <button id="btnJoinTeam">Přidat do týmu</button>
+</section>
+<section id="allRunnersSection" style="display:none;">
+  <h2>Všichni běžci</h2>
+  <ul id="allRunnersList"></ul>
+</section>
+const btnAllRunners = document.getElementById('btnAllRunners');
+const allRunnersSection = document.getElementById('allRunnersSection');
+const allRunnersList = document.getElementById('allRunnersList');
+
+sections.allRunnersSection = allRunnersSection;
+btnAllRunners.style.display = 'inline-block';
+btnAllRunners.onclick = () => showSection(allRunnersSection);
+
+async function loadAllRunners() {
+  allRunnersList.innerHTML = 'Načítám...';
+
+  try {
+    // Načteme všechny běhy s uživateli
+    const runsSnapshot = await db.collection('runs').orderBy('timestamp', 'desc').get();
+
+    // Map uživatelů a jejich statistik
+    const usersStats = {};
+
+    runsSnapshot.forEach(doc => {
+      const run = doc.data();
+      if (!usersStats[run.userId]) {
+        usersStats[run.userId] = { km: 0, min: 0, runsCount: 0 };
+      }
+      usersStats[run.userId].km += run.km;
+      usersStats[run.userId].min += run.min;
+      usersStats[run.userId].runsCount += 1;
+    });
+
+    // Načteme uživatelské informace z kolekce users (přidáme pokud máme)
+    // Pro jednoduchost použijeme userId jako jméno
+
+    allRunnersList.innerHTML = '';
+    for (const userId in usersStats) {
+      const stats = usersStats[userId];
+      const pace = stats.min / stats.km;
+      const li = document.createElement('li');
+      li.textContent = `Uživatel: ${userId}, ${stats.km.toFixed(2)} km, ${stats.min} min, tempo: ${pace.toFixed(2)} min/km, počet běhů: ${stats.runsCount}`;
+      allRunnersList.appendChild(li);
+    }
+  } catch (e) {
+    allRunnersList.innerHTML = 'Chyba při načítání běžců.';
+  }
+}
+
+auth.onAuthStateChanged(user => {
+  if (user) {
+    loadAllRunners();
+  }
+});<button id="btnAllRunners" style="display:none;">Všichni běžci</button>
+  
