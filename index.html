@@ -32,6 +32,7 @@
       border: none;
       cursor: pointer;
       font-weight: bold;
+      transition: background-color 0.3s;
     }
     button:hover {
       background-color: #235bb5;
@@ -43,15 +44,22 @@
       min-height: 1.2em;
       text-align: center;
     }
+    #register-form {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <h1>Dolní Lhota Run</h1>
 
-  <h2>Registrace</h2>
-  <input type="email" id="reg-email" placeholder="Email" />
-  <input type="password" id="reg-password" placeholder="Heslo" />
-  <button id="register-btn">Registrovat</button>
+  <button id="showRegisterBtn">Chci se zaregistrovat</button>
+
+  <div id="register-form">
+    <h2>Registrace</h2>
+    <input type="email" id="reg-email" placeholder="Email" />
+    <input type="password" id="reg-password" placeholder="Heslo" />
+    <button id="register-btn">Registrovat</button>
+  </div>
 
   <h2>Přihlášení</h2>
   <input type="email" id="login-email" placeholder="Email" />
@@ -78,6 +86,14 @@
     const auth = getAuth(app);
 
     const message = document.getElementById('message');
+    const registerForm = document.getElementById('register-form');
+    const showRegisterBtn = document.getElementById('showRegisterBtn');
+
+    showRegisterBtn.addEventListener('click', () => {
+      registerForm.style.display = 'block';
+      showRegisterBtn.style.display = 'none';
+      message.textContent = '';
+    });
 
     document.getElementById('register-btn').addEventListener('click', async () => {
       const email = document.getElementById('reg-email').value;
@@ -91,7 +107,11 @@
         document.getElementById('reg-password').value = '';
       } catch (error) {
         message.style.color = 'red';
-        message.textContent = `Chyba registrace: ${error.message}`;
+        if (error.code === 'auth/email-already-in-use') {
+          message.textContent = 'Tento email se již používá.';
+        } else {
+          message.textContent = `Chyba registrace: ${error.message}`;
+        }
       }
     });
 
@@ -103,7 +123,6 @@
         await signInWithEmailAndPassword(auth, email, password);
         message.style.color = 'green';
         message.textContent = `Přihlášen: ${email}`;
-        // Přesměrování na hlavní stránku
         setTimeout(() => {
           window.location.href = 'index.html'; // uprav podle své hlavní stránky
         }, 1000);
@@ -113,7 +132,6 @@
       }
     });
 
-    // Pokud už je uživatel přihlášen, rovnou ho přesměruj na hlavní stránku
     onAuthStateChanged(auth, user => {
       if (user) {
         window.location.href = 'index.html'; // uprav podle své hlavní stránky
