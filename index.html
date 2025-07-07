@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Run Challenge - Panel</title>
+<title>Run Challenge - Upravený panel</title>
 <style>
   body {
     margin: 0; font-family: Arial, sans-serif;
+    background: #f0f4ff;
+    color: #222;
   }
   header {
     height: 50px;
@@ -24,6 +26,23 @@
   header h1 {
     margin-left: 15px;
     font-weight: normal;
+  }
+  main {
+    padding: 20px;
+  }
+  #btnAddRunMain {
+    background: #4caf50;
+    border: none;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    margin: 15px 0;
+    transition: background-color 0.3s;
+  }
+  #btnAddRunMain:hover {
+    background: #388e3c;
   }
   #sidePanel {
     position: fixed;
@@ -74,9 +93,12 @@
   <h1>Run Challenge</h1>
 </header>
 
+<main>
+  <button id="btnAddRunMain">Přidat nový běh</button>
+</main>
+
 <div id="sidePanel" aria-hidden="true">
   <div id="closePanel" aria-label="Zavřít menu">&times;</div>
-  <button id="btnAddRun">Přidat nový běh</button>
   <button id="btnViewRunners">Pořadí běžců</button>
   <button id="btnTeams">Týmy</button>
   <button id="btnStats">Statistiky</button>
@@ -98,8 +120,8 @@
     sidePanel.setAttribute('aria-hidden', 'true');
   });
 
-  // Tlačítka - prozatím jen alerty, později doplníme funkce
-  document.getElementById('btnAddRun').addEventListener('click', () => {
+  // Prozatím alerty
+  document.getElementById('btnAddRunMain').addEventListener('click', () => {
     alert('Přidání nového běhu');
   });
   document.getElementById('btnViewRunners').addEventListener('click', () => {
