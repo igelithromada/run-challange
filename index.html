@@ -2,259 +2,404 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8" />
-<title>Dolní Lhota Run</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dolní Lhota Run</title>
 <style>
   :root {
-    --primary: #2779e2;
-    --accent: #ffac33;
-    --bg: #f7fafc;
-    --sidebar-bg: linear-gradient(90deg, #2779e2 0%, #48c3cb 50%, #1da1f2 100%);
-    --card-bg: #fff;
-    --text: #212529;
-    --active-bg: #fff;
-    --active-color: #2779e2;
-    --inactive-color: #8b96ab;
+    --color-light-bg: #f0f4ff;
+    --color-light-text: #222;
+    --color-light-primary: #2e5dbd;
+    --color-light-primary-light: #5786ff;
+
+    --color-dark-bg: #121417;
+    --color-dark-text: #eee;
+    --color-dark-primary: #5786ff;
+    --color-dark-primary-light: #7da9ff;
   }
-  [data-theme="dark"] {
-    --primary: #8ab8fa;
-    --accent: #ffa338;
-    --bg: #181c24;
-    --sidebar-bg: linear-gradient(90deg, #22243c 80%, #2779e2 150%);
-    --card-bg: #24283b;
-    --text: #f3f7fa;
-    --active-bg: #fff;
-    --active-color: #2779e2;
-    --inactive-color: #607088;
-  }
+
   body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
-    padding: 0;
-    font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    transition: background .2s, color .2s;
+    background: var(--color-light-bg);
+    color: var(--color-light-text);
+    transition: background 0.3s, color 0.3s;
   }
-  #sidebar {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 60px;
-    background: var(--sidebar-bg);
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    z-index: 1000;
-    overflow-x: auto;
-    scrollbar-width: none;
-    transition: top 0.3s ease;
+
+  body.dark {
+    background: var(--color-dark-bg);
+    color: var(--color-dark-text);
   }
-  #sidebar::-webkit-scrollbar {
-    display: none;
+
+  header {
+    background: linear-gradient(90deg, var(--color-light-primary), var(--color-light-primary-light));
+    color: white; padding: 10px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: background 0.3s;
   }
-  .sidebar-logo {
-    flex: 0 0 auto;
-    font-size: 1.4em;
-    font-weight: 700;
-    margin-right: 30px;
-    color: #fff;
-    white-space: nowrap;
+
+  body.dark header {
+    background: linear-gradient(90deg, var(--color-dark-primary), var(--color-dark-primary-light));
   }
-  .sidebar-btn {
-    flex: 0 0 auto;
-    margin: 0 8px;
-    padding: 10px 20px;
-    border-radius: 12px;
-    font-size: 1em;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    background: none;
+
+  header h1 {
+    margin: 0; font-size: 1.5rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  nav {
+    background: white;
+    display: flex; justify-content: center; gap: 10px;
+    padding: 10px 0;
+    box-shadow: 0 2px 5px rgb(0 0 0 / 0.1);
+    transition: background 0.3s;
+  }
+
+  body.dark nav {
+    background: #20232a;
+    box-shadow: 0 2px 5px rgb(255 255 255 / 0.1);
+  }
+
+  nav button {
+    background: var(--color-light-primary-light);
+    color: white;
     border: none;
-    color: var(--inactive-color);
-    transition: background-color 0.3s, color 0.3s;
-  }
-  .sidebar-btn.active {
-    background: var(--active-bg);
-    color: var(--active-color);
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
     font-weight: 600;
-    box-shadow: 0 2px 8px rgba(39, 121, 226, 0.4);
+    transition: background-color 0.3s;
   }
-  .sidebar-btn:hover:not(.active) {
-    background: #fff3;
-    color: var(--primary);
+
+  nav button:hover, nav button.active {
+    background: var(--color-light-primary);
   }
-  .theme-switch {
-    margin-left: auto;
-    background: transparent;
-    color: #fff;
-    font-size: 1.2em;
-    cursor: pointer;
-    border: none;
+
+  body.dark nav button {
+    background: var(--color-dark-primary-light);
+    color: var(--color-dark-text);
   }
+
+  body.dark nav button:hover, body.dark nav button.active {
+    background: var(--color-dark-primary);
+  }
+
   main {
-    margin-top: 60px;
-    padding: 20px;
-    max-width: 960px;
-    margin-left: auto;
-    margin-right: auto;
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 0 20px;
   }
-  .card {
+
+  section {
     display: none;
   }
-  .card.active {
+
+  section.active {
     display: block;
+  }
+
+  h2 {
+    color: var(--color-light-primary);
+    transition: color 0.3s;
+  }
+
+  body.dark h2 {
+    color: var(--color-dark-primary);
+  }
+
+  label {
+    display: block;
+    margin-top: 15px;
+    font-weight: 600;
+  }
+
+  input[type=number], input[type=text], input[type=password] {
+    width: 100%; max-width: 150px;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    font-size: 1rem;
+    background: white;
+    color: black;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  body.dark input[type=number], body.dark input[type=text], body.dark input[type=password] {
+    background: #2a2c33;
+    color: var(--color-dark-text);
+    border-color: #555;
+  }
+
+  #btnAddRun, #btnLogin, #btnLogout, #btnJoinTeam, #btnCreateTeam {
+    margin-top: 20px;
+    background: var(--color-light-primary);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+  }
+
+  #btnAddRun:hover, #btnLogin:hover, #btnLogout:hover, #btnJoinTeam:hover, #btnCreateTeam:hover {
+    background: var(--color-light-primary-light);
+  }
+
+  body.dark #btnAddRun, body.dark #btnLogin, body.dark #btnLogout, body.dark #btnJoinTeam, body.dark #btnCreateTeam {
+    background: var(--color-dark-primary);
+    color: var(--color-dark-text);
+  }
+
+  body.dark #btnAddRun:hover, body.dark #btnLogin:hover, body.dark #btnLogout:hover, body.dark #btnJoinTeam:hover, body.dark #btnCreateTeam:hover {
+    background: var(--color-dark-primary-light);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 0.95rem;
+  }
+
+  table, th, td {
+    border: 1px solid #aaa;
+    transition: border-color 0.3s;
+  }
+
+  body.dark table, body.dark th, body.dark td {
+    border-color: #555;
+  }
+
+  th, td {
+    padding: 8px;
+    text-align: left;
+  }
+
+  th {
+    background: #d0dcff;
+    transition: background 0.3s;
+  }
+
+  body.dark th {
+    background: #3b44b1;
+  }
+
+  .center {
+    text-align: center;
+  }
+
+  #darkModeToggle {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 1.1rem;
   }
 </style>
 </head>
-<body data-theme="light">
-
-<header id="sidebar">
-  <div class="sidebar-logo">🏃 Dolní Lhota Run</div>
-  <button class="sidebar-btn active" id="menu-hlavni">Hlavní stránka</button>
-  <button class="sidebar-btn" id="menu-moje">Moje běhy</button>
-  <button class="sidebar-btn" id="menu-tym">Tým</button>
-  <button class="sidebar-btn" id="menu-vsichni">Všichni běžci</button>
-  <button class="sidebar-btn" id="menu-stats">📊 Statistiky</button>
-  <button class="sidebar-btn" id="logoutBtn" style="display:none;">Odhlásit</button>
-  <button class="theme-switch" id="themeToggleBtn" title="Přepnout tmavý/světlý režim">🌙</button>
+<body>
+<header>
+  <h1>🏃 Dolní Lhota Run</h1>
+  <button id="darkModeToggle" title="Přepnout tmavý režim">🌙</button>
+  <button id="logoutBtn" style="background:#ff4c4c; border:none; border-radius:5px; color:white; cursor:pointer; display:none;">Odhlásit</button>
 </header>
 
+<nav>
+  <button id="btnDashboard" class="active">Hlavní stránka</button>
+  <button id="btnMyRuns">Moje běhy</button>
+  <button id="btnTeam">Tým</button>
+  <button id="btnAllRunners">Všichni běžci</button>
+  <button id="btnLogin">Přihlásit se</button>
+</nav>
+
 <main>
-<section id="page-hlavni" class="card active">
+  <section id="dashboard" class="active">
     <h2>Vítej v běžecké výzvě Dolní Lhoty!</h2>
-    <p>Sleduj své běhy, přidej nové, zapoj se do týmu a porovnávej se s ostatními.</p>
+    <p>Tady budeš sledovat své výsledky a statistiky.</p>
   </section>
 
-  <section id="page-moje" class="card">
-    <h2>Moje běhy</h2>
-    <label for="input-km">Kilometry (km):</label>
-    <input type="number" id="input-km" step="0.01" min="0" placeholder="Např. 5.3" />
-    <label for="input-min">Čas (minuty):</label>
-    <input type="number" id="input-min" step="1" min="1" placeholder="Např. 30" />
-    <label for="input-pace">Průměrné tempo (min/km):</label>
-    <input type="text" id="input-pace" disabled placeholder="0.00" />
-    <button class="primary-btn" id="btnAddRun">Přidat běh</button>
-    <ul id="myRunsList" class="run-list"></ul>
+  <section id="myRuns">
+    <h2>Zadat nový běh</h2>
+    <label for="input-km">Kolik km?</label>
+    <input type="number" id="input-km" min="0" step="0.01" />
+    <label for="input-min">Čas v minutách</label>
+    <input type="number" id="input-min" min="0" step="1" />
+    <button id="btnAddRun">Přidat běh</button>
+    <h3>Moje běhy</h3>
+    <ul id="myRunsList"></ul>
   </section>
 
-  <section id="page-tym" class="card">
-    <h2>Tým</h2>
-    <label for="select-team">Vyber tým</label>
+  <section id="team">
+    <h2>Můj tým</h2>
+    <p><b>Tým:</b> <span id="currentTeamName">Žádný tým</span></p>
     <select id="select-team"></select>
-    <button class="primary-btn" id="btnJoinTeam">Přidat se do týmu</button>
+    <button id="btnJoinTeam">Přidat se do týmu</button>
     <h3>Členové týmu</h3>
-    <ul id="teamMembersList" class="run-list"></ul>
-    <label for="input-new-team">Vytvořit nový tým</label>
-    <input type="text" id="input-new-team" placeholder="Název týmu" />
-    <button class="primary-btn" id="btnCreateTeam">Vytvořit tým</button>
+    <ul id="teamMembersList"></ul>
+
+    <h3>Vytvořit nový tým</h3>
+    <input id="input-new-team" placeholder="Název týmu" />
+    <button id="btnCreateTeam">Vytvořit tým</button>
   </section>
 
-  <section id="page-vsichni" class="card">
-    <h2>Všichni běžci</h2>
+  <section id="allRunners">
+    <h2>Pořadí běžců</h2>
     <table>
       <thead>
-        <tr>
-          <th>#</th><th>Jméno</th><th>Celkem km</th><th>Celkem min</th><th>Průměrné tempo</th><th>Tým</th>
-        </tr>
+        <tr><th>#</th><th>Jméno</th><th>Km</th><th>Minuty</th><th>Tempo</th><th>Tým</th></tr>
       </thead>
       <tbody id="runnersTableBody"></tbody>
     </table>
   </section>
 
-  <section id="page-stats" class="card">
-    <h2>Statistiky běhů</h2>
-    <div style="margin-bottom:12px;">
-      <button id="btn-week" class="active-filter">Poslední týden</button>
-      <button id="btn-month">Poslední měsíc</button>
-    </div>
-    <div id="stats-summary"></div>
-    <canvas id="runsChart" width="400" height="250"></canvas>
+  <section id="loginSection" style="display:none;">
+    <h2>Přihlášení</h2>
+    <label for="input-username">Uživatelské jméno</label>
+    <input type="text" id="input-username" />
+    <label for="input-password">Heslo</label>
+    <input type="password" id="input-password" />
+    <button id="btnLoginSubmit">Přihlásit se</button>
   </section>
 </main>
 
 <script>
-  const runs = [];
-  const runners = {
-    'Alena': { km: 15, min: 90 },
-    'Karel': { km: 20, min: 100 }
+  // Tmavý režim - načtení a uložení do localStorage
+  const darkToggle = document.getElementById('darkModeToggle');
+  const body = document.body;
+  const storedDark = localStorage.getItem('darkMode');
+  if(storedDark === 'true') {
+    body.classList.add('dark');
+    darkToggle.textContent = '☀️';
+  }
+
+  darkToggle.onclick = () => {
+    body.classList.toggle('dark');
+    if(body.classList.contains('dark')) {
+      localStorage.setItem('darkMode', 'true');
+      darkToggle.textContent = '☀️';
+    } else {
+      localStorage.setItem('darkMode', 'false');
+      darkToggle.textContent = '🌙';
+    }
+  }
+
+  // Demo data a stav
+  let loggedInUser = null;
+
+  let runs = [
+    { km: 10, min: 50, pace: 5 },
+    { km: 5, min: 24, pace: 4.8 }
+  ];
+  let runners = {
+    'pesakradek': { km: 270, min: 642 },
+    '123456': { km: 57, min: 112 },
+    'filip': { km: 50, min: 5 },
+    'Radek': { km: 35, min: 180 },
+    'martin': { km: 27, min: 82 },
+    'kamila': { km: 20, min: 20 }
   };
-  const teams = {
-    'Brouci': ['Alena'],
-    'Lesní běžci': ['Karel']
+  let teams = {
+    'Brouci': ['pesakradek', 'kamila'],
+    'Debilové': ['123456'],
+    'Magoři': ['filip', 'Radek', 'martin']
   };
   let currentTeam = null;
 
+  // Sekce
   const sections = {
-    hlavni: document.getElementById('page-hlavni'),
-    moje: document.getElementById('page-moje'),
-    tym: document.getElementById('page-tym'),
-    vsichni: document.getElementById('page-vsichni'),
-    stats: document.getElementById('page-stats')
+    dashboard: document.getElementById('dashboard'),
+    myRuns: document.getElementById('myRuns'),
+    team: document.getElementById('team'),
+    allRunners: document.getElementById('allRunners'),
+    loginSection: document.getElementById('loginSection')
   };
 
-  const buttons = {
-    hlavni: document.getElementById('menu-hlavni'),
-    moje: document.getElementById('menu-moje'),
-    tym: document.getElementById('menu-tym'),
-    vsichni: document.getElementById('menu-vsichni'),
-    stats: document.getElementById('menu-stats'),
-    logout: document.getElementById('logoutBtn'),
-    themeToggle: document.getElementById('themeToggleBtn')
+  // Tlačítka menu
+  document.getElementById('btnDashboard').onclick = () => showSection('dashboard');
+  document.getElementById('btnMyRuns').onclick = () => {
+    if(checkLoggedIn()) showSection('myRuns');
   };
-
-  function showSection(name) {
-    Object.values(sections).forEach(s => s.classList.remove('active'));
-    if (sections[name]) {
-      sections[name].classList.add('active');
-    }
-    Object.values(buttons).forEach(b => b.classList.remove('active'));
-    if (buttons[name]) {
-      buttons[name].classList.add('active');
-    }
-    if (name === 'moje') renderMyRuns();
-    if (name === 'tym') {
+  document.getElementById('btnTeam').onclick = () => {
+    if(checkLoggedIn()) {
+      showSection('team');
       renderTeamSelect();
       renderTeamMembers();
     }
-    if (name === 'vsichni') renderRunnersTable();
-    if (name === 'stats') {
-      setFilter('week');
+  };
+  document.getElementById('btnAllRunners').onclick = () => showSection('allRunners');
+  document.getElementById('btnLogin').onclick = () => {
+    if(loggedInUser) {
+      logout();
+    } else {
+      showSection('loginSection');
+    }
+  };
+
+  document.getElementById('logoutBtn').onclick = logout;
+
+  // Zobrazit správnou sekci
+  function showSection(name) {
+    for (const sec in sections) {
+      sections[sec].style.display = (sec === name) ? 'block' : 'none';
+    }
+    updateLoginButton();
+  }
+
+  // Zkontroluj přihlášení
+  function checkLoggedIn() {
+    if(!loggedInUser) {
+      alert('Pro vstup do této sekce se musíš přihlásit.');
+      showSection('loginSection');
+      return false;
+    }
+    return true;
+  }
+
+  // Aktualizuj text přihlášení / odhlášení
+  function updateLoginButton() {
+    const btnLogin = document.getElementById('btnLogin');
+    const btnLogout = document.getElementById('logoutBtn');
+    if(loggedInUser) {
+      btnLogin.textContent = 'Profil: ' + loggedInUser;
+      btnLogout.style.display = 'inline-block';
+      btnLogin.style.backgroundColor = '#2e5dbd';
+      btnLogin.style.color = 'white';
+    } else {
+      btnLogin.textContent = 'Přihlásit se';
+      btnLogout.style.display = 'none';
+      btnLogin.style.backgroundColor = '';
+      btnLogin.style.color = '';
     }
   }
 
-  // Schovávání horního panelu při scrollu
-  let lastScrollTop = 0;
-  const header = document.getElementById('sidebar');
-  window.addEventListener('scroll', () => {
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    if (scrollTop > lastScrollTop && scrollTop > 100) {
-      header.style.top = '-60px';
-    } else {
-      header.style.top = '0';
+  // Přihlášení
+  document.getElementById('btnLoginSubmit').onclick = () => {
+    const username = document.getElementById('input-username').value.trim();
+    const password = document.getElementById('input-password').value;
+    if(username === '' || password === '') {
+      alert('Vyplň uživatelské jméno a heslo.');
+      return;
     }
-    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-  });
-</script>
-<script>
-  // Výpočet a zobrazení průměrného tempa
-  function updatePace() {
-    const km = parseFloat(document.getElementById('input-km').value);
-    const min = parseInt(document.getElementById('input-min').value);
-    if (km > 0 && min > 0) {
-      document.getElementById('input-pace').value = (min / km).toFixed(2);
-    } else {
-      document.getElementById('input-pace').value = '';
-    }
+    // Demo přihlášení - kdykoli
+    loggedInUser = username;
+    alert('Přihlášen jako ' + username);
+    showSection('dashboard');
+    updateLoginButton();
+  };
+
+  // Odhlášení
+  function logout() {
+    loggedInUser = null;
+    alert('Odhlášen');
+    showSection('dashboard');
+    updateLoginButton();
   }
-  document.getElementById('input-km').addEventListener('input', updatePace);
-  document.getElementById('input-min').addEventListener('input', updatePace);
 
-  let editingRunIndex = -1;
+  // Přidání běhu
+  document.getElementById('btnAddRun').onclick = () => {
+    if(!checkLoggedIn()) return;
 
-  document.getElementById('btnAddRun').addEventListener('click', () => {
     const km = parseFloat(document.getElementById('input-km').value);
     const min = parseInt(document.getElementById('input-min').value);
     if (!km || !min || km <= 0 || min <= 0) {
@@ -262,65 +407,40 @@
       return;
     }
     const pace = min / km;
+    runs.push({ km, min, pace });
 
-    if (editingRunIndex >= 0) {
-      runs[editingRunIndex] = { km, min, pace };
-      editingRunIndex = -1;
-      document.getElementById('btnAddRun').textContent = 'Přidat běh';
-    } else {
-      runs.push({ km, min, pace });
-    }
-
+    // Aktualizuj tabulku mých běhů
     renderMyRuns();
 
-    if (!runners['Ty']) {
-      runners['Ty'] = { km: 0, min: 0 };
+    // Přidat i do seznamu běžců pod uživatele
+    if (!runners[loggedInUser]) {
+      runners[loggedInUser] = { km: 0, min: 0 };
     }
-    runners['Ty'].km += km;
-    runners['Ty'].min += min;
+    runners[loggedInUser].km += km;
+    runners[loggedInUser].min += min;
 
     renderRunnersTable();
 
+    // Vyčisti formulář
     document.getElementById('input-km').value = '';
     document.getElementById('input-min').value = '';
-    document.getElementById('input-pace').value = '';
-  });
+  };
 
+  // Zobrazení mých běhů
   function renderMyRuns() {
     const ul = document.getElementById('myRunsList');
     ul.innerHTML = '';
     runs.forEach((run, i) => {
       const li = document.createElement('li');
-      li.style.marginBottom = '12px';
-      li.innerHTML = `
-        <b>Běh ${i + 1}:</b> ${run.km.toFixed(2)} km, ${run.min} min, tempo ${run.pace.toFixed(2)} min/km
-        <button onclick="editRun(${i})" style="margin-left: 10px;">Upravit</button>
-        <button onclick="deleteRun(${i})" style="margin-left: 6px; color: red;">Smazat</button>
-      `;
+      li.textContent = `Běh ${i + 1}: ${run.km.toFixed(2)} km, ${run.min} min, tempo ${run.pace.toFixed(2)} min/km`;
       ul.appendChild(li);
     });
   }
 
-  function editRun(index) {
-    const run = runs[index];
-    document.getElementById('input-km').value = run.km;
-    document.getElementById('input-min').value = run.min;
-    updatePace();
-    editingRunIndex = index;
-    document.getElementById('btnAddRun').textContent = 'Uložit změny';
-  }
-
-  function deleteRun(index) {
-    if (confirm('Opravdu chcete smazat tento běh?')) {
-      runs.splice(index, 1);
-      renderMyRuns();
-    }
-  }
-
-  // Tým
+  // Zobrazení týmu
   function renderTeamSelect() {
     const select = document.getElementById('select-team');
-    select.innerHTML = '';
+    select.innerHTML = '<option value="">Vyber tým</option>';
     for (const teamName in teams) {
       const option = document.createElement('option');
       option.value = teamName;
@@ -329,26 +449,29 @@
     }
   }
 
-  document.getElementById('btnJoinTeam').addEventListener('click', () => {
+  document.getElementById('btnJoinTeam').onclick = () => {
+    if(!checkLoggedIn()) return;
+
     const select = document.getElementById('select-team');
     const chosenTeam = select.value;
     if (!chosenTeam) return alert('Vyber tým.');
 
+    // Odeber z ostatních týmů
     for (const teamName in teams) {
-      const idx = teams[teamName].indexOf('Ty');
+      const idx = teams[teamName].indexOf(loggedInUser);
       if (idx !== -1 && teamName !== chosenTeam) {
         teams[teamName].splice(idx, 1);
       }
     }
 
-    if (!teams[chosenTeam].includes('Ty')) {
-      teams[chosenTeam].push('Ty');
+    if (!teams[chosenTeam].includes(loggedInUser)) {
+      teams[chosenTeam].push(loggedInUser);
     }
 
     currentTeam = chosenTeam;
     renderTeamMembers();
     alert(`Přidán do týmu ${chosenTeam}`);
-  });
+  };
 
   function renderTeamMembers() {
     const ul = document.getElementById('teamMembersList');
@@ -364,136 +487,8 @@
     });
   }
 
-  document.getElementById('btnCreateTeam').addEventListener('click', () => {
+  document.getElementById('btnCreateTeam').onclick = () => {
+    if(!checkLoggedIn()) return;
+
     const input = document.getElementById('input-new-team');
     const teamName = input.value.trim();
-    if (!teamName) {
-      alert('Zadej název týmu.');
-      return;
-    }
-    if (teams[teamName]) {
-      alert('Tým s tímto názvem už existuje.');
-      return;
-    }
-    teams[teamName] = [];
-    input.value = '';
-    alert(`Tým "${teamName}" byl vytvořen.`);
-    renderTeamSelect();
-  });
-
-  // Tabulka běžců
-  function renderRunnersTable() {
-    const tbody = document.getElementById('runnersTableBody');
-    tbody.innerHTML = '';
-    const sorted = Object.entries(runners).sort((a,b) => b[1].km - a[1].km);
-    sorted.forEach(([name, stats], index) => {
-      let teamName = '-';
-      for (const tName in teams) {
-        if (teams[tName].includes(name)) {
-          teamName = tName;
-          break;
-        }
-      }
-      const pace = (stats.min / stats.km).toFixed(2);
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${index + 1}</td>
-        <td>${name}</td>
-        <td>${stats.km.toFixed(2)}</td>
-        <td>${stats.min}</td>
-        <td>${pace}</td>
-        <td>${teamName}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  // Statistiky a graf
-  let currentFilter = 'week';
-  let runsChart;
-
-  document.getElementById('btn-week').addEventListener('click', () => setFilter('week'));
-  document.getElementById('btn-month').addEventListener('click', () => setFilter('month'));
-
-  function setFilter(period) {
-    currentFilter = period;
-    document.getElementById('btn-week').classList.toggle('active-filter', period === 'week');
-    document.getElementById('btn-month').classList.toggle('active-filter', period === 'month');
-    updateStats();
-    drawChart();
-  }
-
-  function updateStats() {
-    let filteredRuns = currentFilter === 'week' ? runs.slice(-7) : runs.slice(-30);
-    const totalKm = filteredRuns.reduce((sum, run) => sum + run.km, 0);
-    const totalMin = filteredRuns.reduce((sum, run) => sum + run.min, 0);
-    const avgPace = totalKm ? (totalMin / totalKm).toFixed(2) : '0.00';
-
-    document.getElementById('stats-summary').innerHTML = `
-      <p>Celkem km: <b>${totalKm.toFixed(2)}</b></p>
-      <p>Celkem minut: <b>${totalMin}</b></p>
-      <p>Průměrné tempo: <b>${avgPace} min/km</b></p>
-    `;
-  }
-
-  function drawChart() {
-    const ctx = document.getElementById('runsChart').getContext('2d');
-    if (runsChart) runsChart.destroy();
-    let filteredRuns = currentFilter === 'week' ? runs.slice(-7) : runs.slice(-30);
-    const labels = filteredRuns.map((_, i) => `Běh ${i + 1}`);
-    const dataKm = filteredRuns.map(run => run.km);
-
-    runsChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Vzdálenost (km)',
-          data: dataKm,
-          fill: false,
-          borderColor: 'rgb(39, 121, 226)',
-          tension: 0.1
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    });
-  }
-
-  // Přepínání stránek menu
-  buttons.hlavni.onclick = () => showSection('hlavni');
-  buttons.moje.onclick = () => showSection('moje');
-  buttons.tym.onclick = () => showSection('tym');
-  buttons.vsichni.onclick = () => showSection('vsichni');
-  buttons.stats.onclick = () => showSection('stats');
-  buttons.logout.onclick = () => {
-    alert('Odhlášen (demo)');
-    // Tady by šlo přidat skutečné odhlášení
-  };
-  buttons.themeToggle.onclick = () => {
-    const html = document.documentElement;
-    const isDark = html.getAttribute('data-theme') === 'dark';
-    if (isDark) {
-      html.setAttribute('data-theme', 'light');
-      localStorage.setItem('theme', 'light');
-      buttons.themeToggle.textContent = '🌙';
-    } else {
-      html.setAttribute('data-theme', 'dark');
-      localStorage.setItem('theme', 'dark');
-      buttons.themeToggle.textContent = '☀️';
-    }
-  };
-
-  // Načtení uloženého režimu a start
-  window.onload = () => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    buttons.themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
-
-    showSection('hlavni');
-  };
-              </script>
