@@ -5,6 +5,7 @@
   <title>Dolní Lhota Run</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    /* ...stejný styl jako dřív... */
     :root {
       --primary: #2779e2;
       --accent: #ffac33;
@@ -130,7 +131,7 @@
       border-radius: 17px;
       box-shadow: 0 8px 36px #2779e215;
       padding: 38px 28px;
-      max-width: 400px;
+      max-width: 600px;
       width: 100%;
       font-size: 1.18em;
       color: var(--text);
@@ -142,6 +143,7 @@
       display: block;
       margin: 12px 0 6px 0;
       font-weight: 600;
+      text-align: left;
     }
     input {
       font-size: 1.1em;
@@ -188,6 +190,21 @@
       font-size: 1.04em;
       color: var(--text);
     }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+      font-size: 1.05em;
+    }
+    th, td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background-color: var(--primary);
+      color: var(--card-bg);
+    }
   </style>
 </head>
 <body>
@@ -211,10 +228,4 @@
       </svg>
       Tým
     </button>
-    <button class="sidebar-btn" onclick="odhlasit()">
-      <svg width="22" height="22" fill="none" stroke="#8b96ab" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-      </svg>
-      Odhlásit
-    </button>
-    <button class="theme-switch" onclick="switchTheme()" id
+    <button class="
