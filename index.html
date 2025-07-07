@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Hamburger menu fullscreen</title>
+<title>Run Challenge - Panel</title>
 <style>
   body {
     margin: 0; font-family: Arial, sans-serif;
@@ -21,6 +21,10 @@
     cursor: pointer;
     user-select: none;
   }
+  header h1 {
+    margin-left: 15px;
+    font-weight: normal;
+  }
   #sidePanel {
     position: fixed;
     top: 0; left: 0;
@@ -30,8 +34,11 @@
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     z-index: 1000;
-    padding: 2rem;
+    padding: 2rem 3rem;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
   }
   #sidePanel.active {
     transform: translateX(0);
@@ -43,19 +50,37 @@
     cursor: pointer;
     user-select: none;
   }
+  #sidePanel button {
+    background: #4caf50;
+    border: none;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    margin: 10px 0;
+    text-align: left;
+    transition: background-color 0.3s;
+  }
+  #sidePanel button:hover {
+    background: #388e3c;
+  }
 </style>
 </head>
 <body>
 
 <header>
   <div id="hamburger">&#9776;</div>
-  <h1 style="margin-left: 15px;">Moje Appka</h1>
+  <h1>Run Challenge</h1>
 </header>
 
-<div id="sidePanel">
-  <div id="closePanel">&times;</div>
-  <h2>Menu</h2>
-  <p>Tady můžeš dát odkazy nebo další obsah.</p>
+<div id="sidePanel" aria-hidden="true">
+  <div id="closePanel" aria-label="Zavřít menu">&times;</div>
+  <button id="btnAddRun">Přidat nový běh</button>
+  <button id="btnViewRunners">Pořadí běžců</button>
+  <button id="btnTeams">Týmy</button>
+  <button id="btnStats">Statistiky</button>
+  <button id="logoutBtn">Odhlásit se</button>
 </div>
 
 <script>
@@ -65,10 +90,29 @@
 
   hamburger.addEventListener('click', () => {
     sidePanel.classList.add('active');
+    sidePanel.setAttribute('aria-hidden', 'false');
   });
 
   closePanel.addEventListener('click', () => {
     sidePanel.classList.remove('active');
+    sidePanel.setAttribute('aria-hidden', 'true');
+  });
+
+  // Tlačítka - prozatím jen alerty, později doplníme funkce
+  document.getElementById('btnAddRun').addEventListener('click', () => {
+    alert('Přidání nového běhu');
+  });
+  document.getElementById('btnViewRunners').addEventListener('click', () => {
+    alert('Zobrazit pořadí běžců');
+  });
+  document.getElementById('btnTeams').addEventListener('click', () => {
+    alert('Zobrazit týmy');
+  });
+  document.getElementById('btnStats').addEventListener('click', () => {
+    alert('Zobrazit statistiky');
+  });
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    alert('Odhlášení');
   });
 </script>
 
