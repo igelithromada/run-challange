@@ -4,105 +4,37 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Dolní Lhota Run</title>
-
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
 <style>
-  /* ... stejný styl jako jsme měli ... */
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0; background: #f0f4ff; color: #222;
-    transition: background 0.3s, color 0.3s;
+    padding: 20px;
   }
-  body.dark {
-    background: #121417;
-    color: #eee;
+  h1, h2 {
+    color: #2e5dbd;
   }
-  header {
-    background: linear-gradient(90deg, #2e5dbd, #5786ff);
-    color: white; padding: 10px 20px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  nav {
-    background: white;
-    display: flex; justify-content: center; gap: 10px;
-    padding: 10px 0;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  }
-  nav button {
-    background: #5786ff;
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background-color 0.3s;
-  }
-  nav button:hover, nav button.active {
-    background: #2e5dbd;
-  }
-  main {
-    max-width: 900px;
-    margin: 20px auto;
-    padding: 0 20px;
-  }
-  section {
+  #dashboard, #loginSection, #myRunsSection {
     display: none;
   }
-  section.active {
+  .active {
     display: block;
   }
-  h2 {
-    color: #2e5dbd;
-    transition: color 0.3s;
-  }
-  body.dark h2 {
-    color: #7ea1ff;
-  }
-  label {
-    display: block;
-    margin-top: 15px;
-    font-weight: 600;
-  }
-  input[type=number], input[type=email], input[type=password] {
-    width: 100%; max-width: 300px;
-    padding: 8px;
-    margin-top: 5px;
-    border: 1px solid #bbb;
-    border-radius: 4px;
+  input, button {
     font-size: 1rem;
-    background: white;
-    color: black;
-    transition: background 0.3s, color 0.3s;
-  }
-  body.dark input[type=number], body.dark input[type=email], body.dark input[type=password] {
-    background: #2a2c33;
-    color: #eee;
-    border-color: #555;
+    padding: 10px;
+    margin: 5px 0;
+    width: 100%;
+    max-width: 300px;
   }
   button {
-    margin-top: 20px;
-    background: #2e5dbd;
+    cursor: pointer;
+    background-color: #2e5dbd;
     color: white;
-    padding: 10px 20px;
     border: none;
     border-radius: 6px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background 0.3s;
   }
   button:hover {
-    background: #436aff;
-  }
-  body.dark button {
-    background: #436aff;
-  }
-  body.dark button:hover {
-    background: #2e5dbd;
+    background-color: #436aff;
   }
   ul {
     list-style: none;
@@ -115,388 +47,150 @@
 </head>
 <body>
 
-<header>
-  <h1>🏃 Dolní Lhota Run</h1>
-  <button id="btnToggleTheme" title="Přepnout tmavý režim">🌙</button>
-  <button id="btnLogout" style="display:none;">Odhlásit</button>
-</header>
+<h1>Dolní Lhota Run</h1>
 
-<nav>
-  <button id="btnDashboard" class="active">Hlavní stránka</button>
-  <button id="btnMyRuns" style="display:none;">Moje běhy</button>
+<div id="loginSection" class="active">
+  <h2>Přihlášení</h2>
+  <input type="email" id="email" placeholder="Email" />
+  <input type="password" id="password" placeholder="Heslo" />
   <button id="btnLogin">Přihlásit se</button>
-</nav>
+</div>
 
-<main>
-  <section id="dashboard" class="active">
-    <h2>Vítej v běžecké výzvě Dolní Lhoty!</h2>
-    <p>Tady budeš sledovat své výsledky a statistiky.</p>
-  </section>
+<div id="dashboard">
+  <h2>Hlavní stránka</h2>
+  <button id="btnLogout">Odhlásit se</button>
+  <button id="btnShowRuns">Moje běhy</button>
+</div>
 
-  <section id="loginSection" style="display:none;">
-    <h2>Přihlášení</h2>
-    <label for="loginEmail">Email</label>
-    <input type="email" id="loginEmail" placeholder="email@example.com" />
-    <label for="loginPassword">Heslo</label>
-    <input type="password" id="loginPassword" placeholder="heslo" />
-    <button id="btnLoginSubmit">Přihlásit</button>
-  </section>
+<div id="myRunsSection">
+  <h2>Moje běhy</h2>
+  <label for="runKm">Kilometry (km):</label>
+  <input type="number" id="runKm" step="0.01" min="0" />
+  <label for="runMin">Čas (minuty):</label>
+  <input type="number" id="runMin" min="0" />
+  <button id="btnAddRun">Přidat běh</button>
+  <button id="btnBackToDashboard">Zpět na hlavní stránku</button>
+  <ul id="runsList"></ul>
+</div>
 
-  <section id="myRunsSection" style="display:none;">
-    <h2>Moje běhy</h2>
-    <label for="runKm">Kilometry (km)</label>
-    <input type="number" id="runKm" step="0.01" min="0" />
-    <label for="runMin">Čas (minuty)</label>
-    <input type="number" id="runMin" min="0" />
-    <button id="btnAddRun">Přidat běh</button>
-    <ul id="runsList"></ul>
-  </section>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
+  import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
-<script>
   const firebaseConfig = {
     apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
     authDomain: "dolni-lhota-run.firebaseapp.com",
     projectId: "dolni-lhota-run",
-    storageBucket: "dolni-lhota-run.firebasestorage.app",
+    storageBucket: "dolni-lhota-run.appspot.com",
     messagingSenderId: "549134031482",
     appId: "1:549134031482:web:41205785ed5b4e275a79c3",
     measurementId: "G-E7N1HJ4BEZ"
   };
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-  const btnToggleTheme = document.getElementById('btnToggleTheme');
-  const btnLogout = document.getElementById('btnLogout');
+  const loginSection = document.getElementById('loginSection');
+  const dashboard = document.getElementById('dashboard');
+  const myRunsSection = document.getElementById('myRunsSection');
+
   const btnLogin = document.getElementById('btnLogin');
-  const btnDashboard = document.getElementById('btnDashboard');
-  const btnMyRuns = document.getElementById('btnMyRuns');
-  const btnLoginSubmit = document.getElementById('btnLoginSubmit');
+  const btnLogout = document.getElementById('btnLogout');
+  const btnShowRuns = document.getElementById('btnShowRuns');
+  const btnBackToDashboard = document.getElementById('btnBackToDashboard');
   const btnAddRun = document.getElementById('btnAddRun');
 
-  const dashboard = document.getElementById('dashboard');
-  const loginSection = document.getElementById('loginSection');
-  const myRunsSection = document.getElementById('myRunsSection');
   const runsList = document.getElementById('runsList');
 
   function showSection(section) {
-    dashboard.style.display = 'none';
-    loginSection.style.display = 'none';
-    myRunsSection.style.display = 'none';
-    section.style.display = 'block';
+    loginSection.classList.remove('active');
+    dashboard.classList.remove('active');
+    myRunsSection.classList.remove('active');
+    section.classList.add('active');
   }
 
-  btnDashboard.onclick = () => showSection(dashboard);
-  btnLogin.onclick = () => showSection(loginSection);
-
-  btnLogout.onclick = () => {
-    auth.signOut();
-  };
-
-  btnLoginSubmit.onclick = () => {
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
+  btnLogin.onclick = async () => {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
     if (!email || !password) {
-      alert('Vyplňte email i heslo.');
+      alert('Vyplň email i heslo.');
       return;
     }
-    auth.signInWithEmailAndPassword(email, password)
-      .then(() => alert('Přihlášení úspěšné!'))
-      .catch(error => alert('Chyba přihlášení: ' + error.message));
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      alert('Chyba při přihlášení: ' + e.message);
+    }
   };
 
-  btnAddRun.onclick = () => {
+  btnLogout.onclick = async () => {
+    await signOut(auth);
+  };
+
+  btnShowRuns.onclick = () => showSection(myRunsSection);
+  btnBackToDashboard.onclick = () => showSection(dashboard);
+
+  btnAddRun.onclick = async () => {
     const km = parseFloat(document.getElementById('runKm').value);
     const min = parseInt(document.getElementById('runMin').value);
     if (!km || !min) {
-      alert('Vyplňte km i čas.');
+      alert('Vyplň km i čas.');
       return;
     }
-    const pace = min / km;
     const user = auth.currentUser;
     if (!user) {
-      alert('Nejste přihlášen.');
+      alert('Nejsi přihlášen.');
       return;
     }
-    db.collection('runs').add({
-      userId: user.uid,
-      km,
-      min,
-      pace,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
+    try {
+      await addDoc(collection(db, 'runs'), {
+        userId: user.uid,
+        km,
+        min,
+        pace: min / km,
+        timestamp: serverTimestamp()
+      });
       alert('Běh přidán.');
       document.getElementById('runKm').value = '';
       document.getElementById('runMin').value = '';
       loadRuns(user.uid);
-    }).catch(error => {
-      alert('Chyba při přidávání běhu: ' + error.message);
-    });
+    } catch (e) {
+      alert('Chyba při přidání běhu: ' + e.message);
+    }
   };
 
-  function loadRuns(uid) {
+  async function loadRuns(uid) {
     runsList.innerHTML = 'Načítám...';
-    db.collection('runs').where('userId', '==', uid).orderBy('timestamp', 'desc').get()
-      .then(snapshot => {
-        runsList.innerHTML = '';
-        if (snapshot.empty) {
-          runsList.innerHTML = '<li>Žádné běhy zatím nejsou.</li>';
-          return;
-        }
-        snapshot.forEach(doc => {
-          const run = doc.data();
-          const li = document.createElement('li');
-          li.textContent = `${run.km.toFixed(2)} km, ${run.min} min, tempo ${run.pace.toFixed(2)} min/km`;
-          runsList.appendChild(li);
-        });
-      }).catch(error => {
-        runsList.innerHTML = '<li>Chyba při načítání běhů.</li>';
-        console.error(error);
+    try {
+      const q = query(collection(db, 'runs'), where('userId', '==', uid), orderBy('timestamp', 'desc'));
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) {
+        runsList.innerHTML = '<li>Žádné běhy zatím nejsou.</li>';
+        return;
+      }
+      runsList.innerHTML = '';
+      querySnapshot.forEach(doc => {
+        const run = doc.data();
+        const li = document.createElement('li');
+        li.textContent = `${run.km.toFixed(2)} km, ${run.min} min, tempo ${run.pace.toFixed(2)} min/km`;
+        runsList.appendChild(li);
       });
+    } catch (e) {
+      runsList.innerHTML = '<li>Chyba při načítání běhů.</li>';
+    }
   }
 
-  auth.onAuthStateChanged(user => {
+  onAuthStateChanged(auth, user => {
     if (user) {
-      btnLogout.style.display = 'inline-block';
-      btnLogin.style.display = 'none';
-      btnMyRuns.style.display = 'inline-block';
-      showSection(myRunsSection);
+      showSection(dashboard);
       loadRuns(user.uid);
     } else {
-      btnLogout.style.display = 'none';
-      btnLogin.style.display = 'inline-block';
-      btnMyRuns.style.display = 'none';
       showSection(loginSection);
     }
   });
-
-  btnToggleTheme.onclick = () => {
-    document.body.classList.toggle('dark');
-    const isDark = document.body.classList.contains('dark');
-    localStorage.setItem('darkMode', isDark ? 'true' : 'false');
-    btnToggleTheme.textContent = isDark ? '☀️' : '🌙';
-  };
-
-  window.onload = () => {
-    const darkMode = localStorage.getItem('darkMode');
-    if (darkMode === 'true') {
-      document.body.classList.add('dark');
-      btnToggleTheme.textContent = '☀️';
-    } else {
-      btnToggleTheme.textContent = '🌙';
-    }
-  };
 </script>
-<script>
-  // Firebase config - vlož sem svůj config
-  const firebaseConfig = {
-    apiKey: "TVŮJ_API_KEY",
-    authDomain: "TVŮJ_AUTH_DOMAIN",
-    projectId: "TVŮJ_PROJECT_ID",
-    storageBucket: "TVŮJ_STORAGE_BUCKET",
-    messagingSenderId: "TVŮJ_MESSAGING_SENDER_ID",
-    appId: "TVŮJ_APP_ID"
-  };
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-
-  const btnToggleTheme = document.getElementById('btnToggleTheme');
-  const btnLogout = document.getElementById('btnLogout');
-  const btnLogin = document.getElementById('btnLogin');
-  const btnDashboard = document.getElementById('btnDashboard');
-  const btnMyRuns = document.getElementById('btnMyRuns');
-  const btnTeams = document.getElementById('btnTeams');
-  const btnAllRunners = document.getElementById('btnAllRunners');
-  const btnBadges = document.getElementById('btnBadges');
-  const btnProfile = document.getElementById('btnProfile');
-  const btnLoginSubmit = document.getElementById('btnLoginSubmit');
-  const btnAddRun = document.getElementById('btnAddRun');
-
-  const sections = {
-    dashboard: document.getElementById('dashboard'),
-    loginSection: document.getElementById('loginSection'),
-    myRunsSection: document.getElementById('myRunsSection'),
-    // další sekce doplníme postupně
-  };
-
-  function showSection(section) {
-    for (const sec in sections) {
-      sections[sec].style.display = 'none';
-    }
-    section.style.display = 'block';
-  }
-
-  btnDashboard.onclick = () => showSection(sections.dashboard);
-  btnLogin.onclick = () => showSection(sections.loginSection);
-  btnMyRuns.onclick = () => showSection(sections.myRunsSection);
-
-  btnLogout.onclick = () => {
-    auth.signOut();
-  };
-
-  btnLoginSubmit.onclick = () => {
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
-    if (!email || !password) {
-      alert('Vyplňte email i heslo.');
-      return;
-    }
-    auth.signInWithEmailAndPassword(email, password)
-      .then(() => alert('Přihlášení úspěšné!'))
-      .catch(error => alert('Chyba přihlášení: ' + error.message));
-  };
-
-  btnAddRun.onclick = () => {
-    const km = parseFloat(document.getElementById('runKm').value);
-    const min = parseInt(document.getElementById('runMin').value);
-    if (!km || !min) {
-      alert('Vyplňte km i čas.');
-      return;
-    }
-    const pace = min / km;
-    const user = auth.currentUser;
-    if (!user) {
-      alert('Nejste přihlášen.');
-      return;
-    }
-    db.collection('runs').add({
-      userId: user.uid,
-      km,
-      min,
-      pace,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
-      alert('Běh přidán.');
-      document.getElementById('runKm').value = '';
-      document.getElementById('runMin').value = '';
-      loadRuns(user.uid);
-      showSection(sections.myRunsSection);
-    }).catch(error => {
-      alert('Chyba při přidávání běhu: ' + error.message);
-    });
-  };
-
-  function loadRuns(uid) {
-    const runsList = document.getElementById('runsList');
-    runsList.innerHTML = 'Načítám...';
-    db.collection('runs').where('userId', '==', uid).orderBy('timestamp', 'desc').get()
-      .then(snapshot => {
-        runsList.innerHTML = '';
-        if (snapshot.empty) {
-          runsList.innerHTML = '<li>Žádné běhy zatím nejsou.</li>';
-          return;
-        }
-        snapshot.forEach(doc => {
-          const run = doc.data();
-          const li = document.createElement('li');
-          li.textContent = `${run.km.toFixed(2)} km, ${run.min} min, tempo ${run.pace.toFixed(2)} min/km`;
-          runsList.appendChild(li);
-        });
-      }).catch(error => {
-        runsList.innerHTML = '<li>Chyba při načítání běhů.</li>';
-        console.error(error);
-      });
-  }
-
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      btnLogout.style.display = 'inline-block';
-      btnLogin.style.display = 'none';
-      btnMyRuns.style.display = 'inline-block';
-      showSection(sections.myRunsSection);
-      loadRuns(user.uid);
-    } else {
-      btnLogout.style.display = 'none';
-      btnLogin.style.display = 'inline-block';
-      btnMyRuns.style.display = 'none';
-      showSection(sections.loginSection);
-    }
-  });
-
-  btnToggleTheme.onclick = () => {
-    document.body.classList.toggle('dark');
-    const isDark = document.body.classList.contains('dark');
-    localStorage.setItem('darkMode', isDark ? 'true' : 'false');
-    btnToggleTheme.textContent = isDark ? '☀️' : '🌙';
-  };
-
-  window.onload = () => {
-    const darkMode = localStorage.getItem('darkMode');
-    if (darkMode === 'true') {
-      document.body.classList.add('dark');
-      btnToggleTheme.textContent = '☀️';
-    } else {
-      btnToggleTheme.textContent = '🌙';
-    }
-  };
-</script>
-<section id="teamsSection" style="display:none;">
-  <h2>Týmy</h2>
-  <label for="teamNameInput">Název nového týmu:</label>
-  <input type="text" id="teamNameInput" placeholder="Zadej název týmu" />
-  <button id="btnCreateTeam">Vytvořit tým</button>
-
-  <h3>Moje týmy</h3>
-  <ul id="myTeamsList"></ul>
-
-  <h3>Přidat se do týmu</h3>
-  <select id="teamSelect"></select>
-  <button id="btnJoinTeam">Přidat do týmu</button>
-</section>
-<section id="allRunnersSection" style="display:none;">
-  <h2>Všichni běžci</h2>
-  <ul id="allRunnersList"></ul>
-</section>
-const btnAllRunners = document.getElementById('btnAllRunners');
-const allRunnersSection = document.getElementById('allRunnersSection');
-const allRunnersList = document.getElementById('allRunnersList');
-
-sections.allRunnersSection = allRunnersSection;
-btnAllRunners.style.display = 'inline-block';
-btnAllRunners.onclick = () => showSection(allRunnersSection);
-
-async function loadAllRunners() {
-  allRunnersList.innerHTML = 'Načítám...';
-
-  try {
-    // Načteme všechny běhy s uživateli
-    const runsSnapshot = await db.collection('runs').orderBy('timestamp', 'desc').get();
-
-    // Map uživatelů a jejich statistik
-    const usersStats = {};
-
-    runsSnapshot.forEach(doc => {
-      const run = doc.data();
-      if (!usersStats[run.userId]) {
-        usersStats[run.userId] = { km: 0, min: 0, runsCount: 0 };
-      }
-      usersStats[run.userId].km += run.km;
-      usersStats[run.userId].min += run.min;
-      usersStats[run.userId].runsCount += 1;
-    });
-
-    // Načteme uživatelské informace z kolekce users (přidáme pokud máme)
-    // Pro jednoduchost použijeme userId jako jméno
-
-    allRunnersList.innerHTML = '';
-    for (const userId in usersStats) {
-      const stats = usersStats[userId];
-      const pace = stats.min / stats.km;
-      const li = document.createElement('li');
-      li.textContent = `Uživatel: ${userId}, ${stats.km.toFixed(2)} km, ${stats.min} min, tempo: ${pace.toFixed(2)} min/km, počet běhů: ${stats.runsCount}`;
-      allRunnersList.appendChild(li);
-    }
-  } catch (e) {
-    allRunnersList.innerHTML = 'Chyba při načítání běžců.';
-  }
-}
-
-auth.onAuthStateChanged(user => {
-  if (user) {
-    loadAllRunners();
-  }
-});<button id="btnAllRunners" style="display:none;">Všichni běžci</button>
-  
+</body>
+</html>
