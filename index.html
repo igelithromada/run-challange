@@ -122,6 +122,7 @@
       align-items: center;
       min-height: 100vh;
       justify-content: flex-start;
+      padding: 40px 20px;
     }
     .card {
       margin-top: 60px;
@@ -130,19 +131,62 @@
       box-shadow: 0 8px 36px #2779e215;
       padding: 38px 28px;
       max-width: 400px;
-      width: 90vw;
+      width: 100%;
       font-size: 1.18em;
       color: var(--text);
       text-align: center;
       display: none;
     }
     .card.active { display: block; }
-    @media (max-width:650px) {
-      #sidebar { width: 100vw; min-height: 64px; flex-direction: row; align-items: center; padding:0 0 0 0;}
-      .sidebar-logo {margin: 0 18px 0 18px;}
-      .sidebar-btn, .theme-switch {margin: 0 7px; padding: 12px 12px; font-size:1em;}
-      main {margin-left: 0; margin-top: 90px;}
-      .card {margin-top: 8px;}
+    label {
+      display: block;
+      margin: 12px 0 6px 0;
+      font-weight: 600;
+    }
+    input {
+      font-size: 1.1em;
+      padding: 12px;
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #aaa;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.3s ease-in-out;
+    }
+    input:focus {
+      border-color: var(--primary);
+    }
+    button.primary-btn {
+      background-color: var(--primary);
+      color: var(--card-bg);
+      font-weight: bold;
+      border: none;
+      padding: 14px;
+      margin-top: 20px;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background-color 0.3s, transform 0.1s;
+      font-size: 1.1em;
+      width: 100%;
+    }
+    button.primary-btn:hover {
+      background-color: var(--accent);
+      transform: scale(1.03);
+    }
+    ul.run-list {
+      list-style: none;
+      padding-left: 0;
+      margin-top: 30px;
+      text-align: left;
+      max-height: 300px;
+      overflow-y: auto;
+      border-top: 1px solid #ccc;
+    }
+    ul.run-list li {
+      padding: 10px 8px;
+      border-bottom: 1px solid #ddd;
+      font-size: 1.04em;
+      color: var(--text);
     }
   </style>
 </head>
@@ -173,42 +217,4 @@
       </svg>
       Odhlásit
     </button>
-    <button class="theme-switch" onclick="switchTheme()" id="themeToggleBtn">🌙 Tmavý režim</button>
-  </div>
-  <main>
-    <div class="card active" id="section-dashboard">
-      <h2>Vítej v běžecké výzvě Dolní Lhoty!</h2>
-      <p>Tady budeš zadávat své běhy, sledovat pořadí, tým a statistiky.</p>
-    </div>
-    <div class="card" id="section-myruns">
-      <h2>Moje běhy</h2>
-      <p>(Zde bude seznam tvých běhů, součet a průměrné tempo.)</p>
-    </div>
-    <div class="card" id="section-team">
-      <h2>Tým</h2>
-      <p>(Tady budeš vytvářet a přidávat se do týmů.)</p>
-    </div>
-  </main>
-  <script>
-    function switchTheme() {
-      const html = document.documentElement;
-      const isDark = html.getAttribute('data-theme') === 'dark';
-      html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-      document.getElementById('themeToggleBtn').textContent = isDark ? '🌙 Tmavý režim' : '☀️ Světlý režim';
-    }
-    function showSection(id) {
-      // skryj všechny karty a odznač menu
-      document.querySelectorAll('.card').forEach(e => e.classList.remove('active'));
-      document.querySelectorAll('.sidebar-btn').forEach(e => e.classList.remove('active'));
-      // zobraz zvolenou sekci a zvýrazni menu
-      document.getElementById('section-' + id).classList.add('active');
-      document.getElementById('menu-' + (id === 'myruns' ? 'my' : id)).classList.add('active');
-    }
-    function odhlasit() {
-      alert("Odhlášení zde (logika se doplní).");
-    }
-    // defaultně světlý režim:
-    document.documentElement.setAttribute('data-theme', 'light');
-  </script>
-</body>
-</html>
+    <button class="theme-switch" onclick="switchTheme()" id
