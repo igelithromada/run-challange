@@ -1,37 +1,105 @@
-<!DOCTYPE html>
-<html lang="cs">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dolní Lhota Run</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
+/* Reset základních stylů */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-  <header class="topbar">
-    <button id="hamburgerBtn" aria-label="Otevřít menu">&#9776;</button>
-    <h1>Dolní Lhota Run</h1>
-  </header>
+/* Tělo stránky */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f5f7fa;
+  color: #222;
+}
 
-  <nav id="sidebar" class="sidebar hidden">
-    <button id="closeSidebarBtn" aria-label="Zavřít menu">&times;</button>
-    <div class="user-info">
-      <strong id="userNick">Nick uživatele</strong>
-    </div>
-    <ul class="menu-list">
-      <li><button id="dashboardBtn">Hlavní stránka</button></li>
-      <li><button id="addRunBtn">Přidat nový běh</button></li>
-      <li><button id="teamsBtn">Týmy</button></li>
-      <li><button id="settingsBtn">Nastavení</button></li>
-      <li><button id="logoutBtn">Odhlásit se</button></li>
-    </ul>
-  </nav>
+/* Horní panel */
+.topbar {
+  background: linear-gradient(90deg, #3a7bd5, #00d2ff);
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 0.5em 1em;
+}
 
-  <main id="content">
-    <!-- Zde se budou načítat jednotlivé sekce -->
-    <h2>Vítejte v Dolní Lhota Run!</h2>
-  </main>
+.topbar h1 {
+  flex-grow: 1;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
 
-  <script src="app.js"></script>
-</body>
-</html>
+#hamburgerBtn {
+  font-size: 1.8rem;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 280px;
+  background-color: #1e293b;
+  color: white;
+  padding: 1em;
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.sidebar.hidden {
+  transform: translateX(-100%);
+}
+
+.sidebar button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  float: right;
+}
+
+.user-info {
+  margin-bottom: 2em;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* Menu */
+.menu-list {
+  list-style: none;
+}
+
+.menu-list li {
+  margin-bottom: 1em;
+}
+
+.menu-list button {
+  width: 100%;
+  padding: 0.8em 1em;
+  background-color: transparent;
+  color: white;
+  font-size: 1.1rem;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.25s;
+}
+
+.menu-list button:hover {
+  background-color: #2563eb;
+}
+
+/* Hlavní obsah */
+#content {
+  margin: 1em;
+  padding: 1em;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+  min-height: 80vh;
+}
