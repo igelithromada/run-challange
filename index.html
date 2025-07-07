@@ -173,125 +173,138 @@ function pridatBeh() {
 
 
 <style>
-  body {
-    background: #f8fafc;
-    font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
-    color: #26335d;
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
-  }
-  #sidebar {
-    background: #3e63dd;
-    color: #fff;
-    box-shadow: 3px 0 18px rgba(34,58,110,.10);
-    border-radius: 0 20px 20px 0;
-  }
-  #sidebar a, #sidebar .sidebar-btn, #sidebar .sidebar-nick {
-    font-family: inherit;
-    font-size: 1.14em;
-    border-radius: 10px;
-    padding: 12px 28px;
-    margin: 3px 8px;
-    color: #fff;
-    background: none;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    border: none;
-    text-align: left;
-    transition: background .16s;
-  }
-  #sidebar a:hover, #sidebar .sidebar-btn:hover {
-    background: #4f80ff;
-  }
-  #sidebar .sidebar-nick {
-    color: #c3d4ff;
-    border-bottom: 1.5px solid #4c6fe1;
-    margin-bottom: 10px;
-    font-size: 1.01em;
-    padding-top: 6px;
-    padding-bottom: 10px;
-  }
-  #hamburger {
-    font-size: 2em;
-    color: #4066dd;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 9px rgba(60,100,200,0.09);
-    padding: 2px 13px;
-    border: 1px solid #d4dbf2;
-    position: fixed;
-    top: 18px;
-    left: 18px;
-    z-index: 111;
-    transition: color .16s;
-    cursor: pointer;
-  }
-  #hamburger:hover { color: #ef476f; }
-  h1 {
-    color: #3e63dd;
-    margin-top: 34px;
-    margin-bottom: 12px;
-    font-weight: 700;
-    font-size: 2.2em;
-    text-align: center;
-  }
-  h2 {
-    color: #ef476f;
-    margin: 20px 0 12px 0;
-    font-size: 1.17em;
-    text-align: center;
-    letter-spacing: 1px;
-  }
-  input, select, button {
-    font-size: 1.12em;
-    padding: 13px 11px;
-    border-radius: 10px;
-    border: 1.5px solid #d0d7ef;
-    margin: 8px 0 18px 0;
-    width: 100%;
-    background: #f5f8fd;
-    font-family: inherit;
-    outline: none;
-    box-sizing: border-box;
-    transition: border .18s;
-  }
-  input:focus, select:focus {
-    border: 2px solid #3e63dd;
-    background: #f0f6ff;
-  }
-  button {
-    background: linear-gradient(90deg,#4066dd 80%,#63c3fa 120%);
-    color: #fff;
-    font-weight: bold;
-    letter-spacing: 1px;
-    border: none;
-    margin-top: 10px;
-    box-shadow: 0 2px 9px rgba(34,58,110,.09);
-    transition: background .18s, transform .08s;
-    cursor: pointer;
-  }
-  button:hover, button:focus {
-    background: linear-gradient(90deg,#ef476f 60%,#4f80ff 120%);
-    transform: scale(1.025);
-  }
-  .leave-btn { background: #878ea6 !important; color: #fff; }
-  .card {
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 2px 11px rgba(60,90,180,0.07);
-    border-left: 6px solid #3e63dd;
-    padding: 17px;
-    margin: 13px 0 12px 0;
-    font-size: 1.08em;
-  }
-  .card strong { color: #3e63dd; }
-  .hidden { display: none !important; }
-  @media (max-width:520px) {
-    #sidebar { border-radius: 0 14px 14px 0;}
-    h1 { font-size: 1.4em;}
-    .card { font-size: 1em;}
-  }
+:root {
+  --hlavni: #2779e2;
+  --akcent: #ffac33;
+  --pozadi: #f5f8fa;
+  --bila: #fff;
+  --tmava: #212529;
+  --shadow: 0 8px 32px rgba(39,121,226,0.11);
+}
+body {
+  background: var(--pozadi);
+  font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
+  color: var(--tmava);
+  margin: 0;
+  min-height: 100vh;
+}
+#sidebar {
+  background: linear-gradient(180deg, #2779e2 90%, #48c3cb 120%);
+  color: #fff;
+  border-radius: 0 24px 24px 0;
+  box-shadow: 3px 0 18px rgba(39,121,226,0.12);
+}
+#sidebar a, #sidebar .sidebar-btn, #sidebar .sidebar-nick {
+  font-family: inherit;
+  font-size: 1.18em;
+  border-radius: 12px;
+  padding: 15px 32px;
+  margin: 6px 12px;
+  color: #fff;
+  background: none;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  border: none;
+  text-align: left;
+  transition: background .16s, color .12s;
+}
+#sidebar a:hover, #sidebar .sidebar-btn:hover {
+  background: rgba(255,255,255,0.12);
+  color: #ffac33;
+}
+#sidebar .sidebar-nick {
+  color: #e6f3fe;
+  border-bottom: 2px solid #fff2;
+  margin-bottom: 12px;
+  font-size: 1.06em;
+  padding-top: 8px;
+  padding-bottom: 14px;
+  letter-spacing: 0.3px;
+}
+#hamburger {
+  font-size: 2em;
+  color: var(--hlavni);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 13px rgba(60,100,200,0.09);
+  padding: 6px 18px 6px 14px;
+  border: 1.5px solid #e2e8f6;
+  position: fixed;
+  top: 17px;
+  left: 16px;
+  z-index: 111;
+  transition: color .16s, box-shadow .16s;
+  cursor: pointer;
+}
+#hamburger:hover { color: #ffac33; box-shadow: 0 2px 13px #ffac3320; }
+h1 {
+  color: var(--hlavni);
+  margin-top: 38px;
+  margin-bottom: 15px;
+  font-weight: 800;
+  font-size: 2.4em;
+  text-align: center;
+  letter-spacing: 1.5px;
+  text-shadow: 0 2px 12px #2779e220;
+}
+h2 {
+  color: #ffac33;
+  margin: 22px 0 10px 0;
+  font-size: 1.23em;
+  text-align: center;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+input, select, button {
+  font-size: 1.14em;
+  padding: 16px 12px;
+  border-radius: 13px;
+  border: 1.5px solid #b5d2f4;
+  margin: 10px 0 20px 0;
+  width: 100%;
+  background: #f8fbff;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border .16s;
+}
+input:focus, select:focus {
+  border: 2.2px solid #2779e2;
+  background: #e5f2fd;
+}
+button {
+  background: linear-gradient(90deg,#2779e2 70%,#48c3cb 130%);
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  margin-top: 10px;
+  box-shadow: 0 3px 11px rgba(39,121,226,.10);
+  transition: background .18s, transform .08s;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+}
+button:hover, button:focus {
+  background: linear-gradient(90deg,#ffac33 60%,#2779e2 120%);
+  color: #fff;
+  transform: scale(1.03);
+}
+.leave-btn { background: #a8b3be !important; color: #fff; }
+.card {
+  background: var(--bila);
+  border-radius: 18px;
+  box-shadow: 0 4px 24px #2779e218;
+  border-left: 7px solid #ffac33;
+  padding: 20px 17px;
+  margin: 15px 0 13px 0;
+  font-size: 1.13em;
+}
+.card strong { color: #2779e2; font-weight: 700;}
+.hidden { display: none !important; }
+@media (max-width:600px) {
+  #sidebar { border-radius: 0 15px 15px 0;}
+  h1 { font-size: 1.45em;}
+  .card { font-size: 1em;}
+}
 </style>
 </head>
 <body>
