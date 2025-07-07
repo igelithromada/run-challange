@@ -2,126 +2,498 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Dolní Lhota Run</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root {
-    --primary-color: #2a5dff;
-    --primary-color-light: #4d7eff;
-    --primary-color-dark: #1c3ecf;
-    --bg-color: #f9fbff;
-    --text-color: #222;
-    --btn-bg: var(--primary-color);
-    --btn-bg-hover: var(--primary-color-dark);
-    --btn-color: #fff;
+    --primary: #2779e2;
+    --accent: #ffac33;
+    --bg: #f7fafc;
+    --sidebar-bg: linear-gradient(90deg, #2779e2 0%, #48c3cb 50%, #1da1f2 100%);
+    --card-bg: #fff;
+    --text: #212529;
+    --active-bg: #fff;
+    --active-color: #2779e2;
+    --inactive-color: #8b96ab;
+  }
+  [data-theme="dark"] {
+    --primary: #8ab8fa;
+    --accent: #ffa338;
+    --bg: #181c24;
+    --sidebar-bg: linear-gradient(90deg, #22243c 80%, #2779e2 150%);
+    --card-bg: #24283b;
+    --text: #f3f7fa;
+    --active-bg: #fff;
+    --active-color: #2779e2;
+    --inactive-color: #607088;
   }
   body {
-    margin: 0; 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: var(--bg-color);
-    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background .2s, color .2s;
   }
-  header {
+  #sidebar {
     position: fixed;
     top: 0; left: 0; right: 0;
-    height: 56px;
-    background: linear-gradient(90deg, var(--primary-color), var(--primary-color-light));
+    height: 60px;
+    background: var(--sidebar-bg);
     display: flex;
     align-items: center;
-    padding: 0 16px;
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+    padding: 0 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
     z-index: 1000;
+    overflow-x: auto;
+    scrollbar-width: none;
+    transition: top 0.3s ease;
   }
-  header h1 {
-    margin: 0;
-    font-size: 1.2rem;
+  #sidebar::-webkit-scrollbar {
+    display: none;
+  }
+  .sidebar-logo {
+    flex: 0 0 auto;
+    font-size: 1.4em;
+    font-weight: 700;
+    margin-right: 30px;
     color: #fff;
-    flex-grow: 1;
+    white-space: nowrap;
   }
-  nav button {
-    background: var(--btn-bg);
-    border: none;
-    color: var(--btn-color);
-    font-weight: 600;
-    padding: 8px 14px;
-    margin-left: 12px;
-    border-radius: 6px;
+  .sidebar-btn {
+    flex: 0 0 auto;
+    margin: 0 8px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 1em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    background: none;
+    border: none;
+    color: var(--inactive-color);
+    transition: background-color 0.3s, color 0.3s;
   }
-  nav button:hover,
-  nav button.active {
-    background: var(--btn-bg-hover);
+  .sidebar-btn.active {
+    background: var(--active-bg);
+    color: var(--active-color);
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(39, 121, 226, 0.4);
+  }
+  .sidebar-btn:hover:not(.active) {
+    background: #fff3;
+    color: var(--primary);
+  }
+  .theme-switch {
+    margin-left: auto;
+    background: transparent;
+    color: #fff;
+    font-size: 1.2em;
+    cursor: pointer;
+    border: none;
   }
   main {
-    padding: 72px 16px 16px;
+    margin-top: 60px;
+    padding: 20px;
     max-width: 960px;
-    margin: 0 auto;
+    margin-left: auto;
+    margin-right: auto;
   }
-  h2 {
-    color: var(--primary-color-dark);
-    margin-bottom: 12px;
+  .card {
+    display: none;
   }
-  /* Pro demo */
-  .hidden { display: none; }
+  .card.active {
+    display: block;
+  }
 </style>
 </head>
-<body>
+<body data-theme="light">
 
-<header>
-  <h1>🏃 Dolní Lhota Run</h1>
-  <nav>
-    <button id="nav-dashboard" class="active">Hlavní stránka</button>
-    <button id="nav-myRuns">Moje běhy</button>
-    <button id="nav-team">Tým</button>
-    <button id="nav-logout">Odhlásit</button>
-  </nav>
+<header id="sidebar">
+  <div class="sidebar-logo">🏃 Dolní Lhota Run</div>
+  <button class="sidebar-btn active" id="menu-hlavni">Hlavní stránka</button>
+  <button class="sidebar-btn" id="menu-moje">Moje běhy</button>
+  <button class="sidebar-btn" id="menu-tym">Tým</button>
+  <button class="sidebar-btn" id="menu-vsichni">Všichni běžci</button>
+  <button class="sidebar-btn" id="menu-stats">📊 Statistiky</button>
+  <button class="sidebar-btn" id="logoutBtn" style="display:none;">Odhlásit</button>
+  <button class="theme-switch" id="themeToggleBtn" title="Přepnout tmavý/světlý režim">🌙</button>
 </header>
 
 <main>
-  <section id="page-dashboard">
+<section id="page-hlavni" class="card active">
     <h2>Vítej v běžecké výzvě Dolní Lhoty!</h2>
-    <p>Tady budeš sledovat své výsledky a statistiky.</p>
+    <p>Sleduj své běhy, přidej nové, zapoj se do týmu a porovnávej se s ostatními.</p>
   </section>
-  
-  <section id="page-myRuns" class="hidden">
+
+  <section id="page-moje" class="card">
     <h2>Moje běhy</h2>
-    <p>Formulář a tabulka běhů zde.</p>
+    <label for="input-km">Kilometry (km):</label>
+    <input type="number" id="input-km" step="0.01" min="0" placeholder="Např. 5.3" />
+    <label for="input-min">Čas (minuty):</label>
+    <input type="number" id="input-min" step="1" min="1" placeholder="Např. 30" />
+    <label for="input-pace">Průměrné tempo (min/km):</label>
+    <input type="text" id="input-pace" disabled placeholder="0.00" />
+    <button class="primary-btn" id="btnAddRun">Přidat běh</button>
+    <ul id="myRunsList" class="run-list"></ul>
   </section>
-  
-  <section id="page-team" class="hidden">
+
+  <section id="page-tym" class="card">
     <h2>Tým</h2>
-    <p>Informace o týmu a členství zde.</p>
+    <label for="select-team">Vyber tým</label>
+    <select id="select-team"></select>
+    <button class="primary-btn" id="btnJoinTeam">Přidat se do týmu</button>
+    <h3>Členové týmu</h3>
+    <ul id="teamMembersList" class="run-list"></ul>
+    <label for="input-new-team">Vytvořit nový tým</label>
+    <input type="text" id="input-new-team" placeholder="Název týmu" />
+    <button class="primary-btn" id="btnCreateTeam">Vytvořit tým</button>
+  </section>
+
+  <section id="page-vsichni" class="card">
+    <h2>Všichni běžci</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Jméno</th><th>Celkem km</th><th>Celkem min</th><th>Průměrné tempo</th><th>Tým</th>
+        </tr>
+      </thead>
+      <tbody id="runnersTableBody"></tbody>
+    </table>
+  </section>
+
+  <section id="page-stats" class="card">
+    <h2>Statistiky běhů</h2>
+    <div style="margin-bottom:12px;">
+      <button id="btn-week" class="active-filter">Poslední týden</button>
+      <button id="btn-month">Poslední měsíc</button>
+    </div>
+    <div id="stats-summary"></div>
+    <canvas id="runsChart" width="400" height="250"></canvas>
   </section>
 </main>
 
 <script>
+  const runs = [];
+  const runners = {
+    'Alena': { km: 15, min: 90 },
+    'Karel': { km: 20, min: 100 }
+  };
+  const teams = {
+    'Brouci': ['Alena'],
+    'Lesní běžci': ['Karel']
+  };
+  let currentTeam = null;
+
   const sections = {
-    dashboard: document.getElementById('page-dashboard'),
-    myRuns: document.getElementById('page-myRuns'),
-    team: document.getElementById('page-team'),
+    hlavni: document.getElementById('page-hlavni'),
+    moje: document.getElementById('page-moje'),
+    tym: document.getElementById('page-tym'),
+    vsichni: document.getElementById('page-vsichni'),
+    stats: document.getElementById('page-stats')
   };
 
-  const navButtons = {
-    dashboard: document.getElementById('nav-dashboard'),
-    myRuns: document.getElementById('nav-myRuns'),
-    team: document.getElementById('nav-team'),
-    logout: document.getElementById('nav-logout'),
+  const buttons = {
+    hlavni: document.getElementById('menu-hlavni'),
+    moje: document.getElementById('menu-moje'),
+    tym: document.getElementById('menu-tym'),
+    vsichni: document.getElementById('menu-vsichni'),
+    stats: document.getElementById('menu-stats'),
+    logout: document.getElementById('logoutBtn'),
+    themeToggle: document.getElementById('themeToggleBtn')
   };
 
-  function showPage(page) {
-    Object.values(sections).forEach(sec => sec.classList.add('hidden'));
-    sections[page].classList.remove('hidden');
-
-    Object.values(navButtons).forEach(btn => btn.classList.remove('active'));
-    navButtons[page].classList.add('active');
+  function showSection(name) {
+    Object.values(sections).forEach(s => s.classList.remove('active'));
+    if (sections[name]) {
+      sections[name].classList.add('active');
+    }
+    Object.values(buttons).forEach(b => b.classList.remove('active'));
+    if (buttons[name]) {
+      buttons[name].classList.add('active');
+    }
+    if (name === 'moje') renderMyRuns();
+    if (name === 'tym') {
+      renderTeamSelect();
+      renderTeamMembers();
+    }
+    if (name === 'vsichni') renderRunnersTable();
+    if (name === 'stats') {
+      setFilter('week');
+    }
   }
 
-  navButtons.dashboard.onclick = () => showPage('dashboard');
-  navButtons.myRuns.onclick = () => showPage('myRuns');
-  navButtons.team.onclick = () => showPage('team');
-  navButtons.logout.onclick = () => alert('Odhlášení je zatím jen demo');
+  // Schovávání horního panelu při scrollu
+  let lastScrollTop = 0;
+  const header = document.getElementById('sidebar');
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    if (scrollTop > lastScrollTop && scrollTop > 100) {
+      header.style.top = '-60px';
+    } else {
+      header.style.top = '0';
+    }
+    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+  });
 </script>
+<script>
+  // Výpočet a zobrazení průměrného tempa
+  function updatePace() {
+    const km = parseFloat(document.getElementById('input-km').value);
+    const min = parseInt(document.getElementById('input-min').value);
+    if (km > 0 && min > 0) {
+      document.getElementById('input-pace').value = (min / km).toFixed(2);
+    } else {
+      document.getElementById('input-pace').value = '';
+    }
+  }
+  document.getElementById('input-km').addEventListener('input', updatePace);
+  document.getElementById('input-min').addEventListener('input', updatePace);
 
-</body>
-</html>
+  let editingRunIndex = -1;
+
+  document.getElementById('btnAddRun').addEventListener('click', () => {
+    const km = parseFloat(document.getElementById('input-km').value);
+    const min = parseInt(document.getElementById('input-min').value);
+    if (!km || !min || km <= 0 || min <= 0) {
+      alert('Prosím, zadej platné km i minuty.');
+      return;
+    }
+    const pace = min / km;
+
+    if (editingRunIndex >= 0) {
+      runs[editingRunIndex] = { km, min, pace };
+      editingRunIndex = -1;
+      document.getElementById('btnAddRun').textContent = 'Přidat běh';
+    } else {
+      runs.push({ km, min, pace });
+    }
+
+    renderMyRuns();
+
+    if (!runners['Ty']) {
+      runners['Ty'] = { km: 0, min: 0 };
+    }
+    runners['Ty'].km += km;
+    runners['Ty'].min += min;
+
+    renderRunnersTable();
+
+    document.getElementById('input-km').value = '';
+    document.getElementById('input-min').value = '';
+    document.getElementById('input-pace').value = '';
+  });
+
+  function renderMyRuns() {
+    const ul = document.getElementById('myRunsList');
+    ul.innerHTML = '';
+    runs.forEach((run, i) => {
+      const li = document.createElement('li');
+      li.style.marginBottom = '12px';
+      li.innerHTML = `
+        <b>Běh ${i + 1}:</b> ${run.km.toFixed(2)} km, ${run.min} min, tempo ${run.pace.toFixed(2)} min/km
+        <button onclick="editRun(${i})" style="margin-left: 10px;">Upravit</button>
+        <button onclick="deleteRun(${i})" style="margin-left: 6px; color: red;">Smazat</button>
+      `;
+      ul.appendChild(li);
+    });
+  }
+
+  function editRun(index) {
+    const run = runs[index];
+    document.getElementById('input-km').value = run.km;
+    document.getElementById('input-min').value = run.min;
+    updatePace();
+    editingRunIndex = index;
+    document.getElementById('btnAddRun').textContent = 'Uložit změny';
+  }
+
+  function deleteRun(index) {
+    if (confirm('Opravdu chcete smazat tento běh?')) {
+      runs.splice(index, 1);
+      renderMyRuns();
+    }
+  }
+
+  // Tým
+  function renderTeamSelect() {
+    const select = document.getElementById('select-team');
+    select.innerHTML = '';
+    for (const teamName in teams) {
+      const option = document.createElement('option');
+      option.value = teamName;
+      option.textContent = teamName;
+      select.appendChild(option);
+    }
+  }
+
+  document.getElementById('btnJoinTeam').addEventListener('click', () => {
+    const select = document.getElementById('select-team');
+    const chosenTeam = select.value;
+    if (!chosenTeam) return alert('Vyber tým.');
+
+    for (const teamName in teams) {
+      const idx = teams[teamName].indexOf('Ty');
+      if (idx !== -1 && teamName !== chosenTeam) {
+        teams[teamName].splice(idx, 1);
+      }
+    }
+
+    if (!teams[chosenTeam].includes('Ty')) {
+      teams[chosenTeam].push('Ty');
+    }
+
+    currentTeam = chosenTeam;
+    renderTeamMembers();
+    alert(`Přidán do týmu ${chosenTeam}`);
+  });
+
+  function renderTeamMembers() {
+    const ul = document.getElementById('teamMembersList');
+    ul.innerHTML = '';
+    if (!currentTeam || !teams[currentTeam] || teams[currentTeam].length === 0) {
+      ul.textContent = 'Nejsi zatím v žádném týmu.';
+      return;
+    }
+    teams[currentTeam].forEach(member => {
+      const li = document.createElement('li');
+      li.textContent = member;
+      ul.appendChild(li);
+    });
+  }
+
+  document.getElementById('btnCreateTeam').addEventListener('click', () => {
+    const input = document.getElementById('input-new-team');
+    const teamName = input.value.trim();
+    if (!teamName) {
+      alert('Zadej název týmu.');
+      return;
+    }
+    if (teams[teamName]) {
+      alert('Tým s tímto názvem už existuje.');
+      return;
+    }
+    teams[teamName] = [];
+    input.value = '';
+    alert(`Tým "${teamName}" byl vytvořen.`);
+    renderTeamSelect();
+  });
+
+  // Tabulka běžců
+  function renderRunnersTable() {
+    const tbody = document.getElementById('runnersTableBody');
+    tbody.innerHTML = '';
+    const sorted = Object.entries(runners).sort((a,b) => b[1].km - a[1].km);
+    sorted.forEach(([name, stats], index) => {
+      let teamName = '-';
+      for (const tName in teams) {
+        if (teams[tName].includes(name)) {
+          teamName = tName;
+          break;
+        }
+      }
+      const pace = (stats.min / stats.km).toFixed(2);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${name}</td>
+        <td>${stats.km.toFixed(2)}</td>
+        <td>${stats.min}</td>
+        <td>${pace}</td>
+        <td>${teamName}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Statistiky a graf
+  let currentFilter = 'week';
+  let runsChart;
+
+  document.getElementById('btn-week').addEventListener('click', () => setFilter('week'));
+  document.getElementById('btn-month').addEventListener('click', () => setFilter('month'));
+
+  function setFilter(period) {
+    currentFilter = period;
+    document.getElementById('btn-week').classList.toggle('active-filter', period === 'week');
+    document.getElementById('btn-month').classList.toggle('active-filter', period === 'month');
+    updateStats();
+    drawChart();
+  }
+
+  function updateStats() {
+    let filteredRuns = currentFilter === 'week' ? runs.slice(-7) : runs.slice(-30);
+    const totalKm = filteredRuns.reduce((sum, run) => sum + run.km, 0);
+    const totalMin = filteredRuns.reduce((sum, run) => sum + run.min, 0);
+    const avgPace = totalKm ? (totalMin / totalKm).toFixed(2) : '0.00';
+
+    document.getElementById('stats-summary').innerHTML = `
+      <p>Celkem km: <b>${totalKm.toFixed(2)}</b></p>
+      <p>Celkem minut: <b>${totalMin}</b></p>
+      <p>Průměrné tempo: <b>${avgPace} min/km</b></p>
+    `;
+  }
+
+  function drawChart() {
+    const ctx = document.getElementById('runsChart').getContext('2d');
+    if (runsChart) runsChart.destroy();
+    let filteredRuns = currentFilter === 'week' ? runs.slice(-7) : runs.slice(-30);
+    const labels = filteredRuns.map((_, i) => `Běh ${i + 1}`);
+    const dataKm = filteredRuns.map(run => run.km);
+
+    runsChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Vzdálenost (km)',
+          data: dataKm,
+          fill: false,
+          borderColor: 'rgb(39, 121, 226)',
+          tension: 0.1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  // Přepínání stránek menu
+  buttons.hlavni.onclick = () => showSection('hlavni');
+  buttons.moje.onclick = () => showSection('moje');
+  buttons.tym.onclick = () => showSection('tym');
+  buttons.vsichni.onclick = () => showSection('vsichni');
+  buttons.stats.onclick = () => showSection('stats');
+  buttons.logout.onclick = () => {
+    alert('Odhlášen (demo)');
+    // Tady by šlo přidat skutečné odhlášení
+  };
+  buttons.themeToggle.onclick = () => {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+      buttons.themeToggle.textContent = '🌙';
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+      buttons.themeToggle.textContent = '☀️';
+    }
+  };
+
+  // Načtení uloženého režimu a start
+  window.onload = () => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    buttons.themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+    showSection('hlavni');
+  };
+              </script>
