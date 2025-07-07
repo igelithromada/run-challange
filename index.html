@@ -1,216 +1,37 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dolní Lhota Run - Přihlášení a hlavní stránka</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 0; padding: 20px;
-    background: #f0f4ff;
-    color: #222;
-  }
-  header {
-    display: flex;
-    align-items: center;
-    background: #2e5dbd;
-    color: white;
-    padding: 10px 20px;
-    position: relative;
-  }
-  #hamburger {
-    font-size: 28px;
-    cursor: pointer;
-    user-select: none;
-    margin-right: 20px;
-  }
-  h1 {
-    margin: 0;
-    font-weight: normal;
-    font-size: 1.4rem;
-  }
-  #output {
-    margin-top: 12px;
-    font-weight: 600;
-    color: red;
-  }
-  /* Fullscreen panel */
-  #sidePanel {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(46, 93, 189, 0.95);
-    color: white;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    z-index: 1000;
-    padding: 2rem;
-    box-sizing: border-box;
-  }
-  #sidePanel.active {
-    transform: translateX(0);
-  }
-  #sidePanel button {
-    background: #e53935;
-    border: none;
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    margin-top: 20px;
-  }
-  #sidePanel button:hover {
-    background: #b71c1c;
-  }
-  #closePanel {
-    position: absolute;
-    top: 20px;
-    right: 25px;
-    font-size: 28px;
-    cursor: pointer;
-    user-select: none;
-  }
-  #authSection, #mainSection {
-    max-width: 400px;
-    margin: 50px auto;
-  }
-  input, button {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    font-size: 1rem;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
-  }
-  button {
-    background-color: #2e5dbd;
-    color: white;
-    border: none;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.3s;
-  }
-  button:hover {
-    background-color: #436aff;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Test změn</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      text-align: center;
+    }
+    button {
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      background-color: #2e5dbd;
+      color: white;
+      border: none;
+      border-radius: 8px;
+    }
+    button:hover {
+      background-color: #436aff;
+    }
+  </style>
 </head>
 <body>
+  <h1>Test změn v kódu</h1>
+  <button id="testBtn">Klikni na mě!</button>
 
-<header>
-  <div id="hamburger">&#9776;</div>
-  <h1>Dolní Lhota Run</h1>
-</header>
-
-<div id="sidePanel">
-  <div id="closePanel">&times;</div>
-  <h2>Menu</h2>
-  <button id="logoutBtn">Odhlásit se</button>
-</div>
-
-<div id="authSection">
-  <h2>Přihlášení</h2>
-  <input type="email" id="loginEmail" placeholder="Email" />
-  <input type="password" id="loginPassword" placeholder="Heslo" />
-  <button id="loginBtn">Přihlásit se</button>
-
-  <h2>Registrace</h2>
-  <input type="email" id="regEmail" placeholder="Email" />
-  <input type="password" id="regPassword" placeholder="Heslo" />
-  <button id="registerBtn">Registrovat</button>
-
-  <p id="output"></p>
-</div>
-
-<div id="mainSection" style="display:none;">
-  <h1>Vítej v Dolní Lhotě!</h1>
-  <p>Jsi přihlášený.</p>
-</div>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
-    authDomain: "dolni-lhota-run.firebaseapp.com",
-    projectId: "dolni-lhota-run",
-    storageBucket: "dolni-lhota-run.appspot.com",
-    messagingSenderId: "549134031482",
-    appId: "1:549134031482:web:41205785ed5b4e275a79c3",
-    measurementId: "G-E7N1HJ4BEZ"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  const output = document.getElementById('output');
-  const authSection = document.getElementById('authSection');
-  const mainSection = document.getElementById('mainSection');
-  const sidePanel = document.getElementById('sidePanel');
-  const hamburger = document.getElementById('hamburger');
-  const closePanel = document.getElementById('closePanel');
-  const logoutBtn = document.getElementById('logoutBtn');
-
-  document.getElementById('registerBtn').addEventListener('click', async () => {
-    output.textContent = '';
-    const email = document.getElementById('regEmail').value;
-    const password = document.getElementById('regPassword').value;
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      output.style.color = 'green';
-      output.textContent = 'Registrace úspěšná, nyní se přihlaš.';
-    } catch (error) {
-      output.style.color = 'red';
-      output.textContent = error.message;
-    }
-  });
-
-  document.getElementById('loginBtn').addEventListener('click', async () => {
-    output.textContent = '';
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-      output.style.color = 'red';
-      output.textContent = error.message;
-    }
-  });
-
-  logoutBtn.addEventListener('click', async () => {
-    await signOut(auth);
-    closeSidePanel();
-  });
-
-  hamburger.addEventListener('click', () => {
-    sidePanel.classList.add('active');
-  });
-
-  closePanel.addEventListener('click', () => {
-    closeSidePanel();
-  });
-
-  function closeSidePanel() {
-    sidePanel.classList.remove('active');
-  }
-
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      authSection.style.display = 'none';
-      mainSection.style.display = 'block';
-    } else {
-      authSection.style.display = 'block';
-      mainSection.style.display = 'none';
-      closeSidePanel();
-    }
-  });
-</script>
-
+  <script>
+    document.getElementById('testBtn').addEventListener('click', () => {
+      alert('Tlačítko funguje!');
+    });
+  </script>
 </body>
 </html>
