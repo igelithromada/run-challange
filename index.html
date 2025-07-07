@@ -13,6 +13,7 @@
       --card-bg: #fff;
       --text: #212529;
       --sidebar-width: 220px;
+      --active-bg: #e5f2fd;
     }
     [data-theme="dark"] {
       --primary: #8ab8fa;
@@ -21,8 +22,8 @@
       --sidebar-bg: linear-gradient(180deg, #22243c 80%, #2779e2 150%);
       --card-bg: #24283b;
       --text: #f3f7fa;
+      --active-bg: #213452;
     }
-
     body {
       margin: 0;
       padding: 0;
@@ -45,6 +46,7 @@
       z-index: 10;
       box-shadow: 3px 0 18px rgba(39,121,226,.08);
       transition: background .2s;
+      height: 100vh;
     }
     .sidebar-logo {
       font-size: 1.38em;
@@ -68,13 +70,33 @@
       cursor: pointer;
       font-weight: 500;
       transition: background .13s, color .12s;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .sidebar-btn svg {
+      flex-shrink: 0;
+    }
+    .sidebar-btn.active {
+      background: var(--active-bg);
+      color: var(--primary);
+      font-weight: bold;
+    }
+    .sidebar-btn.active svg {
+      stroke: var(--primary) !important;
+    }
+    .sidebar-btn:not(.active) svg {
+      stroke: #8b96ab;
     }
     .sidebar-btn:hover {
       background: rgba(255,255,255,0.13);
       color: var(--accent);
     }
+    .sidebar-btn:hover svg {
+      stroke: var(--accent) !important;
+    }
     .theme-switch {
-      margin: 40px 0 0 34px;
+      margin: 42px 0 0 34px;
       cursor: pointer;
       background: #fff2;
       color: #fff;
@@ -83,6 +105,7 @@
       font-size: 1.08em;
       transition: background .15s, color .13s;
       border: none;
+      display: block;
     }
     .theme-switch:hover { background: #fff3; color: var(--accent);}
     main {
@@ -91,10 +114,10 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      justify-content: center;
+      justify-content: flex-start;
     }
     .card {
-      margin-top: 80px;
+      margin-top: 60px;
       background: var(--card-bg);
       border-radius: 17px;
       box-shadow: 0 8px 36px #2779e215;
@@ -104,7 +127,9 @@
       font-size: 1.18em;
       color: var(--text);
       text-align: center;
+      display: none;
     }
+    .card.active { display: block; }
     @media (max-width:650px) {
       #sidebar { width: 100vw; min-height: 64px; flex-direction: row; align-items: center; padding:0 0 0 0;}
       .sidebar-logo {margin: 0 18px 0 18px;}
@@ -117,14 +142,48 @@
 <body>
   <div id="sidebar">
     <div class="sidebar-logo">🏃 Dolní Lhota Run</div>
-    <button class="sidebar-btn" onclick="zobrazDashboard()">Dashboard</button>
+    <button class="sidebar-btn active" id="menu-dashboard" onclick="showSection('dashboard')">
+      <!-- Dashboard ikona -->
+      <svg width="22" height="22" fill="none" stroke="#2779e2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <rect x="3" y="12" width="7" height="9"/><rect x="14" y="3" width="7" height="18"/>
+      </svg>
+      Dashboard
+    </button>
+    <button class="sidebar-btn" id="menu-my" onclick="showSection('myruns')">
+      <!-- Moje běhy ikona -->
+      <svg width="22" height="22" fill="none" stroke="#8b96ab" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <path d="M16 21v-2a4 4 0 0 0-8 0v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+      Moje běhy
+    </button>
+    <button class="sidebar-btn" id="menu-team" onclick="showSection('team')">
+      <!-- Tým ikona -->
+      <svg width="22" height="22" fill="none" stroke="#8b96ab" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <path d="M17 21v-2a4 4 0 0 0-3-3.87"/><path d="M7 21v-2a4 4 0 0 1 3-3.87"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+      Tým
+    </button>
+    <button class="sidebar-btn" onclick="odhlasit()">
+      <!-- Odhlásit ikona -->
+      <svg width="22" height="22" fill="none" stroke="#8b96ab" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      Odhlásit
+    </button>
     <button class="theme-switch" onclick="switchTheme()" id="themeToggleBtn">🌙 Tmavý režim</button>
   </div>
   <main>
-    <div class="card" id="dashboardCard">
+    <div class="card active" id="section-dashboard">
       <h2>Vítej v běžecké výzvě Dolní Lhoty!</h2>
-      <p>Tady budeš zadávat své běhy, sledovat pořadí, tým a statistiky.<br>
-      Design je minimalistický a moderní – zkus přepnout tmavý/světlý režim ☀️/🌙.</p>
+      <p>Tady budeš zadávat své běhy, sledovat pořadí, tým a statistiky.</p>
+    </div>
+    <div class="card" id="section-myruns">
+      <h2>Moje běhy</h2>
+      <p>(Zde bude seznam tvých běhů, součet a průměrné tempo.)</p>
+    </div>
+    <div class="card" id="section-team">
+      <h2>Tým</h2>
+      <p>(Tady budeš vytvářet a přidávat se do týmů.)</p>
     </div>
   </main>
   <script>
@@ -134,10 +193,18 @@
       html.setAttribute('data-theme', isDark ? 'light' : 'dark');
       document.getElementById('themeToggleBtn').textContent = isDark ? '🌙 Tmavý režim' : '☀️ Světlý režim';
     }
-    function zobrazDashboard() {
-      document.getElementById('dashboardCard').style.display = '';
+    function showSection(id) {
+      // skryj všechny karty a odznač menu
+      document.querySelectorAll('.card').forEach(e => e.classList.remove('active'));
+      document.querySelectorAll('.sidebar-btn').forEach(e => e.classList.remove('active'));
+      // zobraz zvolenou sekci a zvýrazni menu
+      document.getElementById('section-' + id).classList.add('active');
+      document.getElementById('menu-' + (id === 'myruns' ? 'my' : id)).classList.add('active');
     }
-    // Po načtení – defaultně světlý režim:
+    function odhlasit() {
+      alert("Odhlášení zde (logika se doplní).");
+    }
+    // defaultně světlý režim:
     document.documentElement.setAttribute('data-theme', 'light');
   </script>
 </body>
