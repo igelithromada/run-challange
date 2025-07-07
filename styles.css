@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f0f4ff;
+  background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
   color: #222;
 }
 
@@ -9,15 +9,16 @@ header {
   position: fixed;
   top: 0; left: 0; right: 0;
   height: 60px;
-  background: linear-gradient(90deg, #2e5dbd, #4a74e0);
+  background: #2e5dbd;
   color: white;
   display: flex;
   align-items: center;
   padding: 0 20px;
   z-index: 1000;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
-header #hamburger {
+#hamburger {
   font-size: 30px;
   cursor: pointer;
   user-select: none;
@@ -30,7 +31,7 @@ header h1 {
   flex-grow: 1;
   text-align: center;
   font-weight: 700;
-  font-size: 1.5em;
+  font-size: 1.6em;
   margin: 0;
 }
 
@@ -45,19 +46,16 @@ header h1 {
   display: flex;
   flex-direction: column;
   padding: 30px 40px;
+  overflow-y: auto;
 }
 
-#sidePanel.hidden {
-  transform: translateX(-100%);
-}
-
-#sidePanel:not(.hidden) {
+#sidePanel.open {
   transform: translateX(0);
 }
 
 #closePanel {
   align-self: flex-end;
-  font-size: 32px;
+  font-size: 36px;
   cursor: pointer;
   user-select: none;
   background: none;
@@ -68,9 +66,10 @@ header h1 {
 
 .user-nick {
   font-weight: 700;
-  font-size: 1.3em;
+  font-size: 1.4em;
   margin-bottom: 40px;
   text-align: center;
+  letter-spacing: 1px;
 }
 
 .menu-list {
@@ -99,39 +98,50 @@ header h1 {
 }
 
 main {
-  margin-top: 80px;
+  margin-top: 70px;
   padding: 20px 30px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 .input-group {
-  margin-bottom: 15px;
-  max-width: 300px;
+  margin-bottom: 20px;
 }
 
 .input-group label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
   font-weight: 600;
 }
 
 .input-group input {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   font-size: 1.1em;
-  border-radius: 6px;
-  border: 1px solid #aaa;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  transition: border-color 0.3s;
+}
+
+.input-group input:focus {
+  border-color: #2e5dbd;
+  outline: none;
 }
 
 #addRunBtn {
-  margin-top: 15px;
-  padding: 14px 20px;
-  font-size: 1.2em;
+  width: 100%;
+  padding: 14px;
+  font-size: 1.3em;
   background: #2e5dbd;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.25s ease;
+  transition: background-color 0.3s ease;
 }
 
 #addRunBtn:hover {
