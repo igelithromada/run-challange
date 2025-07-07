@@ -3,193 +3,129 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dolní Lhota run - přihlášení & registrace</title>
+  <title>Dolní Lhota Run - Hlavní stránka</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-
+    /* Základní styl pro tělo */
     body {
       font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
       margin: 0;
       padding: 0;
-      color: #222;
+      background-color: #f4f7fa;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
+      height: 100vh;
+      overflow: hidden;
     }
 
+    /* Styl pro hlavní kontejner stránky */
     .container {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      padding: 2rem 3rem;
-      width: 360px;
-      max-width: 90vw;
-      box-sizing: border-box;
-      text-align: center;
-    }
-
-    h1 {
-      margin-bottom: 1rem;
-      font-weight: 700;
-      color: #1a73e8;
-    }
-
-    h2 {
-      font-weight: 600;
-      margin: 1.5rem 0 0.5rem 0;
-      color: #333;
-      text-align: left;
-    }
-
-    input[type="email"], input[type="password"] {
       width: 100%;
-      padding: 0.8rem 1rem;
-      margin: 0.5rem 0 1rem 0;
-      border: 1.5px solid #ddd;
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: border-color 0.2s;
+      max-width: 1200px;
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
       box-sizing: border-box;
     }
 
-    input[type="email"]:focus, input[type="password"]:focus {
-      border-color: #1a73e8;
-      outline: none;
-    }
-
-    button {
-      width: 100%;
-      padding: 0.9rem;
-      background-color: #1a73e8;
-      border: none;
-      border-radius: 10px;
+    /* Panel v levé části */
+    .panel {
+      width: 300px;
+      background: #1a73e8;
       color: white;
-      font-weight: 600;
-      font-size: 1.1rem;
-      cursor: pointer;
-      transition: background-color 0.2s;
-      margin-bottom: 1rem;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
     }
 
-    button:hover {
-      background-color: #155ab6;
+    .panel h2 {
+      margin-top: 0;
     }
 
-    #logout-btn {
-      background-color: #e53935;
-    }
-
-    #logout-btn:hover {
-      background-color: #b52b28;
-    }
-
-    #output {
-      min-height: 2rem;
-      color: #d32f2f;
-      font-weight: 600;
-      margin-top: 0.5rem;
+    .panel button {
+      background-color: #4caf50;
+      border: none;
+      color: white;
+      padding: 12px;
+      margin: 8px 0;
       text-align: center;
-      word-wrap: break-word;
-    }
-
-    a {
-      color: #1a73e8;
+      font-size: 16px;
       cursor: pointer;
-      text-decoration: none;
-      font-weight: 600;
-      display: inline-block;
-      margin-top: 0.2rem;
+      border-radius: 6px;
+      transition: background-color 0.3s;
     }
 
-    a:hover {
-      text-decoration: underline;
+    .panel button:hover {
+      background-color: #45a049;
     }
+
+    /* Styl pro hlavní obsah */
+    .content {
+      flex: 1;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .content h1 {
+      font-size: 32px;
+      color: #333;
+    }
+
+    .content p {
+      color: #666;
+    }
+    
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Dolní Lhota run</h1>
-
-    <h2>Registrace</h2>
-    <input type="email" id="reg-email" placeholder="Email">
-    <input type="password" id="reg-password" placeholder="Heslo">
-    <button id="register-btn">Registrovat</button>
-
-    <h2>Přihlášení</h2>
-    <input type="email" id="login-email" placeholder="Email">
-    <input type="password" id="login-password" placeholder="Heslo">
-    <button id="login-btn">Přihlásit se</button>
-
-    <button id="logout-btn">Odhlásit</button>
-
-    <p id="output"></p>
+    <div class="panel">
+      <h2>Dolní Lhota Run</h2>
+      <button id="add-run">Přidat nový běh</button>
+      <button id="view-runners">Pořadí běžců</button>
+      <button id="view-teams">Týmy</button>
+      <button id="view-stats">Statistiky</button>
+      <button id="logout-btn">Odhlásit</button>
+    </div>
+    <div class="content">
+      <h1>Vítej v běžecké výzvě Dolní Lhoty!</h1>
+      <p>Užij si sledování tvých výkonů a výsledků s ostatními!</p>
+    </div>
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    const auth = getAuth();
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
-      authDomain: "dolni-lhota-run.firebaseapp.com",
-      projectId: "dolni-lhota-run",
-      storageBucket: "dolni-lhota-run.appspot.com",
-      messagingSenderId: "549134031482",
-      appId: "1:549134031482:web:41205785ed5b4e275a79c3",
-      measurementId: "G-E7N1HJ4BEZ"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const output = document.getElementById("output");
-
-    document.getElementById("register-btn").addEventListener("click", async () => {
-      const email = document.getElementById("reg-email").value;
-      const password = document.getElementById("reg-password").value;
-      try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        output.style.color = "#2e7d32";
-        output.textContent = `Registrován: ${userCredential.user.email}`;
-      } catch (error) {
-        output.style.color = "#d32f2f";
-        output.textContent = `Chyba při registraci: ${error.message}`;
-      }
-    });
-
-    document.getElementById("login-btn").addEventListener("click", async () => {
-      const email = document.getElementById("login-email").value;
-      const password = document.getElementById("login-password").value;
-      try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        output.style.color = "#2e7d32";
-        output.textContent = `Přihlášen: ${userCredential.user.email}`;
-      } catch (error) {
-        output.style.color = "#d32f2f";
-        output.textContent = `Chyba při přihlášení: ${error.message}`;
-      }
-    });
-
+    // Přihlášení a odhlášení
     document.getElementById("logout-btn").addEventListener("click", async () => {
       try {
         await signOut(auth);
-        output.style.color = "#2e7d32";
-        output.textContent = "Odhlášen.";
+        window.location.reload(); // Tato akce resetuje přihlášení
       } catch (error) {
-        output.style.color = "#d32f2f";
-        output.textContent = `Chyba při odhlášení: ${error.message}`;
+        console.error('Chyba při odhlášení: ', error.message);
       }
     });
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        output.style.color = "#2e7d32";
-        output.textContent = `Aktuálně přihlášen: ${user.email}`;
-      } else {
-        output.style.color = "#222";
-        output.textContent = "Nikdo není přihlášen.";
-      }
+    // Aktivace dalších tlačítek pro různé funkce
+    document.getElementById("add-run").addEventListener("click", () => {
+      alert("Přidání nového běhu");
+    });
+
+    document.getElementById("view-runners").addEventListener("click", () => {
+      alert("Zobrazit pořadí běžců");
+    });
+
+    document.getElementById("view-teams").addEventListener("click", () => {
+      alert("Zobrazit týmy");
+    });
+
+    document.getElementById("view-stats").addEventListener("click", () => {
+      alert("Zobrazit statistiky");
     });
   </script>
 </body>
