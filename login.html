@@ -1,143 +1,106 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dolní Lhota Run - Přihlášení a Registrace</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 400px;
-      margin: 40px auto;
-      padding: 20px;
-      background: #f0f4ff;
-      color: #222;
-    }
-    h1, h2 {
-      text-align: center;
-      color: #2a6fdb;
-    }
-    input, button {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      box-sizing: border-box;
-      font-size: 1em;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background-color: #2a6fdb;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background-color 0.3s;
-    }
-    button:hover {
-      background-color: #235bb5;
-    }
-    #message {
-      margin-top: 15px;
-      font-weight: bold;
-      color: #e33;
-      min-height: 1.2em;
-      text-align: center;
-    }
-    #register-form {
-      display: none;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Přihlášení - Dolní Lhota Run</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 400px; margin: 40px auto; background:#f0f4ff; color:#222; padding:20px; }
+  h1,h2 { text-align:center; color:#2a6fdb; }
+  input,button { width:100%; padding:12px; margin:10px 0; font-size:1em; border-radius:5px; border:1px solid #ccc; }
+  button { background:#2a6fdb; color:#fff; font-weight:bold; border:none; cursor:pointer; }
+  button:hover { background:#235bb5; }
+  #message { text-align:center; font-weight:bold; min-height:1.2em; }
+  #register-form { display:none; }
+</style>
 </head>
 <body>
-  <h1>Dolní Lhota Run</h1>
 
-  <button id="showRegisterBtn">Chci se zaregistrovat</button>
+<h1>Dolní Lhota Run</h1>
+<button id="showRegisterBtn">Chci se zaregistrovat</button>
 
-  <div id="register-form">
-    <h2>Registrace</h2>
-    <input type="email" id="reg-email" placeholder="Email" />
-    <input type="password" id="reg-password" placeholder="Heslo" />
-    <button id="register-btn">Registrovat</button>
-  </div>
+<div id="register-form">
+  <h2>Registrace</h2>
+  <input type="email" id="reg-email" placeholder="Email" />
+  <input type="password" id="reg-password" placeholder="Heslo" />
+  <button id="register-btn">Registrovat</button>
+</div>
 
-  <h2>Přihlášení</h2>
-  <input type="email" id="login-email" placeholder="Email" />
-  <input type="password" id="login-password" placeholder="Heslo" />
-  <button id="login-btn">Přihlásit se</button>
+<h2>Přihlášení</h2>
+<input type="email" id="login-email" placeholder="Email" />
+<input type="password" id="login-password" placeholder="Heslo" />
+<button id="login-btn">Přihlásit se</button>
 
-  <p id="message"></p>
+<p id="message"></p>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
-      authDomain: "dolni-lhota-run.firebaseapp.com",
-      projectId: "dolni-lhota-run",
-      storageBucket: "dolni-lhota-run.appspot.com",
-      messagingSenderId: "549134031482",
-      appId: "1:549134031482:web:41205785ed5b4e275a79c3",
-      measurementId: "G-E7N1HJ4BEZ"
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
+  authDomain: "dolni-lhota-run.firebaseapp.com",
+  projectId: "dolni-lhota-run",
+  storageBucket: "dolni-lhota-run.appspot.com",
+  messagingSenderId: "549134031482",
+  appId: "1:549134031482:web:41205785ed5b4e275a79c3",
+  measurementId: "G-E7N1HJ4BEZ"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-    const message = document.getElementById('message');
-    const registerForm = document.getElementById('register-form');
-    const showRegisterBtn = document.getElementById('showRegisterBtn');
+const message = document.getElementById('message');
+const registerForm = document.getElementById('register-form');
+const showRegisterBtn = document.getElementById('showRegisterBtn');
 
-    showRegisterBtn.addEventListener('click', () => {
-      registerForm.style.display = 'block';
-      showRegisterBtn.style.display = 'none';
-      message.textContent = '';
-    });
+showRegisterBtn.addEventListener('click', () => {
+  registerForm.style.display = 'block';
+  showRegisterBtn.style.display = 'none';
+  message.textContent = '';
+});
 
-    document.getElementById('register-btn').addEventListener('click', async () => {
-      const email = document.getElementById('reg-email').value;
-      const password = document.getElementById('reg-password').value;
-      message.textContent = '';
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        message.style.color = 'green';
-        message.textContent = 'Registrace proběhla úspěšně. Nyní se přihlas.';
-        document.getElementById('reg-email').value = '';
-        document.getElementById('reg-password').value = '';
-      } catch (error) {
-        message.style.color = 'red';
-        if (error.code === 'auth/email-already-in-use') {
-          message.textContent = 'Tento email se již používá.';
-        } else {
-          message.textContent = `Chyba registrace: ${error.message}`;
-        }
-      }
-    });
+document.getElementById('register-btn').addEventListener('click', async () => {
+  const email = document.getElementById('reg-email').value;
+  const password = document.getElementById('reg-password').value;
+  message.textContent = '';
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+    message.style.color = 'green';
+    message.textContent = 'Registrace proběhla úspěšně. Nyní se přihlas.';
+    document.getElementById('reg-email').value = '';
+    document.getElementById('reg-password').value = '';
+  } catch (error) {
+    message.style.color = 'red';
+    if (error.code === 'auth/email-already-in-use') {
+      message.textContent = 'Tento email se již používá.';
+    } else {
+      message.textContent = `Chyba registrace: ${error.message}`;
+    }
+  }
+});
 
-    document.getElementById('login-btn').addEventListener('click', async (event) => {
-      event.preventDefault();
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-      message.textContent = '';
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        message.style.color = 'green';
-        message.textContent = `Přihlášen: ${email}`;
-        setTimeout(() => {
-          window.location.href = 'index.html'; // uprav podle své hlavní stránky
-        }, 1000);
-      } catch (error) {
-        message.style.color = 'red';
-        message.textContent = `Chyba přihlášení: ${error.message}`;
-      }
-    });
+document.getElementById('login-btn').addEventListener('click', async (event) => {
+  event.preventDefault();
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  message.textContent = '';
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    message.style.color = 'green';
+    message.textContent = `Přihlášen: ${email}`;
+    setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+  } catch (error) {
+    message.style.color = 'red';
+    message.textContent = `Chyba přihlášení: ${error.message}`;
+  }
+});
 
-    onAuthStateChanged(auth, user => {
-      if (user) {
-        window.location.href = 'index.html'; // uprav podle své hlavní stránky
-      }
-    });
-  </script>
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    window.location.href = 'index.html';
+  }
+});
+</script>
 </body>
 </html>
