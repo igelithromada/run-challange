@@ -276,3 +276,182 @@ async function renderTeams() {
 }
 
 async function
+async function createTeam() {
+  const teamName = prompt('Zadej název nového týmu:');
+  if (!teamName || teamName.trim().length < 3) {
+    alert('Název týmu musí mít alespoň 3 znaky.');
+    return;
+  }
+
+  const teamRef = await addDoc(collection(db, 'teams'), {
+    name: teamName.trim(),
+    creatorId: currentUser.uid,
+    creatorNickname: userNickEl.textContent,
+    members: [currentUser.uid],
+    createdAt: Date.now()
+  });
+
+  await updateUserTeam(teamRef.id, teamName.trim());
+
+  alert(`Tým "${teamName}" vytvořen a přidán.`);
+  renderTeams();
+  updateUserTeamDisplay(teamName.trim());
+}
+
+async function joinTeam() {
+  const teamsSnapshot = await getDocs(collection(db, 'teams'));
+  if (teamsSnapshot.empty) {
+    alert('Žádné týmy nejsou vytvořené.');
+    return;
+  }
+
+  let teamNames = [];
+  let teamIds = [];
+  teamsSnapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    teamNames.push(data.name);
+    teamIds.push(docSnap.id);
+  });
+
+  const teamChoice = prompt(`Vyber si tým podle čísla:\n${teamNames.map((n,i) => `${i+1}: ${n}`).join('\n')}`);
+  const idx = parseInt(teamChoice) - 1;
+  if (idx < 0 || idx >= teamIds.length) {
+    alert('Neplatná volba.');
+    return;
+  }
+
+  const chosenTeamId = teamIds[idx];
+  const teamDocRef = doc(db, 'teams', chosenTeamId);
+  const teamDocSnap = await getDoc(teamDocRef);
+  if (!teamDocSnap.exists()) {
+    alert('Tým nenalezen.');
+    return;
+  }
+
+  const teamData = teamDocSnap.data();
+  if (teamData.members && teamData.members.includes(currentUser.uid)) {
+    alert('Již jsi v tomto týmu.');
+    return;
+  }
+
+  const newMembers = teamData.members ? [...teamData.members, currentUser.uid] : [currentUser.uid];
+  await updateDoc(teamDocRef, { members: newMembers });
+  await updateUserTeam(chosenTeamId, teamData.name);
+
+  alert(`Přidán jsi do týmu "${teamData.name}".`);
+  renderTeams();
+  updateUserTeamDisplay(teamData.name);
+}
+
+async function leaveTeam(teamId) {
+  const teamDocRef = doc(db, 'teams', teamId);
+  const teamDocSnap = await getDoc(teamDocRef);
+  if (!teamDocSnap.exists()) {
+    alert('Tým nenalezen.');
+    return;
+  }
+
+  const teamData = teamDocSnap.data();
+
+  if (teamData.creatorId === currentUser.uid) {
+    const confirmDelete = confirm('Jste tvůrcem týmu. Opravdu chcete tým smazat?');
+    if (!confirmDelete) return;
+
+    // Smažeme tým i běhy členů (pokud chceš, můžeš přidat mazání běhů)
+    await deleteDoc(teamDocRef);
+    await updateUserTeam(null, 'žádný');
+    alert('Tým byl smazán.');
+    renderTeams();
+    updateUserTeamDisplay('žádný');
+    return;
+  }
+
+  const newMembers = teamData.members.filter(uid => uid !== currentUser.uid);
+  await updateDoc(teamDocRef, { members: newMembers });
+  await updateUserTeam(null, 'žádný');
+
+  alert('Opustil jsi tým.');
+  renderTeams();
+  updateUserTeamDisplay('žádný');
+}
+
+async function updateUserTeam(teamId, teamName) {
+  const userDocRef = doc(db, 'users', currentUser.uid);
+  await updateDoc(userDocRef, { teamId: teamId || null, teamName: teamName || 'žádný' });
+  userTeamEl.textContent = `Tým: ${teamName || 'žádný'}`;
+}
+
+function updateUserTeamDisplay(teamName) {
+  userTeamEl.textContent = `Tým: ${teamName}`;
+}
+
+async function addRun(km, min) {
+  if (!km || !min) {
+    alert('Vyplň prosím km i čas.');
+    return;
+  }
+  await addDoc(collection(db, 'runs'), {
+    userId: currentUser.uid,
+    km,
+    min,
+    timestamp: Date.now()
+  });
+  alert('Běh přidán!');
+  renderDashboard();
+  renderMyRuns();
+}
+
+onAuthStateChanged(auth, async user => {
+  if (!user) {
+    // Přesměruj na přihlášení, pokud chceš, nebo řeš logout tady
+    window.location.href = 'login.html';
+    return;
+  }
+  currentUser = user;
+
+  // Načteme uživatelská data
+  const userDocRef = doc(db, 'users', currentUser.uid);
+  const userDocSnap = await getDoc(userDocRef);
+
+  if (!userDocSnap.exists()) {
+    // Pokud uživatel ještě nemá profil, vytvoříme ho
+    await setDoc(userDocRef, {
+      email: user.email,
+      nickname: user.email.split('@')[0],
+      teamId: null,
+      teamName: 'žádný'
+    });
+  }
+
+  const userData = (await getDoc(userDocRef)).data();
+  userNickEl.textContent = userData.nickname || currentUser.email;
+  userTeamEl.textContent = `Tým: ${userData.teamName || 'žádný'}`;
+
+  renderDashboard();
+});
+
+document.getElementById('btnDashboard').addEventListener('click', () => {
+  renderDashboard();
+  sidePanel.classList.add('hidden');
+});
+
+document.getElementById('btnMyRuns').addEventListener('click', () => {
+  renderMyRuns();
+  sidePanel.classList.add('hidden');
+});
+
+document.getElementById('btnSettings').addEventListener('click', () => {
+  renderSettings();
+  sidePanel.classList.add('hidden');
+});
+
+document.getElementById('btnTeams').addEventListener('click', () => {
+  renderTeams();
+  sidePanel.classList.add('hidden');
+});
+
+document.getElementById('addRunBtn').addEventListener('click', () => {
+  const km = parseFloat(document.getElementById('inputKm')?.value);
+  const min = parseInt(document.getElementById('inputMin')?.value);
+  addRun(km, min);
+});
