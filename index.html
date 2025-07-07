@@ -2,16 +2,19 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <title>Test deploy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dolní Lhota Run</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Test deploy aplikace</h1>
-  <button id="test-btn">Klikni na mě</button>
+  <header>
+    <h1>Dolní Lhota Run</h1>
+  </header>
 
-  <script>
-    document.getElementById('test-btn').addEventListener('click', () => {
-      alert('Aplikace funguje!');
-    });
-  </script>
+  <main id="mainContent">
+    <!-- Obsah se bude dynamicky měnit -->
+  </main>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>
