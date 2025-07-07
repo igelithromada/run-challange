@@ -71,7 +71,6 @@
 
     const logoutBtn = document.getElementById('logoutBtn');
 
-    // Kontrola stavu přihlášení
     onAuthStateChanged(auth, user => {
       if (!user) {
         // Uživateli není přihlášen -> přesměruj na přihlašovací stránku
@@ -82,7 +81,6 @@
     logoutBtn.addEventListener('click', async () => {
       try {
         await signOut(auth);
-        // Po odhlášení přesměruj na login
         window.location.href = 'login.html';
       } catch (error) {
         alert('Chyba při odhlášení: ' + error.message);
