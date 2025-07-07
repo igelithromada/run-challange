@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dolní Lhota Run</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="topbar">
+    <button id="hamburgerBtn" aria-label="Otevřít menu">&#9776;</button>
+    <h1>Dolní Lhota Run</h1>
+  </header>
+
+  <nav id="sidebar" class="sidebar hidden">
+    <button id="closeSidebarBtn" aria-label="Zavřít menu">&times;</button>
+    <div class="user-info">
+      <strong id="userNick">Nick uživatele</strong>
+    </div>
+    <ul class="menu-list">
+      <li><button id="dashboardBtn">Hlavní stránka</button></li>
+      <li><button id="addRunBtn">Přidat nový běh</button></li>
+      <li><button id="teamsBtn">Týmy</button></li>
+      <li><button id="settingsBtn">Nastavení</button></li>
+      <li><button id="logoutBtn">Odhlásit se</button></li>
+    </ul>
+  </nav>
+
+  <main id="content">
+    <!-- Zde se budou načítat jednotlivé sekce -->
+    <h2>Vítejte v Dolní Lhota Run!</h2>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
