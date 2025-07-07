@@ -195,7 +195,7 @@ function pridatBeh() {
 <div id="sidebar">
   <div id="odhlasBtn" onclick="odhlasit()">🚪</div>
   
-  <div id="userInfo" style="text-align:center; font-weight:bold; margin-bottom:15px;"><span id="nickDisplay"></span><br><span id="tymDisplay"></span></div><a href="#" onclick="zobrazSekci('dashboard')">Dashboard</a>
+  <a href="#" onclick="zobrazSekci('dashboard')">Dashboard</a>
   <a href="#" onclick="zobrazSekci('mojeBehy')">Moje běhy</a>
   <a href="#" onclick="zobrazSekci('tymMain')">Tým</a>
 </div>
@@ -343,7 +343,7 @@ function zobrazInfoUzivatele() {
   db.collection("uzivatele").doc(nick).get().then(doc => {
     const data = doc.data();
     aktualniTym = data ? data.tym : null;
-    document.getElementById('userInfo').innerHTML = `<strong>$<span id="nickDisplay"></span></strong><br>Tým: ${aktualniTym || "Žádný tým"}`;
+    document.getElementById('userInfo').innerHTML = `<strong>${nick}</strong><br>Tým: ${aktualniTym || "Žádný tým"}`;
   });
 }
 
@@ -460,7 +460,6 @@ function pridatBeh() {
 
 
 <script>
-// Dosadíme nick a tým do panelu při načtení
 function zobrazNickTym() {
   document.getElementById('nickDisplay').textContent = (typeof nick !== "undefined" ? nick : "");
   document.getElementById('tymDisplay').textContent = (typeof aktualniTym !== "undefined" && aktualniTym ? "Tým: " + aktualniTym : "");
