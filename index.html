@@ -1,172 +1,124 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dolní Lhota Run</title>
-<style>
-  body {
-    margin: 0; font-family: Arial, sans-serif;
-    background: #f0f4ff;
-    color: #222;
-  }
-  header {
-    height: 50px;
-    background: #2e5dbd;
-    color: white;
-    display: flex;
-    align-items: center;
-    padding: 0 15px;
-  }
-  #hamburger {
-    font-size: 28px;
-    cursor: pointer;
-    user-select: none;
-  }
-  header h1 {
-    margin-left: 15px;
-    font-weight: normal;
-  }
-  main {
-    padding: 20px;
-  }
-  #inputs {
-    margin-bottom: 15px;
-    display: flex;
-    flex-direction: column;
-    max-width: 200px;
-  }
-  #inputs input {
-    padding: 10px;
-    font-size: 16px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
-  }
-  #btnAddRunMain {
-    background: #4caf50;
-    border: none;
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 18px;
-    cursor: pointer;
-    margin: 15px 0;
-    transition: background-color 0.3s;
-  }
-  #btnAddRunMain:hover {
-    background: #388e3c;
-  }
-  #sidePanel {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background-color: rgba(46, 93, 189, 0.95);
-    color: white;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    z-index: 1000;
-    padding: 2rem 3rem;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-  }
-  #sidePanel.active {
-    transform: translateX(0);
-  }
-  #closePanel {
-    position: absolute;
-    top: 20px; right: 25px;
-    font-size: 28px;
-    cursor: pointer;
-    user-select: none;
-  }
-  #nickDisplay {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 30px;
-  }
-  #sidePanel button {
-    background: #4caf50;
-    border: none;
-    color: white;
-    padding: 15px 20px;
-    border-radius: 8px;
-    font-size: 18px;
-    cursor: pointer;
-    margin: 10px 0;
-    text-align: left;
-    transition: background-color 0.3s;
-  }
-  #sidePanel button:hover {
-    background: #388e3c;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dolní Lhota Run - Přihlášení a Registrace</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 400px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f0f4ff;
+      color: #222;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #2a6fdb;
+    }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      box-sizing: border-box;
+      font-size: 1em;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #2a6fdb;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #235bb5;
+    }
+    #message {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #e33;
+      min-height: 1.2em;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-
-<header>
-  <div id="hamburger">&#9776;</div>
   <h1>Dolní Lhota Run</h1>
-</header>
 
-<main>
-  <div id="inputs">
-    <input type="number" id="inputKm" placeholder="Kilometry (km)" min="0" step="0.01" />
-    <input type="number" id="inputMin" placeholder="Čas (minuty)" min="0" />
-  </div>
-  <button id="btnAddRunMain">Přidat nový běh</button>
-</main>
+  <h2>Registrace</h2>
+  <input type="email" id="reg-email" placeholder="Email" />
+  <input type="password" id="reg-password" placeholder="Heslo" />
+  <button id="register-btn">Registrovat</button>
 
-<div id="sidePanel" aria-hidden="true">
-  <div id="closePanel" aria-label="Zavřít menu">&times;</div>
-  <div id="nickDisplay">Nick: igelithromada</div>
-  <button id="btnViewRunners">Pořadí běžců</button>
-  <button id="btnTeams">Týmy</button>
-  <button id="btnStats">Statistiky</button>
-  <button id="btnSettings">Nastavení</button>
-  <button id="logoutBtn">Odhlásit se</button>
-</div>
+  <h2>Přihlášení</h2>
+  <input type="email" id="login-email" placeholder="Email" />
+  <input type="password" id="login-password" placeholder="Heslo" />
+  <button id="login-btn">Přihlásit se</button>
 
-<script>
-  const hamburger = document.getElementById('hamburger');
-  const sidePanel = document.getElementById('sidePanel');
-  const closePanel = document.getElementById('closePanel');
+  <p id="message"></p>
 
-  hamburger.addEventListener('click', () => {
-    sidePanel.classList.add('active');
-    sidePanel.setAttribute('aria-hidden', 'false');
-  });
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-  closePanel.addEventListener('click', () => {
-    sidePanel.classList.remove('active');
-    sidePanel.setAttribute('aria-hidden', 'true');
-  });
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
+      authDomain: "dolni-lhota-run.firebaseapp.com",
+      projectId: "dolni-lhota-run",
+      storageBucket: "dolni-lhota-run.appspot.com",
+      messagingSenderId: "549134031482",
+      appId: "1:549134031482:web:41205785ed5b4e275a79c3",
+      measurementId: "G-E7N1HJ4BEZ"
+    };
 
-  document.getElementById('btnAddRunMain').addEventListener('click', () => {
-    const km = document.getElementById('inputKm').value;
-    const min = document.getElementById('inputMin').value;
-    alert(`Přidání běhu: ${km} km, ${min} minut`);
-  });
-  document.getElementById('btnViewRunners').addEventListener('click', () => {
-    alert('Zobrazit pořadí běžců');
-  });
-  document.getElementById('btnTeams').addEventListener('click', () => {
-    alert('Zobrazit týmy');
-  });
-  document.getElementById('btnStats').addEventListener('click', () => {
-    alert('Zobrazit statistiky');
-  });
-  document.getElementById('btnSettings').addEventListener('click', () => {
-    alert('Nastavení');
-  });
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    // Přesměrování na přihlašovací stránku, změň URL podle potřeby
-    alert('Odhlášení - přesměruji na přihlášení');
-    window.location.href = 'login.html'; // zde dej URL přihlašovací stránky
-  });
-</script>
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
+    const message = document.getElementById('message');
+
+    document.getElementById('register-btn').addEventListener('click', async () => {
+      const email = document.getElementById('reg-email').value;
+      const password = document.getElementById('reg-password').value;
+      message.textContent = '';
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        message.style.color = 'green';
+        message.textContent = 'Registrace proběhla úspěšně. Nyní se přihlas.';
+        document.getElementById('reg-email').value = '';
+        document.getElementById('reg-password').value = '';
+      } catch (error) {
+        message.style.color = 'red';
+        message.textContent = `Chyba registrace: ${error.message}`;
+      }
+    });
+
+    document.getElementById('login-btn').addEventListener('click', async () => {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      message.textContent = '';
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        message.style.color = 'green';
+        message.textContent = `Přihlášen: ${email}`;
+        // Přesměrování na hlavní stránku
+        setTimeout(() => {
+          window.location.href = 'index.html'; // uprav podle své hlavní stránky
+        }, 1000);
+      } catch (error) {
+        message.style.color = 'red';
+        message.textContent = `Chyba přihlášení: ${error.message}`;
+      }
+    });
+
+    // Pokud už je uživatel přihlášen, rovnou ho přesměruj na hlavní stránku
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        window.location.href = 'index.html'; // uprav podle své hlavní stránky
+      }
+    });
+  </script>
 </body>
 </html>
