@@ -1,239 +1,127 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dolní Lhota Run</title>
-<style>
-  body {
-    font-family: 'Inter', sans-serif;
-    margin: 0; padding: 0;
-    background-color: #f4f7fa;
-    display: flex; justify-content: center; align-items: center;
-    height: 100vh;
-    overflow: hidden;
-  }
-  .container {
-    display: flex;
-    width: 90vw;
-    max-width: 1200px;
-    height: 80vh;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    overflow: hidden;
-  }
-  .panel {
-    width: 280px;
-    background: #1a73e8;
-    color: white;
-    padding: 20px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-  .panel h2 {
-    margin: 0 0 1rem 0;
-  }
-  .panel button {
-    background: #4caf50;
-    border: none;
-    color: white;
-    padding: 12px;
-    margin-bottom: 1rem;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  .panel button:hover {
-    background: #388e3c;
-  }
-  .content {
-    flex: 1;
-    padding: 30px;
-    box-sizing: border-box;
-    overflow-y: auto;
-  }
-  .content h1 {
-    margin-top: 0;
-    color: #333;
-  }
-  label {
-    display: block;
-    margin: 12px 0 4px 0;
-    font-weight: 600;
-  }
-  input {
-    width: 100%;
-    max-width: 400px;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 1rem;
-  }
-  button.add-run {
-    background-color: #1a73e8;
-    margin-top: 12px;
-  }
-  button.add-run:hover {
-    background-color: #155ab6;
-  }
-  ul {
-    padding-left: 0;
-    list-style: none;
-  }
-  ul li {
-    margin: 6px 0;
-    padding: 8px;
-    background: #f0f4ff;
-    border-radius: 6px;
-  }
-  #output {
-    margin-top: 12px;
-    font-weight: 600;
-    color: red;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dolní Lhota Run ONLINE</title>
 </head>
 <body>
-
-<div class="container">
-  <div class="panel">
-    <h2>Dolní Lhota Run</h2>
-    <button id="btnAddRun" class="add-run">Přidat nový běh</button>
-    <button id="btnViewRuns" class="add-run">Moje běhy</button>
-    <button id="btnLogout">Odhlásit se</button>
+  <h1>Dolní Lhota Run</h1>
+  <div id="auth"></div>
+  <div id="app" style="display:none;">
+    <p id="welcome"></p>
+    <button onclick="logout()">Odhlásit se</button>
+    <h3>Přidat běh</h3>
+    <input id="km" type="number" placeholder="km" step="0.01">
+    <input id="min" type="number" placeholder="min">
+    <button onclick="addRun()">Uložit</button>
+    <h3>Moje běhy</h3>
+    <ul id="runs"></ul>
   </div>
-  <div class="content" id="content">
-    <h1>Vítej v běžecké výzvě Dolní Lhoty!</h1>
-    <p>Zde uvidíš své statistiky a přehledy.</p>
-  </div>
-</div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
-    authDomain: "dolni-lhota-run.firebaseapp.com",
-    projectId: "dolni-lhota-run",
-    storageBucket: "dolni-lhota-run.appspot.com",
-    messagingSenderId: "549134031482",
-    appId: "1:549134031482:web:41205785ed5b4e275a79c3",
-    measurementId: "G-E7N1HJ4BEZ"
-  };
+    const firebaseConfig = {
+      apiKey: "TVŮJ_API_KEY",
+      authDomain: "TVŮJ_AUTH_DOMAIN",
+      projectId: "TVŮJ_PROJECT_ID",
+      storageBucket: "TVŮJ_BUCKET",
+      messagingSenderId: "TVŮJ_SENDER_ID",
+      appId: "TVŮJ_APP_ID"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-  let currentUser = null;
+    const authDiv = document.getElementById('auth');
+    const appDiv = document.getElementById('app');
+    const welcome = document.getElementById('welcome');
+    const runsUl = document.getElementById('runs');
 
-  const content = document.getElementById('content');
-  const btnAddRun = document.getElementById('btnAddRun');
-  const btnViewRuns = document.getElementById('btnViewRuns');
-  const btnLogout = document.getElementById('btnLogout');
+    let currentUser = null;
 
-  function showAddRunForm() {
-    content.innerHTML = `
-      <h1>Přidat nový běh</h1>
-      <label for="kmInput">Kilometry (km):</label>
-      <input type="number" id="kmInput" step="0.01" min="0" />
-      <label for="minInput">Čas (minuty):</label>
-      <input type="number" id="minInput" min="0" />
-      <button id="submitRunBtn" class="add-run">Uložit běh</button>
-      <div id="output"></div>
-    `;
-    document.getElementById('submitRunBtn').addEventListener('click', async () => {
-      const km = parseFloat(document.getElementById('kmInput').value);
-      const min = parseInt(document.getElementById('minInput').value);
-      const output = document.getElementById('output');
-      if (isNaN(km) || isNaN(min)) {
-        output.style.color = 'red';
-        output.textContent = 'Vyplň prosím km i čas.';
-        return;
-      }
-      const user = currentUser;
-      if (!user) {
-        output.style.color = 'red';
-        output.textContent = 'Nejste přihlášen.';
-        return;
-      }
+    function showAuth() {
+      authDiv.innerHTML = `
+        <input type="email" id="email" placeholder="email"><br>
+        <input type="password" id="pass" placeholder="heslo"><br>
+        <button onclick="login()">Přihlásit</button>
+        <button onclick="register()">Registrovat</button>
+      `;
+      appDiv.style.display = "none";
+    }
+
+    async function login() {
+      const email = document.getElementById('email').value;
+      const pass = document.getElementById('pass').value;
       try {
-        await addDoc(collection(db, 'runs'), {
-          userId: user.uid,
-          km,
-          min,
+        await signInWithEmailAndPassword(auth, email, pass);
+      } catch (e) {
+        alert("Chyba přihlášení: " + e.message);
+      }
+    }
+
+    async function register() {
+      const email = document.getElementById('email').value;
+      const pass = document.getElementById('pass').value;
+      try {
+        await createUserWithEmailAndPassword(auth, email, pass);
+      } catch (e) {
+        alert("Chyba registrace: " + e.message);
+      }
+    }
+
+    async function logout() {
+      await signOut(auth);
+    }
+
+    async function addRun() {
+      if (!currentUser) return alert("Nejste přihlášen.");
+      const km = parseFloat(document.getElementById('km').value);
+      const min = parseInt(document.getElementById('min').value);
+      if (isNaN(km) || isNaN(min)) return alert("Vyplň km i min.");
+      try {
+        await addDoc(collection(db, "runs"), {
+          userId: currentUser.uid,
+          km, min,
           pace: min / km,
           timestamp: serverTimestamp()
         });
-        output.style.color = 'green';
-        output.textContent = 'Běh uložen.';
-        document.getElementById('kmInput').value = '';
-        document.getElementById('minInput').value = '';
+        loadRuns();
       } catch (e) {
-        output.style.color = 'red';
-        output.textContent = 'Chyba při ukládání běhu: ' + e.message;
+        alert("Chyba při ukládání: " + e.message);
+      }
+    }
+
+    async function loadRuns() {
+      if (!currentUser) return;
+      const q = query(collection(db, "runs"), where("userId", "==", currentUser.uid), orderBy("timestamp", "desc"));
+      const snapshot = await getDocs(q);
+      runsUl.innerHTML = "";
+      snapshot.forEach(doc => {
+        const r = doc.data();
+        const li = document.createElement('li');
+        li.textContent = `${(r.km ?? 0).toFixed(2)} km, ${r.min ?? 0} min, ${(r.pace ?? 0).toFixed(2)} min/km`;
+        runsUl.appendChild(li);
+      });
+    }
+
+    onAuthStateChanged(auth, user => {
+      currentUser = user;
+      if (user) {
+        welcome.textContent = "Vítej " + user.email;
+        appDiv.style.display = "block";
+        authDiv.innerHTML = "";
+        loadRuns();
+      } else {
+        showAuth();
       }
     });
-  }
 
-  async function showMyRuns() {
-    content.innerHTML = '<h1>Moje běhy</h1><ul id="runsList"><li>Načítám běhy...</li></ul><div id="output"></div>';
-    const runsList = document.getElementById('runsList');
-    const output = document.getElementById('output');
-    const user = currentUser;
-    if (!user) {
-      output.style.color = 'red';
-      output.textContent = 'Nejste přihlášen.';
-      return;
-    }
-    try {
-      const q = query(collection(db, 'runs'), where('userId', '==', user.uid), orderBy('timestamp', 'desc'));
-      const snapshot = await getDocs(q);
-      if (snapshot.empty) {
-        runsList.innerHTML = '<li>Nemáš zatím žádné běhy.</li>';
-        return;
-      }
-      runsList.innerHTML = '';
-      snapshot.forEach(doc => {
-        const run = doc.data();
-        const li = document.createElement('li');
-        li.textContent = `${(run.km ?? 0).toFixed(2)} km, ${run.min ?? 0} min, tempo ${(run.pace ?? 0).toFixed(2)} min/km`;
-        runsList.appendChild(li);
-      });
-    } catch (e) {
-      output.style.color = 'red';
-      output.textContent = 'Chyba při načítání běhů: ' + e.message;
-    }
-  }
-
-  btnAddRun.addEventListener('click', showAddRunForm);
-  btnViewRuns.addEventListener('click', showMyRuns);
-  btnLogout.addEventListener('click', async () => {
-    await signOut(auth);
-    content.innerHTML = `<h1>Odhlášen</h1><p>Děkujeme za použití aplikace.</p>`;
-  });
-
-  onAuthStateChanged(auth, user => {
-    currentUser = user;
-    if (user) {
-      content.innerHTML = `<h1>Vítej zpět, ${user.email}!</h1><p>Vyber akci z levého panelu.</p>`;
-      btnLogout.style.display = 'block';
-      btnAddRun.style.display = 'block';
-      btnViewRuns.style.display = 'block';
-    } else {
-      content.innerHTML = '<h1>Nejsi přihlášen.</h1><p>Prosím přihlas se.</p>';
-      btnLogout.style.display = 'none';
-      btnAddRun.style.display = 'none';
-      btnViewRuns.style.display = 'none';
-    }
-  });
-</script>
-
+    showAuth();
+  </script>
 </body>
 </html>
