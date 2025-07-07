@@ -150,7 +150,7 @@
       const km = parseFloat(document.getElementById('kmInput').value);
       const min = parseInt(document.getElementById('minInput').value);
       const output = document.getElementById('output');
-      if (!km || !min) {
+      if (isNaN(km) || isNaN(min)) {
         output.style.color = 'red';
         output.textContent = 'Vyplň prosím km i čas.';
         return;
@@ -181,10 +181,9 @@
   }
 
   async function showMyRuns() {
-    content.innerHTML = '<h1>Moje běhy</h1><ul id="runsList"></ul><div id="output"></div>';
+    content.innerHTML = '<h1>Moje běhy</h1><ul id="runsList"><li>Načítám běhy...</li></ul><div id="output"></div>';
     const runsList = document.getElementById('runsList');
     const output = document.getElementById('output');
-    runsList.innerHTML = 'Načítám běhy...';
     const user = auth.currentUser;
     if (!user) {
       output.style.color = 'red';
@@ -202,7 +201,7 @@
       snapshot.forEach(doc => {
         const run = doc.data();
         const li = document.createElement('li');
-        li.textContent = `${run.km.toFixed(2)} km, ${run.min} min, tempo ${run.pace.toFixed(2)} min/km`;
+        li.textContent = `${(run.km ?? 0).toFixed(2)} km, ${run.min ?? 0} min, tempo ${(run.pace ?? 0).toFixed(2)} min/km`;
         runsList.appendChild(li);
       });
     } catch (e) {
@@ -218,8 +217,6 @@
     content.innerHTML = `<h1>Odhlášen</h1><p>Děkujeme za použití aplikace.</p>`;
   });
 
-  // Po přihlášení zobraz hlavní obrazovku
-  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   onAuthStateChanged(auth, user => {
     if (user) {
       content.innerHTML = `<h1>Vítej zpět, ${user.email}!</h1><p>Vyber akci z levého panelu.</p>`;
