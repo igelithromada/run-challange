@@ -15,7 +15,9 @@ import {
   orderBy,
   doc,
   getDoc,
-  updateDoc
+  updateDoc,
+  setDoc,
+  deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -36,6 +38,7 @@ const hamburger = document.getElementById('hamburger');
 const sidePanel = document.getElementById('sidePanel');
 const closePanel = document.getElementById('closePanel');
 const userNickEl = document.getElementById('userNick');
+const userTeamEl = document.getElementById('userTeam');
 const mainContent = document.getElementById('mainContent');
 
 hamburger.addEventListener('click', () => {
@@ -68,21 +71,31 @@ async function renderDashboard() {
   mainContent.innerHTML = `
     <h2>Hlavní stránka</h2>
     <p>Souhrn běhů všech uživatelů:</p>
-    <table border="1" style="border-collapse: collapse; width: 100%; max-width: 600px;">
+    <table>
       <thead>
-        <tr>
-          <th>Uživatel</th>
-          <th>Celkem km</th>
-          <th>Celkem min</th>
-          <th>Průměr min/km</th>
-        </tr>
+        <tr><th>Pořadí</th><th>Uživatel</th><th>Celkem km</th><th>Celkem min</th><th>Průměr min/km</th></tr>
       </thead>
       <tbody id="dashboardBody">
-        <tr><td colspan="4">Načítám...</td></tr>
+        <tr><td colspan="5">Načítám...</td></tr>
       </tbody>
     </table>
+    <div class="input-group">
+      <label for="inputKm">Kilometry (km)</label>
+      <input type="number" id="inputKm" min="0" step="0.01" />
+    </div>
+    <div class="input-group">
+      <label for="inputMin">Čas (minuty)</label>
+      <input type="number" id="inputMin" min="0" />
+    </div>
+    <button id="addRunBtn">Přidat nový běh</button>
+    <div id="addRunMessage"></div>
   `;
+
   const dashboardBody = document.getElementById('dashboardBody');
+  const addRunBtn = document.getElementById('addRunBtn');
+  const inputKm = document.getElementById('inputKm');
+  const inputMin = document.getElementById('inputMin');
+  const addRunMessage = document.getElementById('addRunMessage');
 
   // Načteme všechny běhy a sečteme podle uživatele
   const runsSnapshot = await getDocs(collection(db, 'runs'));
@@ -100,29 +113,58 @@ async function renderDashboard() {
   // Načteme uživatelská data
   const userIds = Object.keys(usersStats);
   if (userIds.length === 0) {
-    dashboardBody.innerHTML = '<tr><td colspan="4">Žádné záznamy</td></tr>';
-    return;
-  }
-  const usersQuery = query(collection(db, 'users'), where('__name__', 'in', userIds));
-  const usersSnapshot = await getDocs(usersQuery);
-  const usersData = {};
-  usersSnapshot.forEach(u => usersData[u.id] = u.data());
+    dashboardBody.innerHTML = '<tr><td colspan="5">Žádné záznamy</td></tr>';
+  } else {
+    const usersQuery = query(collection(db, 'users'), where('__name__', 'in', userIds));
+    const usersSnapshot = await getDocs(usersQuery);
+    const usersData = {};
+    usersSnapshot.forEach(u => usersData[u.id] = u.data());
 
-  // Sestavíme řádky tabulky
-  dashboardBody.innerHTML = '';
-  userIds.forEach(userId => {
-    const user = usersData[userId];
-    const stat = usersStats[userId];
-    const nickname = user?.nickname || user?.email || 'Neznámý';
-    const pace = calculatePace(stat.min, stat.km);
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${nickname}</td>
-      <td>${formatNumber(stat.km)}</td>
-      <td>${Math.round(stat.min)}</td>
-      <td>${pace}</td>
-    `;
-    dashboardBody.appendChild(row);
+    dashboardBody.innerHTML = '';
+    let index = 1;
+    userIds.forEach(userId => {
+      const user = usersData[userId];
+      const stat = usersStats[userId];
+      const nickname = user?.nickname || user?.email || 'Neznámý';
+      const pace = calculatePace(stat.min, stat.km);
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${index++}</td>
+        <td>${nickname}</td>
+        <td>${formatNumber(stat.km)}</td>
+        <td>${Math.round(stat.min)}</td>
+        <td>${pace}</td>
+      `;
+      dashboardBody.appendChild(row);
+    });
+  }
+
+  addRunBtn.addEventListener('click', async () => {
+    const km = parseFloat(inputKm.value);
+    const min = parseInt(inputMin.value);
+
+    if (!km || !min) {
+      addRunMessage.textContent = 'Vyplň prosím km i čas správně.';
+      addRunMessage.className = 'alert error';
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, 'runs'), {
+        userId: currentUser.uid,
+        km,
+        min,
+        timestamp: Date.now()
+      });
+      addRunMessage.textContent = 'Běh přidán!';
+      addRunMessage.className = 'alert success';
+      inputKm.value = '';
+      inputMin.value = '';
+      renderDashboard(); // refresh tabulky
+    } catch (e) {
+      addRunMessage.textContent = 'Chyba při přidání běhu.';
+      addRunMessage.className = 'alert error';
+    }
   });
 }
 
@@ -161,6 +203,7 @@ async function renderMyRuns() {
     mainContent.appendChild(summary);
   }
 }
+
 async function renderSettings() {
   mainContent.innerHTML = `
     <h2>Nastavení</h2>
@@ -174,7 +217,6 @@ async function renderSettings() {
   const saveBtn = document.getElementById('saveNicknameBtn');
   const settingsMessage = document.getElementById('settingsMessage');
 
-  // Načti aktuální přezdívku
   const userDocRef = doc(db, 'users', currentUser.uid);
   const userDocSnap = await getDoc(userDocRef);
   if (userDocSnap.exists()) {
@@ -196,42 +238,41 @@ async function renderSettings() {
   });
 }
 
-async function addRun(km, min) {
-  if (!km || !min) {
-    alert('Vyplň prosím km i čas.');
+async function renderTeams() {
+  mainContent.innerHTML = `
+    <h2>Týmy</h2>
+    <button id="createTeamBtn">Vytvořit tým</button>
+    <button id="joinTeamBtn">Přidat se do týmu</button>
+    <div id="teamsList"></div>
+  `;
+
+  const teamsList = document.getElementById('teamsList');
+
+  const teamsSnapshot = await getDocs(collection(db, 'teams'));
+  teamsList.innerHTML = '';
+
+  if (teamsSnapshot.empty) {
+    teamsList.textContent = 'Žádné týmy nejsou vytvořené.';
     return;
   }
-  await addDoc(collection(db, 'runs'), {
-    userId: currentUser.uid,
-    km,
-    min,
-    timestamp: Date.now()
+
+  teamsSnapshot.forEach(docSnap => {
+    const team = docSnap.data();
+    const div = document.createElement('div');
+    div.style.marginBottom = '10px';
+    div.textContent = `${team.name} (vytvořil: ${team.creatorNickname || 'neznámý'})`;
+    if (team.members && team.members.includes(currentUser.uid)) {
+      const leaveBtn = document.createElement('button');
+      leaveBtn.textContent = 'Opustit tým';
+      leaveBtn.style.marginLeft = '10px';
+      leaveBtn.addEventListener('click', () => leaveTeam(docSnap.id));
+      div.appendChild(leaveBtn);
+    }
+    teamsList.appendChild(div);
   });
-  alert('Běh přidán!');
+
+  document.getElementById('createTeamBtn').addEventListener('click', createTeam);
+  document.getElementById('joinTeamBtn').addEventListener('click', joinTeam);
 }
 
-hamburger.addEventListener('click', () => {
-  sidePanel.classList.remove('hidden');
-  sidePanel.setAttribute('aria-hidden', 'false');
-});
-
-closePanel.addEventListener('click', () => {
-  sidePanel.classList.add('hidden');
-  sidePanel.setAttribute('aria-hidden', 'true');
-});
-
-document.getElementById('btnLogout').addEventListener('click', async () => {
-  await signOut(auth);
-});
-
-document.getElementById('btnDashboard').addEventListener('click', () => {
-  renderDashboard();
-  sidePanel.classList.add('hidden');
-});
-
-document.getElementById('btnMyRuns').addEventListener('click', () => {
-  renderMyRuns();
-  sidePanel.classList.add('hidden');
-});
-
-document.getElementById('
+async function
