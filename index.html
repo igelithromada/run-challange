@@ -215,12 +215,12 @@ function pridatBeh() {
 </div>
 
 <div id="dashboardSection" class="hidden">
-  <h2>Zadat nový běh</h2>
+  <h2></h2>
   <input type="number" id="km" placeholder="Kolik km?">
   <input type="number" id="cas" placeholder="Čas v minutách">
   <button onclick="pridatBeh()">Přidat běh</button>
 
-  <h2>Pořadí uživatelů</h2>
+  <h2>Pořadí běžců</h2>
   <div id="stavUzivatelu"></div>
 </div>
 
@@ -348,7 +348,7 @@ function zobrazInfoUzivatele() {
   });
 }
 
-function zobrazMojeBehy() {
+function zobrazMoje výkony() {
   db.collection("behy").where("jmeno","==",nick).onSnapshot(snapshot => {
     let html = "", sumKm=0, sumCas=0, sumTempo=0, count=0;
     snapshot.forEach(doc => {
