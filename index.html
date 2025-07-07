@@ -3,7 +3,7 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8" />
-<title>Běh v Oboře</title>
+<title>Dolní Lhota Run</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
 function pripojSe(nazevTymu) {
   db.collection("uzivatele").doc(nick).set({ tym: nazevTymu })
@@ -56,6 +56,16 @@ function pridatBeh() {
       }, 300);
     });
 }
+function zobrazSekci(sekce) {
+  ['dashboard','mojeBehy','tymMain','tymVytvor','tymPridat'].forEach(s=>{
+    document.getElementById(s+'Section').style.display = (s===sekce)?'block':'none';
+  });
+  toggleSidebar();
+  if(sekce==='mojeBehy') zobrazMojeBehy();
+  if(sekce==='tymPridat') zobrazTymy();
+}
+
+function
 </script>
 
 
@@ -112,6 +122,16 @@ function pridatBeh() {
       }, 300);
     });
 }
+function zobrazSekci(sekce) {
+  ['dashboard','mojeBehy','tymMain','tymVytvor','tymPridat'].forEach(s=>{
+    document.getElementById(s+'Section').style.display = (s===sekce)?'block':'none';
+  });
+  toggleSidebar();
+  if(sekce==='mojeBehy') zobrazMojeBehy();
+  if(sekce==='tymPridat') zobrazTymy();
+}
+
+function
 </script>
 
 
@@ -168,6 +188,16 @@ function pridatBeh() {
       }, 300);
     });
 }
+function zobrazSekci(sekce) {
+  ['dashboard','mojeBehy','tymMain','tymVytvor','tymPridat'].forEach(s=>{
+    document.getElementById(s+'Section').style.display = (s===sekce)?'block':'none';
+  });
+  toggleSidebar();
+  if(sekce==='mojeBehy') zobrazMojeBehy();
+  if(sekce==='tymPridat') zobrazTymy();
+}
+
+function
 </script>
 
 
@@ -185,7 +215,7 @@ function pridatBeh() {
   #sidebar a:hover { background: #ddd; }
   #hamburger { position: fixed; top: 15px; left: 15px; font-size: 2.2em; cursor: pointer; z-index: 101; }
   #odhlasBtn { position: absolute; top: 10px; right: 10px; font-size: 1.1em; cursor: pointer; }
-  #userInfo { padding-top: 80px; padding-top: 100px; text-align: center; padding: 0 32px 10px 32px; font-size: 1em; }
+  #userInfo { padding-top: 100px; text-align: center; padding: 0 32px 10px 32px; font-size: 1em; }
 </style>
 </head>
 <body>
@@ -243,8 +273,7 @@ function pridatBeh() {
 
 <div id="tymPridatSection" class="hidden">
   <h2>Vyber tým</h2>
-  <button onclick='zobrazVytvorTym()'>Vytvořit tým</button> <button onclick='zobrazSeznamTymu()'>Přidat do týmu</button><div id='vytvorTymForm' class='hidden'><input type='text' id='nazevTymu' placeholder='Název týmu'><button onclick='vytvorTym()'>Vytvořit</button></div>
-<div id='seznamTymu'></div>
+  <div id="seznamTymu"></div>
 </div>
 
 <script>
@@ -456,6 +485,16 @@ function pridatBeh() {
       }, 300);
     });
 }
+function zobrazSekci(sekce) {
+  ['dashboard','mojeBehy','tymMain','tymVytvor','tymPridat'].forEach(s=>{
+    document.getElementById(s+'Section').style.display = (s===sekce)?'block':'none';
+  });
+  toggleSidebar();
+  if(sekce==='mojeBehy') zobrazMojeBehy();
+  if(sekce==='tymPridat') zobrazTymy();
+}
+
+function
 </script>
 
 
@@ -497,42 +536,16 @@ function zobrazVsechny() {
       }).join('');
   });
 }
-</script>
-
-<div id="vsichniSection" class="hidden">
-  <h2>Všichni běžci</h2>
-  <div id="vsichniBehy"></div>
-</div>
-<script>
 function zobrazSekci(sekce) {
-  ['dashboard','mojeBehy','tym','vsichni'].forEach(s=>{
-    var el = document.getElementById(s+'Section');
-    if(el) el.style.display = (s===sekce)?'block':'none';
+  ['dashboard','mojeBehy','tymMain','tymVytvor','tymPridat'].forEach(s=>{
+    document.getElementById(s+'Section').style.display = (s===sekce)?'block':'none';
   });
+  toggleSidebar();
   if(sekce==='mojeBehy') zobrazMojeBehy();
-  if(sekce==='tym' && aktualniTym) zobrazBehyTymu(aktualniTym);
-  if(sekce==='vsichni') zobrazVsechny();
+  if(sekce==='tymPridat') zobrazTymy();
 }
-function zobrazVsechny() {
-  db.collection("behy").onSnapshot(snapshot => {
-    const soucty = {};
-    snapshot.forEach(doc => {
-      const z = doc.data();
-      if (!soucty[z.jmeno]) soucty[z.jmeno] = { km:0, cas:0, tempo:0, pocet:0 };
-      soucty[z.jmeno].km += z.km;
-      soucty[z.jmeno].cas += z.cas;
-      soucty[z.jmeno].tempo += parseFloat(z.tempo) || 0;
-      soucty[z.jmeno].pocet++;
-    });
-    let i=1;
-    document.getElementById('vsichniBehy').innerHTML = Object.entries(soucty)
-      .sort((a,b)=>b[1].km - a[1].km)
-      .map(([j, data])=>{
-        const prumTempo = data.pocet > 0 ? (data.tempo / data.pocet).toFixed(2) : "0";
-        return `<div class='card'>${i++}. <strong>${j}</strong>: ${data.km} km, ${data.cas} min, ${prumTempo} min/km</div>`;
-      }).join('');
-  });
-}
+
+function
 </script>
 </body>
 </html>
