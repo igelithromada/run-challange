@@ -1,213 +1,213 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8" />
-  <title>Dolní Lhota Run</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    /* ...stejný styl jako dřív... */
-    :root {
-      --primary: #2779e2;
-      --accent: #ffac33;
-      --bg: #f7fafc;
-      --sidebar-bg: linear-gradient(180deg, #2779e2 70%, #48c3cb 130%);
-      --card-bg: #fff;
-      --text: #212529;
-      --sidebar-width: 220px;
-      --active-bg: #fff;
-      --active-color: #2779e2;
-      --inactive-color: #8b96ab;
-    }
-    [data-theme="dark"] {
-      --primary: #8ab8fa;
-      --accent: #ffa338;
-      --bg: #181c24;
-      --sidebar-bg: linear-gradient(180deg, #22243c 80%, #2779e2 150%);
-      --card-bg: #24283b;
-      --text: #f3f7fa;
-      --active-bg: #fff;
-      --active-color: #2779e2;
-      --inactive-color: #607088;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      transition: background .2s, color .2s;
-    }
-    #sidebar {
-      position: fixed;
-      top: 0; left: 0; bottom: 0;
-      width: var(--sidebar-width);
-      background: var(--sidebar-bg);
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 36px 0 0 0;
-      z-index: 10;
-      box-shadow: 3px 0 18px rgba(39,121,226,.08);
-      transition: background .2s;
-      height: 100vh;
-    }
-    .sidebar-logo {
-      font-size: 1.38em;
-      font-weight: 700;
-      margin: 0 0 32px 34px;
-      letter-spacing: 1px;
-      color: #fff;
-      text-shadow: 0 2px 10px #2779e245;
-    }
-    .sidebar-btn {
-      width: 90%;
-      margin: 7px 0 0 0;
-      padding: 14px 32px;
-      border: none;
-      background: none;
-      color: var(--inactive-color);
-      border-radius: 16px;
-      font-size: 1.14em;
-      font-family: inherit;
-      text-align: left;
-      cursor: pointer;
-      font-weight: 500;
-      transition: background .13s, color .12s;
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      box-shadow: none;
-      outline: none;
-    }
-    .sidebar-btn svg {
-      flex-shrink: 0;
-      stroke: var(--inactive-color);
-      background: none;
-      transition: stroke .15s;
-    }
-    .sidebar-btn.active {
-      background: var(--active-bg);
-      color: var(--active-color);
-      font-weight: bold;
-      box-shadow: 0 2px 12px #2779e215;
-    }
-    .sidebar-btn.active svg {
-      stroke: var(--active-color) !important;
-    }
-    .sidebar-btn:not(.active):hover {
-      background: #fff3;
-      color: var(--primary);
-    }
-    .sidebar-btn:not(.active):hover svg {
-      stroke: var(--primary) !important;
-    }
-    .theme-switch {
-      margin: 42px 0 0 34px;
-      cursor: pointer;
-      background: #fff2;
-      color: #fff;
-      padding: 10px 24px;
-      border-radius: 20px;
-      font-size: 1.08em;
-      transition: background .15s, color .13s;
-      border: none;
-      display: block;
-    }
-    .theme-switch:hover { background: #fff3; color: var(--accent);}
-    main {
-      margin-left: var(--sidebar-width);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      justify-content: flex-start;
-      padding: 40px 20px;
-    }
-    .card {
-      margin-top: 60px;
-      background: var(--card-bg);
-      border-radius: 17px;
-      box-shadow: 0 8px 36px #2779e215;
-      padding: 38px 28px;
-      max-width: 600px;
-      width: 100%;
-      font-size: 1.18em;
-      color: var(--text);
-      text-align: center;
-      display: none;
-    }
-    .card.active { display: block; }
-    label {
-      display: block;
-      margin: 12px 0 6px 0;
-      font-weight: 600;
-      text-align: left;
-    }
-    input {
-      font-size: 1.1em;
-      padding: 12px;
-      width: 100%;
-      border-radius: 8px;
-      border: 1px solid #aaa;
-      outline: none;
-      box-sizing: border-box;
-      transition: border-color 0.3s ease-in-out;
-    }
-    input:focus {
-      border-color: var(--primary);
-    }
-    button.primary-btn {
-      background-color: var(--primary);
-      color: var(--card-bg);
-      font-weight: bold;
-      border: none;
-      padding: 14px;
-      margin-top: 20px;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: background-color 0.3s, transform 0.1s;
-      font-size: 1.1em;
-      width: 100%;
-    }
-    button.primary-btn:hover {
-      background-color: var(--accent);
-      transform: scale(1.03);
-    }
-    ul.run-list {
-      list-style: none;
-      padding-left: 0;
-      margin-top: 30px;
-      text-align: left;
-      max-height: 300px;
-      overflow-y: auto;
-      border-top: 1px solid #ccc;
-    }
-    ul.run-list li {
-      padding: 10px 8px;
-      border-bottom: 1px solid #ddd;
-      font-size: 1.04em;
-      color: var(--text);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 30px;
-      font-size: 1.05em;
-    }
-    th, td {
-      padding: 10px 8px;
-      border-bottom: 1px solid #ddd;
-      text-align: center;
-    }
-    th {
-      background-color: var(--primary);
-      color: var(--card-bg);
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Dolní Lhota Run - Kompletní demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  /* Styl viz předchozí zpráva */
+  :root {
+    --primary: #2779e2;
+    --accent: #ffac33;
+    --bg: #f7fafc;
+    --sidebar-bg: linear-gradient(180deg, #2779e2 70%, #48c3cb 130%);
+    --card-bg: #fff;
+    --text: #212529;
+    --sidebar-width: 220px;
+    --active-bg: #fff;
+    --active-color: #2779e2;
+    --inactive-color: #8b96ab;
+  }
+  [data-theme="dark"] {
+    --primary: #8ab8fa;
+    --accent: #ffa338;
+    --bg: #181c24;
+    --sidebar-bg: linear-gradient(180deg, #22243c 80%, #2779e2 150%);
+    --card-bg: #24283b;
+    --text: #f3f7fa;
+    --active-bg: #fff;
+    --active-color: #2779e2;
+    --inactive-color: #607088;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background .2s, color .2s;
+  }
+  #sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-width);
+    background: var(--sidebar-bg);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 36px 0 0 0;
+    z-index: 10;
+    box-shadow: 3px 0 18px rgba(39,121,226,.08);
+    transition: background .2s;
+    height: 100vh;
+  }
+  .sidebar-logo {
+    font-size: 1.38em;
+    font-weight: 700;
+    margin: 0 0 32px 34px;
+    letter-spacing: 1px;
+    color: #fff;
+    text-shadow: 0 2px 10px #2779e245;
+  }
+  .sidebar-btn {
+    width: 90%;
+    margin: 7px 0 0 0;
+    padding: 14px 32px;
+    border: none;
+    background: none;
+    color: var(--inactive-color);
+    border-radius: 16px;
+    font-size: 1.14em;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background .13s, color .12s;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    box-shadow: none;
+    outline: none;
+  }
+  .sidebar-btn svg {
+    flex-shrink: 0;
+    stroke: var(--inactive-color);
+    background: none;
+    transition: stroke .15s;
+  }
+  .sidebar-btn.active {
+    background: var(--active-bg);
+    color: var(--active-color);
+    font-weight: bold;
+    box-shadow: 0 2px 12px #2779e215;
+  }
+  .sidebar-btn.active svg {
+    stroke: var(--active-color) !important;
+  }
+  .sidebar-btn:not(.active):hover {
+    background: #fff3;
+    color: var(--primary);
+  }
+  .sidebar-btn:not(.active):hover svg {
+    stroke: var(--primary) !important;
+  }
+  .theme-switch {
+    margin: 42px 0 0 34px;
+    cursor: pointer;
+    background: #fff2;
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-size: 1.08em;
+    transition: background .15s, color .13s;
+    border: none;
+    display: block;
+  }
+  .theme-switch:hover { background: #fff3; color: var(--accent);}
+  main {
+    margin-left: var(--sidebar-width);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    justify-content: flex-start;
+    padding: 40px 20px;
+  }
+  .card {
+    margin-top: 60px;
+    background: var(--card-bg);
+    border-radius: 17px;
+    box-shadow: 0 8px 36px #2779e215;
+    padding: 38px 28px;
+    max-width: 700px;
+    width: 100%;
+    font-size: 1.18em;
+    color: var(--text);
+    text-align: center;
+    display: none;
+  }
+  .card.active { display: block; }
+  label {
+    display: block;
+    margin: 12px 0 6px 0;
+    font-weight: 600;
+    text-align: left;
+  }
+  input, select {
+    font-size: 1.1em;
+    padding: 12px;
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #aaa;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease-in-out;
+  }
+  input:focus, select:focus {
+    border-color: var(--primary);
+  }
+  button.primary-btn {
+    background-color: var(--primary);
+    color: var(--card-bg);
+    font-weight: bold;
+    border: none;
+    padding: 14px;
+    margin-top: 20px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.3s, transform 0.1s;
+    font-size: 1.1em;
+    width: 100%;
+  }
+  button.primary-btn:hover {
+    background-color: var(--accent);
+    transform: scale(1.03);
+  }
+  ul.run-list {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 30px;
+    text-align: left;
+    max-height: 300px;
+    overflow-y: auto;
+    border-top: 1px solid #ccc;
+  }
+  ul.run-list li {
+    padding: 10px 8px;
+    border-bottom: 1px solid #ddd;
+    font-size: 1.04em;
+    color: var(--text);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 30px;
+    font-size: 1.05em;
+  }
+  th, td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+  }
+  th {
+    background-color: var(--primary);
+    color: var(--card-bg);
+  }
+</style>
 </head>
-<body>
+<body data-theme="light">
   <div id="sidebar">
     <div class="sidebar-logo">🏃 Dolní Lhota Run</div>
     <button class="sidebar-btn active" id="menu-dashboard" onclick="showSection('dashboard')">
@@ -228,4 +228,179 @@
       </svg>
       Tým
     </button>
-    <button class="
+    <button class="sidebar-btn" onclick="odhlasit()">
+      <svg width="22" height="22" fill="none" stroke="#8b96ab" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      Odhlásit
+    </button>
+    <button class="theme-switch" onclick="switchTheme()" id="themeToggleBtn">🌙 Tmavý režim</button>
+  </div>
+  <main>
+    <div class="card active" id="section-dashboard">
+      <h2>Vítej v běžecké výzvě Dolní Lhoty!</h2>
+      <p>Tady budeš zadávat své běhy, sledovat pořadí, tým a statistiky.</p>
+    </div>
+
+    <div class="card" id="section-myruns">
+      <h2>Zadat nový běh</h2>
+      <label for="input-km">Kolik km?</label>
+      <input type="number" id="input-km" min="0" step="0.01" placeholder="např. 5.3" oninput="updatePace()" />
+      <label for="input-min">Čas v minutách</label>
+      <input type="number" id="input-min" min="1" step="1" placeholder="např. 30" oninput="updatePace()" />
+      <label for="input-pace">Průměrné tempo (min/km)</label>
+      <input type="text" id="input-pace" disabled placeholder="0.00" />
+      <button class="primary-btn" onclick="addRun()">Přidat běh</button>
+      <h3>Seznam běhů</h3>
+      <ul id="myRunsList" class="run-list"></ul>
+    </div>
+
+    <div class="card" id="section-team">
+      <h2>Tým</h2>
+      <label for="select-team">Vyber tým</label>
+      <select id="select-team"></select>
+      <button class="primary-btn" onclick="joinTeam()">Přidat se do týmu</button>
+      <h3>Členové týmu</h3>
+      <ul id="teamMembersList" class="run-list"></ul>
+    </div>
+
+    <div class="card" id="section-allrunners">
+      <h2>Tabulka běžců</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Jméno</th><th>Celkem km</th><th>Celkem min</th><th>Průměrné tempo</th>
+          </tr>
+        </thead>
+        <tbody id="runnersTableBody"></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    // Data demo
+    let runs = [];
+    let runners = {
+      'Alena': { km: 15, min: 90 },
+      'Karel': { km: 20, min: 100 }
+    };
+    let teams = {
+      'Brouci': ['Alena'],
+      'Lesní běžci': ['Karel']
+    };
+    let currentTeam = null;
+
+    // Přepínání sekcí
+    function showSection(id) {
+      document.querySelectorAll('.card').forEach(e => e.classList.remove('active'));
+      document.querySelectorAll('.sidebar-btn').forEach(e => e.classList.remove('active'));
+      document.getElementById('section-' + id).classList.add('active');
+      document.getElementById('menu-' + (id === 'myruns' ? 'my' : id)).classList.add('active');
+
+      if (id === 'myruns') renderMyRuns();
+      if (id === 'team') {
+        renderTeamSelect();
+        renderTeamMembers();
+      }
+      if (id === 'allrunners') renderRunnersTable();
+    }
+
+    // Světlo/tma režim
+    function switchTheme() {
+      const html = document.documentElement;
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      document.getElementById('themeToggleBtn').textContent = isDark ? '🌙 Tmavý režim' : '☀️ Světlý režim';
+    }
+
+    // Přidat běh
+    function updatePace() {
+      const km = parseFloat(document.getElementById('input-km').value);
+      const min = parseInt(document.getElementById('input-min').value);
+      const paceField = document.getElementById('input-pace');
+      if (km > 0 && min > 0) {
+        paceField.value = (min / km).toFixed(2);
+      } else {
+        paceField.value = '';
+      }
+    }
+    function addRun() {
+      const km = parseFloat(document.getElementById('input-km').value);
+      const min = parseInt(document.getElementById('input-min').value);
+      if (!km || !min || km <= 0 || min <= 0) {
+        alert('Prosím, zadej platné km i minuty.');
+        return;
+      }
+      runs.push({ km, min, pace: min / km });
+      // Aktualizovat osobní běhy
+      renderMyRuns();
+      // Aktualizovat tabulku běžců
+      // Pro demo jen přidáme do fiktivního běžce „Ty“
+      if (!runners['Ty']) runners['Ty'] = { km: 0, min: 0 };
+      runners['Ty'].km += km;
+      runners['Ty'].min += min;
+      // Aktualizovat tabulku
+      renderRunnersTable();
+      clearRunInputs();
+    }
+    function renderMyRuns() {
+      const ul = document.getElementById('myRunsList');
+      ul.innerHTML = '';
+      runs.forEach((run, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${i+1}. ${run.km.toFixed(2)} km, ${run.min} min, tempo ${run.pace.toFixed(2)} min/km`;
+        ul.appendChild(li);
+      });
+    }
+    function clearRunInputs() {
+      document.getElementById('input-km').value = '';
+      document.getElementById('input-min').value = '';
+      document.getElementById('input-pace').value = '';
+    }
+
+    // Správa týmů
+    function renderTeamSelect() {
+      const select = document.getElementById('select-team');
+      select.innerHTML = '';
+      for (const teamName in teams) {
+        const option = document.createElement('option');
+        option.value = teamName;
+        option.textContent = teamName;
+        select.appendChild(option);
+      }
+    }
+    function joinTeam() {
+      const select = document.getElementById('select-team');
+      const chosenTeam = select.value;
+      if (!chosenTeam) return alert('Vyber tým.');
+      if (!currentTeam) {
+        currentTeam = chosenTeam;
+        if (!teams[chosenTeam].includes('Ty')) teams[chosenTeam].push('Ty');
+      } else if (currentTeam !== chosenTeam) {
+        // odebrat z předchozího týmu
+        const idx = teams[currentTeam].indexOf('Ty');
+        if (idx !== -1) teams[currentTeam].splice(idx, 1);
+        currentTeam = chosenTeam;
+        if (!teams[chosenTeam].includes('Ty')) teams[chosenTeam].push('Ty');
+      }
+      renderTeamMembers();
+      alert(`Přidán do týmu ${chosenTeam}`);
+    }
+    function renderTeamMembers() {
+      const ul = document.getElementById('teamMembersList');
+      ul.innerHTML = '';
+      if (!currentTeam) {
+        ul.textContent = 'Nejsi zatím v žádném týmu.';
+        return;
+      }
+      teams[currentTeam].forEach(member => {
+        const li = document.createElement('li');
+        li.textContent = member;
+        ul.appendChild(li);
+      });
+    }
+
+    // Tabulka běžců
+    function renderRunnersTable() {
+      const tbody = document.getElementById('runnersTableBody');
+      tbody.innerHTML = '';
+      // Převést na pole a seřadit podle km sestupně
