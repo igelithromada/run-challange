@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Run Challenge - Upravený panel</title>
+<title>Run Challenge - Upravený panel s Nickem a vstupy</title>
 <style>
   body {
     margin: 0; font-family: Arial, sans-serif;
@@ -29,6 +29,21 @@
   }
   main {
     padding: 20px;
+  }
+  #inputs {
+    margin-bottom: 15px;
+  }
+  #inputs input {
+    width: calc(50% - 12px);
+    padding: 10px;
+    font-size: 16px;
+    margin-right: 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+  }
+  #inputs input:last-child {
+    margin-right: 0;
   }
   #btnAddRunMain {
     background: #4caf50;
@@ -57,7 +72,6 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
   }
   #sidePanel.active {
     transform: translateX(0);
@@ -68,6 +82,11 @@
     font-size: 28px;
     cursor: pointer;
     user-select: none;
+  }
+  #nickDisplay {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 30px;
   }
   #sidePanel button {
     background: #4caf50;
@@ -94,14 +113,20 @@
 </header>
 
 <main>
+  <div id="inputs">
+    <input type="number" id="inputKm" placeholder="Kilometry (km)" min="0" step="0.01" />
+    <input type="number" id="inputMin" placeholder="Čas (minuty)" min="0" />
+  </div>
   <button id="btnAddRunMain">Přidat nový běh</button>
 </main>
 
 <div id="sidePanel" aria-hidden="true">
   <div id="closePanel" aria-label="Zavřít menu">&times;</div>
+  <div id="nickDisplay">Nick: igelithromada</div>
   <button id="btnViewRunners">Pořadí běžců</button>
   <button id="btnTeams">Týmy</button>
   <button id="btnStats">Statistiky</button>
+  <button id="btnSettings">Nastavení</button>
   <button id="logoutBtn">Odhlásit se</button>
 </div>
 
@@ -120,9 +145,11 @@
     sidePanel.setAttribute('aria-hidden', 'true');
   });
 
-  // Prozatím alerty
+  // Tlačítka - prozatím jen alerty
   document.getElementById('btnAddRunMain').addEventListener('click', () => {
-    alert('Přidání nového běhu');
+    const km = document.getElementById('inputKm').value;
+    const min = document.getElementById('inputMin').value;
+    alert(`Přidání běhu: ${km} km, ${min} minut`);
   });
   document.getElementById('btnViewRunners').addEventListener('click', () => {
     alert('Zobrazit pořadí běžců');
@@ -132,6 +159,9 @@
   });
   document.getElementById('btnStats').addEventListener('click', () => {
     alert('Zobrazit statistiky');
+  });
+  document.getElementById('btnSettings').addEventListener('click', () => {
+    alert('Nastavení');
   });
   document.getElementById('logoutBtn').addEventListener('click', () => {
     alert('Odhlášení');
