@@ -3,193 +3,112 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dolní Lhota Run</title>
+<title>Registrace a přihlášení</title>
 <style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0; background: #f0f4ff; color: #222;
-    padding: 20px;
-  }
-  h1, h2 {
-    color: #2e5dbd;
-  }
-  #dashboard, #loginSection, #myRunsSection {
-    display: none;
-  }
-  .active {
-    display: block;
-  }
-  input, button {
-    font-size: 1rem;
-    padding: 10px;
-    margin: 5px 0;
-    width: 100%;
-    max-width: 300px;
-  }
-  button {
-    cursor: pointer;
-    background-color: #2e5dbd;
-    color: white;
-    border: none;
-    border-radius: 6px;
-  }
-  button:hover {
-    background-color: #436aff;
-  }
-  ul {
-    list-style: none;
-    padding-left: 0;
-  }
-  ul li {
-    margin-bottom: 8px;
-  }
+  body { font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: auto; }
+  input { display: block; width: 100%; margin-bottom: 10px; padding: 8px; }
+  button { padding: 10px; width: 100%; background-color: #4285f4; color: white; border: none; cursor: pointer; }
+  button:hover { background-color: #357ae8; }
+  #message { color: red; margin-bottom: 10px; }
+  #toggleForm { margin-top: 10px; background: none; border: none; color: #4285f4; cursor: pointer; }
 </style>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+  // Firebase config (doplň svoje)
+  const firebaseConfig = {
+    apiKey: "TVŮJ_API_KEY",
+    authDomain: "TVŮJ_AUTH_DOMAIN",
+    projectId: "TVŮJ_PROJECT_ID",
+    storageBucket: "TVŮJ_STORAGE_BUCKET",
+    messagingSenderId: "TVŮJ_MESSAGING_SENDER_ID",
+    appId: "TVŮJ_APP_ID",
+    measurementId: "TVŮJ_MEASUREMENT_ID"
+  };
+
+  // Inicializace Firebase
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+</script>
 </head>
 <body>
 
-<h1>Dolní Lhota Run</h1>
+<h2 id="formTitle">Přihlášení</h2>
+<div id="message"></div>
 
-<div id="loginSection" class="active">
-  <h2>Přihlášení</h2>
-  <input type="email" id="email" placeholder="Email" />
-  <input type="password" id="password" placeholder="Heslo" />
-  <button id="btnLogin">Přihlásit se</button>
-</div>
+<input type="email" id="email" placeholder="Email" />
+<input type="password" id="password" placeholder="Heslo" />
 
-<div id="dashboard">
-  <h2>Hlavní stránka</h2>
-  <button id="btnLogout">Odhlásit se</button>
-  <button id="btnShowRuns">Moje běhy</button>
-</div>
+<button id="submitBtn">Přihlásit se</button>
 
-<div id="myRunsSection">
-  <h2>Moje běhy</h2>
-  <label for="runKm">Kilometry (km):</label>
-  <input type="number" id="runKm" step="0.01" min="0" />
-  <label for="runMin">Čas (minuty):</label>
-  <input type="number" id="runMin" min="0" />
-  <button id="btnAddRun">Přidat běh</button>
-  <button id="btnBackToDashboard">Zpět na hlavní stránku</button>
-  <ul id="runsList"></ul>
-</div>
+<button id="toggleForm">Nemáš účet? Registruj se</button>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
-  import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+<script>
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const submitBtn = document.getElementById('submitBtn');
+  const toggleFormBtn = document.getElementById('toggleForm');
+  const messageDiv = document.getElementById('message');
+  const formTitle = document.getElementById('formTitle');
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
-    authDomain: "dolni-lhota-run.firebaseapp.com",
-    projectId: "dolni-lhota-run",
-    storageBucket: "dolni-lhota-run.appspot.com",
-    messagingSenderId: "549134031482",
-    appId: "1:549134031482:web:41205785ed5b4e275a79c3",
-    measurementId: "G-E7N1HJ4BEZ"
-  };
+  let isLogin = true;
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  const loginSection = document.getElementById('loginSection');
-  const dashboard = document.getElementById('dashboard');
-  const myRunsSection = document.getElementById('myRunsSection');
-
-  const btnLogin = document.getElementById('btnLogin');
-  const btnLogout = document.getElementById('btnLogout');
-  const btnShowRuns = document.getElementById('btnShowRuns');
-  const btnBackToDashboard = document.getElementById('btnBackToDashboard');
-  const btnAddRun = document.getElementById('btnAddRun');
-
-  const runsList = document.getElementById('runsList');
-
-  function showSection(section) {
-    loginSection.classList.remove('active');
-    dashboard.classList.remove('active');
-    myRunsSection.classList.remove('active');
-    section.classList.add('active');
-  }
-
-  btnLogin.onclick = async () => {
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value.trim();
-    if (!email || !password) {
-      alert('Vyplň email i heslo.');
-      return;
-    }
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (e) {
-      alert('Chyba při přihlášení: ' + e.message);
-    }
-  };
-
-  btnLogout.onclick = async () => {
-    await signOut(auth);
-  };
-
-  btnShowRuns.onclick = () => showSection(myRunsSection);
-  btnBackToDashboard.onclick = () => showSection(dashboard);
-
-  btnAddRun.onclick = async () => {
-    const km = parseFloat(document.getElementById('runKm').value);
-    const min = parseInt(document.getElementById('runMin').value);
-    if (!km || !min) {
-      alert('Vyplň km i čas.');
-      return;
-    }
-    const user = auth.currentUser;
-    if (!user) {
-      alert('Nejsi přihlášen.');
-      return;
-    }
-    try {
-      await addDoc(collection(db, 'runs'), {
-        userId: user.uid,
-        km,
-        min,
-        pace: min / km,
-        timestamp: serverTimestamp()
-      });
-      alert('Běh přidán.');
-      document.getElementById('runKm').value = '';
-      document.getElementById('runMin').value = '';
-      loadRuns(user.uid);
-    } catch (e) {
-      alert('Chyba při přidání běhu: ' + e.message);
-    }
-  };
-
-  async function loadRuns(uid) {
-    runsList.innerHTML = 'Načítám...';
-    try {
-      const q = query(collection(db, 'runs'), where('userId', '==', uid), orderBy('timestamp', 'desc'));
-      const querySnapshot = await getDocs(q);
-      if (querySnapshot.empty) {
-        runsList.innerHTML = '<li>Žádné běhy zatím nejsou.</li>';
-        return;
-      }
-      runsList.innerHTML = '';
-      querySnapshot.forEach(doc => {
-        const run = doc.data();
-        const li = document.createElement('li');
-        li.textContent = `${run.km.toFixed(2)} km, ${run.min} min, tempo ${run.pace.toFixed(2)} min/km`;
-        runsList.appendChild(li);
-      });
-    } catch (e) {
-      runsList.innerHTML = '<li>Chyba při načítání běhů.</li>';
-    }
-  }
-
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      showSection(dashboard);
-      loadRuns(user.uid);
+  toggleFormBtn.onclick = () => {
+    isLogin = !isLogin;
+    if (isLogin) {
+      formTitle.textContent = "Přihlášení";
+      submitBtn.textContent = "Přihlásit se";
+      toggleFormBtn.textContent = "Nemáš účet? Registruj se";
     } else {
-      showSection(loginSection);
+      formTitle.textContent = "Registrace";
+      submitBtn.textContent = "Registrovat";
+      toggleFormBtn.textContent = "Máš účet? Přihlaš se";
     }
-  });
+    messageDiv.textContent = "";
+  };
+
+  submitBtn.onclick = () => {
+    const email = emailInput.value;
+    const password = passwordInput.value;
+    messageDiv.textContent = "";
+
+    if (!email || !password) {
+      messageDiv.textContent = "Vyplň prosím email i heslo.";
+      return;
+    }
+
+    if (isLogin) {
+      // Přihlášení
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          messageDiv.style.color = "green";
+          messageDiv.textContent = "Úspěšně přihlášen!";
+          // Tady můžeš přesměrovat uživatele nebo něco dalšího
+        })
+        .catch(error => {
+          messageDiv.style.color = "red";
+          messageDiv.textContent = "Chyba přihlášení: " + error.message;
+        });
+    } else {
+      // Registrace
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(() => {
+          messageDiv.style.color = "green";
+          messageDiv.textContent = "Úspěšně zaregistrován! Teď se můžeš přihlásit.";
+          isLogin = true;
+          formTitle.textContent = "Přihlášení";
+          submitBtn.textContent = "Přihlásit se";
+          toggleFormBtn.textContent = "Nemáš účet? Registruj se";
+          emailInput.value = "";
+          passwordInput.value = "";
+        })
+        .catch(error => {
+          messageDiv.style.color = "red";
+          messageDiv.textContent = "Chyba registrace: " + error.message;
+        });
+    }
+  };
 </script>
 
 </body>
