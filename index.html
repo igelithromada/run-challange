@@ -56,6 +56,16 @@ function pridatBeh() {
       }, 300);
     });
 }
+function zobrazSekci(sekce) {
+  ['dashboard','mojeBehy','tymMain','tymVytvor','tymPridat'].forEach(s=>{
+    document.getElementById(s+'Section').style.display = (s===sekce)?'block':'none';
+  });
+  toggleSidebar();
+  if(sekce==='mojeBehy') zobrazMojeBehy();
+  if(sekce==='tymPridat') zobrazTymy();
+}
+
+function
 </script>
 
 
@@ -112,6 +122,16 @@ function pridatBeh() {
       }, 300);
     });
 }
+function zobrazSekci(sekce) {
+  ['dashboard','mojeBehy','tymMain','tymVytvor','tymPridat'].forEach(s=>{
+    document.getElementById(s+'Section').style.display = (s===sekce)?'block':'none';
+  });
+  toggleSidebar();
+  if(sekce==='mojeBehy') zobrazMojeBehy();
+  if(sekce==='tymPridat') zobrazTymy();
+}
+
+function
 </script>
 
 
@@ -168,6 +188,16 @@ function pridatBeh() {
       }, 300);
     });
 }
+function zobrazSekci(sekce) {
+  ['dashboard','mojeBehy','tymMain','tymVytvor','tymPridat'].forEach(s=>{
+    document.getElementById(s+'Section').style.display = (s===sekce)?'block':'none';
+  });
+  toggleSidebar();
+  if(sekce==='mojeBehy') zobrazMojeBehy();
+  if(sekce==='tymPridat') zobrazTymy();
+}
+
+function
 </script>
 
 
@@ -185,7 +215,7 @@ function pridatBeh() {
   #sidebar a:hover { background: #ddd; }
   #hamburger { position: fixed; top: 15px; left: 15px; font-size: 2.2em; cursor: pointer; z-index: 101; }
   #odhlasBtn { position: absolute; top: 10px; right: 10px; font-size: 1.1em; cursor: pointer; }
-  #userInfo { padding-top: 80px; padding: 0 32px 10px 32px; font-size: 1em; }
+  #userInfo { padding-top: 100px; text-align: center; padding: 0 32px 10px 32px; font-size: 1em; }
 </style>
 </head>
 <body>
@@ -201,7 +231,7 @@ function pridatBeh() {
   <a href="#" onclick="zobrazSekci('tymMain')">Tým</a>
 </div>
 
-<h1>Běh v Oboře</h1>
+<h1>Dolní Lhota Run</h1>
 
 <div id="loginSection">
   <h2>Přihlášení</h2>
@@ -455,6 +485,16 @@ function pridatBeh() {
       }, 300);
     });
 }
+function zobrazSekci(sekce) {
+  ['dashboard','mojeBehy','tymMain','tymVytvor','tymPridat'].forEach(s=>{
+    document.getElementById(s+'Section').style.display = (s===sekce)?'block':'none';
+  });
+  toggleSidebar();
+  if(sekce==='mojeBehy') zobrazMojeBehy();
+  if(sekce==='tymPridat') zobrazTymy();
+}
+
+function
 </script>
 
 
@@ -496,6 +536,16 @@ function zobrazVsechny() {
       }).join('');
   });
 }
+function zobrazSekci(sekce) {
+  ['dashboard','mojeBehy','tymMain','tymVytvor','tymPridat'].forEach(s=>{
+    document.getElementById(s+'Section').style.display = (s===sekce)?'block':'none';
+  });
+  toggleSidebar();
+  if(sekce==='mojeBehy') zobrazMojeBehy();
+  if(sekce==='tymPridat') zobrazTymy();
+}
+
+function
 </script>
 </body>
 </html>
