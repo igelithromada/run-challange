@@ -173,19 +173,125 @@ function pridatBeh() {
 
 
 <style>
-  body { font-family: sans-serif; background: #f8f8f8; color: #222; padding: 20px; max-width: 400px; margin: auto; transition: margin-left 0.3s; }
-  h1, h2 { text-align: center; color: #ff6600; }
-  input, button { font-size: 1.2em; padding: 12px; margin: 10px 0; width: 100%; border-radius: 8px; border: 1px solid #aaa; }
-  button { background: #ff6600; color: #fff; font-weight: bold; cursor: pointer; }
-  .leave-btn { background: #999 !important; }
-  .card { background: #fff; border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 10px; }
-  .hidden { display: none; }
-  #sidebar { height: 100%; width: 0; position: fixed; z-index: 100; top: 0; left: 0; background: #f0f0f0; overflow-x: auto; transition: 0.3s; padding-top: 20px; display: flex; flex-direction: column; }
-  #sidebar a { padding: 8px 8px 8px 32px; text-decoration: none; font-size: 1.2em; color: #333; display: block; transition: 0.3s; }
-  #sidebar a:hover { background: #ddd; }
-  #hamburger { position: fixed; top: 15px; left: 15px; font-size: 2.2em; cursor: pointer; z-index: 101; }
-  #odhlasBtn { position: absolute; top: 10px; right: 10px; font-size: 1.1em; cursor: pointer; }
-  #userInfo { padding: 0 32px 10px 32px; font-size: 1em; }
+  body {
+    background: #f8fafc;
+    font-family: 'Segoe UI', 'Montserrat', Arial, sans-serif;
+    color: #26335d;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+  #sidebar {
+    background: #3e63dd;
+    color: #fff;
+    box-shadow: 3px 0 18px rgba(34,58,110,.10);
+    border-radius: 0 20px 20px 0;
+  }
+  #sidebar a, #sidebar .sidebar-btn, #sidebar .sidebar-nick {
+    font-family: inherit;
+    font-size: 1.14em;
+    border-radius: 10px;
+    padding: 12px 28px;
+    margin: 3px 8px;
+    color: #fff;
+    background: none;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    border: none;
+    text-align: left;
+    transition: background .16s;
+  }
+  #sidebar a:hover, #sidebar .sidebar-btn:hover {
+    background: #4f80ff;
+  }
+  #sidebar .sidebar-nick {
+    color: #c3d4ff;
+    border-bottom: 1.5px solid #4c6fe1;
+    margin-bottom: 10px;
+    font-size: 1.01em;
+    padding-top: 6px;
+    padding-bottom: 10px;
+  }
+  #hamburger {
+    font-size: 2em;
+    color: #4066dd;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 9px rgba(60,100,200,0.09);
+    padding: 2px 13px;
+    border: 1px solid #d4dbf2;
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    z-index: 111;
+    transition: color .16s;
+    cursor: pointer;
+  }
+  #hamburger:hover { color: #ef476f; }
+  h1 {
+    color: #3e63dd;
+    margin-top: 34px;
+    margin-bottom: 12px;
+    font-weight: 700;
+    font-size: 2.2em;
+    text-align: center;
+  }
+  h2 {
+    color: #ef476f;
+    margin: 20px 0 12px 0;
+    font-size: 1.17em;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+  input, select, button {
+    font-size: 1.12em;
+    padding: 13px 11px;
+    border-radius: 10px;
+    border: 1.5px solid #d0d7ef;
+    margin: 8px 0 18px 0;
+    width: 100%;
+    background: #f5f8fd;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+    transition: border .18s;
+  }
+  input:focus, select:focus {
+    border: 2px solid #3e63dd;
+    background: #f0f6ff;
+  }
+  button {
+    background: linear-gradient(90deg,#4066dd 80%,#63c3fa 120%);
+    color: #fff;
+    font-weight: bold;
+    letter-spacing: 1px;
+    border: none;
+    margin-top: 10px;
+    box-shadow: 0 2px 9px rgba(34,58,110,.09);
+    transition: background .18s, transform .08s;
+    cursor: pointer;
+  }
+  button:hover, button:focus {
+    background: linear-gradient(90deg,#ef476f 60%,#4f80ff 120%);
+    transform: scale(1.025);
+  }
+  .leave-btn { background: #878ea6 !important; color: #fff; }
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 11px rgba(60,90,180,0.07);
+    border-left: 6px solid #3e63dd;
+    padding: 17px;
+    margin: 13px 0 12px 0;
+    font-size: 1.08em;
+  }
+  .card strong { color: #3e63dd; }
+  .hidden { display: none !important; }
+  @media (max-width:520px) {
+    #sidebar { border-radius: 0 14px 14px 0;}
+    h1 { font-size: 1.4em;}
+    .card { font-size: 1em;}
+  }
 </style>
 </head>
 <body>
