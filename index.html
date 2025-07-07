@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Run Challenge - Upravený panel s Nickem a vstupy</title>
+<title>Dolní Lhota Run</title>
 <style>
   body {
     margin: 0; font-family: Arial, sans-serif;
@@ -32,18 +32,17 @@
   }
   #inputs {
     margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    max-width: 200px;
   }
   #inputs input {
-    width: calc(50% - 12px);
     padding: 10px;
     font-size: 16px;
-    margin-right: 12px;
+    margin-bottom: 10px;
     border-radius: 6px;
     border: 1px solid #ccc;
     box-sizing: border-box;
-  }
-  #inputs input:last-child {
-    margin-right: 0;
   }
   #btnAddRunMain {
     background: #4caf50;
@@ -109,7 +108,7 @@
 
 <header>
   <div id="hamburger">&#9776;</div>
-  <h1>Run Challenge</h1>
+  <h1>Dolní Lhota Run</h1>
 </header>
 
 <main>
@@ -145,7 +144,6 @@
     sidePanel.setAttribute('aria-hidden', 'true');
   });
 
-  // Tlačítka - prozatím jen alerty
   document.getElementById('btnAddRunMain').addEventListener('click', () => {
     const km = document.getElementById('inputKm').value;
     const min = document.getElementById('inputMin').value;
@@ -164,7 +162,9 @@
     alert('Nastavení');
   });
   document.getElementById('logoutBtn').addEventListener('click', () => {
-    alert('Odhlášení');
+    // Přesměrování na přihlašovací stránku, změň URL podle potřeby
+    alert('Odhlášení - přesměruji na přihlášení');
+    window.location.href = 'login.html'; // zde dej URL přihlašovací stránky
   });
 </script>
 
