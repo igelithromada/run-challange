@@ -1,115 +1,92 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Registrace a přihlášení</title>
-<style>
-  body { font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: auto; }
-  input { display: block; width: 100%; margin-bottom: 10px; padding: 8px; }
-  button { padding: 10px; width: 100%; background-color: #4285f4; color: white; border: none; cursor: pointer; }
-  button:hover { background-color: #357ae8; }
-  #message { color: red; margin-bottom: 10px; }
-  #toggleForm { margin-top: 10px; background: none; border: none; color: #4285f4; cursor: pointer; }
-</style>
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script>
-  // Firebase config (doplň svoje)
-  const firebaseConfig = {
-    apiKey: "TVŮJ_API_KEY",
-    authDomain: "TVŮJ_AUTH_DOMAIN",
-    projectId: "TVŮJ_PROJECT_ID",
-    storageBucket: "TVŮJ_STORAGE_BUCKET",
-    messagingSenderId: "TVŮJ_MESSAGING_SENDER_ID",
-    appId: "TVŮJ_APP_ID",
-    measurementId: "TVŮJ_MEASUREMENT_ID"
-  };
-
-  // Inicializace Firebase
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-</script>
+  <meta charset="UTF-8" />
+  <title>Dolní Lhota run - přihlášení & registrace</title>
 </head>
 <body>
+  <h1>Dolní Lhota run</h1>
 
-<h2 id="formTitle">Přihlášení</h2>
-<div id="message"></div>
+  <h2>Registrace</h2>
+  <input type="email" id="reg-email" placeholder="Email">
+  <input type="password" id="reg-password" placeholder="Heslo">
+  <button id="register-btn">Registrovat</button>
 
-<input type="email" id="email" placeholder="Email" />
-<input type="password" id="password" placeholder="Heslo" />
+  <h2>Přihlášení</h2>
+  <input type="email" id="login-email" placeholder="Email">
+  <input type="password" id="login-password" placeholder="Heslo">
+  <button id="login-btn">Přihlásit se</button>
 
-<button id="submitBtn">Přihlásit se</button>
+  <h2>Odhlášení</h2>
+  <button id="logout-btn">Odhlásit</button>
 
-<button id="toggleForm">Nemáš účet? Registruj se</button>
+  <p id="output"></p>
 
-<script>
-  const emailInput = document.getElementById('email');
-  const passwordInput = document.getElementById('password');
-  const submitBtn = document.getElementById('submitBtn');
-  const toggleFormBtn = document.getElementById('toggleForm');
-  const messageDiv = document.getElementById('message');
-  const formTitle = document.getElementById('formTitle');
+  <script type="module">
+    // Firebase SDK z CDN
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-  let isLogin = true;
+    // Tvoje nastavení Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
+      authDomain: "dolni-lhota-run.firebaseapp.com",
+      projectId: "dolni-lhota-run",
+      storageBucket: "dolni-lhota-run.appspot.com",
+      messagingSenderId: "549134031482",
+      appId: "1:549134031482:web:41205785ed5b4e275a79c3",
+      measurementId: "G-E7N1HJ4BEZ"
+    };
 
-  toggleFormBtn.onclick = () => {
-    isLogin = !isLogin;
-    if (isLogin) {
-      formTitle.textContent = "Přihlášení";
-      submitBtn.textContent = "Přihlásit se";
-      toggleFormBtn.textContent = "Nemáš účet? Registruj se";
-    } else {
-      formTitle.textContent = "Registrace";
-      submitBtn.textContent = "Registrovat";
-      toggleFormBtn.textContent = "Máš účet? Přihlaš se";
-    }
-    messageDiv.textContent = "";
-  };
+    // Inicializace Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-  submitBtn.onclick = () => {
-    const email = emailInput.value;
-    const password = passwordInput.value;
-    messageDiv.textContent = "";
+    // Elementy
+    const output = document.getElementById("output");
 
-    if (!email || !password) {
-      messageDiv.textContent = "Vyplň prosím email i heslo.";
-      return;
-    }
+    // Registrace
+    document.getElementById("register-btn").addEventListener("click", async () => {
+      const email = document.getElementById("reg-email").value;
+      const password = document.getElementById("reg-password").value;
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        output.textContent = `Registrován: ${userCredential.user.email}`;
+      } catch (error) {
+        output.textContent = `Chyba při registraci: ${error.message}`;
+      }
+    });
 
-    if (isLogin) {
-      // Přihlášení
-      auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
-          messageDiv.style.color = "green";
-          messageDiv.textContent = "Úspěšně přihlášen!";
-          // Tady můžeš přesměrovat uživatele nebo něco dalšího
-        })
-        .catch(error => {
-          messageDiv.style.color = "red";
-          messageDiv.textContent = "Chyba přihlášení: " + error.message;
-        });
-    } else {
-      // Registrace
-      auth.createUserWithEmailAndPassword(email, password)
-        .then(() => {
-          messageDiv.style.color = "green";
-          messageDiv.textContent = "Úspěšně zaregistrován! Teď se můžeš přihlásit.";
-          isLogin = true;
-          formTitle.textContent = "Přihlášení";
-          submitBtn.textContent = "Přihlásit se";
-          toggleFormBtn.textContent = "Nemáš účet? Registruj se";
-          emailInput.value = "";
-          passwordInput.value = "";
-        })
-        .catch(error => {
-          messageDiv.style.color = "red";
-          messageDiv.textContent = "Chyba registrace: " + error.message;
-        });
-    }
-  };
-</script>
+    // Přihlášení
+    document.getElementById("login-btn").addEventListener("click", async () => {
+      const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-password").value;
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        output.textContent = `Přihlášen: ${userCredential.user.email}`;
+      } catch (error) {
+        output.textContent = `Chyba při přihlášení: ${error.message}`;
+      }
+    });
 
+    // Odhlášení
+    document.getElementById("logout-btn").addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+        output.textContent = "Odhlášen.";
+      } catch (error) {
+        output.textContent = `Chyba při odhlášení: ${error.message}`;
+      }
+    });
+
+    // Stav přihlášení
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        output.textContent = `Aktuálně přihlášen: ${user.email}`;
+      } else {
+        output.textContent = "Nikdo není přihlášen.";
+      }
+    });
+  </script>
 </body>
 </html>
