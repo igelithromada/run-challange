@@ -2,17 +2,22 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Test nasazení</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f0f4ff; }
+  body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
   h1 { color: #2a6fdb; }
 </style>
 </head>
 <body>
-  <h1>Test nasazení Vercel - Čas: <span id="time"></span></h1>
+  <h1>Nasazení funguje! Čas: <span id="time"></span></h1>
+
   <script>
-    document.getElementById('time').textContent = new Date().toLocaleString();
+    function updateTime() {
+      document.getElementById('time').textContent = new Date().toLocaleTimeString();
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
   </script>
 </body>
 </html>
