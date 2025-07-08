@@ -281,3 +281,45 @@ btnSettings.addEventListener('click', () => {
   sidePanel.classList.remove('open');
   sidePanel.setAttribute('aria-hidden', 'true');
 });
+window.addEventListener('DOMContentLoaded', () => {
+  const btnDashboard = document.getElementById('btnDashboard');
+  const btnMyRuns = document.getElementById('btnMyRuns');
+  const btnTeams = document.getElementById('btnTeams');
+  const btnSettings = document.getElementById('btnSettings');
+  const mainContent = document.getElementById('mainContent');
+  const sidePanel = document.getElementById('sidePanel');
+
+  btnDashboard.addEventListener('click', () => {
+    mainContent.innerHTML = '<h2>Hlavní stránka</h2><p>Obsah hlavní stránky...</p>';
+    sidePanel.classList.remove('open');
+    sidePanel.setAttribute('aria-hidden', 'true');
+  });
+
+  btnMyRuns.addEventListener('click', () => {
+    mainContent.innerHTML = '<h2>Moje běhy</h2><p>Obsah mých běhů...</p>';
+    sidePanel.classList.remove('open');
+    sidePanel.setAttribute('aria-hidden', 'true');
+  });
+
+  btnTeams.addEventListener('click', () => {
+    mainContent.innerHTML = '<h2>Týmy</h2><p>Správa týmů...</p>';
+    sidePanel.classList.remove('open');
+    sidePanel.setAttribute('aria-hidden', 'true');
+  });
+
+  btnSettings.addEventListener('click', () => {
+    mainContent.innerHTML = '<h2>Nastavení</h2><p>Nastavení uživatele...</p>';
+    sidePanel.classList.remove('open');
+    sidePanel.setAttribute('aria-hidden', 'true');
+  });
+
+  document.getElementById('btnLogout').addEventListener('click', async () => {
+    // Odhlášení a přesměrování
+    try {
+      await signOut(auth);
+      window.location.href = 'login.html';
+    } catch (error) {
+      alert('Chyba při odhlášení: ' + error.message);
+    }
+  });
+});
