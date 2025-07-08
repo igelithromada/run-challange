@@ -1,35 +1,79 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dolní Lhota Run</title>
-<link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8" />
+  <title>Test Firebase Přihlášení</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; background: #f0f4ff; }
+    h1 { text-align: center; color: #2a6fdb; }
+    input, button { width: 100%; padding: 12px; margin: 8px 0; font-size: 1em; border-radius: 5px; border: 1px solid #ccc; }
+    button { background: #2a6fdb; color: white; border: none; cursor: pointer; font-weight: bold; }
+    button:hover { background: #235bb5; }
+    #message { text-align: center; height: 1.5em; margin-top: 10px; }
+  </style>
 </head>
 <body>
 
-<header>
-  <button id="hamburger" aria-label="Otevřít menu">&#9776;</button>
-  <h1>Dolní Lhota Run</h1>
-</header>
+<h1>Přihlášení</h1>
+<input id="email" type="email" placeholder="Email" />
+<input id="password" type="password" placeholder="Heslo" />
+<button id="loginBtn">Přihlásit se</button>
 
-<nav id="sidePanel" aria-hidden="true" class="hidden">
-  <button id="closePanel" aria-label="Zavřít menu">&times;</button>
-  <div id="userNick" class="user-nick">nick@example.com</div>
-  <div id="userTeam" class="user-team">Tým: žádný</div>
-  <ul class="menu-list">
-    <li><button id="btnDashboard">Hlavní stránka</button></li>
-    <li><button id="btnMyRuns">Moje běhy</button></li>
-    <li><button id="btnTeams">Týmy</button></li>
-    <li><button id="btnSettings">Nastavení</button></li>
-    <li><button id="btnLogout">Odhlásit se</button></li>
-  </ul>
-</nav>
+<p id="message"></p>
 
-<main id="mainContent">
-  <!-- Obsah se bude měnit -->
-</main>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-<script type="module" src="app.js"></script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
+    authDomain: "dolni-lhota-run.firebaseapp.com",
+    projectId: "dolni-lhota-run",
+    storageBucket: "dolni-lhota-run.appspot.com",
+    messagingSenderId: "549134031482",
+    appId: "1:549134031482:web:41205785ed5b4e275a79c3",
+    measurementId: "G-E7N1HJ4BEZ"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const loginBtn = document.getElementById('loginBtn');
+  const message = document.getElementById('message');
+
+  loginBtn.addEventListener('click', async () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    message.textContent = '';
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      message.style.color = 'green';
+      message.textContent = 'Přihlášení úspěšné! Probíhá přesměrování...';
+      setTimeout(() => {
+        // Po přihlášení přesměruj třeba na hlavní stránku
+        window.location.href = 'index.html'; // nebo jiná stránka
+      }, 1500);
+    } catch (error) {
+      message.style.color = 'red';
+      message.textContent = `Chyba přihlášení: ${error.message}`;
+    }
+  });
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      message.style.color = 'green';
+      message.textContent = `Jste přihlášen jako ${user.email}`;
+      // Můžeš rovnou přesměrovat, pokud chceš:
+      // window.location.href = 'index.html';
+    } else {
+      message.textContent = '';
+    }
+  });
+</script>
+
 </body>
 </html>
