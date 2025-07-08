@@ -238,3 +238,46 @@ const btnDashboard = document.getElementById('btnDashboard');
 const btnMyRuns = document.getElementById('btnMyRuns');
 const btnTeams = document.getElementById('btnTeams');
 const btnSettings = document.getElementById('btnSettings');
+// Předpokládám, že máš definované:
+// hamburger, sidePanel, closePanel, mainContent, atd.
+
+const btnDashboard = document.getElementById('btnDashboard');
+const btnMyRuns = document.getElementById('btnMyRuns');
+const btnTeams = document.getElementById('btnTeams');
+const btnSettings = document.getElementById('btnSettings');
+
+btnDashboard.addEventListener('click', () => {
+  mainContent.innerHTML = `
+    <h2>Hlavní stránka</h2>
+    <p>Zde bude souhrn běhů všech uživatelů a formulář na přidání nového běhu.</p>
+  `;
+  sidePanel.classList.remove('open');
+  sidePanel.setAttribute('aria-hidden', 'true');
+});
+
+btnMyRuns.addEventListener('click', () => {
+  mainContent.innerHTML = `
+    <h2>Moje běhy</h2>
+    <p>Zde budou tvoje zaznamenané běhy.</p>
+  `;
+  sidePanel.classList.remove('open');
+  sidePanel.setAttribute('aria-hidden', 'true');
+});
+
+btnTeams.addEventListener('click', () => {
+  mainContent.innerHTML = `
+    <h2>Týmy</h2>
+    <p>Zde bude správa týmů — vytvoření, přidání, opuštění.</p>
+  `;
+  sidePanel.classList.remove('open');
+  sidePanel.setAttribute('aria-hidden', 'true');
+});
+
+btnSettings.addEventListener('click', () => {
+  mainContent.innerHTML = `
+    <h2>Nastavení</h2>
+    <p>Zde můžeš změnit přezdívku a další nastavení profilu.</p>
+  `;
+  sidePanel.classList.remove('open');
+  sidePanel.setAttribute('aria-hidden', 'true');
+});
