@@ -2,9 +2,94 @@
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
-  <title>Test nasazení Vercel</title>
+  <title>Dolní Lhota Run - Přihlášení</title>
 </head>
 <body>
-  <h1 style="text-align:center; margin-top: 50px;">Hello World - Test Vercel nasazení</h1>
+  <h1>Dolní Lhota Run</h1>
+
+  <div>
+    <h2>Registrace</h2>
+    <input type="email" id="reg-email" placeholder="Email" />
+    <input type="password" id="reg-password" placeholder="Heslo" />
+    <button id="register-btn">Registrovat</button>
+  </div>
+
+  <div>
+    <h2>Přihlášení</h2>
+    <input type="email" id="login-email" placeholder="Email" />
+    <input type="password" id="login-password" placeholder="Heslo" />
+    <button id="login-btn">Přihlásit se</button>
+  </div>
+
+  <div>
+    <button id="logout-btn">Odhlásit se</button>
+  </div>
+
+  <p id="output"></p>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
+      authDomain: "dolni-lhota-run.firebaseapp.com",
+      projectId: "dolni-lhota-run",
+      storageBucket: "dolni-lhota-run.appspot.com",
+      messagingSenderId: "549134031482",
+      appId: "1:549134031482:web:41205785ed5b4e275a79c3",
+      measurementId: "G-E7N1HJ4BEZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const output = document.getElementById("output");
+
+    document.getElementById("register-btn").addEventListener("click", async () => {
+      const email = document.getElementById("reg-email").value;
+      const password = document.getElementById("reg-password").value;
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        output.textContent = `Registrován: ${userCredential.user.email}`;
+      } catch (error) {
+        output.textContent = `Chyba při registraci: ${error.message}`;
+      }
+    });
+
+    document.getElementById("login-btn").addEventListener("click", async () => {
+      const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-password").value;
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        output.textContent = `Přihlášen: ${userCredential.user.email}`;
+      } catch (error) {
+        output.textContent = `Chyba při přihlášení: ${error.message}`;
+      }
+    });
+
+    document.getElementById("logout-btn").addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+        output.textContent = "Odhlášen.";
+      } catch (error) {
+        output.textContent = `Chyba při odhlášení: ${error.message}`;
+      }
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        output.textContent = `Aktuálně přihlášen: ${user.email}`;
+      } else {
+        output.textContent = "Nikdo není přihlášen.";
+      }
+    });
+  </script>
 </body>
 </html>
