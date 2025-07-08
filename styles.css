@@ -1,3 +1,43 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f0f4ff;
+  color: #222;
+}
+
+header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 60px;
+  background: linear-gradient(90deg, #2e5dbd, #4a74e0);
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 1000;
+}
+
+#hamburger {
+  font-size: 30px;
+  cursor: pointer;
+  user-select: none;
+  background: none;
+  border: none;
+  color: white;
+}
+
+header h1 {
+  flex-grow: 1;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.5em;
+  margin: 0;
+}
+
 #sidePanel {
   position: fixed;
   top: 0; left: 0; bottom: 0; right: 0;
@@ -65,4 +105,98 @@
 
 .menu-list button:hover {
   background-color: rgba(255, 255, 255, 0.2);
+}
+
+main {
+  margin-top: 70px;
+  padding: 20px 30px;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 12px 30px rgba(46, 93, 189, 0.2);
+  min-height: 80vh;
+  font-size: 1.1em;
+  color: #333;
+}
+
+.input-group {
+  margin-bottom: 15px;
+  max-width: 300px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px;
+  font-size: 1.1em;
+  border-radius: 6px;
+  border: 1px solid #aaa;
+}
+
+#addRunBtn {
+  display: block;
+  width: 100%;
+  margin-top: 20px;
+  padding: 15px;
+  font-size: 1.3em;
+  background: #2e5dbd;
+  color: white;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#addRunBtn:hover {
+  background: #1b3a82;
+}
+
+.alert {
+  margin-top: 15px;
+  font-weight: 600;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.alert.error {
+  background: #ffd5d5;
+  color: #900;
+}
+
+.alert.success {
+  background: #d5ffd9;
+  color: #060;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 25px;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+}
+
+th {
+  background-color: #e3e9ff;
+}
+
+.intro {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 30px;
+  font-size: 1.1em;
+  color: #333;
+  line-height: 1.5;
 }
