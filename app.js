@@ -234,3 +234,7 @@ async function renderSettings() {
     const newNick = nicknameInput.value.trim();
     if (newNick.length < 2) {
       settingsMessage.style.color = 'red';
+const btnDashboard = document.getElementById('btnDashboard');
+const btnMyRuns = document.getElementById('btnMyRuns');
+const btnTeams = document.getElementById('btnTeams');
+const btnSettings = document.getElementById('btnSettings');
