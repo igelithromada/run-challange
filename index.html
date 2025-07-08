@@ -1,105 +1,34 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Test Hamburger panel</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 0; padding: 0;
-  }
-  header {
-    background: #2e5dbd;
-    color: white;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-  }
-  #hamburger {
-    font-size: 30px;
-    cursor: pointer;
-    background: none;
-    border: none;
-    color: white;
-  }
-  #sidePanel {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(46, 93, 189, 0.95);
-    color: white;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    z-index: 9999;
-    padding: 20px;
-  }
-  #sidePanel.open {
-    transform: translateX(0);
-  }
-  #closePanel {
-    font-size: 40px;
-    cursor: pointer;
-    background: none;
-    border: none;
-    color: white;
-    float: right;
-  }
-  .menu-list {
-    margin-top: 50px;
-    list-style: none;
-    padding-left: 0;
-  }
-  .menu-list li {
-    margin: 20px 0;
-  }
-  .menu-list button {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.5em;
-    cursor: pointer;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dolní Lhota Run</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
 <header>
   <button id="hamburger" aria-label="Otevřít menu">&#9776;</button>
-  <h1 style="margin-left: 20px;">Dolní Lhota Run</h1>
+  <h1>Dolní Lhota Run</h1>
 </header>
 
-<nav id="sidePanel" aria-hidden="true">
+<nav id="sidePanel" aria-hidden="true" class="hidden">
   <button id="closePanel" aria-label="Zavřít menu">&times;</button>
+  <div id="userNick" class="user-nick">nick@example.com</div>
+  <div id="userTeam" class="user-team">Tým: žádný</div>
   <ul class="menu-list">
-    <li><button>Hlavní stránka</button></li>
-    <li><button>Moje běhy</button></li>
-    <li><button>Týmy</button></li>
-    <li><button>Nastavení</button></li>
-    <li><button>Odhlásit se</button></li>
+    <li><button id="btnDashboard">Hlavní stránka</button></li>
+    <li><button id="btnMyRuns">Moje běhy</button></li>
+    <li><button id="btnSettings">Nastavení</button></li>
+    <li><button id="btnLogout">Odhlásit se</button></li>
   </ul>
 </nav>
 
-<script>
-  const hamburger = document.getElementById('hamburger');
-  const sidePanel = document.getElementById('sidePanel');
-  const closePanel = document.getElementById('closePanel');
+<main id="mainContent">
+  <!-- obsah bude dynamicky generován -->
+</main>
 
-  hamburger.addEventListener('click', () => {
-    sidePanel.classList.add('open');
-    sidePanel.setAttribute('aria-hidden', 'false');
-  });
-
-  closePanel.addEventListener('click', () => {
-    sidePanel.classList.remove('open');
-    sidePanel.setAttribute('aria-hidden', 'true');
-  });
-</script>
-
+<script type="module" src="app.js"></script>
 </body>
 </html>
-<button id="btnDashboard">Hlavní stránka</button>
-<button id="btnMyRuns">Moje běhy</button>
-<button id="btnTeams">Týmy</button>
-<button id="btnSettings">Nastavení</button>
-<button id="btnLogout">Odhlásit se</button>
