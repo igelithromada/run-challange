@@ -1,43 +1,3 @@
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f0f4ff;
-  color: #222;
-}
-
-header {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: 60px;
-  background: linear-gradient(90deg, #2e5dbd, #4a74e0);
-  color: white;
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  z-index: 1000;
-}
-
-#hamburger {
-  font-size: 30px;
-  cursor: pointer;
-  user-select: none;
-  background: none;
-  border: none;
-  color: white;
-}
-
-header h1 {
-  flex-grow: 1;
-  text-align: center;
-  font-weight: 700;
-  font-size: 1.5em;
-  margin: 0;
-}
-
 #sidePanel {
   position: fixed;
   top: 0; left: 0; bottom: 0; right: 0;
@@ -58,24 +18,23 @@ header h1 {
 
 #closePanel {
   align-self: flex-end;
-  font-size: 36px;
+  font-size: 40px;
   cursor: pointer;
-  user-select: none;
   background: none;
   border: none;
   color: white;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
 }
 
 .user-nick {
   font-weight: 700;
-  font-size: 1.4em;
-  margin-bottom: 5px;
+  font-size: 1.6em;
+  margin-bottom: 10px;
   text-align: center;
 }
 
 .user-team {
-  font-size: 1.1em;
+  font-size: 1.2em;
   margin-bottom: 40px;
   text-align: center;
   font-style: italic;
@@ -84,6 +43,7 @@ header h1 {
 .menu-list {
   list-style: none;
   padding-left: 0;
+  flex-grow: 1;
 }
 
 .menu-list li {
@@ -94,94 +54,15 @@ header h1 {
   background: transparent;
   border: none;
   color: white;
-  text-align: left;
+  text-align: center;
   cursor: pointer;
-  padding: 12px 8px;
-  border-radius: 8px;
-  font-size: 1.2em;
+  padding: 15px;
+  border-radius: 12px;
+  font-size: 1.3em;
   transition: background-color 0.25s ease;
+  width: 100%;
 }
 
 .menu-list button:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-}
-
-main {
-  margin-top: 70px;
-  padding: 20px 30px;
-  max-width: 900px;
-  margin-left: auto;
-  margin-right: auto;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-  min-height: 80vh;
-}
-
-.input-group {
-  margin-bottom: 15px;
-  max-width: 300px;
-}
-
-.input-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 600;
-}
-
-.input-group input {
-  width: 100%;
-  padding: 10px;
-  font-size: 1.1em;
-  border-radius: 6px;
-  border: 1px solid #aaa;
-}
-
-#addRunBtn {
-  margin-top: 15px;
-  padding: 14px 20px;
-  font-size: 1.2em;
-  background: #2e5dbd;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.25s ease;
-}
-
-#addRunBtn:hover {
-  background: #1c3a82;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-
-th, td {
-  border: 1px solid #ccc;
-  padding: 10px;
-  text-align: center;
-}
-
-th {
-  background-color: #e3e9ff;
-}
-
-.alert {
-  padding: 10px;
-  margin-top: 15px;
-  border-radius: 6px;
-  font-weight: 600;
-}
-
-.alert.error {
-  background-color: #fdd;
-  color: #900;
-}
-
-.alert.success {
-  background-color: #dfd;
-  color: #060;
+  background-color: rgba(255, 255, 255, 0.2);
 }
