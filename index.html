@@ -7,28 +7,25 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <header>
+    <h1>Dolní Lhota Run</h1>
+  </header>
 
-<header>
-  <button id="hamburger" aria-label="Otevřít menu">&#9776;</button>
-  <h1>Dolní Lhota Run</h1>
-</header>
+  <main>
+    <section id="auth-section">
+      <h2>Přihlášení</h2>
+      <input type="email" id="login-email" placeholder="Email" />
+      <input type="password" id="login-password" placeholder="Heslo" />
+      <button id="login-btn">Přihlásit se</button>
+      <p id="auth-message"></p>
+    </section>
 
-<nav id="sidePanel" aria-hidden="true" class="hidden">
-  <button id="closePanel" aria-label="Zavřít menu">&times;</button>
-  <div id="userNick" class="user-nick">nick@example.com</div>
-  <div id="userTeam" class="user-team">Tým: žádný</div>
-  <ul class="menu-list">
-    <li><button id="btnDashboard">Hlavní stránka</button></li>
-    <li><button id="btnMyRuns">Moje běhy</button></li>
-    <li><button id="btnSettings">Nastavení</button></li>
-    <li><button id="btnLogout">Odhlásit se</button></li>
-  </ul>
-</nav>
+    <section id="welcome-section" style="display:none;">
+      <p>Vítej, <span id="user-email"></span>!</p>
+      <button id="logout-btn">Odhlásit se</button>
+    </section>
+  </main>
 
-<main id="mainContent">
-  <!-- obsah bude dynamicky generován -->
-</main>
-
-<script type="module" src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
