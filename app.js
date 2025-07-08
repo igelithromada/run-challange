@@ -6,14 +6,15 @@ import {
   onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// Firebase config - nahraď svými údaji
+// Firebase config tvůj:
 const firebaseConfig = {
-  apiKey: "TADY_TVŮJ_API_KEY",
-  authDomain: "TADY_TVŮJ_AUTH_DOMAIN",
-  projectId: "TADY_TVŮJ_PROJECT_ID",
-  storageBucket: "TADY_TVŮJ_STORAGE_BUCKET",
-  messagingSenderId: "TADY_TVŮJ_SENDER_ID",
-  appId: "TADY_TVŮJ_APP_ID"
+  apiKey: "AIzaSyDN2XshsRKpD54i2Q98xwCzcHiQUs3gvSU",
+  authDomain: "dolni-lhota-run.firebaseapp.com",
+  projectId: "dolni-lhota-run",
+  storageBucket: "dolni-lhota-run.firebasestorage.app",
+  messagingSenderId: "549134031482",
+  appId: "1:549134031482:web:41205785ed5b4e275a79c3",
+  measurementId: "G-E7N1HJ4BEZ"
 };
 
 // Inicializace Firebase
