@@ -10,7 +10,7 @@ type Run = {
   id: string;
   km?: number;
   minuty?: number;
-  tempo?: string;
+  tempo?: number;
   type?: string;
   timestamp?: {
     seconds: number;
@@ -49,11 +49,7 @@ export default function MyRunsPage() {
 
       const unsubscribeRuns = onSnapshot(q, (snapshot) => {
         const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Run[];
-        items.sort((a, b) => {
-          const tA = a.timestamp?.seconds || 0;
-          const tB = b.timestamp?.seconds || 0;
-          return tB - tA;
-        });
+        items.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         setRuns(items);
         setLoading(false);
       }, (err) => {
@@ -74,14 +70,14 @@ export default function MyRunsPage() {
 
     if (dateFrom) {
       const fromDate = new Date(dateFrom);
-      fromDate.setHours(0,0,0,0);
+      fromDate.setHours(0, 0, 0, 0);
       const runDate = new Date((run.timestamp?.seconds || 0) * 1000);
       dateMatch = dateMatch && runDate >= fromDate;
     }
 
     if (dateTo) {
       const toDate = new Date(dateTo);
-      toDate.setHours(23,59,59,999);
+      toDate.setHours(23, 59, 59, 999);
       const runDate = new Date((run.timestamp?.seconds || 0) * 1000);
       dateMatch = dateMatch && runDate <= toDate;
     }
@@ -91,11 +87,18 @@ export default function MyRunsPage() {
 
   const totalKm = filteredRuns.reduce((sum, run) => sum + (run.km || 0), 0);
   const totalMin = filteredRuns.reduce((sum, run) => sum + (run.minuty || 0), 0);
-  const avgTempo = totalKm ? (totalMin / totalKm).toFixed(2) : 0;
+  const avgTempo = totalKm ? (totalMin / totalKm).toFixed(2) : "0";
   const totalHours = (totalMin / 60).toFixed(2);
 
-  const longestRun = filteredRuns.reduce((max, run) => (run.km && run.km > (max?.km || 0) ? run : max), null);
-  const fastestRun = filteredRuns.reduce((min, run) => (run.tempo && run.tempo < (min?.tempo || Infinity) ? run : min), null);
+  const longestRun = filteredRuns.reduce<Run | null>(
+    (max, run) => (run.km && run.km > (max?.km || 0) ? run : max),
+    null
+  );
+
+  const fastestRun = filteredRuns.reduce<Run | null>(
+    (min, run) => (run.tempo && run.tempo < (min?.tempo || Infinity) ? run : min),
+    null
+  );
 
   const handleDelete = async (id: string) => {
     try {
@@ -137,10 +140,10 @@ export default function MyRunsPage() {
   };
 
   const renderRunItem = (run: Run, highlight = false) => (
-    <li key={run.id} style={{ 
-      marginBottom: "1rem", 
-      display: "flex", 
-      justifyContent: "center", 
+    <li key={run.id} style={{
+      marginBottom: "1rem",
+      display: "flex",
+      justifyContent: "center",
       alignItems: "center",
       backgroundColor: highlight ? "#f9f9f9" : "transparent",
       padding: highlight ? "1rem" : "0",
@@ -158,7 +161,7 @@ export default function MyRunsPage() {
         {run.imageUrl && (
           showImageId === run.id ? (
             <>
-              <img 
+              <img
                 src={run.imageUrl}
                 alt="běh fotka"
                 style={{ maxWidth: "100px", display: "block", margin: "5px auto" }}
@@ -186,12 +189,7 @@ export default function MyRunsPage() {
         ) : (
           <>
             <button onClick={() => handleEdit(run)} style={{ marginLeft: "5px" }}>✏️ Upravit</button>
-            <button 
-              onClick={() => handleDelete(run.id)}
-              style={{ marginLeft: "5px", color: "red" }}
-            >
-              🗑 Smazat
-            </button>
+            <button onClick={() => handleDelete(run.id)} style={{ marginLeft: "5px", color: "red" }}>🗑 Smazat</button>
           </>
         )}
       </div>
@@ -230,21 +228,17 @@ export default function MyRunsPage() {
           </div>
         </div>
       )}
-      {longestRun && (
-        <>
-          <hr style={{ margin: "2rem 0", borderTop: "1px dashed #ccc" }} />
-          <div style={{ fontWeight: "bold", marginBottom: "0.5rem" }}>🏆 Nejdelší aktivita:</div>
-          <ul style={{ listStyle: "none", padding: 0 }}>{renderRunItem(longestRun, true)}</ul>
-          <hr style={{ margin: "2rem 0", borderTop: "1px dashed #ccc" }} />
-        </>
-      )}
-      {fastestRun && (
-        <>
-          <div style={{ fontWeight: "bold", marginBottom: "0.5rem" }}>⚡ Nejrychlejší aktivita:</div>
-          <ul style={{ listStyle: "none", padding: 0 }}>{renderRunItem(fastestRun, true)}</ul>
-          <hr style={{ margin: "2rem 0", borderTop: "1px dashed #ccc" }} />
-        </>
-      )}
+      {longestRun && <>
+        <hr style={{ margin: "2rem 0", borderTop: "1px dashed #ccc" }} />
+        <div style={{ fontWeight: "bold", marginBottom: "0.5rem" }}>🏆 Nejdelší aktivita:</div>
+        <ul style={{ listStyle: "none", padding: 0 }}>{renderRunItem(longestRun, true)}</ul>
+        <hr style={{ margin: "2rem 0", borderTop: "1px dashed #ccc" }} />
+      </>}
+      {fastestRun && <>
+        <div style={{ fontWeight: "bold", marginBottom: "0.5rem" }}>⚡ Nejrychlejší aktivita:</div>
+        <ul style={{ listStyle: "none", padding: 0 }}>{renderRunItem(fastestRun, true)}</ul>
+        <hr style={{ margin: "2rem 0", borderTop: "1px dashed #ccc" }} />
+      </>}
       {loading && <p>Načítám...</p>}
       {error && <p style={{ color: "red" }}>{error}</p>}
       {filteredRuns.length === 0 && !loading && <p>Nemáte žádné záznamy pro tento výběr.</p>}
