@@ -6,10 +6,10 @@ import { db } from "../../lib/firebase";
 
 export default function UserRunsPage() {
   const params = useParams();
-  const userId = params.id;
+  const userId: string | undefined = params.id; // Typ pro userId, který může být string nebo undefined
 
-  const [runs, setRuns] = useState([]);
-  const [showImageId, setShowImageId] = useState(null);
+  const [runs, setRuns] = useState<any[]>([]);
+  const [showImageId, setShowImageId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function UserRunsPage() {
   return (
     <div style={{ textAlign: "center", marginTop: "2rem" }}>
       <h1>Aktivity uživatele {userName}</h1>
-      <button 
+      <button
         onClick={() => router.push("/")}
         style={{
           marginBottom: "1rem",
@@ -56,18 +56,18 @@ export default function UserRunsPage() {
             <small style={{ color: "#555" }}>
               {run.timestamp?.toDate?.()
                 ? run.timestamp.toDate().toLocaleString("cs-CZ")
-                : new Date(run.timestamp?.seconds ? run.timestamp.seconds * 1000 : run.timestamp).toLocaleString("cs-CZ")}
+                : new Date(run.timestamp?.seconds ? run.timestamp.seconds * 1000 : 0).toLocaleString("cs-CZ")}
             </small>
             {run.imageUrl && (
               <div>
                 {showImageId === run.id ? (
                   <>
-                    <img 
-                      src={run.imageUrl} 
+                    <img
+                      src={run.imageUrl}
                       alt="běh fotka"
-                      style={{ maxWidth: "300px", display: "block", margin: "10px auto" }} 
+                      style={{ maxWidth: "300px", display: "block", margin: "10px auto" }}
                     />
-                    <button 
+                    <button
                       onClick={() => setShowImageId(null)}
                       style={{ marginTop: "5px", backgroundColor: "gray", color: "white", border: "none", borderRadius: "3px", padding: "3px 8px" }}
                     >
@@ -75,7 +75,7 @@ export default function UserRunsPage() {
                     </button>
                   </>
                 ) : (
-                  <span 
+                  <span
                     style={{ marginLeft: "10px", cursor: "pointer", color: "blue" }}
                     onClick={() => setShowImageId(run.id)}
                   >
