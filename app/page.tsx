@@ -1,23 +1,42 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { collection, query, orderBy, limit, onSnapshot, DocumentData } from "firebase/firestore";
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "./lib/firebase";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import RunForm from "./components/RunForm";
 
+type Run = {
+  id: string;
+  km: number;
+  minuty: number;
+  tempo: string;
+  type?: string;
+  uid: string;
+  nickname?: string;
+  email?: string;
+  imageUrl?: string;
+  teamId?: string;
+  timestamp?: any;
+};
+
+type Team = {
+  id: string;
+  name: string;
+};
+
 export default function Page() {
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState([]);
-  const [teams, setTeams] = useState([]);
-  const [selectedType, setSelectedType] = useState("běh");
-  const [showImageId, setShowImageId] = useState(null);
+  const [runs, setRuns] = useState<Run[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [selectedType, setSelectedType] = useState<"běh" | "chůze">("běh");
+  const [showImageId, setShowImageId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user: User | null) => {
       if (!user) {
         router.push("/login");
       }
@@ -28,15 +47,16 @@ export default function Page() {
       orderBy("timestamp", "desc"),
       limit(30)
     );
+
     const unsubscribeRuns = onSnapshot(q, (snapshot) => {
-      const items = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
+      const items: Run[] = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as Run))
         .filter(item => (item.type || "běh") === selectedType);
       setRuns(items);
     });
 
     const unsubTeams = onSnapshot(collection(db, "teams"), (snapshot) => {
-      const teamList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const teamList: Team[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Team));
       setTeams(teamList);
     });
 
@@ -47,7 +67,7 @@ export default function Page() {
     };
   }, [selectedType, router]);
 
-  const handleSelect = async (item) => {
+  const handleSelect = async (item: string) => {
     setMenuVisible(false);
     if (item === "logout") {
       try {
@@ -60,10 +80,10 @@ export default function Page() {
     if (item === "myrun") router.push("/myruns");
     if (item === "teams") router.push("/teams");
     if (item === "settings") router.push("/settings");
-    if (item === "statistics") router.push("/statistics"); // přidáno
+    if (item === "statistics") router.push("/statistics");
   };
 
-  const handleUserClick = (uid) => {
+  const handleUserClick = (uid: string) => {
     router.push(`/user/${uid}`);
   };
 
@@ -103,9 +123,7 @@ export default function Page() {
         <h2>Vložit nový záznam</h2>
         <RunForm type={selectedType} />
 
-        <h2 style={{ marginTop: "2rem" }}>
-          Poslední záznamy
-        </h2>
+        <h2 style={{ marginTop: "2rem" }}>Poslední záznamy</h2>
         <ul style={{ listStyle: "none", padding: 0 }}>
           {runs.map((run) => {
             const teamName = run.teamId 
