@@ -1,14 +1,21 @@
 "use client";
 import React from "react";
 
-export default function Navbar({ onMenuClick }) {
+type NavbarProps = {
+  onMenuClick: () => void;
+};
+
+export default function Navbar({ onMenuClick }: NavbarProps) {
   return (
-    <div style={{
-      backgroundColor: "orange", color: "black", padding: "1rem",
-      display: "flex", justifyContent: "space-between", alignItems: "center"
-    }}>
-      <div style={{ fontWeight: "bold", fontSize: "1.2rem" }}>Dolní Lhota v pohybu</div>
-      <div onClick={onMenuClick} style={{ fontSize: "1.5rem", cursor: "pointer" }}>☰</div>
+    <div className="bg-gradient-to-r from-orange-500 to-pink-500 text-white px-6 py-4 flex justify-between items-center shadow-md">
+      <div className="font-bold text-xl">Dolní Lhota v pohybu</div>
+      <button 
+        onClick={onMenuClick}
+        className="text-3xl hover:text-orange-200 transition duration-200"
+        aria-label="Menu"
+      >
+        ☰
+      </button>
     </div>
   );
 }
