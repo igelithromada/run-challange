@@ -6,18 +6,31 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth, storage } from "../lib/firebase";
 
+type Run = {
+  id: string;
+  km?: number;
+  minuty?: number;
+  tempo?: string;
+  type?: string;
+  timestamp?: {
+    seconds: number;
+    toDate?: () => Date;
+  };
+  imageUrl?: string;
+};
+
 export default function MyRunsPage() {
-  const [runs, setRuns] = useState([]);
+  const [runs, setRuns] = useState<Run[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showImageId, setShowImageId] = useState(null);
+  const [showImageId, setShowImageId] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState("běh");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [editingId, setEditingId] = useState(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [km, setKm] = useState("");
   const [minuty, setMinuty] = useState("");
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<File | null>(null);
 
   const router = useRouter();
 
@@ -35,7 +48,7 @@ export default function MyRunsPage() {
       );
 
       const unsubscribeRuns = onSnapshot(q, (snapshot) => {
-        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Run[];
         items.sort((a, b) => {
           const tA = a.timestamp?.seconds || 0;
           const tB = b.timestamp?.seconds || 0;
@@ -81,10 +94,10 @@ export default function MyRunsPage() {
   const avgTempo = totalKm ? (totalMin / totalKm).toFixed(2) : 0;
   const totalHours = (totalMin / 60).toFixed(2);
 
-  const longestRun = filteredRuns.reduce((max, run) => (run.km > (max?.km || 0) ? run : max), null);
-  const fastestRun = filteredRuns.reduce((min, run) => (run.tempo < (min?.tempo || Infinity) ? run : min), null);
+  const longestRun = filteredRuns.reduce((max, run) => (run.km && run.km > (max?.km || 0) ? run : max), null);
+  const fastestRun = filteredRuns.reduce((min, run) => (run.tempo && run.tempo < (min?.tempo || Infinity) ? run : min), null);
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string) => {
     try {
       await deleteDoc(doc(db, "runs", id));
     } catch (err) {
@@ -92,14 +105,14 @@ export default function MyRunsPage() {
     }
   };
 
-  const handleEdit = (run) => {
+  const handleEdit = (run: Run) => {
     setEditingId(run.id);
-    setKm(run.km);
-    setMinuty(run.minuty);
+    setKm(run.km?.toString() || "");
+    setMinuty(run.minuty?.toString() || "");
     setFile(null);
   };
 
-  const handleUpdate = async (id) => {
+  const handleUpdate = async (id: string) => {
     try {
       let imageUrl = null;
 
@@ -123,7 +136,7 @@ export default function MyRunsPage() {
     }
   };
 
-  const renderRunItem = (run, highlight = false) => (
+  const renderRunItem = (run: Run, highlight = false) => (
     <li key={run.id} style={{ 
       marginBottom: "1rem", 
       display: "flex", 
@@ -138,7 +151,7 @@ export default function MyRunsPage() {
         <small style={{ color: "#555" }}>
           {run.timestamp?.toDate?.()
             ? run.timestamp.toDate().toLocaleString("cs-CZ")
-            : new Date(run.timestamp?.seconds ? run.timestamp.seconds * 1000 : run.timestamp).toLocaleString("cs-CZ")}
+            : new Date(run.timestamp?.seconds ? run.timestamp.seconds * 1000 : 0).toLocaleString("cs-CZ")}
         </small>
       </div>
       <div style={{ marginLeft: "1rem" }}>
@@ -166,7 +179,7 @@ export default function MyRunsPage() {
             <div>
               <input type="number" value={km} onChange={(e) => setKm(e.target.value)} style={{ width: "60px" }} />
               <input type="number" value={minuty} onChange={(e) => setMinuty(e.target.value)} style={{ width: "60px", marginLeft: "5px" }} />
-              <input type="file" onChange={(e) => setFile(e.target.files[0])} style={{ marginLeft: "5px" }} />
+              <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ marginLeft: "5px" }} />
             </div>
             <button onClick={() => handleUpdate(run.id)} style={{ marginTop: "5px" }}>💾 Uložit</button>
           </>
