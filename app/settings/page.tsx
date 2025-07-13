@@ -6,12 +6,12 @@ import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 
 export default function SettingsPage() {
-  const [userId, setUserId] = useState(null);
-  const [nickname, setNickname] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [file, setFile] = useState(null);
-  const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [nickname, setNickname] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [file, setFile] = useState<File | null>(null);
+  const [success, setSuccess] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
 
   const presetAvatars = [
     "/avatars/muz.png",
@@ -42,7 +42,7 @@ export default function SettingsPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const uploadToCloudinary = async (file) => {
+  const uploadToCloudinary = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "lhota_unsigned");
@@ -65,13 +65,15 @@ export default function SettingsPage() {
         finalAvatarUrl = await uploadToCloudinary(file);
       }
 
-      await setDoc(doc(db, "users", userId), {
-        nickname,
-        avatarUrl: finalAvatarUrl
-      }, { merge: true });
+      if (userId) {
+        await setDoc(doc(db, "users", userId), {
+          nickname,
+          avatarUrl: finalAvatarUrl
+        }, { merge: true });
 
-      setSuccess("Nastavení bylo uloženo.");
-      setTimeout(() => setSuccess(""), 3000);
+        setSuccess("Nastavení bylo uloženo.");
+        setTimeout(() => setSuccess(""), 3000);
+      }
     } catch (err) {
       console.error(err);
       alert("Chyba při ukládání.");
@@ -101,7 +103,7 @@ export default function SettingsPage() {
             <img src={avatarUrl} alt="avatar" style={{ width: "100px", borderRadius: "50%", marginBottom: "0.5rem" }} />
           </div>
         )}
-        <input type="file" onChange={(e) => setFile(e.target.files[0])} style={{ marginBottom: "1rem" }} />
+        <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ marginBottom: "1rem" }} />
         <div style={{ margin: "1rem 0" }}>
           <div style={{ marginBottom: "0.5rem" }}>Nebo si vyber předvolený avatar:</div>
           <div style={{ display: "flex", justifyContent: "center", gap: "10px", flexWrap: "wrap" }}>
