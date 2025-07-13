@@ -3,15 +3,19 @@ import React, { useState } from "react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../lib/firebase";
 
-export default function RunForm({ type }) {
-  const [km, setKm] = useState("");
-  const [minuty, setMinuty] = useState("");
-  const [file, setFile] = useState(null);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+type RunFormProps = {
+  type: string;
+};
+
+export default function RunForm({ type }: RunFormProps) {
+  const [km, setKm] = useState<string>("");
+  const [minuty, setMinuty] = useState<string>("");
+  const [file, setFile] = useState<File | null>(null);
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
 
   // upload fotky na Cloudinary
-  const uploadToCloudinary = async (file) => {
+  const uploadToCloudinary = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "lhota_unsigned");
@@ -82,7 +86,7 @@ export default function RunForm({ type }) {
       />
       <input 
         type="file" 
-        onChange={(e) => setFile(e.target.files[0])}
+        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         style={{ margin: "10px", padding: "8px", width: "60%" }} 
       />
       <button 
