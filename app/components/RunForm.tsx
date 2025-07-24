@@ -54,11 +54,18 @@ const uploadToCloudinary = async (file: File) => {
 
       const joinedTeam = localStorage.getItem("joinedTeam");
 
-      let avatarUrl = "";
-      const userDoc = await getDoc(doc(db, "users", auth.currentUser?.uid));
-      if (userDoc.exists()) {
-        avatarUrl = userDoc.data().avatarUrl || "";
-      }
+     let avatarUrl = "";
+
+const uid = auth.currentUser?.uid;
+if (!uid) {
+  console.warn("Uživatel není přihlášen");
+  return;
+}
+
+const userDoc = await getDoc(doc(db, "users", uid));
+if (userDoc.exists()) {
+  avatarUrl = userDoc.data().avatarUrl || "";
+}
 
       const totalMinutes = minVal + secVal / 60;
 
