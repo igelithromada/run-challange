@@ -220,7 +220,7 @@ export default function Page() {
                 }}>
                   <small style={{ whiteSpace: "nowrap" }}>{dateStr}</small>
                   {showPhotoIcon(run) && (
-                    <div onClick={() => handleShowImages(run.imageUrls ?? [], run.imageUrl)} style={{ cursor: "pointer" }}>
+                    <div onClick={() => handleShowImages(run.imageUrls ?? [], run.imageUrl __ "")} style={{ cursor: "pointer" }}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5"
                         strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
