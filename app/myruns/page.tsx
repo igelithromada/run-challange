@@ -15,11 +15,12 @@ import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
+import { RunData } from "../types"; // nově přidaný import
 
 export default function MyRunsPage() {
   useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState<any[]>([]);
+  const [runs, setRuns] = useState<RunData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showImageUrl, setShowImageUrl] = useState<string | null>(null);
@@ -40,7 +41,7 @@ export default function MyRunsPage() {
       }
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       const unsubRuns = onSnapshot(q, (snap) => {
-        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() as RunData }))
           .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         setRuns(items);
         setLoading(false);
@@ -77,12 +78,16 @@ export default function MyRunsPage() {
   const longestRun = filteredRuns.reduce((max, run) => (run.km > (max?.km || 0) ? run : max), null);
   const fastestRun = filteredRuns.reduce((min, run) => (run.tempo < (min?.tempo || Infinity) ? run : min), null);
 
-  const handleDelete = async (id: string) => await deleteDoc(doc(db, "runs", id));
+  const handleDelete = async (id: string) => {
+    if (confirm("Opravdu chcete tento záznam smazat?")) {
+      await deleteDoc(doc(db, "runs", id));
+    }
+  };
 
-  const handleEdit = (run: any) => {
+  const handleEdit = (run: RunData) => {
     setEditingId(run.id);
-    setKm(run.km);
-    setMinuty(run.minuty);
+    setKm(run.km.toString());
+    setMinuty(run.minuty.toString());
     setFile(null);
   };
 
@@ -209,18 +214,21 @@ export default function MyRunsPage() {
                 </div>
                 <div style={{
                   display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-end",
+                  alignItems: "center",
+                  gap: "0.5rem",
                   position: "absolute",
                   right: "0.8rem",
-                  top: "0.4rem",
-                  gap: "0.3rem"
+                  top: "0.4rem"
                 }}>
-                  <small>{new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ")}</small>
+                  <div onClick={() => handleDelete(run.id)} style={{ cursor: "pointer" }}>🗑️</div>
+                  <div onClick={() => handleEdit(run)} style={{ cursor: "pointer" }}>✏️</div>
                   {run.imageUrl && (
                     <div onClick={() => setShowImageUrl(run.imageUrl)} style={{ cursor: "pointer" }}>📷</div>
                   )}
                 </div>
+                <small style={{ position: "absolute", right: "0.8rem", bottom: "0.4rem" }}>
+                  {new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ")}
+                </small>
               </div>
             )
           )}
