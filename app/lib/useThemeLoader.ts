@@ -28,7 +28,7 @@ export default function useThemeLoader() {
 
     const interval = setInterval(() => {
       applyCurrentTheme();
-    }, 300000); // každých 5 minut (300000 ms)
+    }, 300000); // každých 5 minut
 
     return () => {
       unsub();
@@ -37,7 +37,7 @@ export default function useThemeLoader() {
   }, []);
 }
 
-const applyTheme = (selectedTheme, color) => {
+const applyTheme = (selectedTheme: string, color: string) => {
   let gradient = "";
 
   if (selectedTheme === "default") {
@@ -56,7 +56,7 @@ const applyTheme = (selectedTheme, color) => {
   document.documentElement.style.setProperty("--main-gradient", gradient);
 };
 
-const getColorByHour = (hour) => {
+const getColorByHour = (hour: number): string => {
   let lightness = 90;
   if (hour < 6) lightness = 20;
   else if (hour < 10) lightness = 70;
