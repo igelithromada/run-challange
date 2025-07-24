@@ -8,11 +8,11 @@ export default function RunForm({ type }: { type: string }) {
   const [km, setKm] = useState("");
   const [minuty, setMinuty] = useState("");
   const [sekundy, setSekundy] = useState("");
-  const [files, setFiles] = useState([]);
+  const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-const uploadToCloudinary = async (file: File) => {
+  const uploadToCloudinary = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "lhota_unsigned");
@@ -43,7 +43,7 @@ const uploadToCloudinary = async (file: File) => {
     }
 
     try {
-      let imageUrls = [];
+      let imageUrls: string[] = [];
 
       if (files.length > 0) {
         for (let file of files) {
@@ -53,19 +53,18 @@ const uploadToCloudinary = async (file: File) => {
       }
 
       const joinedTeam = localStorage.getItem("joinedTeam");
+      let avatarUrl = "";
 
-     let avatarUrl = "";
+      const uid = auth.currentUser?.uid;
+      if (!uid) {
+        console.warn("Uživatel není přihlášen");
+        return;
+      }
 
-const uid = auth.currentUser?.uid;
-if (!uid) {
-  console.warn("Uživatel není přihlášen");
-  return;
-}
-
-const userDoc = await getDoc(doc(db, "users", uid));
-if (userDoc.exists()) {
-  avatarUrl = userDoc.data().avatarUrl || "";
-}
+      const userDoc = await getDoc(doc(db, "users", uid));
+      if (userDoc.exists()) {
+        avatarUrl = userDoc.data().avatarUrl || "";
+      }
 
       const totalMinutes = minVal + secVal / 60;
 
@@ -156,7 +155,7 @@ if (userDoc.exists()) {
             <input
               type="file"
               multiple
-              onChange={(e) => setFiles(Array.from(e.target.files))}
+              onChange={(e) => setFiles(Array.from(e.target.files || []))}
               style={{ display: "none" }}
             />
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#333" strokeWidth="1.5"
@@ -208,7 +207,7 @@ if (userDoc.exists()) {
   );
 }
 
-const inputStyle = {
+const inputStyle: React.CSSProperties = {
   margin: "10px 0",
   padding: "10px 16px",
   width: "100%",
@@ -223,7 +222,7 @@ const inputStyle = {
   boxSizing: "border-box"
 };
 
-const buttonStyle = {
+const buttonStyle: React.CSSProperties = {
   padding: "12px 20px",
   background: "rgba(255,255,255,0.2)",
   color: "white",
