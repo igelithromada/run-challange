@@ -16,16 +16,17 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import RunForm from "./components/RunForm";
 import useThemeLoader from "./lib/useThemeLoader";
+import { RunData } from "./types"; // Assuming RunData type is defined somewhere
 
 export default function Page() {
   useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState([]);
-  const [teams, setTeams] = useState([]);
+  const [runs, setRuns] = useState<RunData[]>([]); // Typováno jako RunData[]
+  const [teams, setTeams] = useState<any[]>([]); // Typování pro týmy
   const [selectedType, setSelectedType] = useState("běh");
-  const [showImages, setShowImages] = useState(null);
+  const [showImages, setShowImages] = useState<string[] | null>(null); // Typováno jako pole stringů nebo null
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
-  const [userAvatars, setUserAvatars] = useState({});
+  const [userAvatars, setUserAvatars] = useState<{ [key: string]: { avatarUrl: string; nickname: string } }>({}); // Typování pro userAvatars
   const router = useRouter();
 
   useEffect(() => {
@@ -36,30 +37,34 @@ export default function Page() {
     const q = query(collection(db, "runs"), orderBy("timestamp", "desc"), limit(30));
     const unsubRuns = onSnapshot(q, (snap) => {
       const items = snap.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(item => (item.type || "běh") === selectedType);
+        .map((doc) => ({ id: doc.id, ...doc.data() } as RunData)) // Typováno jako RunData
+        .filter((item) => (item.type || "běh") === selectedType);
       setRuns(items);
     });
 
     const unsubTeams = onSnapshot(collection(db, "teams"), (snap) => {
-      setTeams(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setTeams(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
     });
 
-    return () => { unsubAuth(); unsubRuns(); unsubTeams(); }
+    return () => {
+      unsubAuth();
+      unsubRuns();
+      unsubTeams();
+    };
   }, [selectedType, router]);
 
   useEffect(() => {
-    runs.forEach(run => {
+    runs.forEach((run) => {
       if (run.uid && !userAvatars[run.uid]) {
-        getDoc(doc(db, "users", run.uid)).then(snapshot => {
+        getDoc(doc(db, "users", run.uid)).then((snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.data();
-            setUserAvatars(prev => ({
+            setUserAvatars((prev) => ({
               ...prev,
               [run.uid]: {
                 avatarUrl: data.avatarUrl || "",
-                nickname: data.nickname || ""
-              }
+                nickname: data.nickname || "",
+              },
             }));
           }
         });
@@ -67,14 +72,14 @@ export default function Page() {
     });
   }, [runs]);
 
-  const formatTime = (minutes) => {
+  const formatTime = (minutes: string) => {
     const totalSeconds = Math.round(parseFloat(minutes) * 60);
     const min = Math.floor(totalSeconds / 60);
     const sec = totalSeconds % 60;
     return `${min}′${sec.toString().padStart(2, "0")}″`;
   };
 
-  const handleSelect = (item) => {
+  const handleSelect = (item: string) => {
     setMenuVisible(false);
     if (item === "logout") signOut(auth).then(() => router.push("/login"));
     else if (item === "myrun") router.push("/myruns");
@@ -84,13 +89,13 @@ export default function Page() {
     else router.push("/");
   };
 
-  const showPhotoIcon = (run) => {
+  const showPhotoIcon = (run: RunData) => {
     const hasSingle = typeof run.imageUrl === "string" && run.imageUrl !== "";
     const hasMultiple = Array.isArray(run.imageUrls) && run.imageUrls.length > 0;
     return hasSingle || hasMultiple;
   };
 
-  const handleShowImages = (images, fallback) => {
+  const handleShowImages = (images: string[], fallback: string) => {
     let urls = [];
 
     if (Array.isArray(images) && images.length > 0) {
@@ -253,8 +258,12 @@ export default function Page() {
                 position: "absolute", top: "50%", width: "100%", display: "flex",
                 justifyContent: "space-between", transform: "translateY(-50%)", padding: "0 1rem"
               }}>
-                <button onClick={handlePrev} style={{ background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer" }}>❮</button>
-                <button onClick={handleNext} style={{ background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer" }}>❯</button>
+                <button onClick={handlePrev} style={{
+                  background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer"
+                }}>❮</button>
+                <button onClick={handleNext} style={{
+                  background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer"
+                }}>❯</button>
               </div>
             )}
           </div>
