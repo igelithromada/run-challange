@@ -96,7 +96,7 @@ export default function Page() {
   };
 
   const handleShowImages = (images: string[], fallback: string) => {
-    let urls = [];
+    let urls: string[] = [];
 
     if (Array.isArray(images) && images.length > 0) {
       urls = images;
