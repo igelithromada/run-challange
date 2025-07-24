@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { collection, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore";
 import { db, auth } from "../lib/firebase";
 
-export default function RunForm({ type }) {
+export default function RunForm({ type }: { type: string }) {
   const [showForm, setShowForm] = useState(false);
   const [km, setKm] = useState("");
   const [minuty, setMinuty] = useState("");
