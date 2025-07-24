@@ -41,12 +41,12 @@ export default function MyRunsPage() {
       }
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       const unsubRuns = onSnapshot(q, (snap) => {
-        const items = snap.docs
-          .map((doc) => {
-            const data = doc.data() as Omit<RunData, "id">;
-            return { ...data, id: doc.id };
-          })
-          .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+        const items = snap.docs.map(doc => {
+          const data = doc.data() as Omit<RunData, "id">;
+          return { ...data, id: doc.id };
+        }).sort((a, b) =>
+          (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)
+        );
         setRuns(items);
         setLoading(false);
       }, (err) => {
@@ -81,11 +81,11 @@ export default function MyRunsPage() {
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const totalHours = totalMin / 60;
 
-  const longestRun: RunData | null = filteredRuns.reduce<RunData | null>((max, run) =>
-    !max || run.km > max.km ? run : max, null);
+  const longestRun = filteredRuns.reduce<RunData | null>((max, run) =>
+    !max || Number(run.km) > Number(max.km) ? run : max, null);
 
-  const fastestRun: RunData | null = filteredRuns.reduce<RunData | null>((min, run) =>
-    !min || run.tempo < min.tempo ? run : min, null);
+  const fastestRun = filteredRuns.reduce<RunData | null>((min, run) =>
+    !min || Number(run.tempo) < Number(min.tempo) ? run : min, null);
 
   const handleDelete = async (id: string) => {
     if (confirm("Opravdu chcete tento záznam smazat?")) {
@@ -123,9 +123,7 @@ export default function MyRunsPage() {
     if (item === "logout") {
       await signOut(auth);
       router.push("/login");
-    } else {
-      router.push("/" + item);
-    }
+    } else router.push("/" + item);
   };
 
   const renderTempoBar = (tempo: number) => {
@@ -184,12 +182,12 @@ export default function MyRunsPage() {
 
         {longestRun && (
           <div className="tile">
-            🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(longestRun.minuty)} ({formatTime(longestRun.tempo)} /km)
+            🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(Number(longestRun.minuty))} ({formatTime(Number(longestRun.tempo))} /km)
           </div>
         )}
         {fastestRun && (
           <div className="tile">
-            ⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(fastestRun.minuty)} ({formatTime(fastestRun.tempo)} /km)
+            ⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(Number(fastestRun.minuty))} ({formatTime(Number(fastestRun.tempo))} /km)
           </div>
         )}
 
@@ -220,8 +218,8 @@ export default function MyRunsPage() {
                       {run.nickname || run.email?.split("@")[0]}
                     </span>
                   </div>
-                  <div>{run.km} km, {formatTime(run.minuty)}</div>
-                  {renderTempoBar(run.tempo)}
+                  <div>{run.km} km, {formatTime(Number(run.minuty))}</div>
+                  {renderTempoBar(Number(run.tempo))}
                 </div>
                 <div style={{
                   display: "flex",
