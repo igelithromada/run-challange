@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import {
-  collection, query, where, onSnapshot, doc, deleteDoc, updateDoc
+  collection, query, where, onSnapshot, doc,
+  deleteDoc, updateDoc
 } from "firebase/firestore";
 import {
   ref, uploadBytes, getDownloadURL
@@ -40,12 +41,12 @@ export default function MyRunsPage() {
       }
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       const unsubRuns = onSnapshot(q, (snap) => {
-        const items = snap.docs.map((doc) => {
-          const data = doc.data() as Omit<RunData, "id">;
-          return { ...data, id: doc.id };
-        }).sort((a, b) =>
-          (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)
-        );
+        const items = snap.docs
+          .map((doc) => {
+            const data = doc.data() as Omit<RunData, "id">;
+            return { ...data, id: doc.id };
+          })
+          .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         setRuns(items);
         setLoading(false);
       }, (err) => {
@@ -80,11 +81,11 @@ export default function MyRunsPage() {
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const totalHours = totalMin / 60;
 
-  const longestRun: RunData | undefined = filteredRuns.reduce((max, run) =>
-    !max || run.km > max.km ? run : max, undefined);
+  const longestRun: RunData | null = filteredRuns.reduce<RunData | null>((max, run) =>
+    !max || run.km > max.km ? run : max, null);
 
-  const fastestRun: RunData | undefined = filteredRuns.reduce((min, run) =>
-    !min || run.tempo < min.tempo ? run : min, undefined);
+  const fastestRun: RunData | null = filteredRuns.reduce<RunData | null>((min, run) =>
+    !min || run.tempo < min.tempo ? run : min, null);
 
   const handleDelete = async (id: string) => {
     if (confirm("Opravdu chcete tento záznam smazat?")) {
@@ -122,7 +123,9 @@ export default function MyRunsPage() {
     if (item === "logout") {
       await signOut(auth);
       router.push("/login");
-    } else router.push("/" + item);
+    } else {
+      router.push("/" + item);
+    }
   };
 
   const renderTempoBar = (tempo: number) => {
