@@ -15,7 +15,7 @@ import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
-import { RunData } from "../types"; // typ s id: string
+import { RunData } from "../types";
 
 export default function MyRunsPage() {
   useThemeLoader();
@@ -41,10 +41,8 @@ export default function MyRunsPage() {
       }
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       const unsubRuns = onSnapshot(q, (snap) => {
-        const items = snap.docs.map(doc => {
-          const data = doc.data() as Omit<RunData, "id">;
-          return { id: doc.id, ...data };
-        }).sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() as RunData }))
+          .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         setRuns(items);
         setLoading(false);
       }, (err) => {
@@ -77,8 +75,11 @@ export default function MyRunsPage() {
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const totalHours = totalMin / 60;
 
-  const longestRun = filteredRuns.reduce((max, run) => (run.km > (max?.km || 0) ? run : max), null);
-  const fastestRun = filteredRuns.reduce((min, run) => (run.tempo < (min?.tempo || Infinity) ? run : min), null);
+  const longestRun: RunData | undefined = filteredRuns.reduce((max, run) =>
+    !max || run.km > max.km ? run : max, undefined);
+
+  const fastestRun: RunData | undefined = filteredRuns.reduce((min, run) =>
+    !min || run.tempo < min.tempo ? run : min, undefined);
 
   const handleDelete = async (id: string) => {
     if (confirm("Opravdu chcete tento záznam smazat?")) {
