@@ -15,7 +15,7 @@ import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
-import { RunData } from "../types"; // nově přidaný import
+import { RunData } from "../types"; // typ s id: string
 
 export default function MyRunsPage() {
   useThemeLoader();
@@ -41,8 +41,10 @@ export default function MyRunsPage() {
       }
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       const unsubRuns = onSnapshot(q, (snap) => {
-        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() as RunData }))
-          .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+        const items = snap.docs.map(doc => {
+          const data = doc.data() as Omit<RunData, "id">;
+          return { id: doc.id, ...data };
+        }).sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         setRuns(items);
         setLoading(false);
       }, (err) => {
