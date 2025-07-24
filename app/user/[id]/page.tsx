@@ -21,7 +21,7 @@ type RunData = {
 
 export default function UserPage() {
   useThemeLoader();
-  const id = useParams().id as string;
+  const { id } = useParams();
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<RunData[]>([]);
@@ -34,16 +34,16 @@ export default function UserPage() {
   useEffect(() => {
     const q = query(collection(db, "runs"), where("uid", "==", id));
     const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const items = snap.docs.map((doc): RunData => ({ id: doc.id, ...doc.data() }));
       const sorted = items.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-      setRuns(sorted as RunData[]);
+      setRuns(sorted);
     });
     return () => unsub();
   }, [id]);
 
   useEffect(() => {
     const fetchUser = async () => {
-      const snapshot = await getDoc(doc(db, "users", id));
+      const snapshot = await getDoc(doc(db, "users", id as string));
       if (snapshot.exists()) {
         const data = snapshot.data();
         setUserInfo({
@@ -91,18 +91,8 @@ export default function UserPage() {
         </h1>
 
         <div className="tile-group">
-          <button
-            className={`tile-button ${selectedType === "běh" ? "active" : ""}`}
-            onClick={() => setSelectedType("běh")}
-          >
-            🏃 Běh
-          </button>
-          <button
-            className={`tile-button ${selectedType === "chůze" ? "active" : ""}`}
-            onClick={() => setSelectedType("chůze")}
-          >
-            🚶 Chůze
-          </button>
+          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
+          <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
         </div>
 
         <div className="list-container" style={{ gap: "0", display: "flex", flexDirection: "column" }}>
@@ -130,9 +120,7 @@ export default function UserPage() {
                   <div className="avatar" style={{ marginRight: "0.1rem" }}>{avatar}</div>
                   <div style={{ flex: 1 }}>
                     <div>
-                      <span style={{ fontWeight: "bold", color: "white" }}>
-                        {userInfo.nickname || userInfo.email?.split("@")[0] || "Anonym"}
-                      </span>
+                      <span style={{ fontWeight: "bold", color: "white" }}>{userInfo.nickname || userInfo.email?.split("@")[0] || "Anonym"}</span>
                       {teamName && (
                         <span style={{ marginLeft: "10px", fontWeight: "bold", color: "white" }}>
                           ({teamName})
@@ -172,16 +160,13 @@ export default function UserPage() {
       {showImageUrl && (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000 }}>
           <div style={{ textAlign: "center" }}>
-            <img src={showImageUrl[currentImageIndex]} alt="náhled" style={{ maxWidth: "90%", maxHeight: "80%", borderRadius: "10px" }} />
-            <div style={{ marginTop: "1rem", display: "flex", justifyContent: "center", gap: "1rem" }}>
-              <button disabled={currentImageIndex === 0} onClick={() => setCurrentImageIndex(currentImageIndex - 1)} style={{ padding: "0.4rem 1rem", fontSize: "16px", fontWeight: "bold", borderRadius: "8px", cursor: "pointer" }}>
-                ◀
-              </button>
-              <button onClick={() => setShowImageUrl(null)} style={{ padding: "0.4rem 1.4rem", background: "white", color: "black", border: "none", borderRadius: "12px", fontWeight: "bold", fontSize: "16px", cursor: "pointer" }}>
+            <img src={showImageUrl[currentImageIndex]} style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain" }} />
+            <div style={{ marginTop: "10px", display: "flex", justifyContent: "center", gap: "10px" }}>
+              {showImageUrl.length > 1 && showImageUrl.map((_, i) => (
+                <button key={i} onClick={() => setCurrentImageIndex(i)} style={{ background: currentImageIndex === i ? "white" : "#666", border: "none", borderRadius: "50%", width: "10px", height: "10px" }} />
+              ))}
+              <button onClick={() => setShowImageUrl(null)} style={{ marginLeft: "20px", background: "white", border: "none", borderRadius: "5px", padding: "5px 10px", fontWeight: "bold" }}>
                 Zavřít
-              </button>
-              <button disabled={currentImageIndex >= showImageUrl.length - 1} onClick={() => setCurrentImageIndex(currentImageIndex + 1)} style={{ padding: "0.4rem 1rem", fontSize: "16px", fontWeight: "bold", borderRadius: "8px", cursor: "pointer" }}>
-                ▶
               </button>
             </div>
           </div>
