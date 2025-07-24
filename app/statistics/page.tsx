@@ -1,20 +1,37 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
-import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
 
+type RunData = {
+  id: string;
+  uid: string;
+  email?: string;
+  nickname?: string;
+  teamId?: string;
+  km?: number;
+  minuty?: number;
+  type?: string;
+  timestamp: any;
+};
+
+type TeamData = {
+  id: string;
+  name: string;
+};
+
 export default function StatisticsPage() {
   useThemeLoader();
 
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState([]);
-  const [teams, setTeams] = useState([]);
-  const [user, setUser] = useState<User | null>(null);
+  const [runs, setRuns] = useState<RunData[]>([]);
+  const [teams, setTeams] = useState<TeamData[]>([]);
+  const [user, setUser] = useState<any>(null);
   const [selectedType, setSelectedType] = useState("běh");
   const [view, setView] = useState("já");
   const [metric, setMetric] = useState("km");
@@ -29,11 +46,11 @@ export default function StatisticsPage() {
     });
 
     const unsubRuns = onSnapshot(query(collection(db, "runs"), orderBy("timestamp", "desc")),
-      (snap) => setRuns(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+      (snap) => setRuns(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as RunData)))
     );
 
     const unsubTeams = onSnapshot(collection(db, "teams"),
-      (snap) => setTeams(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+      (snap) => setTeams(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as TeamData)))
     );
 
     return () => { unsubAuth(); unsubRuns(); unsubTeams(); }
@@ -47,8 +64,8 @@ export default function StatisticsPage() {
     return true;
   });
 
-  const userMap = {};
-  const teamMap = {};
+  const userMap: Record<string, { km: number; min: number }> = {};
+  const teamMap: Record<string, { km: number; min: number; members: Record<string, { km: number; min: number }> }> = {};
   filtered.forEach(run => {
     const name = run.nickname || run.email?.split("@")[0] || "Anonym";
     const team = teams.find(t => t.id === run.teamId)?.name || "?";
@@ -103,7 +120,7 @@ export default function StatisticsPage() {
     totalKm = teamList.reduce((a, b) => a + b.km, 0);
     totalMin = teamList.reduce((a, b) => a + (b.tempo * b.km || 0), 0);
   }
-  const avgTempo = totalKm ? (totalMin / totalKm).toFixed(2) : 0;
+  const avgTempo = totalKm ? (totalMin / totalKm).toFixed(2) : "0";
 
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
@@ -164,11 +181,11 @@ export default function StatisticsPage() {
                   background: idx === 0 ? "gold" : idx === 1 ? "silver" : idx === 2 ? "#cd7f32" : "rgba(0,0,0,0.2)"
                 }}>
                   <div style={{ marginRight: "0.8rem" }}>{idx + 1}.</div>
-                  <div className="avatar">{item.name?.charAt(0).toUpperCase()}</div>
+                  <div className="avatar">{(item as any).name?.charAt(0).toUpperCase()}</div>
                   <div style={{ marginLeft: "0.6rem" }}>
-                    {item.name} — {metric === "km"
-                      ? `${item.km.toFixed(2)} km`
-                      : `${item.tempo.toFixed(2)} min/km`}
+                    {(item as any).name} — {metric === "km"
+                      ? `${(item as any).km.toFixed(2)} km`
+                      : `${(item as any).tempo.toFixed(2)} min/km`}
                   </div>
                 </li>
               ))}
@@ -179,11 +196,11 @@ export default function StatisticsPage() {
               {(view === "jednotlivci" ? userList : teamList).slice(3).map((item, idx) => (
                 <li key={idx} className="tile" style={{ display: "flex", alignItems: "center" }}>
                   <div style={{ marginRight: "0.8rem" }}>{idx + 4}.</div>
-                  <div className="avatar">{item.name?.charAt(0).toUpperCase()}</div>
+                  <div className="avatar">{(item as any).name?.charAt(0).toUpperCase()}</div>
                   <div style={{ marginLeft: "0.6rem" }}>
-                    {item.name} — {metric === "km"
-                      ? `${item.km.toFixed(2)} km`
-                      : `${item.tempo.toFixed(2)} min/km`}
+                    {(item as any).name} — {metric === "km"
+                      ? `${(item as any).km.toFixed(2)} km`
+                      : `${(item as any).tempo.toFixed(2)} min/km`}
                   </div>
                 </li>
               ))}
