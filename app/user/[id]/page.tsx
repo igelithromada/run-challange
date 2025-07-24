@@ -21,7 +21,7 @@ type RunData = {
 
 export default function UserPage() {
   useThemeLoader();
-  const { id } = useParams();
+  const id = useParams().id as string;
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<RunData[]>([]);
@@ -34,9 +34,9 @@ export default function UserPage() {
   useEffect(() => {
     const q = query(collection(db, "runs"), where("uid", "==", id));
     const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((doc) => ({ id: doc.id, ...(doc.data() as Omit<RunData, "id">) }));
+      const items = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       const sorted = items.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-      setRuns(sorted);
+      setRuns(sorted as RunData[]);
     });
     return () => unsub();
   }, [id]);
@@ -91,8 +91,18 @@ export default function UserPage() {
         </h1>
 
         <div className="tile-group">
-          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
-          <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
+          <button
+            className={`tile-button ${selectedType === "běh" ? "active" : ""}`}
+            onClick={() => setSelectedType("běh")}
+          >
+            🏃 Běh
+          </button>
+          <button
+            className={`tile-button ${selectedType === "chůze" ? "active" : ""}`}
+            onClick={() => setSelectedType("chůze")}
+          >
+            🚶 Chůze
+          </button>
         </div>
 
         <div className="list-container" style={{ gap: "0", display: "flex", flexDirection: "column" }}>
