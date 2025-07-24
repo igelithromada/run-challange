@@ -1,21 +1,14 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  deleteDoc,
-  updateDoc,
+  collection, query, where, onSnapshot, doc, deleteDoc, updateDoc
 } from "firebase/firestore";
 import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
+  ref, uploadBytes, getDownloadURL
 } from "firebase/storage";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import {
+  onAuthStateChanged, signOut
+} from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
@@ -46,27 +39,20 @@ export default function MyRunsPage() {
         return;
       }
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
-      const unsubRuns = onSnapshot(
-        q,
-        (snap) => {
-          const items = snap.docs
-            .map((doc) => {
-              const data = doc.data() as Omit<RunData, "id">;
-              return { ...data, id: doc.id };
-            })
-            .sort(
-              (a, b) =>
-                (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)
-            );
-          setRuns(items);
-          setLoading(false);
-        },
-        (err) => {
-          console.error(err);
-          setError("Chyba při načítání dat.");
-          setLoading(false);
-        }
-      );
+      const unsubRuns = onSnapshot(q, (snap) => {
+        const items = snap.docs.map((doc) => {
+          const data = doc.data() as Omit<RunData, "id">;
+          return { ...data, id: doc.id };
+        }).sort((a, b) =>
+          (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)
+        );
+        setRuns(items);
+        setLoading(false);
+      }, (err) => {
+        console.error(err);
+        setError("Chyba při načítání dat.");
+        setLoading(false);
+      });
 
       return () => unsubRuns();
     });
@@ -89,8 +75,8 @@ export default function MyRunsPage() {
     return true;
   });
 
-  const totalKm = filteredRuns.reduce((sum, run) => sum + (run.km || 0), 0);
-  const totalMin = filteredRuns.reduce((sum, run) => sum + (run.minuty || 0), 0);
+  const totalKm = filteredRuns.reduce((sum, run) => sum + Number(run.km || 0), 0);
+  const totalMin = filteredRuns.reduce((sum, run) => sum + Number(run.minuty || 0), 0);
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const totalHours = totalMin / 60;
 
