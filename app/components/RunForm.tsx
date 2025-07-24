@@ -12,7 +12,7 @@ export default function RunForm({ type }: { type: string }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const uploadToCloudinary = async (file) => {
+const uploadToCloudinary = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "lhota_unsigned");
