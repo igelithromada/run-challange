@@ -7,16 +7,28 @@ import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import useThemeLoader from "../../lib/useThemeLoader";
 
+type RunData = {
+  id: string;
+  timestamp?: { seconds: number };
+  km?: number;
+  minuty?: number;
+  tempo?: number | string;
+  type?: string;
+  teamId?: string;
+  imageUrls?: string[];
+  imageUrl?: string;
+};
+
 export default function UserPage() {
   useThemeLoader();
   const { id } = useParams();
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState([]);
+  const [runs, setRuns] = useState<RunData[]>([]);
   const [selectedType, setSelectedType] = useState("běh");
   const [userInfo, setUserInfo] = useState({ nickname: "", avatarUrl: "", email: "" });
-  const [teams, setTeams] = useState([]);
-  const [showImageUrl, setShowImageUrl] = useState(null);
+  const [teams, setTeams] = useState<{ id: string; name?: string }[]>([]);
+  const [showImageUrl, setShowImageUrl] = useState<string[] | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
@@ -24,7 +36,7 @@ export default function UserPage() {
     const unsub = onSnapshot(q, (snap) => {
       const items = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       const sorted = items.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-      setRuns(sorted);
+      setRuns(sorted as RunData[]);
     });
     return () => unsub();
   }, [id]);
@@ -51,14 +63,14 @@ export default function UserPage() {
     return () => unsub();
   }, []);
 
-  const formatTime = (minutes) => {
-    const totalSeconds = Math.round(parseFloat(minutes) * 60);
+  const formatTime = (minutes?: number | string) => {
+    const totalSeconds = Math.round(parseFloat(minutes as string) * 60);
     const min = Math.floor(totalSeconds / 60);
     const sec = totalSeconds % 60;
     return `${min}′${sec.toString().padStart(2, "0")}″`;
   };
 
-  const handleSelect = (item) => {
+  const handleSelect = (item: string) => {
     setMenuVisible(false);
     if (item === "logout") router.push("/login");
     else if (item === "myruns") window.location.href = "/myruns";
@@ -104,12 +116,12 @@ export default function UserPage() {
                 : avatarLetter;
 
               const pos = (() => {
-                const tempo = parseFloat(run.tempo);
+                const tempo = parseFloat(run.tempo as string);
                 const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
                 return Math.min(100, Math.max(0, ((range.max - tempo) / (range.max - range.min)) * 100));
               })();
 
-              const dateStr = new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ", {
+              const dateStr = new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ", {
                 hour: "2-digit", minute: "2-digit", year: "numeric", month: "numeric", day: "numeric"
               });
 
@@ -141,8 +153,8 @@ export default function UserPage() {
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", position: "absolute", right: "0.8rem", top: "0.4rem", gap: "0.3rem" }}>
                     <small>{dateStr}</small>
-                    {(run.imageUrls?.length > 0 || run.imageUrl) && (
-                      <div onClick={() => { setCurrentImageIndex(0); setShowImageUrl(run.imageUrls || [run.imageUrl]); }} style={{ cursor: "pointer" }}>
+                    {(run.imageUrls?.length || run.imageUrl) && (
+                      <div onClick={() => { setCurrentImageIndex(0); setShowImageUrl(run.imageUrls || [run.imageUrl!]); }} style={{ cursor: "pointer" }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                           <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
                           <circle cx="8.5" cy="8.5" r="1.5" />
