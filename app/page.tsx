@@ -16,17 +16,17 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import RunForm from "./components/RunForm";
 import useThemeLoader from "./lib/useThemeLoader";
-import { RunData } from "./types"; // Assuming RunData type is defined somewhere
+import { RunData } from "./types";
 
 export default function Page() {
   useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState<RunData[]>([]); // Typováno jako RunData[]
-  const [teams, setTeams] = useState<any[]>([]); // Typování pro týmy
+  const [runs, setRuns] = useState<RunData[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
   const [selectedType, setSelectedType] = useState("běh");
-  const [showImages, setShowImages] = useState<string[] | null>(null); // Typováno jako pole stringů nebo null
+  const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
-  const [userAvatars, setUserAvatars] = useState<{ [key: string]: { avatarUrl: string; nickname: string } }>({}); // Typování pro userAvatars
+  const [userAvatars, setUserAvatars] = useState<{ [key: string]: { avatarUrl: string; nickname: string } }>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export default function Page() {
     const q = query(collection(db, "runs"), orderBy("timestamp", "desc"), limit(30));
     const unsubRuns = onSnapshot(q, (snap) => {
       const items = snap.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() } as RunData)) // Typováno jako RunData
+        .map((doc) => ({ id: doc.id, ...doc.data() } as RunData))
         .filter((item) => (item.type || "běh") === selectedType);
       setRuns(items);
     });
@@ -220,7 +220,7 @@ export default function Page() {
                 }}>
                   <small style={{ whiteSpace: "nowrap" }}>{dateStr}</small>
                   {showPhotoIcon(run) && (
-                    <div onClick={() => handleShowImages(run.imageUrls, run.imageUrl)} style={{ cursor: "pointer" }}>
+                    <div onClick={() => handleShowImages(run.imageUrls ?? [], run.imageUrl)} style={{ cursor: "pointer" }}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5"
                         strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
