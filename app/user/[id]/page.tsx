@@ -34,9 +34,9 @@ export default function UserPage() {
   useEffect(() => {
     const q = query(collection(db, "runs"), where("uid", "==", id));
     const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const items = snap.docs.map((doc) => ({ id: doc.id, ...(doc.data() as Omit<RunData, "id">) }));
       const sorted = items.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-      setRuns(sorted as RunData[]);
+      setRuns(sorted);
     });
     return () => unsub();
   }, [id]);
@@ -91,18 +91,8 @@ export default function UserPage() {
         </h1>
 
         <div className="tile-group">
-          <button
-            className={`tile-button ${selectedType === "běh" ? "active" : ""}`}
-            onClick={() => setSelectedType("běh")}
-          >
-            🏃 Běh
-          </button>
-          <button
-            className={`tile-button ${selectedType === "chůze" ? "active" : ""}`}
-            onClick={() => setSelectedType("chůze")}
-          >
-            🚶 Chůze
-          </button>
+          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
+          <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
         </div>
 
         <div className="list-container" style={{ gap: "0", display: "flex", flexDirection: "column" }}>
