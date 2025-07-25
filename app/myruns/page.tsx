@@ -1,29 +1,37 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import {
-  collection, query, where, onSnapshot, doc, getDoc,
-  deleteDoc, updateDoc
+  collection, query, where, onSnapshot, doc,
+  deleteDoc, updateDoc, getDoc
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import {
+  ref, uploadBytes, getDownloadURL
+} from "firebase/storage";
+import {
+  onAuthStateChanged, signOut
+} from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
-import { RunData } from "../types";
+import { RunData, UserData } from "../types";
 
 export default function MyRunsPage() {
   useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<RunData[]>([]);
+  const [userAvatars, setUserAvatars] = useState<{ [key: string]: UserData }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showImageUrl, setShowImageUrl] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState("běh");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [userAvatars, setUserAvatars] = useState<{ [key: string]: { avatarUrl: string; nickname: string } }>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [km, setKm] = useState("");
+  const [minuty, setMinuty] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -32,10 +40,10 @@ export default function MyRunsPage() {
         router.push("/login");
         return;
       }
-
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       const unsubRuns = onSnapshot(q, (snap) => {
-        const items = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as RunData));
+        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as RunData))
+          .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         setRuns(items);
         setLoading(false);
       }, (err) => {
@@ -53,13 +61,13 @@ export default function MyRunsPage() {
       if (run.uid && !userAvatars[run.uid]) {
         getDoc(doc(db, "users", run.uid)).then((snapshot) => {
           if (snapshot.exists()) {
-            const data = snapshot.data();
+            const data = snapshot.data() as UserData;
             setUserAvatars((prev) => ({
               ...prev,
               [run.uid]: {
                 avatarUrl: data.avatarUrl || "",
-                nickname: data.nickname || "",
-              },
+                nickname: data.nickname || ""
+              }
             }));
           }
         });
@@ -67,30 +75,55 @@ export default function MyRunsPage() {
     });
   }, [runs]);
 
-  const formatTime = (minutes: number) => {
-    const totalSeconds = Math.round(minutes * 60);
-    const min = Math.floor(totalSeconds / 60);
-    const sec = totalSeconds % 60;
-    return `${min}′${sec.toString().padStart(2, "0")}″`;
+  const formatTime = (min: string | number) => {
+    const totalSeconds = Math.round(parseFloat(String(min)) * 60);
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return `${m}′${s.toString().padStart(2, "0")}″`;
   };
 
-  const filteredRuns = runs
-    .filter((run) => (run.type || "běh") === selectedType)
-    .filter((run) => {
-      const date = new Date((run.timestamp?.seconds || 0) * 1000);
-      if (dateFrom && new Date(dateFrom) > date) return false;
-      if (dateTo && new Date(dateTo + "T23:59") < date) return false;
-      return true;
-    })
-    .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+  const filteredRuns = runs.filter(run => {
+    if ((run.type || "běh") !== selectedType) return false;
+    const date = new Date((run.timestamp?.seconds || 0) * 1000);
+    if (dateFrom && new Date(dateFrom) > date) return false;
+    if (dateTo && new Date(dateTo + "T23:59") < date) return false;
+    return true;
+  });
 
-  const totalKm = filteredRuns.reduce((sum, run) => sum + (run.km || 0), 0);
-  const totalMin = filteredRuns.reduce((sum, run) => sum + (run.minuty || 0), 0);
+  const totalKm = filteredRuns.reduce((sum, run) => sum + parseFloat(run.km?.toString() || "0"), 0);
+  const totalMin = filteredRuns.reduce((sum, run) => sum + parseFloat(run.minuty?.toString() || "0"), 0);
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const totalHours = totalMin / 60;
 
-  const longestRun = filteredRuns.reduce((max, run) => (run.km > (max?.km || 0) ? run : max), null);
-  const fastestRun = filteredRuns.reduce((min, run) => (run.tempo < (min?.tempo || Infinity) ? run : min), null);
+  const longestRun = filteredRuns.reduce((max, run) => parseFloat(run.km.toString()) > (max ? parseFloat(max.km.toString()) : 0) ? run : max, null as RunData | null);
+  const fastestRun = filteredRuns.reduce((min, run) => parseFloat(run.tempo.toString()) < (min ? parseFloat(min.tempo.toString()) : Infinity) ? run : min, null as RunData | null);
+
+  const handleDelete = async (id: string) => await deleteDoc(doc(db, "runs", id));
+
+  const handleEdit = (run: RunData) => {
+    setEditingId(run.id);
+    setKm(run.km.toString());
+    setMinuty(run.minuty.toString());
+    setFile(null);
+  };
+
+  const handleUpdate = async (id: string) => {
+    let imageUrl = null;
+    if (file) {
+      const imageRef = ref(storage, `runs/${id}/${file.name}`);
+      await uploadBytes(imageRef, file);
+      imageUrl = await getDownloadURL(imageRef);
+    }
+    const tempo = parseFloat(minuty) / parseFloat(km);
+    await updateDoc(doc(db, "runs", id), {
+      km: parseFloat(km),
+      minuty: parseFloat(minuty),
+      tempo: tempo,
+      ...(imageUrl && { imageUrl })
+    });
+    setEditingId(null);
+    setFile(null);
+  };
 
   const renderTempoBar = (tempo: number) => {
     const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
@@ -98,7 +131,7 @@ export default function MyRunsPage() {
     return (
       <div style={{ marginTop: "4px" }}>
         <div style={{ fontSize: "0.9rem", marginBottom: "2px" }}>
-          {formatTime(tempo)} /km
+          {formatTime(tempo)}
         </div>
         <div style={{
           height: "5px", width: "70px",
@@ -126,9 +159,7 @@ export default function MyRunsPage() {
     if (item === "logout") {
       await signOut(auth);
       router.push("/login");
-    } else {
-      router.push("/" + item);
-    }
+    } else router.push("/" + item);
   };
 
   return (
@@ -169,16 +200,25 @@ export default function MyRunsPage() {
 
         <h2 className="centered-title">Moje záznamy</h2>
         <div className="list-container" style={{ display: "flex", flexDirection: "column", gap: "0" }}>
-          {filteredRuns.map((run) => {
+          {filteredRuns.map(run => {
             const user = userAvatars[run.uid] || {};
             const nickname = user.nickname || run.nickname || run.email?.split("@")[0] || "Anonym";
             const avatarLetter = nickname.charAt(0).toUpperCase();
+
             const avatar = user.avatarUrl
               ? <img src={user.avatarUrl} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
               : avatarLetter;
+
             const dateStr = new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ");
 
-            return (
+            return editingId === run.id ? (
+              <div key={run.id} className="tile list-tile" style={{ textAlign: "center" }}>
+                <input type="number" value={km} onChange={(e) => setKm(e.target.value)} placeholder="km" />
+                <input type="number" value={minuty} onChange={(e) => setMinuty(e.target.value)} placeholder="min" />
+                <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                <button onClick={() => handleUpdate(run.id)}>💾 Uložit</button>
+              </div>
+            ) : (
               <div key={run.id} className="tile list-tile"
                 style={{
                   display: "flex",
@@ -188,7 +228,8 @@ export default function MyRunsPage() {
                   margin: "6px 0",
                   padding: "6px 8px"
                 }}>
-                <div className="avatar">{avatar}</div>
+                <div className="avatar" style={{ marginRight: "0.1rem" }}>{avatar}</div>
+
                 <div style={{ flex: 1 }}>
                   <div>
                     <span style={{ fontWeight: "bold", color: "white" }}>
@@ -196,8 +237,9 @@ export default function MyRunsPage() {
                     </span>
                   </div>
                   <div>{run.km} km, {formatTime(run.minuty)}</div>
-                  {renderTempoBar(run.tempo)}
+                  {renderTempoBar(parseFloat(run.tempo))}
                 </div>
+
                 <div style={{
                   display: "flex",
                   flexDirection: "column",
@@ -209,15 +251,12 @@ export default function MyRunsPage() {
                 }}>
                   <small>{dateStr}</small>
                   {run.imageUrl && (
-                    <div onClick={() => setShowImageUrl(run.imageUrl)} style={{ cursor: "pointer" }}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5"
-                        strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                        <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
-                        <circle cx="8.5" cy="8.5" r="1.5" />
-                        <path d="M21 15l-5-5L5 21" />
-                      </svg>
+                    <div onClick={() => setShowImageUrl(run.imageUrl!)} style={{ cursor: "pointer" }}>
+                      📷
                     </div>
                   )}
+                  <div onClick={() => handleEdit(run)} style={{ cursor: "pointer" }}>✏️</div>
+                  <div onClick={() => handleDelete(run.id)} style={{ cursor: "pointer" }}>🗑️</div>
                 </div>
               </div>
             );
