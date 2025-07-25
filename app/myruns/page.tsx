@@ -16,22 +16,10 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
 
-type RunData = {
-  id: string;
-  km: number;
-  minuty: number;
-  tempo: number;
-  timestamp?: { seconds: number };
-  type?: string;
-  imageUrl?: string;
-  nickname?: string;
-  email?: string;
-};
-
 export default function MyRunsPage() {
   useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState<RunData[]>([]);
+  const [runs, setRuns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showImageUrl, setShowImageUrl] = useState<string | null>(null);
@@ -53,7 +41,7 @@ export default function MyRunsPage() {
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       const unsubRuns = onSnapshot(q, (snap) => {
         const items = snap.docs.map(doc => {
-          const data = doc.data() as Omit<RunData, "id">;
+          const data = doc.data();
           return { id: doc.id, ...data };
         }).sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         setRuns(items);
@@ -88,17 +76,15 @@ export default function MyRunsPage() {
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const totalHours = totalMin / 60;
 
-  const longestRun = filteredRuns.reduce<RunData | null>((max, run) =>
-    run.km > (max?.km || 0) ? run : max, null);
-  const fastestRun = filteredRuns.reduce<RunData | null>((min, run) =>
-    run.tempo < (min?.tempo || Infinity) ? run : min, null);
+  const longestRun = filteredRuns.reduce((max, run) => (run.km > (max?.km || 0) ? run : max), null);
+  const fastestRun = filteredRuns.reduce((min, run) => (run.tempo < (min?.tempo || Infinity) ? run : min), null);
 
   const handleDelete = async (id: string) => await deleteDoc(doc(db, "runs", id));
 
-  const handleEdit = (run: RunData) => {
+  const handleEdit = (run: any) => {
     setEditingId(run.id);
-    setKm(String(run.km));
-    setMinuty(String(run.minuty));
+    setKm(run.km);
+    setMinuty(run.minuty);
     setFile(null);
   };
 
@@ -234,7 +220,7 @@ export default function MyRunsPage() {
                 }}>
                   <small>{new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ")}</small>
                   {run.imageUrl && (
-                    <div onClick={() => setShowImageUrl(run.imageUrl)} style={{ cursor: "pointer" }}>📷</div>
+                    <div onClick={() => setShowImageUrl(run.imageUrl!)} style={{ cursor: "pointer" }}>📷</div>
                   )}
                 </div>
               </div>
