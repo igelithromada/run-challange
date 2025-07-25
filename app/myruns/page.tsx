@@ -1,125 +1,152 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  deleteDoc,
+  updateDoc,
+} from "firebase/firestore";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
+import {
+  onAuthStateChanged,
+  signOut
+} from "firebase/auth";
+import { useRouter } from "next/navigation";
 import { db, auth, storage } from "../lib/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
-import { useRouter } from "next/navigation";
+import { RunData, UserData, TeamData } from "../types";
 
-export default function SettingsPage() {
+export default function MyRunsPage() {
   useThemeLoader();
-
   const [menuVisible, setMenuVisible] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [nickname, setNickname] = useState("");
-  const [email, setEmail] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
+  const [runs, setRuns] = useState<RunData[]>([]);
+  const [users, setUsers] = useState<Record<string, UserData>>({});
+  const [teams, setTeams] = useState<TeamData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showImageUrl, setShowImageUrl] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState("běh");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [km, setKm] = useState("");
+  const [minuty, setMinuty] = useState("");
+  const [sekundy, setSekundy] = useState("0");
   const [file, setFile] = useState<File | null>(null);
-  const [theme, setTheme] = useState("default");
-  const [customColor, setCustomColor] = useState("#36D1DC");
-
   const router = useRouter();
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUserId(user.uid);
-        setEmail(user.email || "");
-        const userRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userRef);
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setNickname(data.nickname || "");
-          setAvatarUrl(data.avatarUrl || "");
-          setTheme(data.theme || "default");
-          setCustomColor(data.customColor || "#36D1DC");
-          applyTheme(data.theme || "default", data.customColor || "#36D1DC");
-        } else {
-          const initialData = {
-            id: user.uid,
-            email: user.email || "",
-            nickname: "",
-            avatarUrl: "",
-            theme: "default",
-            customColor: "#36D1DC"
-          };
-          await setDoc(userRef, initialData);
-        }
-      } else {
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      if (!user) {
         router.push("/login");
+        return;
       }
+      const q = query(collection(db, "runs"), where("uid", "==", user.uid));
+      const unsubRuns = onSnapshot(q, (snap) => {
+        const items = snap.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as RunData))
+          .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+        setRuns(items);
+        setLoading(false);
+      }, (err) => {
+        console.error(err);
+        setError("Chyba při načítání dat.");
+        setLoading(false);
+      });
+
+      return () => unsubRuns();
     });
-    return () => unsub();
+
+    const unsubUsers = onSnapshot(collection(db, "users"), (snap) => {
+      const all: Record<string, UserData> = {};
+      snap.forEach((doc) => {
+        const data = doc.data() as UserData;
+        all[doc.id] = { ...data, id: doc.id };
+      });
+      setUsers(all);
+    });
+
+    const unsubTeams = onSnapshot(collection(db, "teams"), (snap) => {
+      setTeams(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as TeamData)));
+    });
+
+    return () => {
+      unsubUsers();
+      unsubTeams();
+    };
   }, [router]);
-
-  const applyTheme = (selectedTheme: string, color: string) => {
-    let gradient = "";
-    if (selectedTheme === "default") gradient = "linear-gradient(180deg, #36D1DC, #5B86E5)";
-    else if (selectedTheme === "man") gradient = "linear-gradient(180deg, #2980b9, #2c3e50)";
-    else if (selectedTheme === "woman") gradient = "linear-gradient(180deg, #ff7eb3, #ff758c)";
-    else if (selectedTheme === "auto") {
-      const hour = new Date().getHours();
-      gradient = hour >= 6 && hour < 18
-        ? "linear-gradient(180deg, #36D1DC, #5B86E5)"
-        : "linear-gradient(180deg, #0f2027, #203a43, #2c5364)";
-    }
-    else if (selectedTheme === "custom") gradient = `linear-gradient(180deg, ${color}, #000000)`;
-    document.documentElement.style.setProperty("--main-gradient", gradient);
-  };
-
-  const saveSettings = async (newData = {}) => {
-    if (!userId) return;
-    await setDoc(doc(db, "users", userId), {
-      nickname,
-      avatarUrl,
-      theme,
-      customColor,
-      ...newData
-    }, { merge: true });
-  };
-
-  const handleThemeChange = (selectedTheme: string) => {
-    setTheme(selectedTheme);
-    applyTheme(selectedTheme, customColor);
-    saveSettings({ theme: selectedTheme });
-  };
-
-  const handleCustomColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const color = e.target.value;
-    setCustomColor(color);
-    setTheme("custom");
-    applyTheme("custom", color);
-    saveSettings({ theme: "custom", customColor: color });
-  };
-
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !userId) return;
-
-    const avatarRef = ref(storage, `avatars/${userId}/${file.name}`);
-    await uploadBytes(avatarRef, file);
-    const url = await getDownloadURL(avatarRef);
-
-    setAvatarUrl(url);
-    saveSettings({ avatarUrl: url });
-  };
 
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
     if (item === "logout") {
-      try {
-        await signOut(auth);
-        router.push("/login");
-      } catch (err) {
-        console.error("Chyba při odhlašování: ", err);
-      }
-    } else if (item === "myrun") router.push("/myruns");
-    else if (item === "teams") router.push("/teams");
-    else if (item === "settings") router.push("/settings");
-    else if (item === "statistics") router.push("/statistics");
+      await signOut(auth);
+      router.push("/login");
+    } else {
+      router.push("/" + item);
+    }
+  };
+
+  const formatTime = (minutes: number) => {
+    const totalSeconds = Math.round(minutes * 60);
+    const min = Math.floor(totalSeconds / 60);
+    const sec = totalSeconds % 60;
+    return `${min}′${sec.toString().padStart(2, "0")}″`;
+  };
+
+  const filteredRuns = runs.filter(run => {
+    if ((run.type || "běh") !== selectedType) return false;
+    const date = new Date((run.timestamp?.seconds || 0) * 1000);
+    if (dateFrom && new Date(dateFrom) > date) return false;
+    if (dateTo && new Date(dateTo + "T23:59") < date) return false;
+    return true;
+  });
+
+  const totalKm = filteredRuns.reduce((sum, run) => sum + (run.km || 0), 0);
+  const totalMin = filteredRuns.reduce((sum, run) => sum + (parseFloat(run.minuty) || 0), 0);
+  const avgTempo = totalKm ? totalMin / totalKm : 0;
+  const totalHours = totalMin / 60;
+
+  const longestRun = filteredRuns.reduce<RunData | null>((max, run) => (run.km > (max?.km || 0) ? run : max), null);
+  const fastestRun = filteredRuns.reduce<RunData | null>((min, run) =>
+    (parseFloat(run.tempo) < parseFloat(min?.tempo || "100") ? run : min), null
+  );
+
+  const handleDelete = async (id: string) => await deleteDoc(doc(db, "runs", id));
+
+  const handleEdit = (run: RunData) => {
+    setEditingId(run.id);
+    setKm(run.km.toString());
+    setMinuty(run.minuty);
+    setSekundy(((parseFloat(run.minuty) % 1) * 60).toFixed(0));
+    setFile(null);
+  };
+
+  const handleUpdate = async (id: string) => {
+    let imageUrl = null;
+    if (file) {
+      const imageRef = ref(storage, `runs/${id}/${file.name}`);
+      await uploadBytes(imageRef, file);
+      imageUrl = await getDownloadURL(imageRef);
+    }
+    const totalMin = parseFloat(minuty) + parseFloat(sekundy) / 60;
+    const tempo = totalMin / parseFloat(km);
+    await updateDoc(doc(db, "runs", id), {
+      km: parseFloat(km),
+      minuty: totalMin.toString(),
+      tempo: tempo.toFixed(2),
+      ...(imageUrl && { imageUrl })
+    });
+    setEditingId(null);
+    setFile(null);
   };
 
   return (
@@ -128,101 +155,164 @@ export default function SettingsPage() {
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
       <div className="container">
-        <h1 className="centered-title">Nastavení</h1>
+        <h1 className="centered-title">Moje aktivity</h1>
 
-        <div className="tile">
-          <h3>Uživatelské jméno</h3>
-          <input
-            type="text"
-            value={nickname}
-            placeholder="Uživatelské jméno"
-            onChange={(e) => setNickname(e.target.value)}
-            onBlur={() => saveSettings()}
-            style={{
-              width: "100%", padding: "0.5rem", borderRadius: "10px",
-              border: "none", marginTop: "0.2rem"
-            }}
-          />
+        <div className="tile-group">
+          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
+          <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
         </div>
 
         <div className="tile" style={{ textAlign: "center" }}>
-          <h3>Změnit avatar</h3>
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="avatar" style={{
-              width: "80px", height: "80px", borderRadius: "50%", marginBottom: "0.0rem"
-            }} />
-          ) : (
-            <div style={{
-              width: "80px", height: "80px", borderRadius: "50%",
-              background: "rgba(255,255,255,0.3)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "5rem", marginBottom: "0.5rem"
-            }}>
-              {(nickname || email)?.charAt(0).toUpperCase() || "?"}
-            </div>
-          )}
-          <input type="file" onChange={handleAvatarChange} />
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ marginLeft: "1rem" }} />
         </div>
 
-        <div className="tile">
-          <h3>Nastavení vzhledu</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            <ThemeItem color="linear-gradient(180deg, #36D1DC, #5B86E5)" active={theme === "default"} onClick={() => handleThemeChange("default")} text="Výchozí vzhled" />
-            <ThemeItem color="linear-gradient(180deg, #2980b9, #2c3e50)" active={theme === "man"} onClick={() => handleThemeChange("man")} text="Muž" />
-            <ThemeItem color="linear-gradient(180deg, #ff7eb3, #ff758c)" active={theme === "woman"} onClick={() => handleThemeChange("woman")} text="Žena" />
-            <ThemeItem color="linear-gradient(180deg, #36D1DC, #5B86E5)" active={theme === "auto"} onClick={() => handleThemeChange("auto")} text="Automaticky podle času" />
+        <div className="tile-group">
+          <div className="tile">Počet aktivit<br />{filteredRuns.length}</div>
+          <div className="tile">Celkem km<br />{totalKm.toFixed(2)}</div>
+          <div className="tile">Čas<br />{totalHours.toFixed(2)} h</div>
+          <div className="tile">Prům. tempo<br />{formatTime(avgTempo)}</div>
+        </div>
 
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: "0.7rem",
-              padding: "0.5rem 0.7rem",
-              background: "rgba(255,255,255,0.1)",
-              borderRadius: "10px"
-            }}>
-              <label htmlFor="customColor" style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-                <div style={{
-                  width: "24px", height: "24px", borderRadius: "50%",
-                  background: customColor, border: "1px solid white"
-                }}></div>
-                <span>Vlastní barva</span>
-              </label>
-              <input
-                id="customColor"
-                type="color"
-                value={customColor}
-                onChange={handleCustomColorChange}
+        {longestRun && (
+          <div className="tile">
+            🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(parseFloat(longestRun.minuty))} ({formatTime(parseFloat(longestRun.tempo))} /km)
+          </div>
+        )}
+        {fastestRun && (
+          <div className="tile">
+            ⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(parseFloat(fastestRun.minuty))} ({formatTime(parseFloat(fastestRun.tempo))} /km)
+          </div>
+        )}
+
+        <h2 className="centered-title">Moje záznamy</h2>
+        <div className="list-container" style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+          {filteredRuns.map(run => {
+            const avatarLetter = (users[run.uid]?.nickname || run.nickname || run.email?.charAt(0) || "?").toUpperCase();
+            const avatar = users[run.uid]?.avatarUrl
+              ? <img src={users[run.uid].avatarUrl} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
+              : avatarLetter;
+
+            const teamName = run.teamId ? teams.find(t => t.id === run.teamId)?.name || "?" : null;
+            const tempoValue = parseFloat(run.tempo);
+            const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
+            const pos = Math.min(100, Math.max(0, ((range.max - tempoValue) / (range.max - range.min)) * 100));
+            const dateStr = new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ", {
+              hour: "2-digit", minute: "2-digit", year: "numeric", month: "numeric", day: "numeric"
+            });
+
+            return (
+              <div key={run.id} className="tile list-tile" style={{ display: "flex", flexDirection: "column", gap: "0.5rem", margin: "6px 0", padding: "6px 8px" }}>
+                <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
+                  <div className="avatar" style={{ marginRight: "0.1rem" }}>{avatar}</div>
+                  <div style={{ flex: 1 }}>
+                    <div>
+                      <span style={{ fontWeight: "bold", color: "white" }}>
+                        {users[run.uid]?.nickname || run.nickname || run.email?.split("@")[0] || "Anonym"}
+                      </span>
+                      {teamName && (
+                        <span style={{ marginLeft: "10px", fontWeight: "bold", color: "white" }}>
+                          ({teamName})
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.2rem" }}>
+                      <div>{run.km} km, {formatTime(parseFloat(run.minuty))}</div>
+                      <div style={{ background: "rgba(0,0,0,0.0)", padding: "0.1rem 0.6rem", borderRadius: "10px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                        <div style={{ fontSize: "1rem", marginBottom: "0.1px", color: "white", fontWeight: "bold" }}>
+                          {formatTime(tempoValue)} /km
+                        </div>
+                        <div style={{ height: "5px", width: "70px", background: "linear-gradient(90deg, red, yellow, green)", borderRadius: "3px", position: "relative" }}>
+                          <div style={{ position: "absolute", top: "-4px", left: `${pos}%`, width: "10px", height: "10px", background: "white", border: "2px solid #333", borderRadius: "50%", transform: "translateX(-50%)" }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.3rem" }}>
+                    <small>{dateStr}</small>
+                    <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.3rem" }}>
+                      <div onClick={() => confirm("Opravdu chceš smazat záznam?") && handleDelete(run.id)} style={{ cursor: "pointer" }}>🗑️</div>
+                      <div onClick={() => handleEdit(run)} style={{ cursor: "pointer" }}>✏️</div>
+                      {(run.imageUrls?.length || run.imageUrl) && (
+                        <div onClick={() => setShowImageUrl(run.imageUrls?.[0] ?? run.imageUrl ?? null)} style={{ cursor: "pointer" }}>📷</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {editingId === run.id && (
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    handleUpdate(run.id);
+                  }}>
+                    <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+                      <input type="number" value={km} onChange={(e) => setKm(e.target.value)} placeholder="km" required />
+                      <input type="number" value={minuty} onChange={(e) => setMinuty(e.target.value)} placeholder="minuty" required />
+                      <input type="number" value={sekundy} onChange={(e) => setSekundy(e.target.value)} placeholder="sekundy" required />
+                      <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                      <button type="submit">💾</button>
+                      <button type="button" onClick={() => setEditingId(null)}>❌</button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {showImageUrl && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+          background: "rgba(0,0,0,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <img
+              src={showImageUrl}
+              alt="náhled"
+              style={{ maxHeight: "80vh", maxWidth: "90vw", borderRadius: "10px" }}
+            />
+            <div style={{ marginTop: "1rem", display: "flex", justifyContent: "center", gap: "1rem" }}>
+              <button
+                onClick={() => setShowImageUrl(null)}
                 style={{
-                  width: "40px",
-                  height: "40px",
+                  padding: "0.5rem 1rem",
+                  borderRadius: "5px",
+                  background: "white",
                   border: "none",
-                  borderRadius: "8px",
-                  background: "none"
+                  cursor: "pointer",
+                  fontWeight: "bold"
                 }}
-              />
+              >
+                Zavřít
+              </button>
+              <button
+                onClick={async () => {
+                  if (!window.confirm("Opravdu chceš smazat fotku?")) return;
+                  const run = runs.find(r =>
+                    r.imageUrl === showImageUrl || r.imageUrls?.[0] === showImageUrl
+                  );
+                  if (!run) return;
+
+                  await updateDoc(doc(db, "runs", run.id), {
+                    imageUrl: null,
+                    imageUrls: []
+                  });
+                  setShowImageUrl(null);
+                }}
+                style={{
+                  padding: "0.5rem 1rem",
+                  borderRadius: "5px",
+                  background: "#f44336",
+                  color: "white",
+                  border: "none",
+                  cursor: "pointer",
+                  fontWeight: "bold"
+                }}
+              >
+                Smazat fotku
+              </button>
             </div>
           </div>
         </div>
-      </div>
-    </>
-  );
-}
-
-const ThemeItem = ({ color, active, onClick, text }: {
-  color: string, active: boolean, onClick: () => void, text: string
-}) => (
-  <div onClick={onClick} style={{
-    cursor: "pointer",
-    display: "flex", alignItems: "center", gap: "0.5rem",
-    background: active ? "rgba(255,255,255,0.3)" : "transparent",
-    borderRadius: "8px",
-    padding: "0.5rem"
-  }}>
-    <div style={{
-      width: "20px", height: "20px", borderRadius: "50%",
-      background: color
-    }}></div>
-    {text}
-  </div>
-);
+      )}
