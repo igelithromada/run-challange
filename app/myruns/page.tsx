@@ -1,18 +1,13 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  deleteDoc,
-  getDoc,
+  collection, query, where, onSnapshot, doc, getDoc,
+  deleteDoc, updateDoc
 } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { db, auth } from "../lib/firebase";
+import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
@@ -22,11 +17,12 @@ export default function MyRunsPage() {
   useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<RunData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showImageUrl, setShowImageUrl] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState("běh");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [showImages, setShowImages] = useState<string[] | null>(null);
-  const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [userAvatars, setUserAvatars] = useState<{ [key: string]: { avatarUrl: string; nickname: string } }>({});
   const router = useRouter();
 
@@ -39,17 +35,18 @@ export default function MyRunsPage() {
 
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       const unsubRuns = onSnapshot(q, (snap) => {
-        const items = snap.docs
-          .map((doc) => ({ id: doc.id, ...doc.data() } as RunData))
-          .filter((item) => (item.type || "běh") === selectedType);
+        const items = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as RunData));
         setRuns(items);
+        setLoading(false);
+      }, (err) => {
+        console.error(err);
+        setError("Chyba při načítání dat.");
+        setLoading(false);
       });
 
       return () => unsubRuns();
     });
-
-    return () => unsubAuth();
-  }, [router, selectedType]);
+  }, [router]);
 
   useEffect(() => {
     runs.forEach((run) => {
@@ -70,52 +67,67 @@ export default function MyRunsPage() {
     });
   }, [runs]);
 
-  const formatTime = (minutes: string) => {
-    const totalSeconds = Math.round(parseFloat(minutes) * 60);
+  const formatTime = (minutes: number) => {
+    const totalSeconds = Math.round(minutes * 60);
     const min = Math.floor(totalSeconds / 60);
     const sec = totalSeconds % 60;
     return `${min}′${sec.toString().padStart(2, "0")}″`;
   };
 
-  const showPhotoIcon = (run: RunData) => {
-    const hasSingle = typeof run.imageUrl === "string" && run.imageUrl !== "";
-    const hasMultiple = Array.isArray(run.imageUrls) && run.imageUrls.length > 0;
-    return hasSingle || hasMultiple;
+  const filteredRuns = runs
+    .filter((run) => (run.type || "běh") === selectedType)
+    .filter((run) => {
+      const date = new Date((run.timestamp?.seconds || 0) * 1000);
+      if (dateFrom && new Date(dateFrom) > date) return false;
+      if (dateTo && new Date(dateTo + "T23:59") < date) return false;
+      return true;
+    })
+    .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+  const totalKm = filteredRuns.reduce((sum, run) => sum + (run.km || 0), 0);
+  const totalMin = filteredRuns.reduce((sum, run) => sum + (run.minuty || 0), 0);
+  const avgTempo = totalKm ? totalMin / totalKm : 0;
+  const totalHours = totalMin / 60;
+
+  const longestRun = filteredRuns.reduce((max, run) => (run.km > (max?.km || 0) ? run : max), null);
+  const fastestRun = filteredRuns.reduce((min, run) => (run.tempo < (min?.tempo || Infinity) ? run : min), null);
+
+  const renderTempoBar = (tempo: number) => {
+    const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
+    let pos = Math.min(100, Math.max(0, ((range.max - tempo) / (range.max - range.min)) * 100));
+    return (
+      <div style={{ marginTop: "4px" }}>
+        <div style={{ fontSize: "0.9rem", marginBottom: "2px" }}>
+          {formatTime(tempo)} /km
+        </div>
+        <div style={{
+          height: "5px", width: "70px",
+          background: "linear-gradient(90deg, red, yellow, green)",
+          borderRadius: "3px", position: "relative"
+        }}>
+          <div style={{
+            position: "absolute",
+            top: "-4px",
+            left: `${pos}%`,
+            width: "10px",
+            height: "10px",
+            background: "white",
+            border: "2px solid #333",
+            borderRadius: "50%",
+            transform: "translateX(-50%)"
+          }} />
+        </div>
+      </div>
+    );
   };
 
-  const handleShowImages = (images: string[], fallback: string) => {
-    let urls: string[] = [];
-
-    if (Array.isArray(images) && images.length > 0) {
-      urls = images;
-    } else if (typeof fallback === "string" && fallback !== "") {
-      urls = [fallback];
-    }
-
-    if (urls.length > 0) {
-      setShowImages(urls);
-      setCurrentImgIndex(0);
-    }
-  };
-
-  const handleNext = () => {
-    if (showImages) {
-      setCurrentImgIndex((currentImgIndex + 1) % showImages.length);
-    }
-  };
-
-  const handlePrev = () => {
-    if (showImages) {
-      setCurrentImgIndex((currentImgIndex - 1 + showImages.length) % showImages.length);
-    }
-  };
-
-  const handleSelect = (item: string) => {
+  const handleSelect = async (item: string) => {
     setMenuVisible(false);
     if (item === "logout") {
-      auth.signOut().then(() => router.push("/login"));
+      await signOut(auth);
+      router.push("/login");
     } else {
-      router.push(`/${item}`);
+      router.push("/" + item);
     }
   };
 
@@ -132,29 +144,39 @@ export default function MyRunsPage() {
           <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
         </div>
 
-        <div className="tile">
-          <label>Od:</label>
+        <div className="tile" style={{ textAlign: "center" }}>
           <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-          <label>Do:</label>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ marginLeft: "1rem" }} />
         </div>
 
-        <h2 className="centered-title">Záznamy</h2>
-        <div className="list-container" style={{ gap: "0", display: "flex", flexDirection: "column" }}>
-          {runs.map(run => {
+        <div className="tile-group">
+          <div className="tile">Počet aktivit<br />{filteredRuns.length}</div>
+          <div className="tile">Celkem km<br />{totalKm.toFixed(2)}</div>
+          <div className="tile">Čas<br />{totalHours.toFixed(2)} h</div>
+          <div className="tile">Prům. tempo<br />{formatTime(avgTempo)}</div>
+        </div>
+
+        {longestRun && (
+          <div className="tile">
+            🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(longestRun.minuty)} ({formatTime(longestRun.tempo)} /km)
+          </div>
+        )}
+        {fastestRun && (
+          <div className="tile">
+            ⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(fastestRun.minuty)} ({formatTime(fastestRun.tempo)} /km)
+          </div>
+        )}
+
+        <h2 className="centered-title">Moje záznamy</h2>
+        <div className="list-container" style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+          {filteredRuns.map((run) => {
             const user = userAvatars[run.uid] || {};
             const nickname = user.nickname || run.nickname || run.email?.split("@")[0] || "Anonym";
             const avatarLetter = nickname.charAt(0).toUpperCase();
             const avatar = user.avatarUrl
               ? <img src={user.avatarUrl} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
               : avatarLetter;
-
-            const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
-            let pos = Math.min(100, Math.max(0, ((range.max - parseFloat(run.tempo)) / (range.max - range.min)) * 100));
-
-            const dateStr = new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ", {
-              hour: "2-digit", minute: "2-digit", year: "numeric", month: "numeric", day: "numeric"
-            });
+            const dateStr = new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ");
 
             return (
               <div key={run.id} className="tile list-tile"
@@ -166,43 +188,16 @@ export default function MyRunsPage() {
                   margin: "6px 0",
                   padding: "6px 8px"
                 }}>
-                <div className="avatar" style={{ marginRight: "0.1rem" }}>{avatar}</div>
-
+                <div className="avatar">{avatar}</div>
                 <div style={{ flex: 1 }}>
                   <div>
-                    <span style={{ fontWeight: "bold", color: "white", cursor: "pointer" }}>{nickname}</span>
+                    <span style={{ fontWeight: "bold", color: "white" }}>
+                      {nickname}
+                    </span>
                   </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.2rem" }}>
-                    <div>{run.km} km, {formatTime(run.minuty)}</div>
-                    <div style={{
-                      background: "rgba(0,0,0,0.0)",
-                      padding: "0.1rem 0.6rem",
-                      borderRadius: "10px",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center"
-                    }}>
-                      <div style={{ fontSize: "1rem", marginBottom: "0.1px" }}>
-                        {formatTime(run.tempo)} /km
-                      </div>
-                      <div style={{
-                        height: "5px", width: "70px",
-                        background: "linear-gradient(90deg, red, yellow, green)",
-                        borderRadius: "3px", position: "relative"
-                      }}>
-                        <div style={{
-                          position: "absolute",
-                          top: "-4px", left: `${pos}%`,
-                          width: "10px", height: "10px",
-                          background: "white", border: "2px solid #333",
-                          borderRadius: "50%", transform: "translateX(-50%)"
-                        }}></div>
-                      </div>
-                    </div>
-                  </div>
+                  <div>{run.km} km, {formatTime(run.minuty)}</div>
+                  {renderTempoBar(run.tempo)}
                 </div>
-
                 <div style={{
                   display: "flex",
                   flexDirection: "column",
@@ -212,9 +207,9 @@ export default function MyRunsPage() {
                   top: "0.4rem",
                   gap: "0.3rem"
                 }}>
-                  <small style={{ whiteSpace: "nowrap" }}>{dateStr}</small>
-                  {showPhotoIcon(run) && (
-                    <div onClick={() => handleShowImages(run.imageUrls ?? [], run.imageUrl ?? "")} style={{ cursor: "pointer" }}>
+                  <small>{dateStr}</small>
+                  {run.imageUrl && (
+                    <div onClick={() => setShowImageUrl(run.imageUrl)} style={{ cursor: "pointer" }}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5"
                         strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
@@ -228,41 +223,28 @@ export default function MyRunsPage() {
             );
           })}
         </div>
-      </div>
 
-      {showImages && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-          background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center",
-          zIndex: 2000
-        }}>
-          <div style={{ position: "relative", textAlign: "center" }}>
-            <img src={showImages[currentImgIndex]} alt="náhled" style={{
-              maxWidth: "90%", maxHeight: "80%", borderRadius: "10px"
-            }} />
-            <div style={{ marginTop: "1.2rem" }}>
-              <button onClick={() => setShowImages(null)} style={{
+        {showImageUrl && (
+          <div style={{
+            position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+            background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000
+          }}>
+            <div style={{ position: "relative" }}>
+              <img src={showImageUrl} alt="náhled" style={{ maxHeight: "90%", maxWidth: "90%", borderRadius: "10px" }} />
+              <button onClick={() => setShowImageUrl(null)} style={{
+                position: "absolute", top: "-10px", right: "-10px",
                 background: "white", color: "black", border: "none",
-                borderRadius: "12px", padding: "0.6rem 1.4rem",
-                fontWeight: "bold", fontSize: "16px", cursor: "pointer"
-              }}>Zavřít</button>
+                borderRadius: "50%", width: "30px", height: "30px",
+                cursor: "pointer", fontWeight: "bold", fontSize: "16px"
+              }}>×</button>
             </div>
-            {showImages.length > 1 && (
-              <div style={{
-                position: "absolute", top: "50%", width: "100%", display: "flex",
-                justifyContent: "space-between", transform: "translateY(-50%)", padding: "0 1rem"
-              }}>
-                <button onClick={handlePrev} style={{
-                  background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer"
-                }}>❮</button>
-                <button onClick={handleNext} style={{
-                  background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer"
-                }}>❯</button>
-              </div>
-            )}
           </div>
-        </div>
-      )}
+        )}
+
+        {loading && <p>Načítám...</p>}
+        {error && <p style={{ color: "red" }}>{error}</p>}
+        {!loading && filteredRuns.length === 0 && <p>Nemáte žádné záznamy.</p>}
+      </div>
     </>
   );
 }
