@@ -148,6 +148,7 @@ export default function MyRunsPage() {
       router.push("/" + item);
     }
   };
+  
   return (
     <>
       <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
