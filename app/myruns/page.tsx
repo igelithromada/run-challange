@@ -146,8 +146,8 @@ export default function MyRunsPage() {
   
   return (
     <>
-    <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-    <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+      <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
+      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
     <div className="container">
       <h1 className="centered-title">Moje aktivity</h1>
