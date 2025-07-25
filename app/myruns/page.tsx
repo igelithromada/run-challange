@@ -40,6 +40,7 @@ export default function MyRunsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [km, setKm] = useState("");
   const [minuty, setMinuty] = useState("");
+  const [sekundy, setSekundy] = useState("0");
   const [file, setFile] = useState<File | null>(null);
   const router = useRouter();
 
@@ -115,6 +116,7 @@ export default function MyRunsPage() {
     setEditingId(run.id);
     setKm(run.km.toString());
     setMinuty(run.minuty);
+    setSekundy(((parseFloat(run.minuty) % 1) * 60).toFixed(0));
     setFile(null);
   };
 
@@ -125,13 +127,14 @@ export default function MyRunsPage() {
       await uploadBytes(imageRef, file);
       imageUrl = await getDownloadURL(imageRef);
     }
-    const tempo = parseFloat(minuty) / parseFloat(km);
+    const totalMin = parseFloat(minuty) + parseFloat(sekundy) / 60;
+    const tempo = totalMin / parseFloat(km);
     await updateDoc(doc(db, "runs", id), {
       km: parseFloat(km),
-      minuty: minuty,
-      tempo: tempo.toFixed(2),
-      ...(imageUrl && { imageUrl })
-    });
+    minuty: totalMin.toString(),
+    tempo: tempo.toFixed(2),
+    ...(imageUrl && { imageUrl })
+  });
     setEditingId(null);
     setFile(null);
   };
