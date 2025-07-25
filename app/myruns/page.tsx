@@ -16,10 +16,22 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
 
+type RunData = {
+  id: string;
+  km: number;
+  minuty: number;
+  tempo: number;
+  timestamp?: { seconds: number };
+  type?: string;
+  imageUrl?: string;
+  nickname?: string;
+  email?: string;
+};
+
 export default function MyRunsPage() {
   useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState<any[]>([]);
+  const [runs, setRuns] = useState<RunData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showImageUrl, setShowImageUrl] = useState<string | null>(null);
@@ -40,8 +52,10 @@ export default function MyRunsPage() {
       }
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       const unsubRuns = onSnapshot(q, (snap) => {
-        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-          .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+        const items = snap.docs.map(doc => {
+          const data = doc.data() as Omit<RunData, "id">;
+          return { id: doc.id, ...data };
+        }).sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         setRuns(items);
         setLoading(false);
       }, (err) => {
@@ -74,15 +88,17 @@ export default function MyRunsPage() {
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const totalHours = totalMin / 60;
 
-  const longestRun = filteredRuns.reduce((max, run) => (run.km > (max?.km || 0) ? run : max), null);
-  const fastestRun = filteredRuns.reduce((min, run) => (run.tempo < (min?.tempo || Infinity) ? run : min), null);
+  const longestRun = filteredRuns.reduce<RunData | null>((max, run) =>
+    run.km > (max?.km || 0) ? run : max, null);
+  const fastestRun = filteredRuns.reduce<RunData | null>((min, run) =>
+    run.tempo < (min?.tempo || Infinity) ? run : min, null);
 
   const handleDelete = async (id: string) => await deleteDoc(doc(db, "runs", id));
 
-  const handleEdit = (run: any) => {
+  const handleEdit = (run: RunData) => {
     setEditingId(run.id);
-    setKm(run.km);
-    setMinuty(run.minuty);
+    setKm(String(run.km));
+    setMinuty(String(run.minuty));
     setFile(null);
   };
 
@@ -191,19 +207,13 @@ export default function MyRunsPage() {
               <div key={run.id} className="tile list-tile"
                 style={{
                   display: "flex",
-                  alignItems: "center",
+                  alignItems: "flex-start",
                   gap: "0.5rem",
-                  padding: "6px 8px",
-                  position: "relative"
+                  position: "relative",
+                  margin: "6px 0",
+                  padding: "6px 8px"
                 }}>
-                <div className="avatar" style={{
-                  width: "40px", height: "40px", borderRadius: "50%",
-                  backgroundColor: "#4f46e5", display: "flex",
-                  alignItems: "center", justifyContent: "center",
-                  fontWeight: "bold", color: "white", fontSize: "18px"
-                }}>
-                  {(run.nickname || run.email)?.charAt(0).toUpperCase() || "?"}
-                </div>
+                <div className="avatar">{(run.nickname || run.email)?.charAt(0).toUpperCase() || "?"}</div>
                 <div style={{ flex: 1 }}>
                   <div>
                     <span style={{ fontWeight: "bold", color: "white" }}>
@@ -217,12 +227,14 @@ export default function MyRunsPage() {
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "flex-end",
-                  justifyContent: "center",
+                  position: "absolute",
+                  right: "0.8rem",
+                  top: "0.4rem",
                   gap: "0.3rem"
                 }}>
-                  <small>{new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ")}</small>
+                  <small>{new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ")}</small>
                   {run.imageUrl && (
-                    <div onClick={() => setShowImageUrl(run.imageUrl)} style={{ cursor: "pointer", fontSize: "18px" }}>📷</div>
+                    <div onClick={() => setShowImageUrl(run.imageUrl)} style={{ cursor: "pointer" }}>📷</div>
                   )}
                 </div>
               </div>
