@@ -244,26 +244,57 @@ export default function MyRunsPage() {
         </div>
 
         {showImageUrl && (
-          <div style={{
-            position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-            background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000
-          }}>
-            <div style={{ position: "relative" }}>
-              <img src={showImageUrl} alt="náhled" style={{ maxHeight: "90%", maxWidth: "90%", borderRadius: "10px" }} />
-              <button onClick={() => setShowImageUrl(null)} style={{
-                position: "absolute", top: "-10px", right: "-10px",
-                background: "white", color: "black", border: "none",
-                borderRadius: "50%", width: "30px", height: "30px",
-                cursor: "pointer", fontWeight: "bold", fontSize: "16px"
-              }}>×</button>
-            </div>
-          </div>
-        )}
+  <div style={{
+    position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+    background: "rgba(0,0,0,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000
+  }}>
+    <div style={{ textAlign: "center" }}>
+      <img
+        src={showImageUrl}
+        alt="náhled"
+        style={{ maxHeight: "80vh", maxWidth: "90vw", borderRadius: "10px" }}
+      />
+      <div style={{ marginTop: "1rem", display: "flex", justifyContent: "center", gap: "1rem" }}>
+        <button
+          onClick={() => setShowImageUrl(null)}
+          style={{
+            padding: "0.5rem 1rem",
+            borderRadius: "5px",
+            background: "white",
+            border: "none",
+            cursor: "pointer",
+            fontWeight: "bold"
+          }}
+        >
+          Zavřít
+        </button>
+        <button
+          onClick={async () => {
+            if (!window.confirm("Opravdu chceš smazat fotku?")) return;
+            const run = runs.find(r =>
+              r.imageUrl === showImageUrl || r.imageUrls?.[0] === showImageUrl
+            );
+            if (!run) return;
 
-        {loading && <p>Načítám...</p>}
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        {!loading && filteredRuns.length === 0 && <p>Nemáte žádné záznamy.</p>}
+            await updateDoc(doc(db, "runs", run.id), {
+              imageUrl: null,
+              imageUrls: []
+            });
+            setShowImageUrl(null);
+          }}
+          style={{
+            padding: "0.5rem 1rem",
+            borderRadius: "5px",
+            background: "#f44336",
+            color: "white",
+            border: "none",
+            cursor: "pointer",
+            fontWeight: "bold"
+          }}
+        >
+          Smazat fotku
+        </button>
       </div>
-    </>
-  );
-}
+    </div>
+  </div>
+)}
