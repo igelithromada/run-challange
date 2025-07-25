@@ -66,13 +66,13 @@ export default function MyRunsPage() {
     });
 
     const unsubUsers = onSnapshot(collection(db, "users"), (snap) => {
-      const all: Record<string, UserData> = {};
-      snap.forEach((doc) => {
-        const data = doc.data() as UserData;
-        all[data.id] = data;
-      });
-      setUsers(all);
-    });
+  const all: Record<string, UserData> = {};
+  snap.forEach((doc) => {
+    const data = doc.data() as UserData;
+    all[doc.id] = { ...data, id: doc.id }; // přidáme id do dat
+  });
+  setUsers(all);
+   });
 
     const unsubTeams = onSnapshot(collection(db, "teams"), (snap) => {
       setTeams(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as TeamData)));
