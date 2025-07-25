@@ -47,17 +47,21 @@ export default function StatisticsPage() {
 
   const filtered = runs.filter((run) => {
     if ((run.type || "běh") !== selectedType) return false;
-    const date = new Date(run.timestamp?.seconds ? run.timestamp.seconds * 1000 : run.timestamp);
+
+    const date = run.timestamp?.seconds
+      ? new Date(run.timestamp.seconds * 1000)
+      : run.timestamp instanceof Date
+      ? run.timestamp
+      : null;
+
+    if (!date) return false;
     if (startDate && new Date(startDate) > date) return false;
     if (endDate && new Date(endDate + "T23:59") < date) return false;
     return true;
   });
 
   const userMap: Record<string, { km: number; min: number }> = {};
-  const teamMap: Record<
-    string,
-    { km: number; min: number; members: Record<string, { km: number; min: number }> }
-  > = {};
+  const teamMap: Record<string, { km: number; min: number; members: Record<string, { km: number; min: number }> }> = {};
   filtered.forEach((run) => {
     const name = run.nickname || run.email?.split("@")[0] || "Anonym";
     const team = teams.find((t) => t.id === run.teamId)?.name || "?";
@@ -168,51 +172,6 @@ export default function StatisticsPage() {
           <div className="tile">Prům. tempo<br />{avgTempo} min/km</div>
           <div className="tile">Počet<br />{view === "já" ? filtered.filter(r => r.uid === user?.uid).length : view === "jednotlivci" ? userList.length : teamList.length}</div>
         </div>
-
-        {view === "já" && (
-          <div style={{ textAlign: "center", marginTop: "1rem" }}>
-            <p>🥇 Pořadí mezi jednotlivci: {myPos || "-"}</p>
-            <p>🥈 Tvůj tým ({myTeamName || "-"}) je: {myTeamPos || "-"}</p>
-            <p>🥉 Tvé pořadí v týmu: {myTeamPosInside || "-"}</p>
-          </div>
-        )}
-
-        {view !== "já" && (
-          <>
-            <h3 className="centered-title">🏆 Stupně vítězů</h3>
-            <ul style={{ listStyle: "none", padding: 0 }}>
-              {(view === "jednotlivci" ? userList : teamList).slice(0, 3).map((item, idx) => (
-                <li key={idx} className="tile" style={{
-                  display: "flex", alignItems: "center",
-                  background: idx === 0 ? "gold" : idx === 1 ? "silver" : idx === 2 ? "#cd7f32" : "rgba(0,0,0,0.2)"
-                }}>
-                  <div style={{ marginRight: "0.8rem" }}>{idx + 1}.</div>
-                  <div className="avatar">{(item.name || item.team)?.charAt(0).toUpperCase()}</div>
-                  <div style={{ marginLeft: "0.6rem" }}>
-                    {(item.name || item.team)} — {metric === "km"
-                      ? `${item.km.toFixed(2)} km`
-                      : `${item.tempo.toFixed(2)} min/km`}
-                  </div>
-                </li>
-              ))}
-            </ul>
-
-            <h3 className="centered-title" style={{ marginTop: "2rem" }}>📊 Ostatní</h3>
-            <ul style={{ listStyle: "none", padding: 0 }}>
-              {(view === "jednotlivci" ? userList : teamList).slice(3).map((item, idx) => (
-                <li key={idx} className="tile" style={{ display: "flex", alignItems: "center" }}>
-                  <div style={{ marginRight: "0.8rem" }}>{idx + 4}.</div>
-                  <div className="avatar">{(item.name || item.team)?.charAt(0).toUpperCase()}</div>
-                  <div style={{ marginLeft: "0.6rem" }}>
-                    {(item.name || item.team)} — {metric === "km"
-                      ? `${item.km.toFixed(2)} km`
-                      : `${item.tempo.toFixed(2)} min/km`}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
       </div>
     </>
   );
