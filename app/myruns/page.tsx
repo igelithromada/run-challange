@@ -141,8 +141,10 @@ export default function MyRunsPage() {
     if (item === "logout") {
       await signOut(auth);
       router.push("/login");
-    } else router.push("/" + item);
-  };
+    } else {
+      router.push("/" + item);
+      }
+   };
   
   return (
     <>
