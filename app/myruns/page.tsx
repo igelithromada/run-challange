@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import {
-  collection, query, where, onSnapshot, doc,
-  deleteDoc, updateDoc, getDoc
+  collection, query, where, onSnapshot, doc, getDoc,
+  deleteDoc, updateDoc
 } from "firebase/firestore";
 import {
   ref, uploadBytes, getDownloadURL
@@ -65,21 +65,25 @@ export default function MyRunsPage() {
             setUserAvatars((prev) => ({
               ...prev,
               [run.uid]: {
+                id: run.uid,
                 avatarUrl: data.avatarUrl || "",
-                nickname: data.nickname || ""
+                nickname: data.nickname || "",
+                email: data.email || "",
+                theme: data.theme || "",
+                customColor: data.customColor || ""
               }
             }));
           }
         });
       }
     });
-  }, [runs]);
+  }, [runs, userAvatars]);
 
-  const formatTime = (min: string | number) => {
-    const totalSeconds = Math.round(parseFloat(String(min)) * 60);
-    const m = Math.floor(totalSeconds / 60);
-    const s = totalSeconds % 60;
-    return `${m}′${s.toString().padStart(2, "0")}″`;
+  const formatTime = (minutes: number | string) => {
+    const totalSeconds = Math.round(parseFloat(minutes as string) * 60);
+    const min = Math.floor(totalSeconds / 60);
+    const sec = totalSeconds % 60;
+    return `${min}′${sec.toString().padStart(2, "0")}″`;
   };
 
   const filteredRuns = runs.filter(run => {
@@ -90,20 +94,20 @@ export default function MyRunsPage() {
     return true;
   });
 
-  const totalKm = filteredRuns.reduce((sum, run) => sum + parseFloat(run.km?.toString() || "0"), 0);
-  const totalMin = filteredRuns.reduce((sum, run) => sum + parseFloat(run.minuty?.toString() || "0"), 0);
+  const totalKm = filteredRuns.reduce((sum, run) => sum + (typeof run.km === "number" ? run.km : parseFloat(run.km)), 0);
+  const totalMin = filteredRuns.reduce((sum, run) => sum + parseFloat(run.minuty), 0);
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const totalHours = totalMin / 60;
 
-  const longestRun = filteredRuns.reduce((max, run) => parseFloat(run.km.toString()) > (max ? parseFloat(max.km.toString()) : 0) ? run : max, null as RunData | null);
-  const fastestRun = filteredRuns.reduce((min, run) => parseFloat(run.tempo.toString()) < (min ? parseFloat(min.tempo.toString()) : Infinity) ? run : min, null as RunData | null);
+  const longestRun = filteredRuns.reduce((max, run) => (run.km > (max?.km || 0) ? run : max), null);
+  const fastestRun = filteredRuns.reduce((min, run) => (parseFloat(run.tempo) < parseFloat(min?.tempo || "100") ? run : min), null);
 
   const handleDelete = async (id: string) => await deleteDoc(doc(db, "runs", id));
 
   const handleEdit = (run: RunData) => {
     setEditingId(run.id);
     setKm(run.km.toString());
-    setMinuty(run.minuty.toString());
+    setMinuty(run.minuty);
     setFile(null);
   };
 
@@ -117,21 +121,22 @@ export default function MyRunsPage() {
     const tempo = parseFloat(minuty) / parseFloat(km);
     await updateDoc(doc(db, "runs", id), {
       km: parseFloat(km),
-      minuty: parseFloat(minuty),
-      tempo: tempo,
+      minuty: minuty,
+      tempo: tempo.toString(),
       ...(imageUrl && { imageUrl })
     });
     setEditingId(null);
     setFile(null);
   };
 
-  const renderTempoBar = (tempo: number) => {
+  const renderTempoBar = (tempo: number | string) => {
+    const tempoNum = parseFloat(tempo as string);
     const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
-    let pos = Math.min(100, Math.max(0, ((range.max - tempo) / (range.max - range.min)) * 100));
+    let pos = Math.min(100, Math.max(0, ((range.max - tempoNum) / (range.max - range.min)) * 100));
     return (
       <div style={{ marginTop: "4px" }}>
         <div style={{ fontSize: "0.9rem", marginBottom: "2px" }}>
-          {formatTime(tempo)}
+          {formatTime(tempo)} /km
         </div>
         <div style={{
           height: "5px", width: "70px",
@@ -200,18 +205,8 @@ export default function MyRunsPage() {
 
         <h2 className="centered-title">Moje záznamy</h2>
         <div className="list-container" style={{ display: "flex", flexDirection: "column", gap: "0" }}>
-          {filteredRuns.map(run => {
-            const user = userAvatars[run.uid] || {};
-            const nickname = user.nickname || run.nickname || run.email?.split("@")[0] || "Anonym";
-            const avatarLetter = nickname.charAt(0).toUpperCase();
-
-            const avatar = user.avatarUrl
-              ? <img src={user.avatarUrl} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
-              : avatarLetter;
-
-            const dateStr = new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ");
-
-            return editingId === run.id ? (
+          {filteredRuns.map(run =>
+            editingId === run.id ? (
               <div key={run.id} className="tile list-tile" style={{ textAlign: "center" }}>
                 <input type="number" value={km} onChange={(e) => setKm(e.target.value)} placeholder="km" />
                 <input type="number" value={minuty} onChange={(e) => setMinuty(e.target.value)} placeholder="min" />
@@ -228,18 +223,20 @@ export default function MyRunsPage() {
                   margin: "6px 0",
                   padding: "6px 8px"
                 }}>
-                <div className="avatar" style={{ marginRight: "0.1rem" }}>{avatar}</div>
-
+                <div className="avatar">
+                  {userAvatars[run.uid]?.avatarUrl
+                    ? <img src={userAvatars[run.uid].avatarUrl} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
+                    : (userAvatars[run.uid]?.nickname || run.nickname || run.email || "?").charAt(0).toUpperCase()}
+                </div>
                 <div style={{ flex: 1 }}>
                   <div>
                     <span style={{ fontWeight: "bold", color: "white" }}>
-                      {nickname}
+                      {userAvatars[run.uid]?.nickname || run.nickname || run.email?.split("@")[0] || "Anonym"}
                     </span>
                   </div>
                   <div>{run.km} km, {formatTime(run.minuty)}</div>
-                  {renderTempoBar(parseFloat(run.tempo))}
+                  {renderTempoBar(run.tempo)}
                 </div>
-
                 <div style={{
                   display: "flex",
                   flexDirection: "column",
@@ -249,18 +246,21 @@ export default function MyRunsPage() {
                   top: "0.4rem",
                   gap: "0.3rem"
                 }}>
-                  <small>{dateStr}</small>
+                  <small>{new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ")}</small>
                   {run.imageUrl && (
-                    <div onClick={() => setShowImageUrl(run.imageUrl!)} style={{ cursor: "pointer" }}>
-                      📷
+                    <div onClick={() => setShowImageUrl(run.imageUrl)} style={{ cursor: "pointer" }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5"
+                        strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                        <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path d="M21 15l-5-5L5 21" />
+                      </svg>
                     </div>
                   )}
-                  <div onClick={() => handleEdit(run)} style={{ cursor: "pointer" }}>✏️</div>
-                  <div onClick={() => handleDelete(run.id)} style={{ cursor: "pointer" }}>🗑️</div>
                 </div>
               </div>
-            );
-          })}
+            )
+          )}
         </div>
 
         {showImageUrl && (
