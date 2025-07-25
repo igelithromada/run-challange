@@ -1,24 +1,37 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import {
-  collection, query, where, onSnapshot, doc, getDoc,
-  deleteDoc, updateDoc
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  getDoc,
+  deleteDoc,
+  updateDoc
 } from "firebase/firestore";
 import {
-  ref, uploadBytes, getDownloadURL
+  ref,
+  uploadBytes,
+  getDownloadURL
 } from "firebase/storage";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import {
+  onAuthStateChanged,
+  signOut
+} from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
-import { RunData, UserData } from "../types";
+import { RunData, UserData, TeamData } from "../types";
 
 export default function MyRunsPage() {
   useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<RunData[]>([]);
+  const [users, setUsers] = useState<Record<string, UserData>>({});
+  const [teams, setTeams] = useState<TeamData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showImageUrl, setShowImageUrl] = useState<string | null>(null);
@@ -29,7 +42,6 @@ export default function MyRunsPage() {
   const [km, setKm] = useState("");
   const [minuty, setMinuty] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [userAvatars, setUserAvatars] = useState<{ [uid: string]: UserData }>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -38,26 +50,13 @@ export default function MyRunsPage() {
         router.push("/login");
         return;
       }
-
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       const unsubRuns = onSnapshot(q, (snap) => {
-        const items: RunData[] = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as RunData))
+        const items = snap.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as RunData))
           .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         setRuns(items);
         setLoading(false);
-
-        items.forEach((run) => {
-          const userRef = doc(db, "users", run.uid);
-          getDoc(userRef).then((snapshot) => {
-            if (snapshot.exists()) {
-              const data = snapshot.data() as UserData;
-              setUserAvatars((prev) => ({
-                ...prev,
-                [run.uid]: { ...data, id: run.uid }
-              }));
-            }
-          });
-        });
       }, (err) => {
         console.error(err);
         setError("Chyba při načítání dat.");
@@ -66,10 +65,29 @@ export default function MyRunsPage() {
 
       return () => unsubRuns();
     });
-  }, [router]);
 
-  const formatTime = (minutes: number | string) => {
-    const totalSeconds = Math.round(parseFloat(minutes.toString()) * 60);
+    // Načti všechny uživatele
+    const unsubUsers = onSnapshot(collection(db, "users"), (snap) => {
+      const all: Record<string, UserData> = {};
+      snap.forEach((doc) => {
+        const data = doc.data() as UserData;
+        all[data.id] = data;
+      });
+      setUsers(all);
+    });
+
+    // Načti všechny týmy
+    const unsubTeams = onSnapshot(collection(db, "teams"), (snap) => {
+      setTeams(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as TeamData)));
+    });
+
+    return () => {
+      unsubUsers();
+      unsubTeams();
+    };
+  }, [router]);
+  const formatTime = (minutes: number) => {
+    const totalSeconds = Math.round(minutes * 60);
     const min = Math.floor(totalSeconds / 60);
     const sec = totalSeconds % 60;
     return `${min}′${sec.toString().padStart(2, "0")}″`;
@@ -83,16 +101,15 @@ export default function MyRunsPage() {
     return true;
   });
 
-  const totalKm = filteredRuns.reduce((sum, run) => sum + (typeof run.km === "number" ? run.km : 0), 0);
-  const totalMin = filteredRuns.reduce((sum, run) => sum + parseFloat(run.minuty || "0"), 0);
+  const totalKm = filteredRuns.reduce((sum, run) => sum + (run.km || 0), 0);
+  const totalMin = filteredRuns.reduce((sum, run) => sum + (parseFloat(run.minuty) || 0), 0);
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const totalHours = totalMin / 60;
 
-  const longestRun = filteredRuns.reduce<RunData | null>((max, run) =>
-    run.km > (max?.km || 0) ? run : max, null);
-
+  const longestRun = filteredRuns.reduce<RunData | null>((max, run) => (run.km > (max?.km || 0) ? run : max), null);
   const fastestRun = filteredRuns.reduce<RunData | null>((min, run) =>
-    parseFloat(run.tempo) < parseFloat(min?.tempo || "100") ? run : min, null);
+    (parseFloat(run.tempo) < parseFloat(min?.tempo || "100") ? run : min), null
+  );
 
   const handleDelete = async (id: string) => await deleteDoc(doc(db, "runs", id));
 
@@ -126,9 +143,13 @@ export default function MyRunsPage() {
     if (item === "logout") {
       await signOut(auth);
       router.push("/login");
-    } else {
-      router.push("/" + item);
-    }
+    } else router.push("/" + item);
+  };
+
+  const showPhotoIcon = (run: RunData) => {
+    const hasSingle = typeof run.imageUrl === "string" && run.imageUrl !== "";
+    const hasMultiple = Array.isArray(run.imageUrls) && run.imageUrls.length > 0;
+    return hasSingle || hasMultiple;
   };
 
   return (
@@ -158,21 +179,19 @@ export default function MyRunsPage() {
 
         {longestRun && (
           <div className="tile">
-            🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(longestRun.minuty)} ({formatTime(longestRun.tempo)} /km)
+            🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(parseFloat(longestRun.minuty))} ({formatTime(parseFloat(longestRun.tempo))} /km)
           </div>
         )}
         {fastestRun && (
           <div className="tile">
-            ⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(fastestRun.minuty)} ({formatTime(fastestRun.tempo)} /km)
+            ⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(parseFloat(fastestRun.minuty))} ({formatTime(parseFloat(fastestRun.tempo))} /km)
           </div>
         )}
 
         <h2 className="centered-title">Moje záznamy</h2>
         <div className="list-container" style={{ display: "flex", flexDirection: "column", gap: "0" }}>
-          {filteredRuns.map(run => {
-            const user = userAvatars[run.uid];
-
-            return editingId === run.id ? (
+          {filteredRuns.map(run =>
+            editingId === run.id ? (
               <div key={run.id} className="tile list-tile" style={{ textAlign: "center" }}>
                 <input type="number" value={km} onChange={(e) => setKm(e.target.value)} placeholder="km" />
                 <input type="number" value={minuty} onChange={(e) => setMinuty(e.target.value)} placeholder="min" />
@@ -180,31 +199,98 @@ export default function MyRunsPage() {
                 <button onClick={() => handleUpdate(run.id)}>💾 Uložit</button>
               </div>
             ) : (
-              <div key={run.id} className="tile list-tile" style={{ display: "flex", alignItems: "center", position: "relative", gap: "0.8rem", padding: "6px 8px" }}>
-                {user?.avatarUrl ? (
-                  <img src={user.avatarUrl} className="avatar" />
-                ) : (
-                  <div className="avatar">{(user?.nickname || run.email)?.charAt(0).toUpperCase() || "?"}</div>
-                )}
-                <div style={{ flex: 1 }}>
-                  <div><b style={{ color: "white" }}>{user?.nickname || run.email?.split("@")[0]}</b></div>
-                  <div>{run.km} km, {formatTime(run.minuty)}</div>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.3rem" }}>
-                  <small>{new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ")}</small>
-                  {run.imageUrl && (
-                    <svg onClick={() => setShowImageUrl(run.imageUrl ?? null)} xmlns="http://www.w3.org/2000/svg"
-                      fill="none" viewBox="0 0 24 24" strokeWidth={1.5}
-                      stroke="currentColor" className="w-6 h-6 cursor-pointer">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l.867-1.5A2 2 0 015.598 5h12.804a2 2 0 011.731 1l.867 1.5M3 8v10a2 2 0 002 2h14a2 2 0 002-2V8M3 8h18m-9 4a2 2 0 100-4 2 2 0 000 4z" />
-                    </svg>
+              <div key={run.id} className="tile list-tile"
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "0.5rem",
+                  position: "relative",
+                  margin: "6px 0",
+                  padding: "6px 8px"
+                }}>
+                <div className="avatar" style={{ marginRight: "0.1rem" }}>
+                  {userAvatars[run.uid]?.avatarUrl ? (
+                    <img src={userAvatars[run.uid].avatarUrl} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
+                  ) : (
+                    (userAvatars[run.uid]?.nickname || run.nickname || run.email?.split("@")[0] || "?").charAt(0).toUpperCase()
                   )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
 
+                <div style={{ flex: 1 }}>
+                  <div>
+                    <span style={{ fontWeight: "bold", color: "white" }}>
+                      {userAvatars[run.uid]?.nickname || run.nickname || run.email?.split("@")[0] || "Anonym"}
+                    </span>
+                    {run.teamId && teams.find(t => t.id === run.teamId)?.name && (
+                      <span style={{ marginLeft: "10px", fontWeight: "bold", color: "white" }}>
+                        ({teams.find(t => t.id === run.teamId)?.name})
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.2rem" }}>
+                    <div>{run.km} km, {formatTime(parseFloat(run.minuty))}</div>
+                    <div style={{
+                      background: "rgba(0,0,0,0.0)",
+                      padding: "0.1rem 0.6rem",
+                      borderRadius: "10px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center"
+                    }}>
+                      <div style={{ fontSize: "1rem", marginBottom: "0.1px" }}>
+                        {formatTime(run.tempo)} /km
+                      </div>
+                      <div style={{
+                        height: "5px", width: "70px",
+                        background: "linear-gradient(90deg, red, yellow, green)",
+                        borderRadius: "3px", position: "relative"
+                      }}>
+                        <div style={{
+                          position: "absolute",
+                          top: "-4px", left: `${
+                            Math.min(100, Math.max(0, ((selectedType === "chůze" ? 20 : 8 - parseFloat(run.tempo)) / ((selectedType === "chůze" ? 20 : 8) - (selectedType === "chůze" ? 8 : 3))) * 100))
+                          }%`,
+                          width: "10px", height: "10px",
+                          background: "white", border: "2px solid #333",
+                          borderRadius: "50%", transform: "translateX(-50%)"
+                        }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                  position: "absolute",
+                  right: "0.8rem",
+                  top: "0.4rem",
+                  gap: "0.3rem"
+                }}>
+                  <small style={{ whiteSpace: "nowrap" }}>
+                    {new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ")}
+                  </small>
+                  {showPhotoIcon(run) && (
+                    <div onClick={() => setShowImageUrl(run.imageUrl ?? null)} style={{ cursor: "pointer" }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5"
+                        strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                        <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path d="M21 15l-5-5L5 21" />
+                      </svg>
+                    </div>
+                  )}
+                  <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.3rem" }}>
+                    <div style={{ cursor: "pointer" }} onClick={() => handleDelete(run.id)}>🗑️</div>
+                    <div style={{ cursor: "pointer" }} onClick={() => handleEdit(run)}>✏️</div>
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+        </div>
         {showImageUrl && (
           <div style={{
             position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
