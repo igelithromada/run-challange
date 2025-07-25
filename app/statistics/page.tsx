@@ -176,6 +176,43 @@ export default function StatisticsPage() {
             <p>🥉 Tvé pořadí v týmu: {myTeamPosInside || "-"}</p>
           </div>
         )}
+
+        {view !== "já" && (
+          <>
+            <h3 className="centered-title">🏆 Stupně vítězů</h3>
+            <ul style={{ listStyle: "none", padding: 0 }}>
+              {(view === "jednotlivci" ? userList : teamList).slice(0, 3).map((item, idx) => (
+                <li key={idx} className="tile" style={{
+                  display: "flex", alignItems: "center",
+                  background: idx === 0 ? "gold" : idx === 1 ? "silver" : idx === 2 ? "#cd7f32" : "rgba(0,0,0,0.2)"
+                }}>
+                  <div style={{ marginRight: "0.8rem" }}>{idx + 1}.</div>
+                  <div className="avatar">{(item.name || item.team)?.charAt(0).toUpperCase()}</div>
+                  <div style={{ marginLeft: "0.6rem" }}>
+                    {(item.name || item.team)} — {metric === "km"
+                      ? `${item.km.toFixed(2)} km`
+                      : `${item.tempo.toFixed(2)} min/km`}
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <h3 className="centered-title" style={{ marginTop: "2rem" }}>📊 Ostatní</h3>
+            <ul style={{ listStyle: "none", padding: 0 }}>
+              {(view === "jednotlivci" ? userList : teamList).slice(3).map((item, idx) => (
+                <li key={idx} className="tile" style={{ display: "flex", alignItems: "center" }}>
+                  <div style={{ marginRight: "0.8rem" }}>{idx + 4}.</div>
+                  <div className="avatar">{(item.name || item.team)?.charAt(0).toUpperCase()}</div>
+                  <div style={{ marginLeft: "0.6rem" }}>
+                    {(item.name || item.team)} — {metric === "km"
+                      ? `${item.km.toFixed(2)} km`
+                      : `${item.tempo.toFixed(2)} min/km`}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </div>
     </>
   );
