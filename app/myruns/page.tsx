@@ -139,6 +139,7 @@ export default function MyRunsPage() {
     setFile(null);
   };
 
+  export default function MyRunsPage() {
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
     if (item === "logout") {
