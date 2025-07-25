@@ -7,8 +7,8 @@ import {
   where,
   onSnapshot,
   doc,
-  getDoc,
   deleteDoc,
+  getDoc,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -22,11 +22,12 @@ export default function MyRunsPage() {
   useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<RunData[]>([]);
+  const [selectedType, setSelectedType] = useState("běh");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
-  const [userAvatars, setUserAvatars] = useState<{
-    [key: string]: { avatarUrl: string; nickname: string };
-  }>({});
+  const [userAvatars, setUserAvatars] = useState<{ [key: string]: { avatarUrl: string; nickname: string } }>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -40,10 +41,7 @@ export default function MyRunsPage() {
       const unsubRuns = onSnapshot(q, (snap) => {
         const items = snap.docs
           .map((doc) => ({ id: doc.id, ...doc.data() } as RunData))
-          .sort(
-            (a, b) =>
-              (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)
-          );
+          .filter((item) => (item.type || "běh") === selectedType);
         setRuns(items);
       });
 
@@ -51,7 +49,7 @@ export default function MyRunsPage() {
     });
 
     return () => unsubAuth();
-  }, [router]);
+  }, [router, selectedType]);
 
   useEffect(() => {
     runs.forEach((run) => {
@@ -77,6 +75,12 @@ export default function MyRunsPage() {
     const min = Math.floor(totalSeconds / 60);
     const sec = totalSeconds % 60;
     return `${min}′${sec.toString().padStart(2, "0")}″`;
+  };
+
+  const showPhotoIcon = (run: RunData) => {
+    const hasSingle = typeof run.imageUrl === "string" && run.imageUrl !== "";
+    const hasMultiple = Array.isArray(run.imageUrls) && run.imageUrls.length > 0;
+    return hasSingle || hasMultiple;
   };
 
   const handleShowImages = (images: string[], fallback: string) => {
@@ -115,12 +119,6 @@ export default function MyRunsPage() {
     }
   };
 
-  const showPhotoIcon = (run: RunData) => {
-    const hasSingle = typeof run.imageUrl === "string" && run.imageUrl !== "";
-    const hasMultiple = Array.isArray(run.imageUrls) && run.imageUrls.length > 0;
-    return hasSingle || hasMultiple;
-  };
-
   return (
     <>
       <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
@@ -129,17 +127,29 @@ export default function MyRunsPage() {
       <div className="container">
         <h1 className="centered-title">Moje aktivity</h1>
 
+        <div className="tile-group">
+          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
+          <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
+        </div>
+
+        <div className="tile">
+          <label>Od:</label>
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          <label>Do:</label>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+        </div>
+
+        <h2 className="centered-title">Záznamy</h2>
         <div className="list-container" style={{ gap: "0", display: "flex", flexDirection: "column" }}>
           {runs.map(run => {
             const user = userAvatars[run.uid] || {};
             const nickname = user.nickname || run.nickname || run.email?.split("@")[0] || "Anonym";
             const avatarLetter = nickname.charAt(0).toUpperCase();
-
             const avatar = user.avatarUrl
               ? <img src={user.avatarUrl} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
               : avatarLetter;
 
-            const range = run.type === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
+            const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
             let pos = Math.min(100, Math.max(0, ((range.max - parseFloat(run.tempo)) / (range.max - range.min)) * 100));
 
             const dateStr = new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ", {
@@ -160,9 +170,7 @@ export default function MyRunsPage() {
 
                 <div style={{ flex: 1 }}>
                   <div>
-                    <span style={{ fontWeight: "bold", color: "white" }}>
-                      {nickname}
-                    </span>
+                    <span style={{ fontWeight: "bold", color: "white", cursor: "pointer" }}>{nickname}</span>
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.2rem" }}>
