@@ -225,7 +225,7 @@ export default function MyRunsPage() {
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", position: "absolute", right: "0.8rem", top: "0.4rem", gap: "0.3rem" }}>
                   <small>{dateStr}</small>
                   {(run.imageUrls?.length || run.imageUrl) && (
-                    <div onClick={() => { setShowImageUrl(run.imageUrls?.[0] || run.imageUrl); }} style={{ cursor: "pointer" }}>
+                    <div onClick={() => { setShowImageUrl(run.imageUrls?.[0] ?? run.imageUrl ?? null); }} style={{ cursor: "pointer" }}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                         <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
                         <circle cx="8.5" cy="8.5" r="1.5" />
