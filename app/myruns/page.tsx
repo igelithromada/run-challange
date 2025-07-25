@@ -86,6 +86,7 @@ export default function MyRunsPage() {
       unsubTeams();
     };
   }, [router]);
+
   const formatTime = (minutes: number) => {
     const totalSeconds = Math.round(minutes * 60);
     const min = Math.floor(totalSeconds / 60);
@@ -209,17 +210,17 @@ export default function MyRunsPage() {
                   padding: "6px 8px"
                 }}>
                 <div className="avatar" style={{ marginRight: "0.1rem" }}>
-                  {userAvatars[run.uid]?.avatarUrl ? (
-                    <img src={userAvatars[run.uid].avatarUrl} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
+                  {users[run.uid]?.avatarUrl ? (
+                    <img src={users[run.uid].avatarUrl} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
                   ) : (
-                    (userAvatars[run.uid]?.nickname || run.nickname || run.email?.split("@")[0] || "?").charAt(0).toUpperCase()
+                    (users[run.uid]?.nickname || run.nickname || run.email?.split("@")[0] || "?").charAt(0).toUpperCase()
                   )}
                 </div>
 
                 <div style={{ flex: 1 }}>
                   <div>
                     <span style={{ fontWeight: "bold", color: "white" }}>
-                      {userAvatars[run.uid]?.nickname || run.nickname || run.email?.split("@")[0] || "Anonym"}
+                      {users[run.uid]?.nickname || run.nickname || run.email?.split("@")[0] || "Anonym"}
                     </span>
                     {run.teamId && teams.find(t => t.id === run.teamId)?.name && (
                       <span style={{ marginLeft: "10px", fontWeight: "bold", color: "white" }}>
@@ -291,6 +292,7 @@ export default function MyRunsPage() {
             )
           )}
         </div>
+
         {showImageUrl && (
           <div style={{
             position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
