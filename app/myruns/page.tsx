@@ -16,10 +16,23 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
 
+type RunData = {
+  id: string;
+  uid: string;
+  nickname?: string;
+  email?: string;
+  km: number;
+  minuty: number;
+  tempo: number;
+  type?: string;
+  timestamp?: { seconds: number };
+  imageUrl?: string;
+};
+
 export default function MyRunsPage() {
   useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState<any[]>([]);
+  const [runs, setRuns] = useState<RunData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showImageUrl, setShowImageUrl] = useState<string | null>(null);
@@ -40,8 +53,8 @@ export default function MyRunsPage() {
       }
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       const unsubRuns = onSnapshot(q, (snap) => {
-        const items = snap.docs.map(doc => {
-          const data = doc.data();
+        const items: RunData[] = snap.docs.map(doc => {
+          const data = doc.data() as Omit<RunData, "id">;
           return { id: doc.id, ...data };
         }).sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         setRuns(items);
@@ -81,10 +94,10 @@ export default function MyRunsPage() {
 
   const handleDelete = async (id: string) => await deleteDoc(doc(db, "runs", id));
 
-  const handleEdit = (run: any) => {
+  const handleEdit = (run: RunData) => {
     setEditingId(run.id);
-    setKm(run.km);
-    setMinuty(run.minuty);
+    setKm(run.km.toString());
+    setMinuty(run.minuty.toString());
     setFile(null);
   };
 
@@ -220,7 +233,7 @@ export default function MyRunsPage() {
                 }}>
                   <small>{new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ")}</small>
                   {run.imageUrl && (
-                    <div onClick={() => setShowImageUrl(run.imageUrl!)} style={{ cursor: "pointer" }}>📷</div>
+                    <div onClick={() => setShowImageUrl(run.imageUrl ?? null)} style={{ cursor: "pointer" }}>📷</div>
                   )}
                 </div>
               </div>
