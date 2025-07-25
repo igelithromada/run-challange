@@ -145,7 +145,7 @@ export default function MyRunsPage() {
   };
   
   return (
-  <>
+    <>
     <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
     <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
