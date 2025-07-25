@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import {
   collection, query, where, onSnapshot, doc,
@@ -18,14 +19,14 @@ import useThemeLoader from "../lib/useThemeLoader";
 
 type RunData = {
   id: string;
-  uid: string;
-  nickname?: string;
-  email?: string;
+  uid?: string;
   km: number;
   minuty: number;
   tempo: number;
   type?: string;
   timestamp?: { seconds: number };
+  nickname?: string;
+  email?: string;
   imageUrl?: string;
 };
 
@@ -53,9 +54,9 @@ export default function MyRunsPage() {
       }
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       const unsubRuns = onSnapshot(q, (snap) => {
-        const items: RunData[] = snap.docs.map(doc => {
+        const items: RunData[] = snap.docs.map((doc) => {
           const data = doc.data() as Omit<RunData, "id">;
-          return { id: doc.id, ...data };
+          return { ...data, id: doc.id };
         }).sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         setRuns(items);
         setLoading(false);
@@ -89,8 +90,15 @@ export default function MyRunsPage() {
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const totalHours = totalMin / 60;
 
-  const longestRun = filteredRuns.reduce((max, run) => (run.km > (max?.km || 0) ? run : max), null);
-  const fastestRun = filteredRuns.reduce((min, run) => (run.tempo < (min?.tempo || Infinity) ? run : min), null);
+  const longestRun: RunData | null = filteredRuns.reduce<RunData | null>(
+    (max, run) => (run.km > (max?.km || 0) ? run : max),
+    null
+  );
+
+  const fastestRun: RunData | null = filteredRuns.reduce<RunData | null>(
+    (min, run) => (run.tempo < (min?.tempo || Infinity) ? run : min),
+    null
+  );
 
   const handleDelete = async (id: string) => await deleteDoc(doc(db, "runs", id));
 
@@ -233,7 +241,7 @@ export default function MyRunsPage() {
                 }}>
                   <small>{new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ")}</small>
                   {run.imageUrl && (
-                    <div onClick={() => setShowImageUrl(run.imageUrl ?? null)} style={{ cursor: "pointer" }}>📷</div>
+                    <div onClick={() => setShowImageUrl(run.imageUrl || null)} style={{ cursor: "pointer" }}>📷</div>
                   )}
                 </div>
               </div>
