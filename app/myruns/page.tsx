@@ -2,12 +2,14 @@
 import React, { useEffect, useState } from "react";
 import {
   collection, query, where, onSnapshot, doc,
-  deleteDoc, updateDoc, getDoc
+  deleteDoc, updateDoc
 } from "firebase/firestore";
 import {
   ref, uploadBytes, getDownloadURL
 } from "firebase/storage";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import {
+  onAuthStateChanged, signOut
+} from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
@@ -19,7 +21,6 @@ export default function MyRunsPage() {
   useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<RunData[]>([]);
-  const [userAvatars, setUserAvatars] = useState<{ [key: string]: UserData }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showImageUrl, setShowImageUrl] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export default function MyRunsPage() {
         return;
       }
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
-      const unsubRuns = onSnapshot(q, async (snap) => {
+      const unsubRuns = onSnapshot(q, (snap) => {
         const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as RunData))
           .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         setRuns(items);
@@ -54,8 +55,8 @@ export default function MyRunsPage() {
     });
   }, [router]);
 
-  const formatTime = (minutes: number | string) => {
-    const totalSeconds = Math.round(parseFloat(minutes as string) * 60);
+  const formatTime = (minutes: number) => {
+    const totalSeconds = Math.round(minutes * 60);
     const min = Math.floor(totalSeconds / 60);
     const sec = totalSeconds % 60;
     return `${min}′${sec.toString().padStart(2, "0")}″`;
@@ -69,19 +70,14 @@ export default function MyRunsPage() {
     return true;
   });
 
-  const totalKm = filteredRuns.reduce((sum, run) => sum + Number(run.km || 0), 0);
-  const totalMin = filteredRuns.reduce((sum, run) => sum + Number(run.minuty || 0), 0);
+  const totalKm = filteredRuns.reduce((sum, run) => sum + (run.km || 0), 0);
+  const totalMin = filteredRuns.reduce((sum, run) => sum + (parseFloat(run.minuty) || 0), 0);
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const totalHours = totalMin / 60;
 
-  const longestRun = filteredRuns.reduce<RunData | null>(
-    (max, run) => (run.km > (max?.km || 0) ? run : max),
-    null
-  );
-
-  const fastestRun = filteredRuns.reduce<RunData | null>(
-    (min, run) => (parseFloat(run.tempo) < parseFloat(min?.tempo || "100") ? run : min),
-    null
+  const longestRun = filteredRuns.reduce<RunData | null>((max, run) => (run.km > (max?.km || 0) ? run : max), null);
+  const fastestRun = filteredRuns.reduce<RunData | null>((min, run) =>
+    (parseFloat(run.tempo) < parseFloat(min?.tempo || "100") ? run : min), null
   );
 
   const handleDelete = async (id: string) => await deleteDoc(doc(db, "runs", id));
@@ -89,7 +85,7 @@ export default function MyRunsPage() {
   const handleEdit = (run: RunData) => {
     setEditingId(run.id);
     setKm(run.km.toString());
-    setMinuty(run.minuty.toString());
+    setMinuty(run.minuty);
     setFile(null);
   };
 
@@ -103,8 +99,8 @@ export default function MyRunsPage() {
     const tempo = parseFloat(minuty) / parseFloat(km);
     await updateDoc(doc(db, "runs", id), {
       km: parseFloat(km),
-      minuty: parseFloat(minuty),
-      tempo: tempo.toFixed(2),
+      minuty: minuty,
+      tempo: tempo.toString(),
       ...(imageUrl && { imageUrl })
     });
     setEditingId(null);
@@ -120,13 +116,13 @@ export default function MyRunsPage() {
   };
 
   const renderTempoBar = (tempo: string) => {
-    const parsedTempo = parseFloat(tempo);
+    const tempoValue = parseFloat(tempo);
     const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
-    let pos = Math.min(100, Math.max(0, ((range.max - parsedTempo) / (range.max - range.min)) * 100));
+    let pos = Math.min(100, Math.max(0, ((range.max - tempoValue) / (range.max - range.min)) * 100));
     return (
       <div style={{ marginTop: "4px" }}>
         <div style={{ fontSize: "0.9rem", marginBottom: "2px" }}>
-          {formatTime(parsedTempo)} /km
+          {formatTime(tempoValue)} /km
         </div>
         <div style={{
           height: "5px", width: "70px",
@@ -176,12 +172,12 @@ export default function MyRunsPage() {
 
         {longestRun && (
           <div className="tile">
-            🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(longestRun.minuty)} ({formatTime(longestRun.tempo)} /km)
+            🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(parseFloat(longestRun.minuty))} ({formatTime(parseFloat(longestRun.tempo))} /km)
           </div>
         )}
         {fastestRun && (
           <div className="tile">
-            ⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(fastestRun.minuty)} ({formatTime(fastestRun.tempo)} /km)
+            ⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(parseFloat(fastestRun.minuty))} ({formatTime(parseFloat(fastestRun.tempo))} /km)
           </div>
         )}
 
@@ -212,7 +208,7 @@ export default function MyRunsPage() {
                       {run.nickname || run.email?.split("@")[0]}
                     </span>
                   </div>
-                  <div>{run.km} km, {formatTime(run.minuty)}</div>
+                  <div>{run.km} km, {formatTime(parseFloat(run.minuty))}</div>
                   {renderTempoBar(run.tempo)}
                 </div>
                 <div style={{
@@ -226,7 +222,7 @@ export default function MyRunsPage() {
                 }}>
                   <small>{new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ")}</small>
                   {run.imageUrl && (
-                    <div onClick={() => setShowImageUrl(run.imageUrl)} style={{ cursor: "pointer" }}>📷</div>
+                    <div onClick={() => setShowImageUrl(run.imageUrl ?? null)} style={{ cursor: "pointer" }}>📷</div>
                   )}
                 </div>
               </div>
