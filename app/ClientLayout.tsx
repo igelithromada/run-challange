@@ -12,11 +12,16 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
         const ref = doc(db, "users", user.uid);
         const snap = await getDoc(ref);
         if (!snap.exists()) {
-          await setDoc(ref, {
-            nickname: user.email?.split("@")[0] || "Uživatel",
+          const defaultNickname = user.email?.split("@")[0] || "uživatel";
+          const defaultData = {
+            id: user.uid,
+            email: user.email || "",
+            nickname: defaultNickname,
             avatarUrl: "",
-            theme: "default"
-          });
+            theme: "default",
+            customColor: "#36D1DC"
+          };
+          await setDoc(ref, defaultData);
         }
       }
     });
