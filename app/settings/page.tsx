@@ -27,7 +27,8 @@ export default function SettingsPage() {
       if (user) {
         setUserId(user.uid);
         setEmail(user.email || "");
-        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const userRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userRef);
         if (userDoc.exists()) {
           const data = userDoc.data();
           setNickname(data.nickname || "");
@@ -35,6 +36,17 @@ export default function SettingsPage() {
           setTheme(data.theme || "default");
           setCustomColor(data.customColor || "#36D1DC");
           applyTheme(data.theme || "default", data.customColor || "#36D1DC");
+        } else {
+          // Pokud dokument neexistuje, vytvoří se výchozí
+          const initialData = {
+            id: user.uid,
+            email: user.email || "",
+            nickname: "",
+            avatarUrl: "",
+            theme: "default",
+            customColor: "#36D1DC"
+          };
+          await setDoc(userRef, initialData);
         }
       } else {
         router.push("/login");
@@ -160,7 +172,6 @@ export default function SettingsPage() {
             <ThemeItem color="linear-gradient(180deg, #ff7eb3, #ff758c)" active={theme === "woman"} onClick={() => handleThemeChange("woman")} text="Žena" />
             <ThemeItem color="linear-gradient(180deg, #36D1DC, #5B86E5)" active={theme === "auto"} onClick={() => handleThemeChange("auto")} text="Automaticky podle času" />
 
-            {/* Upravené zobrazení pro vlastní barvu */}
             <div style={{
               display: "flex",
               alignItems: "center",
