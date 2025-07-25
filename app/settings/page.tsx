@@ -2,8 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { db, auth, storage } from "../lib/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
@@ -38,6 +37,7 @@ export default function SettingsPage() {
           setCustomColor(data.customColor || "#36D1DC");
           applyTheme(data.theme || "default", data.customColor || "#36D1DC");
         } else {
+          // Pokud dokument neexistuje, vytvoří se výchozí
           const initialData = {
             id: user.uid,
             email: user.email || "",
@@ -95,16 +95,16 @@ export default function SettingsPage() {
     saveSettings({ theme: "custom", customColor: color });
   };
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !userId) return;
-
-    const avatarRef = ref(storage, `avatars/${userId}/${file.name}`);
-    await uploadBytes(avatarRef, file);
-    const url = await getDownloadURL(avatarRef);
-
-    setAvatarUrl(url);
-    saveSettings({ avatarUrl: url });
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarUrl(reader.result as string);
+        saveSettings({ avatarUrl: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSelect = async (item: string) => {
