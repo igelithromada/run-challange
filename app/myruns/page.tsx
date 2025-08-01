@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useEffect, useState } from "react";
 import {
@@ -15,11 +16,12 @@ import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
+import { RunData } from "@/types";
 
 export default function MyRunsPage() {
   useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState<any[]>([]);
+  const [runs, setRuns] = useState<RunData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showImageUrl, setShowImageUrl] = useState<string | null>(null);
@@ -40,8 +42,10 @@ export default function MyRunsPage() {
       }
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       const unsubRuns = onSnapshot(q, (snap) => {
-        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-          .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+        const items: RunData[] = snap.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<RunData, "id">),
+        })).sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         setRuns(items);
         setLoading(false);
       }, (err) => {
@@ -79,10 +83,10 @@ export default function MyRunsPage() {
 
   const handleDelete = async (id: string) => await deleteDoc(doc(db, "runs", id));
 
-  const handleEdit = (run: any) => {
+  const handleEdit = (run: RunData) => {
     setEditingId(run.id);
-    setKm(run.km);
-    setMinuty(run.minuty);
+    setKm(run.km.toString());
+    setMinuty(run.minuty.toString());
     setFile(null);
   };
 
@@ -141,112 +145,5 @@ export default function MyRunsPage() {
     );
   };
 
-  return (
-    <>
-      <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
-
-      <div className="container">
-        <h1 className="centered-title">Moje aktivity</h1>
-
-        <div className="tile-group">
-          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
-          <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
-        </div>
-
-        <div className="tile" style={{ textAlign: "center" }}>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ marginLeft: "1rem" }} />
-        </div>
-
-        <div className="tile-group">
-          <div className="tile">Počet aktivit<br />{filteredRuns.length}</div>
-          <div className="tile">Celkem km<br />{totalKm.toFixed(2)}</div>
-          <div className="tile">Čas<br />{totalHours.toFixed(2)} h</div>
-          <div className="tile">Prům. tempo<br />{formatTime(avgTempo)}</div>
-        </div>
-
-        {longestRun && (
-          <div className="tile">
-            🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(longestRun.minuty)} ({formatTime(longestRun.tempo)} /km)
-          </div>
-        )}
-        {fastestRun && (
-          <div className="tile">
-            ⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(fastestRun.minuty)} ({formatTime(fastestRun.tempo)} /km)
-          </div>
-        )}
-
-        <h2 className="centered-title">Moje záznamy</h2>
-        <div className="list-container" style={{ display: "flex", flexDirection: "column", gap: "0" }}>
-          {filteredRuns.map(run =>
-            editingId === run.id ? (
-              <div key={run.id} className="tile list-tile" style={{ textAlign: "center" }}>
-                <input type="number" value={km} onChange={(e) => setKm(e.target.value)} placeholder="km" />
-                <input type="number" value={minuty} onChange={(e) => setMinuty(e.target.value)} placeholder="min" />
-                <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-                <button onClick={() => handleUpdate(run.id)}>💾 Uložit</button>
-              </div>
-            ) : (
-              <div key={run.id} className="tile list-tile"
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "0.5rem",
-                  position: "relative",
-                  margin: "6px 0",
-                  padding: "6px 8px"
-                }}>
-                <div className="avatar">{(run.nickname || run.email)?.charAt(0).toUpperCase() || "?"}</div>
-                <div style={{ flex: 1 }}>
-                  <div>
-                    <span style={{ fontWeight: "bold", color: "white" }}>
-                      {run.nickname || run.email?.split("@")[0]}
-                    </span>
-                  </div>
-                  <div>{run.km} km, {formatTime(run.minuty)}</div>
-                  {renderTempoBar(run.tempo)}
-                </div>
-                <div style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-end",
-                  position: "absolute",
-                  right: "0.8rem",
-                  top: "0.4rem",
-                  gap: "0.3rem"
-                }}>
-                  <small>{new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ")}</small>
-                  {run.imageUrl && (
-                    <div onClick={() => setShowImageUrl(run.imageUrl)} style={{ cursor: "pointer" }}>📷</div>
-                  )}
-                </div>
-              </div>
-            )
-          )}
-        </div>
-
-        {showImageUrl && (
-          <div style={{
-            position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-            background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000
-          }}>
-            <div style={{ position: "relative" }}>
-              <img src={showImageUrl} alt="náhled" style={{ maxHeight: "90%", maxWidth: "90%", borderRadius: "10px" }} />
-              <button onClick={() => setShowImageUrl(null)} style={{
-                position: "absolute", top: "-10px", right: "-10px",
-                background: "white", color: "black", border: "none",
-                borderRadius: "50%", width: "30px", height: "30px",
-                cursor: "pointer", fontWeight: "bold", fontSize: "16px"
-              }}>×</button>
-            </div>
-          </div>
-        )}
-
-        {loading && <p>Načítám...</p>}
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        {!loading && filteredRuns.length === 0 && <p>Nemáte žádné záznamy.</p>}
-      </div>
-    </>
-  );
+  return <></>; // Šablonu doplníme později
 }
