@@ -1,36 +1,25 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  deleteDoc,
-  updateDoc,
+  collection, query, where, onSnapshot, doc,
+  deleteDoc, updateDoc
 } from "firebase/firestore";
 import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
+  ref, uploadBytes, getDownloadURL
 } from "firebase/storage";
 import {
-  onAuthStateChanged,
-  signOut
+  onAuthStateChanged, signOut
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
-import { RunData, UserData, TeamData } from "../types";
 
 export default function MyRunsPage() {
   useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState<RunData[]>([]);
-  const [users, setUsers] = useState<Record<string, UserData>>({});
-  const [teams, setTeams] = useState<TeamData[]>([]);
+  const [runs, setRuns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showImageUrl, setShowImageUrl] = useState<string | null>(null);
@@ -40,7 +29,6 @@ export default function MyRunsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [km, setKm] = useState("");
   const [minuty, setMinuty] = useState("");
-  const [sekundy, setSekundy] = useState("0");
   const [file, setFile] = useState<File | null>(null);
   const router = useRouter();
 
@@ -52,8 +40,7 @@ export default function MyRunsPage() {
       }
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       const unsubRuns = onSnapshot(q, (snap) => {
-        const items = snap.docs
-          .map(doc => ({ id: doc.id, ...doc.data() } as RunData))
+        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
           .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         setRuns(items);
         setLoading(false);
@@ -65,35 +52,7 @@ export default function MyRunsPage() {
 
       return () => unsubRuns();
     });
-
-    const unsubUsers = onSnapshot(collection(db, "users"), (snap) => {
-      const all: Record<string, UserData> = {};
-      snap.forEach((doc) => {
-        const data = doc.data() as UserData;
-        all[doc.id] = { ...data, id: doc.id };
-      });
-      setUsers(all);
-    });
-
-    const unsubTeams = onSnapshot(collection(db, "teams"), (snap) => {
-      setTeams(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as TeamData)));
-    });
-
-    return () => {
-      unsubUsers();
-      unsubTeams();
-    };
   }, [router]);
-
-  const handleSelect = async (item: string) => {
-    setMenuVisible(false);
-    if (item === "logout") {
-      await signOut(auth);
-      router.push("/login");
-    } else {
-      router.push("/" + item);
-    }
-  };
 
   const formatTime = (minutes: number) => {
     const totalSeconds = Math.round(minutes * 60);
@@ -111,22 +70,19 @@ export default function MyRunsPage() {
   });
 
   const totalKm = filteredRuns.reduce((sum, run) => sum + (run.km || 0), 0);
-  const totalMin = filteredRuns.reduce((sum, run) => sum + (parseFloat(run.minuty) || 0), 0);
+  const totalMin = filteredRuns.reduce((sum, run) => sum + (run.minuty || 0), 0);
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const totalHours = totalMin / 60;
 
-  const longestRun = filteredRuns.reduce<RunData | null>((max, run) => (run.km > (max?.km || 0) ? run : max), null);
-  const fastestRun = filteredRuns.reduce<RunData | null>((min, run) =>
-    (parseFloat(run.tempo) < parseFloat(min?.tempo || "100") ? run : min), null
-  );
+  const longestRun = filteredRuns.reduce((max, run) => (run.km > (max?.km || 0) ? run : max), null);
+  const fastestRun = filteredRuns.reduce((min, run) => (run.tempo < (min?.tempo || Infinity) ? run : min), null);
 
   const handleDelete = async (id: string) => await deleteDoc(doc(db, "runs", id));
 
-  const handleEdit = (run: RunData) => {
+  const handleEdit = (run: any) => {
     setEditingId(run.id);
-    setKm(run.km.toString());
+    setKm(run.km);
     setMinuty(run.minuty);
-    setSekundy(((parseFloat(run.minuty) % 1) * 60).toFixed(0));
     setFile(null);
   };
 
@@ -137,16 +93,52 @@ export default function MyRunsPage() {
       await uploadBytes(imageRef, file);
       imageUrl = await getDownloadURL(imageRef);
     }
-    const totalMin = parseFloat(minuty) + parseFloat(sekundy) / 60;
-    const tempo = totalMin / parseFloat(km);
+    const tempo = parseFloat(minuty) / parseFloat(km);
     await updateDoc(doc(db, "runs", id), {
       km: parseFloat(km),
-      minuty: totalMin.toString(),
-      tempo: tempo.toFixed(2),
+      minuty: parseFloat(minuty),
+      tempo: tempo,
       ...(imageUrl && { imageUrl })
     });
     setEditingId(null);
     setFile(null);
+  };
+
+  const handleSelect = async (item: string) => {
+    setMenuVisible(false);
+    if (item === "logout") {
+      await signOut(auth);
+      router.push("/login");
+    } else router.push("/" + item);
+  };
+
+  const renderTempoBar = (tempo: number) => {
+    const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
+    let pos = Math.min(100, Math.max(0, ((range.max - tempo) / (range.max - range.min)) * 100));
+    return (
+      <div style={{ marginTop: "4px" }}>
+        <div style={{ fontSize: "0.9rem", marginBottom: "2px" }}>
+          {formatTime(tempo)} /km
+        </div>
+        <div style={{
+          height: "5px", width: "70px",
+          background: "linear-gradient(90deg, red, yellow, green)",
+          borderRadius: "3px", position: "relative"
+        }}>
+          <div style={{
+            position: "absolute",
+            top: "-4px",
+            left: `${pos}%`,
+            width: "10px",
+            height: "10px",
+            background: "white",
+            border: "2px solid #333",
+            borderRadius: "50%",
+            transform: "translateX(-50%)"
+          }} />
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -176,143 +168,85 @@ export default function MyRunsPage() {
 
         {longestRun && (
           <div className="tile">
-            🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(parseFloat(longestRun.minuty))} ({formatTime(parseFloat(longestRun.tempo))} /km)
+            🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(longestRun.minuty)} ({formatTime(longestRun.tempo)} /km)
           </div>
         )}
         {fastestRun && (
           <div className="tile">
-            ⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(parseFloat(fastestRun.minuty))} ({formatTime(parseFloat(fastestRun.tempo))} /km)
+            ⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(fastestRun.minuty)} ({formatTime(fastestRun.tempo)} /km)
           </div>
         )}
 
         <h2 className="centered-title">Moje záznamy</h2>
         <div className="list-container" style={{ display: "flex", flexDirection: "column", gap: "0" }}>
-          {filteredRuns.map(run => {
-            const avatarLetter = (users[run.uid]?.nickname || run.nickname || run.email?.charAt(0) || "?").toUpperCase();
-            const avatar = users[run.uid]?.avatarUrl
-              ? <img src={users[run.uid].avatarUrl} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
-              : avatarLetter;
-
-            const teamName = run.teamId ? teams.find(t => t.id === run.teamId)?.name || "?" : null;
-            const tempoValue = parseFloat(run.tempo);
-            const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
-            const pos = Math.min(100, Math.max(0, ((range.max - tempoValue) / (range.max - range.min)) * 100));
-            const dateStr = new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ", {
-              hour: "2-digit", minute: "2-digit", year: "numeric", month: "numeric", day: "numeric"
-            });
-
-            return (
-              <div key={run.id} className="tile list-tile" style={{ display: "flex", flexDirection: "column", gap: "0.5rem", margin: "6px 0", padding: "6px 8px" }}>
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
-                  <div className="avatar" style={{ marginRight: "0.1rem" }}>{avatar}</div>
-                  <div style={{ flex: 1 }}>
-                    <div>
-                      <span style={{ fontWeight: "bold", color: "white" }}>
-                        {users[run.uid]?.nickname || run.nickname || run.email?.split("@")[0] || "Anonym"}
-                      </span>
-                      {teamName && (
-                        <span style={{ marginLeft: "10px", fontWeight: "bold", color: "white" }}>
-                          ({teamName})
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.2rem" }}>
-                      <div>{run.km} km, {formatTime(parseFloat(run.minuty))}</div>
-                      <div style={{ background: "rgba(0,0,0,0.0)", padding: "0.1rem 0.6rem", borderRadius: "10px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                        <div style={{ fontSize: "1rem", marginBottom: "0.1px", color: "white", fontWeight: "bold" }}>
-                          {formatTime(tempoValue)} /km
-                        </div>
-                        <div style={{ height: "5px", width: "70px", background: "linear-gradient(90deg, red, yellow, green)", borderRadius: "3px", position: "relative" }}>
-                          <div style={{ position: "absolute", top: "-4px", left: `${pos}%`, width: "10px", height: "10px", background: "white", border: "2px solid #333", borderRadius: "50%", transform: "translateX(-50%)" }}></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.3rem" }}>
-                    <small>{dateStr}</small>
-                    <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.3rem" }}>
-                      <div onClick={() => confirm("Opravdu chceš smazat záznam?") && handleDelete(run.id)} style={{ cursor: "pointer" }}>🗑️</div>
-                      <div onClick={() => handleEdit(run)} style={{ cursor: "pointer" }}>✏️</div>
-                      {(run.imageUrls?.length || run.imageUrl) && (
-                        <div onClick={() => setShowImageUrl(run.imageUrls?.[0] ?? run.imageUrl ?? null)} style={{ cursor: "pointer" }}>📷</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {editingId === run.id && (
-                  <form onSubmit={(e) => {
-                    e.preventDefault();
-                    handleUpdate(run.id);
-                  }}>
-                    <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
-                      <input type="number" value={km} onChange={(e) => setKm(e.target.value)} placeholder="km" required />
-                      <input type="number" value={minuty} onChange={(e) => setMinuty(e.target.value)} placeholder="minuty" required />
-                      <input type="number" value={sekundy} onChange={(e) => setSekundy(e.target.value)} placeholder="sekundy" required />
-                      <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-                      <button type="submit">💾</button>
-                      <button type="button" onClick={() => setEditingId(null)}>❌</button>
-                    </div>
-                  </form>
-                )}
+          {filteredRuns.map(run =>
+            editingId === run.id ? (
+              <div key={run.id} className="tile list-tile" style={{ textAlign: "center" }}>
+                <input type="number" value={km} onChange={(e) => setKm(e.target.value)} placeholder="km" />
+                <input type="number" value={minuty} onChange={(e) => setMinuty(e.target.value)} placeholder="min" />
+                <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                <button onClick={() => handleUpdate(run.id)}>💾 Uložit</button>
               </div>
-            );
-          })}
+            ) : (
+              <div key={run.id} className="tile list-tile"
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "0.5rem",
+                  position: "relative",
+                  margin: "6px 0",
+                  padding: "6px 8px"
+                }}>
+                <div className="avatar">{(run.nickname || run.email)?.charAt(0).toUpperCase() || "?"}</div>
+                <div style={{ flex: 1 }}>
+                  <div>
+                    <span style={{ fontWeight: "bold", color: "white" }}>
+                      {run.nickname || run.email?.split("@")[0]}
+                    </span>
+                  </div>
+                  <div>{run.km} km, {formatTime(run.minuty)}</div>
+                  {renderTempoBar(run.tempo)}
+                </div>
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                  position: "absolute",
+                  right: "0.8rem",
+                  top: "0.4rem",
+                  gap: "0.3rem"
+                }}>
+                  <small>{new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ")}</small>
+                  {run.imageUrl && (
+                    <div onClick={() => setShowImageUrl(run.imageUrl)} style={{ cursor: "pointer" }}>📷</div>
+                  )}
+                </div>
+              </div>
+            )
+          )}
         </div>
-      </div>
 
-      {showImageUrl && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-          background: "rgba(0,0,0,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000
-        }}>
-          <div style={{ textAlign: "center" }}>
-            <img
-              src={showImageUrl}
-              alt="náhled"
-              style={{ maxHeight: "80vh", maxWidth: "90vw", borderRadius: "10px" }}
-            />
-            <div style={{ marginTop: "1rem", display: "flex", justifyContent: "center", gap: "1rem" }}>
-              <button
-                onClick={() => setShowImageUrl(null)}
-                style={{
-                  padding: "0.5rem 1rem",
-                  borderRadius: "5px",
-                  background: "white",
-                  border: "none",
-                  cursor: "pointer",
-                  fontWeight: "bold"
-                }}
-              >
-                Zavřít
-              </button>
-              <button
-                onClick={async () => {
-                  if (!window.confirm("Opravdu chceš smazat fotku?")) return;
-                  const run = runs.find(r =>
-                    r.imageUrl === showImageUrl || r.imageUrls?.[0] === showImageUrl
-                  );
-                  if (!run) return;
-
-                  await updateDoc(doc(db, "runs", run.id), {
-                    imageUrl: null,
-                    imageUrls: []
-                  });
-                  setShowImageUrl(null);
-                }}
-                style={{
-                  padding: "0.5rem 1rem",
-                  borderRadius: "5px",
-                  background: "#f44336",
-                  color: "white",
-                  border: "none",
-                  cursor: "pointer",
-                  fontWeight: "bold"
-                }}
-              >
-                Smazat fotku
-              </button>
+        {showImageUrl && (
+          <div style={{
+            position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+            background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000
+          }}>
+            <div style={{ position: "relative" }}>
+              <img src={showImageUrl} alt="náhled" style={{ maxHeight: "90%", maxWidth: "90%", borderRadius: "10px" }} />
+              <button onClick={() => setShowImageUrl(null)} style={{
+                position: "absolute", top: "-10px", right: "-10px",
+                background: "white", color: "black", border: "none",
+                borderRadius: "50%", width: "30px", height: "30px",
+                cursor: "pointer", fontWeight: "bold", fontSize: "16px"
+              }}>×</button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {loading && <p>Načítám...</p>}
+        {error && <p style={{ color: "red" }}>{error}</p>}
+        {!loading && filteredRuns.length === 0 && <p>Nemáte žádné záznamy.</p>}
+      </div>
+    </>
+  );
+}
