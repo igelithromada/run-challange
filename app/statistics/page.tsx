@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import type { User } from "firebase/auth";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -14,7 +15,6 @@ export default function StatisticsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState([]);
   const [teams, setTeams] = useState([]);
-  import type { User } from "firebase/auth";
   const [user, setUser] = useState<User | null>(null);
   const [selectedType, setSelectedType] = useState("běh");
   const [view, setView] = useState("já");
@@ -201,4 +201,5 @@ export default function StatisticsPage() {
     </>
   );
 }
+
 
