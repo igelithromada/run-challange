@@ -14,7 +14,8 @@ export default function StatisticsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState([]);
   const [teams, setTeams] = useState([]);
-  const [user, setUser] = useState(null);
+  import type { User } from "firebase/auth";
+  const [user, setUser] = useState<User | null>(null);
   const [selectedType, setSelectedType] = useState("běh");
   const [view, setView] = useState("já");
   const [metric, setMetric] = useState("km");
@@ -200,3 +201,4 @@ export default function StatisticsPage() {
     </>
   );
 }
+
