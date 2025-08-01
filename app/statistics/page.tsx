@@ -13,7 +13,7 @@ export default function StatisticsPage() {
   useThemeLoader();
 
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState([]);
+  const [runs, setRuns] = useState<any[]>([]);
   const [teams, setTeams] = useState([]);
   const [user, setUser] = useState<User | null>(null);
   const [selectedType, setSelectedType] = useState("běh");
@@ -201,5 +201,6 @@ export default function StatisticsPage() {
     </>
   );
 }
+
 
 
