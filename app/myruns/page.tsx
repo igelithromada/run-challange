@@ -73,8 +73,8 @@ export default function MyRunsPage() {
     return true;
   });
 
-  const totalKm = filteredRuns.reduce((sum, run) => sum + (run.km || 0), 0);
-  const totalMin = filteredRuns.reduce((sum, run) => sum + (run.minuty || 0), 0);
+  const totalKm = filteredRuns.reduce((sum, run) => sum + Number(run.km || 0), 0);
+  const totalMin = filteredRuns.reduce((sum, run) => sum + Number(run.minuty || 0), 0);
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const totalHours = totalMin / 60;
 
@@ -147,4 +147,5 @@ export default function MyRunsPage() {
 
   return <></>; // Šablonu doplníme později
 }
+
 
