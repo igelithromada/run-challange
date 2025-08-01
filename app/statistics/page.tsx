@@ -14,7 +14,7 @@ export default function StatisticsPage() {
 
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<any[]>([]);
-  const [teams, setTeams] = useState([]);
+  const [teams, setTeams] = useState<any[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [selectedType, setSelectedType] = useState("běh");
   const [view, setView] = useState("já");
@@ -201,6 +201,7 @@ export default function StatisticsPage() {
     </>
   );
 }
+
 
 
 
