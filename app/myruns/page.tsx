@@ -16,7 +16,7 @@ import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
-import { RunData } from "@/types";
+import { RunData } from "../types";
 
 export default function MyRunsPage() {
   useThemeLoader();
@@ -147,3 +147,4 @@ export default function MyRunsPage() {
 
   return <></>; // Šablonu doplníme později
 }
+
