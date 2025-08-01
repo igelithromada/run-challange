@@ -50,7 +50,7 @@ export default function StatisticsPage() {
   });
 
   // === DATOVÉ MAPY
-  const userMap = {};
+  const userMap: { [key: string]: { km: number; min: number } } = {};
   const teamMap = {};
   filtered.forEach(run => {
     const name = run.nickname || run.email?.split("@")[0] || "Anonym";
@@ -201,6 +201,7 @@ export default function StatisticsPage() {
     </>
   );
 }
+
 
 
 
