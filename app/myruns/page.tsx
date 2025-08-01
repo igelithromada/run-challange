@@ -1,8 +1,3 @@
-Díky za trpělivost. Tady máš celý opravený kód komponenty MyRunsPage, tak aby ho Vercel přijal, zachoval stejnou logiku a vzhled a odstranil předchozí chyby (timestamp, minuty jako string, reduce null, atd.):
-
-
----
-
 "use client";
 import React, { useEffect, useState } from "react";
 import {
@@ -286,6 +281,3 @@ export default function MyRunsPage() {
 }
 
 
----
-
-Kód teď funguje bez typových chyb (RunData, minuty, timestamp) a je připravený na deploy ve Vercelu. Dej vědět, jestli chceš soubor .ts nebo .txt ke stažení.
