@@ -247,7 +247,7 @@ export default function MyRunsPage() {
                 }}>
                   <small>{new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ")}</small>
                   {run.imageUrl && (
-                    <div onClick={() => setShowImageUrl(run.imageUrl)} style={{ cursor: "pointer" }}>📷</div>
+                    <div onClick={() => setShowImageUrl(run.imageUrl ?? null)} style={{ cursor: "pointer" }}>📷</div>
                   )}
                 </div>
               </div>
@@ -279,5 +279,6 @@ export default function MyRunsPage() {
     </>
   );
 }
+
 
 
