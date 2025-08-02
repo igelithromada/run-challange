@@ -230,12 +230,12 @@ const fastestRun = filteredRuns.length > 0
   </button>
 </div>
 
-        <div className="tile-group" style={{ marginBottom: "1rem", marginTop: "1rem" }}>
-          <div className="tile">📊 Počet aktivit: {filteredRuns.length}</div>
-          <div className="tile">📏 Celková vzdálenost: {totalKm.toFixed(2)} km</div>
-          <div className="tile">⏱️ Celkový čas: {formatTime(totalMin)}</div>
-          <div className="tile">⚖️ Průměrné tempo: {formatTime(avgTempo)} /km</div>
-        </div>
+       <div className="tile-group" style={{ marginBottom: "1rem", marginTop: "1rem" }}>
+  <div className="tile">📊 Počet aktivit: {filteredRuns.length}</div>
+  <div className="tile">📏 Celková vzdálenost: {totalKm.toFixed(2)} km</div>
+  <div className="tile">⏱️ Celkový čas: {formatTime(totalMin)}</div>
+  <div className="tile">⚖️ Průměrné tempo: {formatTime(avgTempo)} /km</div>
+</div>
 
         <div className="centered-title" style={{ marginTop: "2rem" }}>🏅 Nejdelší běh</div>
         {longestRun && renderRunTile(longestRun)}
@@ -348,6 +348,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
