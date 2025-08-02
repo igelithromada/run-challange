@@ -174,49 +174,60 @@ const fastestRun = filteredRuns.length > 0
         <h1 className="centered-title">Moje aktivity</h1>
 
         <div className="tile-group">
-          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
-          <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
-        </div>
-       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "1rem" }}>
-  <div style={{ display: "flex", gap: "0.5rem" }}>
+  <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
+  <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
+</div>
+
+<div className="tile" style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "1rem", alignItems: "flex-start" }}>
+  <div style={{ display: "flex", gap: "0.5rem", width: "100%" }}>
     <input
-  type="text"
-  placeholder="Datum od"
-  onFocus={(e) => (e.target.type = "date")}
-  value={dateFrom}
-  onChange={(e) => setDateFrom(e.target.value)}
-  style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #ccc", flex: 1 }}
-/>
-<input
-  type="text"
-  placeholder="Datum do"
-  onFocus={(e) => (e.target.type = "date")}
-  value={dateTo}
-  onChange={(e) => setDateTo(e.target.value)}
-  style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #ccc", flex: 1 }}
-/>
+      type="text"
+      placeholder="Datum od"
+      onFocus={(e) => (e.target.type = "date")}
+      value={dateFrom}
+      onChange={(e) => setDateFrom(e.target.value)}
+      style={{
+        flex: 1,
+        padding: "0.5rem",
+        borderRadius: "6px",
+        border: "1px solid #ccc"
+      }}
+    />
+    <input
+      type="text"
+      placeholder="Datum do"
+      onFocus={(e) => (e.target.type = "date")}
+      value={dateTo}
+      onChange={(e) => setDateTo(e.target.value)}
+      style={{
+        flex: 1,
+        padding: "0.5rem",
+        borderRadius: "6px",
+        border: "1px solid #ccc"
+      }}
+    />
   </div>
- <button
-  onClick={() => {
-    setDateFrom("");
-    setDateTo("");
-    setRuns([...runs]); // Přepočítá záznamy podle nového filtru
-  }}
-  style={{
-    background: "white",
-    color: "black",
-    border: "none",
-    borderRadius: "12px",
-    padding: "0.6rem 1.4rem",
-    fontWeight: "bold",
-    fontSize: "16px",
-    cursor: "pointer",
-    alignSelf: "flex-start",
-    marginTop: "0.5rem",
-  }}
->
-  Reset filtru
-</button>
+
+  <button
+    onClick={() => {
+      setDateFrom("");
+      setDateTo("");
+      setRuns([...runs]);
+    }}
+    style={{
+      background: "white",
+      color: "black",
+      border: "none",
+      borderRadius: "12px",
+      padding: "0.6rem 1.4rem",
+      fontWeight: "bold",
+      fontSize: "16px",
+      cursor: "pointer"
+    }}
+  >
+    Reset filtru
+  </button>
+</div>
 </div>
 
         <div className="tile-group" style={{ marginBottom: "1rem", marginTop: "1rem" }}>
@@ -336,6 +347,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
