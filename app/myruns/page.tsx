@@ -97,7 +97,13 @@ export default function MyRunsPage() {
     });
   }, [runs, userAvatars]);
 
-  const filteredRuns = runs.filter(run => (run.type || "běh") === selectedType);
+const filteredRuns = runs.filter(run => {
+  const typeMatch = (run.type || "běh") === selectedType;
+  const runDate = new Date((run.timestamp?.seconds || 0) * 1000);
+  const fromMatch = !dateFrom || runDate >= new Date(dateFrom);
+  const toMatch = !dateTo || runDate <= new Date(dateTo);
+  return typeMatch && fromMatch && toMatch;
+});
   const totalKm = filteredRuns.reduce((sum, run) => sum + run.km, 0);
   const totalMin = filteredRuns.reduce((sum, run) => sum + run.minuty, 0);
   const avgTempo = totalKm > 0 ? totalMin / totalKm : 0;
@@ -294,4 +300,5 @@ export default function MyRunsPage() {
     );
   }
 }
+
 
