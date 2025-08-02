@@ -104,11 +104,17 @@ const filteredRuns = runs.filter(run => {
   const toMatch = !dateTo || runDate <= new Date(dateTo);
   return typeMatch && fromMatch && toMatch;
 });
-  const longestRun = filteredRuns.reduce((prev, current) =>
-  current.km > (prev?.km || 0) ? current : prev, null as RunData | null
-);
-  const fastestRun = filteredRuns.reduce((prev, current) =>
-  current.tempo < (prev?.tempo || Infinity) ? current : prev, null as RunData | null
+  const longestRun = filteredRuns.length > 0
+  ? filteredRuns.reduce((prev, current) =>
+      current.km > prev.km ? current : prev
+    )
+  : null;
+
+const fastestRun = filteredRuns.length > 0
+  ? filteredRuns.reduce((prev, current) =>
+      current.tempo < prev.tempo ? current : prev
+    )
+  : null;
 );
   const totalKm = filteredRuns.reduce((sum, run) => sum + run.km, 0);
   const totalMin = filteredRuns.reduce((sum, run) => sum + run.minuty, 0);
@@ -318,6 +324,7 @@ const filteredRuns = runs.filter(run => {
     );
   }
 }
+
 
 
 
