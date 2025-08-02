@@ -89,8 +89,9 @@ export default function MyRunsPage() {
     if (dateTo && new Date(dateTo + "T23:59") < date) return false;
     return true;
   });
+  Zde je část 2/2 upraveného souboru myruns/page.tsx, která sjednocuje vzhled záznamů s hlavní stránkou a přidává ikony pro úpravu a smazání:
 
-  const totalKm = filteredRuns.reduce((sum, run) => sum + (run.km || 0), 0);
+const totalKm = filteredRuns.reduce((sum, run) => sum + (run.km || 0), 0);
   const totalMin = filteredRuns.reduce((sum, run) => sum + (run.minuty || 0), 0);
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const totalHours = totalMin / 60;
@@ -104,14 +105,12 @@ export default function MyRunsPage() {
   );
 
   const handleDelete = async (id: string) => await deleteDoc(doc(db, "runs", id));
-
   const handleEdit = (run: RunData) => {
     setEditingId(run.id);
     setKm(run.km.toString());
     setMinuty(run.minuty.toString());
     setFile(null);
   };
-
   const handleUpdate = async (id: string) => {
     let imageUrl = null;
     if (file) {
@@ -133,38 +132,14 @@ export default function MyRunsPage() {
     setFile(null);
   };
 
-  const handleSelect = async (item: string) => {
-    setMenuVisible(false);
-    if (item === "logout") {
-      await signOut(auth);
-      router.push("/login");
-    } else router.push("/" + item);
-  };
-
   const renderTempoBar = (tempo: number) => {
     const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
     let pos = Math.min(100, Math.max(0, ((range.max - tempo) / (range.max - range.min)) * 100));
     return (
-      <div style={{ marginTop: "4px" }}>
-        <div style={{ fontSize: "0.9rem", marginBottom: "2px" }}>
-          {formatTime(tempo)} /km
-        </div>
-        <div style={{
-          height: "5px", width: "70px",
-          background: "linear-gradient(90deg, red, yellow, green)",
-          borderRadius: "3px", position: "relative"
-        }}>
-          <div style={{
-            position: "absolute",
-            top: "-4px",
-            left: `${pos}%`,
-            width: "10px",
-            height: "10px",
-            background: "white",
-            border: "2px solid #333",
-            borderRadius: "50%",
-            transform: "translateX(-50%)"
-          }} />
+      <div className="tempo-container">
+        <div className="tempo-label">{formatTime(tempo)} /km</div>
+        <div className="tempo-bar">
+          <div className="tempo-pointer" style={{ left: `${pos}%` }} />
         </div>
       </div>
     );
@@ -173,7 +148,10 @@ export default function MyRunsPage() {
   return (
     <>
       <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={(item) => {
+        setMenuVisible(false);
+        item === "logout" ? signOut(auth).then(() => router.push("/login")) : router.push("/" + item);
+      }} />
 
       <div className="container">
         <h1 className="centered-title">Moje aktivity</h1>
@@ -196,38 +174,26 @@ export default function MyRunsPage() {
         </div>
 
         {longestRun && (
-          <div className="tile">
-            🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(longestRun.minuty)} ({formatTime(longestRun.tempo)} /km)
-          </div>
+          <div className="tile">🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(longestRun.minuty)} ({formatTime(longestRun.tempo)} /km)</div>
         )}
         {fastestRun && (
-          <div className="tile">
-            ⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(fastestRun.minuty)} ({formatTime(fastestRun.tempo)} /km)
-          </div>
+          <div className="tile">⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(fastestRun.minuty)} ({formatTime(fastestRun.tempo)} /km)</div>
         )}
 
         <h2 className="centered-title">Moje záznamy</h2>
-        <div className="list-container" style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+        <div className="list-container">
           {filteredRuns.map(run =>
             editingId === run.id ? (
-              <div key={run.id} className="tile list-tile" style={{ textAlign: "center" }}>
+              <div key={run.id} className="tile list-tile edit-tile">
                 <input type="number" value={km} onChange={(e) => setKm(e.target.value)} placeholder="km" />
                 <input type="number" value={minuty} onChange={(e) => setMinuty(e.target.value)} placeholder="min" />
                 <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
                 <button onClick={() => handleUpdate(run.id)}>💾 Uložit</button>
               </div>
             ) : (
-              <div key={run.id} className="tile list-tile"
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "0.5rem",
-                  position: "relative",
-                  margin: "6px 0",
-                  padding: "6px 8px"
-                }}>
+              <div key={run.id} className="tile list-tile" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", position: "relative" }}>
                 <div className="avatar">{(run.nickname || run.email)?.charAt(0).toUpperCase() || "?"}</div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, marginLeft: "0.5rem" }}>
                   <div>
                     <span style={{ fontWeight: "bold", color: "white" }}>
                       {run.nickname || run.email?.split("@")[0]}
@@ -236,19 +202,13 @@ export default function MyRunsPage() {
                   <div>{run.km} km, {formatTime(run.minuty)}</div>
                   {renderTempoBar(run.tempo)}
                 </div>
-                <div style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-end",
-                  position: "absolute",
-                  right: "0.8rem",
-                  top: "0.4rem",
-                  gap: "0.3rem"
-                }}>
-                  <small>{new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ")}</small>
+                <div className="icons-column">
                   {run.imageUrl && (
-                    <div onClick={() => setShowImageUrl(run.imageUrl ?? null)} style={{ cursor: "pointer" }}>📷</div>
+                    <span className="icon" title="Zobrazit fotku" onClick={() => setShowImageUrl(run.imageUrl ?? null)}>📷</span>
                   )}
+                  <span className="icon" title="Upravit" onClick={() => handleEdit(run)}>✏️</span>
+                  <span className="icon" title="Smazat" onClick={() => handleDelete(run.id)}>🗑️</span>
+                  <small>{new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ")}</small>
                 </div>
               </div>
             )
@@ -256,18 +216,10 @@ export default function MyRunsPage() {
         </div>
 
         {showImageUrl && (
-          <div style={{
-            position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-            background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000
-          }}>
-            <div style={{ position: "relative" }}>
-              <img src={showImageUrl} alt="náhled" style={{ maxHeight: "90%", maxWidth: "90%", borderRadius: "10px" }} />
-              <button onClick={() => setShowImageUrl(null)} style={{
-                position: "absolute", top: "-10px", right: "-10px",
-                background: "white", color: "black", border: "none",
-                borderRadius: "50%", width: "30px", height: "30px",
-                cursor: "pointer", fontWeight: "bold", fontSize: "16px"
-              }}>×</button>
+          <div className="modal-backdrop">
+            <div className="modal-image-wrapper">
+              <img src={showImageUrl} alt="náhled" className="modal-image" />
+              <button className="modal-close" onClick={() => setShowImageUrl(null)}>×</button>
             </div>
           </div>
         )}
@@ -279,6 +231,3 @@ export default function MyRunsPage() {
     </>
   );
 }
-
-
-
