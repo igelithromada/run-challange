@@ -179,8 +179,8 @@ const fastestRun = filteredRuns.length > 0
   <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
 </div>
 
-<div className="tile" style={{ display: "flex", flexDirection: "column", gap: "0.8rem", marginTop: "1rem" }}>
-  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
+<div className="tile" style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.8rem", paddingBottom: "1rem" }}>
+  <div style={{ display: "flex", flexDirection: "row", gap: "0.6rem" }}>
     <input
       type="text"
       placeholder="Datum od"
@@ -188,6 +188,7 @@ const fastestRun = filteredRuns.length > 0
       value={dateFrom}
       onChange={(e) => setDateFrom(e.target.value)}
       style={{
+        flex: 1,
         padding: "0.5rem",
         borderRadius: "6px",
         border: "1px solid #ccc"
@@ -200,6 +201,7 @@ const fastestRun = filteredRuns.length > 0
       value={dateTo}
       onChange={(e) => setDateTo(e.target.value)}
       style={{
+        flex: 1,
         padding: "0.5rem",
         borderRadius: "6px",
         border: "1px solid #ccc"
@@ -207,25 +209,28 @@ const fastestRun = filteredRuns.length > 0
     />
   </div>
 
-  <button
-    onClick={() => {
-      setDateFrom("");
-      setDateTo("");
-      setRuns([...runs]);
-    }}
-    style={{
-      background: "white",
-      color: "black",
-      border: "none",
-      borderRadius: "12px",
-      padding: "0.6rem 1.4rem",
-      fontWeight: "bold",
-      fontSize: "16px",
-      cursor: "pointer"
-    }}
-  >
-    Reset filtru
-  </button>
+  {(dateFrom || dateTo) && (
+    <button
+      onClick={() => {
+        setDateFrom("");
+        setDateTo("");
+        setRuns([...runs]);
+      }}
+      style={{
+        background: "white",
+        color: "black",
+        border: "none",
+        borderRadius: "12px",
+        padding: "0.6rem 1.4rem",
+        fontWeight: "bold",
+        fontSize: "16px",
+        cursor: "pointer",
+        alignSelf: "flex-start"
+      }}
+    >
+      Reset filtru
+    </button>
+  )}
 </div>
 
        <div className="tile-group" style={{
@@ -356,6 +361,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
