@@ -161,6 +161,7 @@ const fastestRun = filteredRuns.length > 0
     }
   };
 
+  
   return (
     <>
       <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
@@ -347,6 +348,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
