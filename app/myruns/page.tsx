@@ -229,7 +229,6 @@ const fastestRun = filteredRuns.length > 0
     Reset filtru
   </button>
 </div>
-</div>
 
         <div className="tile-group" style={{ marginBottom: "1rem", marginTop: "1rem" }}>
           <div className="tile">📏 Celková vzdálenost: {totalKm.toFixed(2)} km</div>
@@ -348,6 +347,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
