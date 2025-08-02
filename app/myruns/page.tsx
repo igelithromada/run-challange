@@ -179,8 +179,8 @@ const fastestRun = filteredRuns.length > 0
   <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
 </div>
 
-<div className="tile" style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.8rem", paddingBottom: "1rem" }}>
-  <div style={{ display: "flex", flexDirection: "row", gap: "0.6rem" }}>
+<div className="tile" style={{ marginTop: "1rem", paddingBottom: "1rem", paddingTop: "0.6rem" }}>
+  <div style={{ display: "flex", gap: "0.5rem", width: "100%", marginBottom: (dateFrom || dateTo) ? "0.8rem" : "0" }}>
     <input
       type="text"
       placeholder="Datum od"
@@ -208,6 +208,29 @@ const fastestRun = filteredRuns.length > 0
       }}
     />
   </div>
+
+  {(dateFrom || dateTo) && (
+    <button
+      onClick={() => {
+        setDateFrom("");
+        setDateTo("");
+        setRuns([...runs]);
+      }}
+      style={{
+        background: "white",
+        color: "black",
+        border: "none",
+        borderRadius: "12px",
+        padding: "0.4rem 1.2rem",
+        fontWeight: "bold",
+        fontSize: "15px",
+        cursor: "pointer"
+      }}
+    >
+      Reset filtru
+    </button>
+  )}
+</div>
 
   {(dateFrom || dateTo) && (
     <button
@@ -361,6 +384,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
