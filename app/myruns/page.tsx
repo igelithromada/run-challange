@@ -104,6 +104,12 @@ const filteredRuns = runs.filter(run => {
   const toMatch = !dateTo || runDate <= new Date(dateTo);
   return typeMatch && fromMatch && toMatch;
 });
+  const longestRun = filteredRuns.reduce((prev, current) =>
+  current.km > (prev?.km || 0) ? current : prev, null as RunData | null
+);
+const fastestRun = filteredRuns.reduce((prev, current) =>
+  current.tempo < (prev?.tempo || Infinity) ? current : prev, null as RunData | null
+);
   const totalKm = filteredRuns.reduce((sum, run) => sum + run.km, 0);
   const totalMin = filteredRuns.reduce((sum, run) => sum + run.minuty, 0);
   const avgTempo = totalKm > 0 ? totalMin / totalKm : 0;
@@ -177,24 +183,25 @@ const filteredRuns = runs.filter(run => {
       placeholder="Datum do"
     />
   </div>
-  <button
-    onClick={() => {
-      setDateFrom("");
-      setDateTo("");
-    }}
-    style={{
-      padding: "0.5rem",
-      borderRadius: "6px",
-      border: "none",
-      backgroundColor: "#ccc",
-      color: "#000",
-      cursor: "pointer",
-      alignSelf: "flex-start",
-      marginTop: "0.5rem",
-    }}
-  >
-    Reset filtru
-  </button>
+ <button
+  onClick={() => {
+    setDateFrom("");
+    setDateTo("");
+    setRuns([...runs]); // Přepočítá záznamy podle nového (neomezeného) filtru
+  }}
+  style={{
+    padding: "0.5rem",
+    borderRadius: "6px",
+    border: "none",
+    backgroundColor: "#ccc",
+    color: "#000",
+    cursor: "pointer",
+    alignSelf: "flex-start",
+    marginTop: "0.5rem",
+  }}
+>
+  Reset filtru
+</button>
 </div>
 
         <div className="tile-group" style={{ marginBottom: "1rem", marginTop: "1rem" }}>
@@ -314,6 +321,7 @@ const filteredRuns = runs.filter(run => {
     );
   }
 }
+
 
 
 
