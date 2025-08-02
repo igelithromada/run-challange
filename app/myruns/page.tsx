@@ -154,6 +154,28 @@ export default function MyRunsPage() {
           <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
           <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
         </div>
+        <div className="tile-group" style={{ marginTop: "0.5rem", gap: "1rem" }}>
+  <div className="tile">
+    <label htmlFor="dateFrom">Od:</label>
+    <input
+      id="dateFrom"
+      type="date"
+      value={dateFrom}
+      onChange={(e) => setDateFrom(e.target.value)}
+      style={{ marginLeft: "0.5rem" }}
+    />
+  </div>
+  <div className="tile">
+    <label htmlFor="dateTo">Do:</label>
+    <input
+      id="dateTo"
+      type="date"
+      value={dateTo}
+      onChange={(e) => setDateTo(e.target.value)}
+      style={{ marginLeft: "0.5rem" }}
+    />
+  </div>
+</div>
 
         <div className="tile-group" style={{ marginBottom: "1rem", marginTop: "1rem" }}>
           <div className="tile">📏 Celková vzdálenost: {totalKm.toFixed(2)} km</div>
@@ -272,3 +294,4 @@ export default function MyRunsPage() {
     );
   }
 }
+
