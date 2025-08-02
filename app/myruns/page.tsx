@@ -179,8 +179,8 @@ const fastestRun = filteredRuns.length > 0
   <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
 </div>
 
-<div className="tile" style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "1rem", alignItems: "flex-start" }}>
-  <div style={{ display: "flex", gap: "0.5rem", width: "100%" }}>
+<div className="tile" style={{ display: "flex", flexDirection: "column", gap: "0.8rem", marginTop: "1rem" }}>
+  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
     <input
       type="text"
       placeholder="Datum od"
@@ -188,7 +188,6 @@ const fastestRun = filteredRuns.length > 0
       value={dateFrom}
       onChange={(e) => setDateFrom(e.target.value)}
       style={{
-        flex: 1,
         padding: "0.5rem",
         borderRadius: "6px",
         border: "1px solid #ccc"
@@ -201,7 +200,6 @@ const fastestRun = filteredRuns.length > 0
       value={dateTo}
       onChange={(e) => setDateTo(e.target.value)}
       style={{
-        flex: 1,
         padding: "0.5rem",
         borderRadius: "6px",
         border: "1px solid #ccc"
@@ -230,18 +228,28 @@ const fastestRun = filteredRuns.length > 0
   </button>
 </div>
 
-       <div className="tile-group" style={{ marginBottom: "1rem", marginTop: "1rem" }}>
+       <div className="tile-group" style={{
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: "0.5rem",
+  marginBottom: "1rem",
+  marginTop: "1rem"
+}}>
   <div className="tile">📊 Počet aktivit: {filteredRuns.length}</div>
   <div className="tile">📏 Celková vzdálenost: {totalKm.toFixed(2)} km</div>
   <div className="tile">⏱️ Celkový čas: {formatTime(totalMin)}</div>
   <div className="tile">⚖️ Průměrné tempo: {formatTime(avgTempo)} /km</div>
 </div>
 
-        <div className="centered-title" style={{ marginTop: "2rem" }}>🏅 Nejdelší běh</div>
-        {longestRun && renderRunTile(longestRun)}
+       <div className="centered-title" style={{ marginTop: "2rem" }}>
+  {selectedType === "běh" ? "🏅 Nejdelší běh" : "🏅 Nejdelší chůze"}
+</div>
+{longestRun && renderRunTile(longestRun)}
 
-        <div className="centered-title" style={{ marginTop: "1.5rem" }}>🚀 Nejrychlejší běh</div>
-        {fastestRun && renderRunTile(fastestRun)}
+<div className="centered-title" style={{ marginTop: "1.5rem" }}>
+  {selectedType === "běh" ? "🚀 Nejrychlejší běh" : "🚀 Nejrychlejší chůze"}
+</div>
+{fastestRun && renderRunTile(fastestRun)}
 
         <h2 className="centered-title" style={{ marginTop: "2rem" }}>Moje záznamy</h2>
         <div className="list-container" style={{ display: "flex", flexDirection: "column", gap: "0" }}>
@@ -348,6 +356,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
