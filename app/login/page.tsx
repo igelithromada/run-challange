@@ -67,12 +67,21 @@ export default function LoginPage() {
       background: "var(--main-gradient, linear-gradient(180deg, #36D1DC, #5B86E5))",
       display: "flex",
       justifyContent: "center",
-      alignItems: "center",
-      flexDirection: "column",
+      alignItems: "flex-start",
+      paddingTop: "60px",
       color: "white",
       fontFamily: "'Poppins', sans-serif"
     }}>
-      <div className="tile" style={{ maxWidth: "400px", width: "90%", textAlign: "center" }}>
+      <div style={{
+        maxWidth: "400px",
+        width: "90%",
+        textAlign: "center",
+        background: "rgba(255,255,255,0.15)",
+        padding: "2rem",
+        borderRadius: "15px",
+        boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
+        backdropFilter: "blur(6px)"
+      }}>
         <h2>
           {zobrazeni === "login" && "Přihlášení"}
           {zobrazeni === "code" && "Registrační kód"}
@@ -83,10 +92,10 @@ export default function LoginPage() {
           <>
             <input type="email" placeholder="Email" value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={inputStyle} /><br/>
+              style={inputStyle} />
             <input type="password" placeholder="Heslo" value={heslo}
               onChange={(e) => setHeslo(e.target.value)}
-              style={inputStyle} /><br/>
+              style={inputStyle} />
             <button onClick={handleLogin} style={buttonStyle}>Přihlásit</button>
             <button onClick={handleForgotPassword} style={buttonStyle}>Zapomněl jsem heslo</button>
             <div style={{ marginTop: "1rem", fontSize: "0.9rem" }}>
@@ -102,7 +111,7 @@ export default function LoginPage() {
           <>
             <input type="text" placeholder="Registrační kód" value={kod}
               onChange={(e) => setKod(e.target.value)}
-              style={inputStyle} /><br/>
+              style={inputStyle} />
             <button onClick={handleZkontrolovatKod} style={buttonStyle}>Potvrdit</button>
             <div style={{ marginTop: "1rem", fontSize: "0.9rem" }}>
               <span onClick={() => setZobrazeni("login")} style={{ cursor: "pointer", textDecoration: "underline" }}>
@@ -116,13 +125,13 @@ export default function LoginPage() {
           <>
             <input type="email" placeholder="Email" value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={inputStyle} /><br/>
+              style={inputStyle} />
             <input type="password" placeholder="Heslo" value={heslo}
               onChange={(e) => setHeslo(e.target.value)}
-              style={inputStyle} /><br/>
+              style={inputStyle} />
             <input type="password" placeholder="Potvrzení hesla" value={potvrzeniHesla}
               onChange={(e) => setPotvrzeniHesla(e.target.value)}
-              style={inputStyle} /><br/>
+              style={inputStyle} />
             <button onClick={handleRegister} style={buttonStyle}>Registrovat</button>
             <div style={{ marginTop: "1rem", fontSize: "0.9rem" }}>
               <span onClick={() => setZobrazeni("login")} style={{ cursor: "pointer", textDecoration: "underline" }}>
@@ -138,16 +147,17 @@ export default function LoginPage() {
   );
 }
 
-const inputStyle = {
-  padding: "0.5rem",
+const inputStyle: React.CSSProperties = {
+  padding: "0.6rem 1rem",
   borderRadius: "8px",
   border: "none",
   outline: "none",
   margin: "0.5rem 0",
-  width: "100%"
+  width: "100%",
+  fontSize: "1rem"
 };
 
-const buttonStyle = {
+const buttonStyle: React.CSSProperties = {
   width: "100%",
   padding: "0.6rem",
   margin: "0.5rem 0",
@@ -156,6 +166,7 @@ const buttonStyle = {
   border: "none",
   borderRadius: "8px",
   fontWeight: "bold",
+  fontSize: "1rem",
   cursor: "pointer",
   transition: "0.3s"
 };
