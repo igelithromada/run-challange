@@ -51,7 +51,18 @@ export default function StatisticsPage() {
 
   // === DATOVÉ MAPY
   const userMap: { [key: string]: { km: number; min: number } } = {};
-  const teamMap = {};
+  const teamMap: {
+  [teamName: string]: {
+    km: number;
+    min: number;
+    members: {
+      [memberName: string]: {
+        km: number;
+        min: number;
+      };
+    };
+  };
+} = {};
   filtered.forEach(run => {
     const name = run.nickname || run.email?.split("@")[0] || "Anonym";
     const team = teams.find(t => t.id===run.teamId)?.name || "?";
@@ -201,6 +212,7 @@ export default function StatisticsPage() {
     </>
   );
 }
+
 
 
 
