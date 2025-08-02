@@ -179,7 +179,7 @@ const fastestRun = filteredRuns.length > 0
   <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
 </div>
 
-<div className="tile" style={{ marginTop: "1rem", paddingBottom: "1rem", paddingTop: "0.6rem" }}>
+<div className="tile" style={{ marginTop: "1rem", padding: "0.8rem 1rem" }}>
   <div style={{ display: "flex", gap: "0.5rem", width: "100%", marginBottom: (dateFrom || dateTo) ? "0.8rem" : "0" }}>
     <input
       type="text"
@@ -232,37 +232,12 @@ const fastestRun = filteredRuns.length > 0
   )}
 </div>
 
-  {(dateFrom || dateTo) && (
-    <button
-      onClick={() => {
-        setDateFrom("");
-        setDateTo("");
-        setRuns([...runs]);
-      }}
-      style={{
-        background: "white",
-        color: "black",
-        border: "none",
-        borderRadius: "12px",
-        padding: "0.6rem 1.4rem",
-        fontWeight: "bold",
-        fontSize: "16px",
-        cursor: "pointer",
-        alignSelf: "flex-start"
-      }}
-    >
-      Reset filtru
-    </button>
-  )}
-</div>
-
-       <div className="tile-group" style={{ margin: "0.8rem 0", rowGap: "0.4rem" }}>
+       <div className="tile-group" style={{ margin: "0.8rem 0", rowGap: "0.4rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
   <div className="tile">📊 Počet aktivit: {filteredRuns.length}</div>
   <div className="tile">📏 Celková vzdálenost: {totalKm.toFixed(2)} km</div>
   <div className="tile">⏱️ Celkový čas: {formatTime(totalMin)}</div>
   <div className="tile">⚖️ Průměrné tempo: {formatTime(avgTempo)} /km</div>
 </div>
-
        <div className="centered-title" style={{ marginTop: "2rem" }}>
   {selectedType === "běh" ? "🏅 Nejdelší běh" : "🏅 Nejdelší chůze"}
 </div>
@@ -378,6 +353,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
