@@ -7,6 +7,7 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
+import { HexColorPicker } from "react-colorful";
 
 export default function SettingsPage() {
   useThemeLoader();
@@ -16,6 +17,7 @@ export default function SettingsPage() {
   const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [theme, setTheme] = useState("default");
   const [customColor, setCustomColor] = useState("#36D1DC");
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -86,12 +88,14 @@ export default function SettingsPage() {
     saveSettings({ theme: selectedTheme });
   };
 
-  const handleCustomColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const color = e.target.value;
+  const handleCustomColorLiveChange = (color: string) => {
     setCustomColor(color);
     setTheme("custom");
     applyTheme("custom", color);
-    saveSettings({ theme: "custom", customColor: color });
+  };
+
+  const handleCustomColorFinalSave = () => {
+    saveSettings({ theme: "custom", customColor });
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -194,18 +198,29 @@ export default function SettingsPage() {
                 </label>
               </div>
               {showColorPicker && (
-                <input
-                  type="color"
-                  value={customColor}
-                  onChange={handleCustomColorChange}
-                  style={{
-                    width: "100%",
-                    height: "60px",
-                    marginTop: "0.5rem",
-                    border: "none",
-                    borderRadius: "10px"
-                  }}
-                />
+                <div style={{ marginTop: "0.5rem" }}>
+                  <HexColorPicker
+                    color={customColor}
+                    onChange={handleCustomColorLiveChange}
+                    style={{ width: "100%", height: "180px" }}
+                  />
+                  <button
+                    onClick={handleCustomColorFinalSave}
+                    style={{
+                      marginTop: "0.5rem",
+                      padding: "0.5rem 1rem",
+                      borderRadius: "10px",
+                      border: "none",
+                      background: "white",
+                      color: "#000",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                      width: "100%"
+                    }}
+                  >
+                    Uložit barvu
+                  </button>
+                </div>
               )}
             </div>
           </div>
