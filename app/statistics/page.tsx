@@ -75,11 +75,11 @@ export default function StatisticsPage() {
 
   const userList = Object.entries(userMap).map(([name,data])=>({
     name, km:data.km, tempo:data.km?(data.min/data.km):0
-  })).sort((a,b)=>b[metric as keyof typeof b]-a[metric as keyof typeof a]);
+  })).sort((a, b) => Number(b[metric as keyof typeof b]) - Number(a[metric as keyof typeof a]));
 
   const teamList = Object.entries(teamMap).map(([team,data])=>({
     team, km:data.km, tempo:data.km?(data.min/data.km):0, members:data.members
-  })).sort((a,b)=>b[metric as keyof typeof b]-a[metric as keyof typeof a]);
+  })).sort((a, b) => Number(b[metric as keyof typeof b]) - Number(a[metric as keyof typeof a]));
 
   let myName = user?.email?.split("@")[0] || "?";
   let myTeamName = null;
@@ -214,3 +214,4 @@ export default function StatisticsPage() {
     </>
   );
 }
+
