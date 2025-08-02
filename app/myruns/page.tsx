@@ -99,15 +99,20 @@ export default function MyRunsPage() {
 
 const filteredRuns = runs.filter(run => {
   const typeMatch = (run.type || "běh") === selectedType;
-  const runDate = new Date((run.timestamp?.seconds || 0) * 1000);
+
+  if (!run.timestamp?.seconds) return false;
+  const runDate = new Date(run.timestamp.seconds * 1000);
+  runDate.setHours(0, 0, 0, 0); // ořežeme čas
 
   const parseDate = (input: string) => {
-    const [year, month, day] = input.split("-").map(Number); // protože input type="date" je "rrrr-mm-dd"
-    return new Date(year, month - 1, day);
+    const [year, month, day] = input.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    date.setHours(0, 0, 0, 0); // ořežeme čas
+    return date;
   };
 
   const fromMatch = !dateFrom || runDate >= parseDate(dateFrom);
-  const toMatch = !dateTo || runDate <= new Date(parseDate(dateTo).setHours(23, 59, 59, 999));
+  const toMatch = !dateTo || runDate <= parseDate(dateTo);
 
   return typeMatch && fromMatch && toMatch;
 });
@@ -327,6 +332,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
