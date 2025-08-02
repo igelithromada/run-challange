@@ -100,10 +100,31 @@ export default function UserPage() {
             .filter(run => (run.type || "běh") === selectedType)
             .map(run => {
               const teamName = run.teamId ? teams.find(t => t.id === run.teamId)?.name || "?" : null;
-              const avatarLetter = (userInfo.nickname || userInfo.email?.charAt(0) || "?").toUpperCase();
-              const avatar = userInfo.avatarUrl
-                ? <img src={userInfo.avatarUrl} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
-                : avatarLetter;
+
+              const avatar = userInfo.avatarUrl ? (
+                <img
+                  src={userInfo.avatarUrl}
+                  alt="avatar"
+                  style={{ width: "40px", height: "40px", borderRadius: "50%" }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                    backgroundColor: "#ccc",
+                    color: "#000",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: "bold",
+                    fontSize: "1rem",
+                  }}
+                >
+                  {(userInfo.nickname?.charAt(0) || userInfo.email?.charAt(0) || "?").toUpperCase()}
+                </div>
+              );
 
               const pos = (() => {
                 const tempo = parseFloat(run.tempo as string);
