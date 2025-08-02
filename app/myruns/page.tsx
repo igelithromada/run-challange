@@ -95,7 +95,10 @@ useEffect(() => {
       }
     });
   }, [runs, userAvatars]);
-
+const filteredRuns = runs.filter(run => (run.type || "běh") === selectedType);
+const totalKm = filteredRuns.reduce((sum, run) => sum + run.km, 0);
+const totalMin = filteredRuns.reduce((sum, run) => sum + run.minuty, 0);
+const avgTempo = totalKm > 0 ? totalMin / totalKm : 0;
   const formatTime = (minutes: number) => {
     const totalSeconds = Math.round(minutes * 60);
     const min = Math.floor(totalSeconds / 60);
@@ -256,5 +259,6 @@ useEffect(() => {
     </>
   );
 }
+
 
 
