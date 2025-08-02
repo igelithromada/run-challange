@@ -111,12 +111,7 @@ const filteredRuns = runs.filter(run => {
 const fastestRun = filteredRuns.length > 0
   ? filteredRuns.reduce((min, run) => run.tempo < min.tempo ? run : min, filteredRuns[0])
   : null;
-
-const fastestRun = filteredRuns.length > 0
-  ? filteredRuns.reduce((prev, current) =>
-      current.tempo < prev.tempo ? current : prev
-    )
-  : null;
+  
 );
   const totalKm = filteredRuns.reduce((sum, run) => sum + run.km, 0);
   const totalMin = filteredRuns.reduce((sum, run) => sum + run.minuty, 0);
@@ -326,6 +321,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
