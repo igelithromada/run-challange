@@ -160,27 +160,41 @@ const filteredRuns = runs.filter(run => {
           <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
           <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
         </div>
-        <div className="tile-group" style={{ marginTop: "0.5rem", gap: "1rem" }}>
-  <div className="tile">
-    <label htmlFor="dateFrom">Od:</label>
+       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "1rem" }}>
+  <div style={{ display: "flex", gap: "0.5rem" }}>
     <input
-      id="dateFrom"
       type="date"
       value={dateFrom}
       onChange={(e) => setDateFrom(e.target.value)}
-      style={{ marginLeft: "0.5rem" }}
+      style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #ccc", flex: 1 }}
+      placeholder="Datum od"
     />
-  </div>
-  <div className="tile">
-    <label htmlFor="dateTo">Do:</label>
     <input
-      id="dateTo"
       type="date"
       value={dateTo}
       onChange={(e) => setDateTo(e.target.value)}
-      style={{ marginLeft: "0.5rem" }}
+      style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #ccc", flex: 1 }}
+      placeholder="Datum do"
     />
   </div>
+  <button
+    onClick={() => {
+      setDateFrom("");
+      setDateTo("");
+    }}
+    style={{
+      padding: "0.5rem",
+      borderRadius: "6px",
+      border: "none",
+      backgroundColor: "#ccc",
+      color: "#000",
+      cursor: "pointer",
+      alignSelf: "flex-start",
+      marginTop: "0.5rem",
+    }}
+  >
+    Reset filtru
+  </button>
 </div>
 
         <div className="tile-group" style={{ marginBottom: "1rem", marginTop: "1rem" }}>
@@ -300,5 +314,6 @@ const filteredRuns = runs.filter(run => {
     );
   }
 }
+
 
 
