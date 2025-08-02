@@ -200,14 +200,16 @@ const fastestRun = filteredRuns.length > 0
   onClick={() => {
     setDateFrom("");
     setDateTo("");
-    setRuns([...runs]); // Přepočítá záznamy podle nového (neomezeného) filtru
+    setRuns([...runs]); // Přepočítá záznamy podle nového filtru
   }}
   style={{
-    padding: "0.5rem",
-    borderRadius: "6px",
+    background: "white",
+    color: "black",
     border: "none",
-    backgroundColor: "#ccc",
-    color: "#000",
+    borderRadius: "12px",
+    padding: "0.6rem 1.4rem",
+    fontWeight: "bold",
+    fontSize: "16px",
     cursor: "pointer",
     alignSelf: "flex-start",
     marginTop: "0.5rem",
@@ -334,6 +336,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
