@@ -98,7 +98,7 @@ export default function MyRunsPage() {
   }, [runs, userAvatars]);
 
 const filteredRuns = runs.filter(run => {
-  const typeMatch = (run.type || "běh") === selectedType;
+  const typeMatch = run.type === selectedType;
 
   if (!run.timestamp?.seconds) return false;
   const runDate = new Date(run.timestamp.seconds * 1000);
@@ -107,7 +107,7 @@ const filteredRuns = runs.filter(run => {
   const parseDate = (input: string) => {
     const [year, month, day] = input.split("-").map(Number);
     const date = new Date(year, month - 1, day);
-    date.setHours(0, 0, 0, 0); // ořežeme čas
+    date.setHours(0, 0, 0, 0);
     return date;
   };
 
@@ -117,13 +117,8 @@ const filteredRuns = runs.filter(run => {
   return typeMatch && fromMatch && toMatch;
 });
  // Najdi nejdelší a nejrychlejší záznam pro vybraný typ
-const longestRun = filteredRuns.length > 0
-  ? [...filteredRuns].sort((a, b) => b.km - a.km)[0]
-  : null;
-
-const fastestRun = filteredRuns.length > 0
-  ? [...filteredRuns].sort((a, b) => a.tempo - b.tempo)[0]
-  : null;
+const longestRun = [...filteredRuns].sort((a, b) => b.km - a.km)[0];
+const fastestRun = [...filteredRuns].sort((a, b) => parseFloat(a.tempo) - parseFloat(b.tempo))[0];
 
   const totalKm = filteredRuns.reduce((sum, run) => sum + run.km, 0);
   const totalMin = filteredRuns.reduce((sum, run) => sum + run.minuty, 0);
@@ -351,6 +346,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
