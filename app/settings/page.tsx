@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { auth, db } from "@/app/firebase";
+import { auth, db } from "../app/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import CustomColorPicker from "../components/CustomColorPicker";
 
@@ -157,3 +157,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+
