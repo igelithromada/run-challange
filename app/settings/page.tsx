@@ -16,7 +16,6 @@ export default function SettingsPage() {
   const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [file, setFile] = useState<File | null>(null);
   const [theme, setTheme] = useState("default");
   const [customColor, setCustomColor] = useState("#36D1DC");
   const [showColorPicker, setShowColorPicker] = useState(false);
