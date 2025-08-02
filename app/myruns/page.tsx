@@ -256,13 +256,7 @@ const fastestRun = filteredRuns.length > 0
   )}
 </div>
 
-       <div className="tile-group" style={{
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
-  gap: "0.5rem",
-  marginBottom: "1rem",
-  marginTop: "1rem"
-}}>
+       <div className="tile-group" style={{ margin: "0.8rem 0", rowGap: "0.4rem" }}>
   <div className="tile">📊 Počet aktivit: {filteredRuns.length}</div>
   <div className="tile">📏 Celková vzdálenost: {totalKm.toFixed(2)} km</div>
   <div className="tile">⏱️ Celkový čas: {formatTime(totalMin)}</div>
@@ -384,6 +378,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
