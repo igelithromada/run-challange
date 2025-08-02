@@ -118,7 +118,7 @@ const filteredRuns = runs.filter(run => {
 });
  // Najdi nejdelší a nejrychlejší záznam pro vybraný typ
 const longestRun = [...filteredRuns].sort((a, b) => b.km - a.km)[0];
-const fastestRun = [...filteredRuns].sort((a, b) => parseFloat(a.tempo) - parseFloat(b.tempo))[0];
+const fastestRun = [...filteredRuns].sort((a, b) => a.tempo - b.tempo)[0];
 
   const totalKm = filteredRuns.reduce((sum, run) => sum + run.km, 0);
   const totalMin = filteredRuns.reduce((sum, run) => sum + run.minuty, 0);
@@ -346,6 +346,7 @@ const fastestRun = [...filteredRuns].sort((a, b) => parseFloat(a.tempo) - parseF
     );
   }
 }
+
 
 
 
