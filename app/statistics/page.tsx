@@ -94,7 +94,7 @@ export default function StatisticsPage() {
 
       const insideList = Object.entries(t.members).map(([name,data])=>({
         name, km:data.km, tempo:data.km?(data.min/data.km):0
-      })).sort((a,b)=>b[metric as keyof typeof b]-a[metric as keyof typeof a]);
+      })).sort((a, b) => Number(b[metric as keyof typeof b]) - Number(a[metric as keyof typeof a]));
       myTeamPosInside = insideList.findIndex(x=>x.name===myName)+1;
     }
   });
@@ -214,4 +214,5 @@ export default function StatisticsPage() {
     </>
   );
 }
+
 
