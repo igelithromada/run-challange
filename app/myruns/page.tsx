@@ -145,11 +145,11 @@ useEffect(() => {
           <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
           <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
         </div>
-<div className="tile-group" style={{ marginBottom: "1rem", marginTop: "1rem" }}>
-  <div className="tile">📏 Celková vzdálenost: {totalKm.toFixed(2)} km</div>
-  <div className="tile">⏱️ Celkový čas: {formatTime(totalMin)}</div>
-  <div className="tile">⚖️ Průměrné tempo: {formatTime(avgTempo)} /km</div>
-</div>
+      <div className="tile-group" style={{ marginBottom: "1rem", marginTop: "1rem" }}>
+      <div className="tile">📏 Celková vzdálenost: {totalKm.toFixed(2)} km</div>
+      <div className="tile">⏱️ Celkový čas: {formatTime(totalMin)}</div>
+      <div className="tile">⚖️ Průměrné tempo: {formatTime(avgTempo)} /km</div>
+        </div>
         <h2 className="centered-title">Moje záznamy</h2>
         <div className="list-container" style={{ display: "flex", flexDirection: "column", gap: "0" }}>
           {runs
@@ -256,4 +256,5 @@ useEffect(() => {
     </>
   );
 }
+
 
