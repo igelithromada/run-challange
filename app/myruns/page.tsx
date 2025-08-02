@@ -114,9 +114,6 @@ const filteredRuns = runs.filter(run => {
   const totalMin = filteredRuns.reduce((sum, run) => sum + run.minuty, 0);
   const avgTempo = totalKm > 0 ? totalMin / totalKm : 0;
 
-  const longestRun = filteredRuns.reduce((max, run) => run.km > max.km ? run : max, filteredRuns[0]);
-  const fastestRun = filteredRuns.reduce((min, run) => run.tempo < min.tempo ? run : min, filteredRuns[0]);
-
   const formatTime = (minutes: number) => {
     const totalSeconds = Math.round(minutes * 60);
     const min = Math.floor(totalSeconds / 60);
@@ -321,6 +318,7 @@ const filteredRuns = runs.filter(run => {
     );
   }
 }
+
 
 
 
