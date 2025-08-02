@@ -101,7 +101,7 @@ const filteredRuns = runs.filter(run => {
   const typeMatch = (run.type || "běh") === selectedType;
   const runDate = new Date((run.timestamp?.seconds || 0) * 1000);
   const fromMatch = !dateFrom || runDate >= new Date(dateFrom);
-  const toMatch = !dateTo || runDate <= new Date(dateTo + "T23:59:59");
+  const toMatch = !dateTo || runDate <= new Date(dateTo);
 });
   const longestRun = filteredRuns.length > 0
   ? filteredRuns.reduce((max, run) => run.km > max.km ? run : max, filteredRuns[0])
@@ -319,6 +319,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
