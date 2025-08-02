@@ -180,19 +180,21 @@ const fastestRun = filteredRuns.length > 0
        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "1rem" }}>
   <div style={{ display: "flex", gap: "0.5rem" }}>
     <input
-      type="date"
-      value={dateFrom}
-      onChange={(e) => setDateFrom(e.target.value)}
-      style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #ccc", flex: 1 }}
-      placeholder="Datum od"
-    />
-    <input
-      type="date"
-      value={dateTo}
-      onChange={(e) => setDateTo(e.target.value)}
-      style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #ccc", flex: 1 }}
-      placeholder="Datum do"
-    />
+  type="text"
+  placeholder="Datum od"
+  onFocus={(e) => (e.target.type = "date")}
+  value={dateFrom}
+  onChange={(e) => setDateFrom(e.target.value)}
+  style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #ccc", flex: 1 }}
+/>
+<input
+  type="text"
+  placeholder="Datum do"
+  onFocus={(e) => (e.target.type = "date")}
+  value={dateTo}
+  onChange={(e) => setDateTo(e.target.value)}
+  style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #ccc", flex: 1 }}
+/>
   </div>
  <button
   onClick={() => {
@@ -332,6 +334,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
