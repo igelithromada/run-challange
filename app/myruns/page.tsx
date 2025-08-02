@@ -180,31 +180,31 @@ const fastestRun = filteredRuns.length > 0
 </div>
 
 <div className="tile" style={{ marginTop: "1rem", padding: "0.8rem 1rem" }}>
-  <div style={{ display: "flex", gap: "0.5rem", width: "100%", marginBottom: (dateFrom || dateTo) ? "0.8rem" : "0" }}>
+  <div style={{ display: "flex", gap: "0.5rem", width: "100%" }}>
     <input
-      type="text"
-      placeholder="Datum od"
-      onFocus={(e) => (e.target.type = "date")}
+      type="date"
       value={dateFrom}
       onChange={(e) => setDateFrom(e.target.value)}
+      placeholder="Datum od"
       style={{
         flex: 1,
-        padding: "0.5rem",
-        borderRadius: "6px",
-        border: "1px solid #ccc"
+        padding: "0.4rem",
+        borderRadius: "8px",
+        border: "1px solid #ccc",
+        boxSizing: "border-box"
       }}
     />
     <input
-      type="text"
-      placeholder="Datum do"
-      onFocus={(e) => (e.target.type = "date")}
+      type="date"
       value={dateTo}
       onChange={(e) => setDateTo(e.target.value)}
+      placeholder="Datum do"
       style={{
         flex: 1,
-        padding: "0.5rem",
-        borderRadius: "6px",
-        border: "1px solid #ccc"
+        padding: "0.4rem",
+        borderRadius: "8px",
+        border: "1px solid #ccc",
+        boxSizing: "border-box"
       }}
     />
   </div>
@@ -214,17 +214,14 @@ const fastestRun = filteredRuns.length > 0
       onClick={() => {
         setDateFrom("");
         setDateTo("");
-        setRuns([...runs]);
       }}
       style={{
+        marginTop: "0.8rem",
+        padding: "0.4rem 1rem",
         background: "white",
-        color: "black",
         border: "none",
-        borderRadius: "12px",
-        padding: "0.4rem 1.2rem",
-        fontWeight: "bold",
-        fontSize: "15px",
-        cursor: "pointer"
+        borderRadius: "999px",
+        fontWeight: "bold"
       }}
     >
       Reset filtru
@@ -353,6 +350,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
