@@ -9,8 +9,6 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
 
-type Metric = "km" | "tempo";
-
 export default function StatisticsPage() {
   useThemeLoader();
 
@@ -20,7 +18,7 @@ export default function StatisticsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [selectedType, setSelectedType] = useState("běh");
   const [view, setView] = useState("já");
-  const [metric, setMetric] = useState<Metric>("km");
+  const [metric, setMetric] = useState("km");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const router = useRouter();
@@ -42,7 +40,6 @@ export default function StatisticsPage() {
     return () => { unsubAuth(); unsubRuns(); unsubTeams(); }
   }, [router]);
 
-  // === FILTRY
   const filtered = runs.filter(run => {
     if ((run.type || "běh") !== selectedType) return false;
     const date = new Date(run.timestamp?.seconds ? run.timestamp.seconds * 1000 : run.timestamp);
@@ -51,7 +48,6 @@ export default function StatisticsPage() {
     return true;
   });
 
-  // === DATOVÉ MAPY
   const userMap: { [key: string]: { km: number; min: number } } = {};
   const teamMap: {
     [key: string]: {
@@ -64,12 +60,10 @@ export default function StatisticsPage() {
     const name = run.nickname || run.email?.split("@")[0] || "Anonym";
     const team = teams.find(t => t.id === run.teamId)?.name || "?";
 
-    // jednotlivec
     if (!userMap[name]) userMap[name] = { km: 0, min: 0 };
     userMap[name].km += Number(run.km || 0);
     userMap[name].min += Number(run.minuty || 0);
 
-    // tým
     if (!teamMap[team]) teamMap[team] = { km: 0, min: 0, members: {} };
     teamMap[team].km += Number(run.km || 0);
     teamMap[team].min += Number(run.minuty || 0);
@@ -82,17 +76,16 @@ export default function StatisticsPage() {
     name,
     km: data.km,
     tempo: data.km ? data.min / data.km : 0
-  })).sort((a, b) => b[metric] - a[metric]);
+  })).sort((a, b) => b[metric as "km" | "tempo"] - a[metric as "km" | "tempo"]);
 
   const teamList = Object.entries(teamMap).map(([team, data]) => ({
     team,
     km: data.km,
     tempo: data.km ? data.min / data.km : 0,
     members: data.members
-  })).sort((a, b) => b[metric] - a[metric]);
+  })).sort((a, b) => b[metric as "km" | "tempo"] - a[metric as "km" | "tempo"]);
 
-  // === MÉ POŘADÍ
-  let myName = user?.email?.split("@")[0] || "?";
+  const myName = user?.email?.split("@")[0] || "?";
   let myTeamName = null;
   let myPos = userList.findIndex(x => x.name === myName) + 1;
   let myTeamPos = null;
@@ -107,12 +100,11 @@ export default function StatisticsPage() {
         name,
         km: data.km,
         tempo: data.km ? data.min / data.km : 0
-      })).sort((a, b) => b[metric] - a[metric]);
+      })).sort((a, b) => b[metric as "km" | "tempo"] - a[metric as "km" | "tempo"]);
       myTeamPosInside = insideList.findIndex(x => x.name === myName) + 1;
     }
   });
 
-  // === TILE SUM
   let totalKm = 0, totalMin = 0;
   if (view === "já") {
     const myRuns = filtered.filter(r => r.uid === user?.uid);
@@ -125,13 +117,15 @@ export default function StatisticsPage() {
     totalKm = teamList.reduce((a, b) => a + b.km, 0);
     totalMin = teamList.reduce((a, b) => a + (b.tempo * b.km || 0), 0);
   }
-  const avgTempo = totalKm ? (totalMin / totalKm).toFixed(2) : 0;
+  const avgTempo = totalKm ? (totalMin / totalKm).toFixed(2) : "0";
 
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
     if (item === "logout") await signOut(auth).then(() => router.push("/login"));
     else router.push(`/${item}`);
   };
+
+  const podiumData = view === "jednotlivci" ? userList : teamList;
 
   return (
     <>
@@ -178,35 +172,38 @@ export default function StatisticsPage() {
           <>
             <h3 className="centered-title">🏆 Stupně vítězů</h3>
             <ul style={{ listStyle: "none", padding: 0 }}>
-              {(view === "jednotlivci" ? userList : teamList).slice(0, 3).map((item, idx) => (
-                <li key={idx} className="tile" style={{
-                  display: "flex", alignItems: "center",
-                  background: idx === 0 ? "gold" : idx === 1 ? "silver" : idx === 2 ? "#cd7f32" : "rgba(0,0,0,0.2)"
-                }}>
-                  <div style={{ marginRight: "0.8rem" }}>{idx + 1}.</div>
-                  <div className="avatar">{item.name?.charAt(0).toUpperCase()}</div>
-                  <div style={{ marginLeft: "0.6rem" }}>
-                    {item.name} — {metric === "km"
-                      ? `${item.km.toFixed(2)} km`
-                      : `${item.tempo.toFixed(2)} min/km`}
-                  </div>
-                </li>
-              ))}
+              {podiumData.slice(0, 3).map((item, idx) => {
+                const label = view === "jednotlivci" ? item.name : item.team;
+                return (
+                  <li key={idx} className="tile" style={{ display: "flex", alignItems: "center", background: idx === 0 ? "gold" : idx === 1 ? "silver" : idx === 2 ? "#cd7f32" : "rgba(0,0,0,0.2)" }}>
+                    <div style={{ marginRight: "0.8rem" }}>{idx + 1}.</div>
+                    <div className="avatar">{label?.charAt(0).toUpperCase()}</div>
+                    <div style={{ marginLeft: "0.6rem" }}>
+                      {label} — {metric === "km"
+                        ? `${item.km.toFixed(2)} km`
+                        : `${item.tempo.toFixed(2)} min/km`}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
 
             <h3 className="centered-title" style={{ marginTop: "2rem" }}>📊 Ostatní</h3>
             <ul style={{ listStyle: "none", padding: 0 }}>
-              {(view === "jednotlivci" ? userList : teamList).slice(3).map((item, idx) => (
-                <li key={idx} className="tile" style={{ display: "flex", alignItems: "center" }}>
-                  <div style={{ marginRight: "0.8rem" }}>{idx + 4}.</div>
-                  <div className="avatar">{item.name?.charAt(0).toUpperCase()}</div>
-                  <div style={{ marginLeft: "0.6rem" }}>
-                    {item.name} — {metric === "km"
-                      ? `${item.km.toFixed(2)} km`
-                      : `${item.tempo.toFixed(2)} min/km`}
-                  </div>
-                </li>
-              ))}
+              {podiumData.slice(3).map((item, idx) => {
+                const label = view === "jednotlivci" ? item.name : item.team;
+                return (
+                  <li key={idx} className="tile" style={{ display: "flex", alignItems: "center" }}>
+                    <div style={{ marginRight: "0.8rem" }}>{idx + 4}.</div>
+                    <div className="avatar">{label?.charAt(0).toUpperCase()}</div>
+                    <div style={{ marginLeft: "0.6rem" }}>
+                      {label} — {metric === "km"
+                        ? `${item.km.toFixed(2)} km`
+                        : `${item.tempo.toFixed(2)} min/km`}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </>
         )}
