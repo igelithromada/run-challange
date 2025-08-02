@@ -71,7 +71,7 @@ export default function LoginPage() {
       flexDirection: "column",
       color: "white",
       fontFamily: "'Poppins', sans-serif",
-      paddingTop: "6rem" // Posun od vrchu
+      paddingTop: "0rem" // Posun od vrchu
     }}>
       <div className="tile" style={{
         maxWidth: "400px",
