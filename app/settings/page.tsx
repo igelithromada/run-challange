@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [file, setFile] = useState<File | null>(null);
   const [theme, setTheme] = useState("default");
   const [customColor, setCustomColor] = useState("#36D1DC");
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const router = useRouter();
 
@@ -37,7 +38,6 @@ export default function SettingsPage() {
           setCustomColor(data.customColor || "#36D1DC");
           applyTheme(data.theme || "default", data.customColor || "#36D1DC");
         } else {
-          // Pokud dokument neexistuje, vytvoří se výchozí
           const initialData = {
             id: user.uid,
             email: user.email || "",
@@ -172,35 +172,42 @@ export default function SettingsPage() {
             <ThemeItem color="linear-gradient(180deg, #ff7eb3, #ff758c)" active={theme === "woman"} onClick={() => handleThemeChange("woman")} text="Žena" />
             <ThemeItem color="linear-gradient(180deg, #36D1DC, #5B86E5)" active={theme === "auto"} onClick={() => handleThemeChange("auto")} text="Automaticky podle času" />
 
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: "0.7rem",
-              padding: "0.5rem 0.7rem",
-              background: "rgba(255,255,255,0.1)",
-              borderRadius: "10px"
-            }}>
-              <label htmlFor="customColor" style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-                <div style={{
-                  width: "24px", height: "24px", borderRadius: "50%",
-                  background: customColor, border: "1px solid white"
-                }}></div>
-                <span>Vlastní barva</span>
-              </label>
-              <input
-                id="customColor"
-                type="color"
-                value={customColor}
-                onChange={handleCustomColorChange}
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  border: "none",
-                  borderRadius: "8px",
-                  background: "none"
-                }}
-              />
+            <div
+              style={{
+                marginTop: "0.7rem",
+                background: "rgba(255,255,255,0.1)",
+                borderRadius: "10px",
+                padding: "0.5rem"
+              }}
+            >
+              <div onClick={() => { setShowColorPicker(!showColorPicker); setTheme("custom"); }} style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer"
+              }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <div style={{
+                    width: "24px", height: "24px", borderRadius: "50%",
+                    background: customColor, border: "1px solid white"
+                  }}></div>
+                  <span>Vlastní barva</span>
+                </label>
+              </div>
+              {showColorPicker && (
+                <input
+                  type="color"
+                  value={customColor}
+                  onChange={handleCustomColorChange}
+                  style={{
+                    width: "100%",
+                    height: "60px",
+                    marginTop: "0.5rem",
+                    border: "none",
+                    borderRadius: "10px"
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>
