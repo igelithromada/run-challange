@@ -100,8 +100,16 @@ export default function MyRunsPage() {
 const filteredRuns = runs.filter(run => {
   const typeMatch = (run.type || "běh") === selectedType;
   const runDate = new Date((run.timestamp?.seconds || 0) * 1000);
-  const fromMatch = !dateFrom || runDate >= new Date(dateFrom);
-  const toMatch = !dateTo || runDate <= new Date(dateTo);
+
+  const parseDate = (input: string) => {
+    const [year, month, day] = input.split("-").map(Number); // protože input type="date" je "rrrr-mm-dd"
+    return new Date(year, month - 1, day);
+  };
+
+  const fromMatch = !dateFrom || runDate >= parseDate(dateFrom);
+  const toMatch = !dateTo || runDate <= new Date(parseDate(dateTo).setHours(23, 59, 59, 999));
+
+  return typeMatch && fromMatch && toMatch;
 });
   const longestRun = filteredRuns.length > 0
   ? filteredRuns.reduce((max, run) => run.km > max.km ? run : max, filteredRuns[0])
@@ -319,6 +327,7 @@ const fastestRun = filteredRuns.length > 0
     );
   }
 }
+
 
 
 
