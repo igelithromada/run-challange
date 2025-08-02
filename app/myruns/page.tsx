@@ -1,5 +1,3 @@
-Zde máš MyRuns na úpravu.
-
 "use client";
 import React, { useEffect, useState } from "react";
 import {
