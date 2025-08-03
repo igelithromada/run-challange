@@ -181,20 +181,17 @@ export default function UserPage() {
       </div>
 
       {showImageUrl && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000 }}>
-          <div style={{ textAlign: "center" }}>
-            <img src={showImageUrl[currentImageIndex]} style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain" }} />
-            <div style={{ marginTop: "10px", display: "flex", justifyContent: "center", gap: "10px" }}>
-              {showImageUrl.length > 1 && showImageUrl.map((_, i) => (
-                <button key={i} onClick={() => setCurrentImageIndex(i)} style={{ background: currentImageIndex === i ? "white" : "#666", border: "none", borderRadius: "50%", width: "10px", height: "10px" }} />
-              ))}
-              <button onClick={() => setShowImageUrl(null)} style={{ marginLeft: "20px", background: "white", border: "none", borderRadius: "5px", padding: "5px 10px", fontWeight: "bold" }}>
-                Zavřít
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
+  <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000 }}>
+    <div style={{ textAlign: "center" }}>
+      <img src={showImageUrl[currentImageIndex]} style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain" }} />
+      <div style={{ marginTop: "10px", display: "flex", justifyContent: "center", gap: "10px" }}>
+        {showImageUrl.length > 1 && showImageUrl.map((_, i) => (
+          <button key={i} onClick={() => setCurrentImageIndex(i)} style={{ background: currentImageIndex === i ? "white" : "#666", border: "none", borderRadius: "50%", width: "10px", height: "10px" }} />
+        ))}
+        <button onClick={() => setShowImageUrl(null)} style={{ marginLeft: "20px", background: "white", border: "none", borderRadius: "5px", padding: "5px 10px", fontWeight: "bold" }}>
+          Zavřít
+        </button>
+      </div>
+    </div>
+  </div>
+)}
