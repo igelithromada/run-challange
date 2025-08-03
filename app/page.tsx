@@ -242,18 +242,19 @@ export default function Page() {
       position: "fixed",
       top: 0,
       left: 0,
-      width: "100%",
-      height: "100%",
+      width: "100vw",
+      height: "100vh",
       background: "rgba(0,0,0,0.9)",
       display: "flex",
+      flexDirection: "column",
       justifyContent: "center",
       alignItems: "center",
-      flexDirection: "column",
       zIndex: 2000,
       padding: "1rem",
+      boxSizing: "border-box",
     }}
   >
-    <div style={{ textAlign: "center", marginBottom: "0.5rem" }}>
+    <div style={{ marginBottom: "0.5rem", textAlign: "center" }}>
       {showImages.map((_, idx) => (
         <span
           key={idx}
@@ -269,7 +270,16 @@ export default function Page() {
       ))}
     </div>
 
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        maxWidth: "100%",
+        maxHeight: "70vh",
+        overflow: "hidden",
+      }}
+    >
       {showImages.length > 1 && (
         <button
           onClick={handlePrev}
@@ -294,6 +304,7 @@ export default function Page() {
           maxHeight: "70vh",
           objectFit: "contain",
           borderRadius: "10px",
+          display: "block",
         }}
       />
 
@@ -314,7 +325,7 @@ export default function Page() {
       )}
     </div>
 
-    <div style={{ marginTop: "1rem", textAlign: "center" }}>
+    <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
       <button
         onClick={() => setShowImages(null)}
         style={{
@@ -336,6 +347,7 @@ export default function Page() {
     </>
   );
 }
+
 
 
 
