@@ -197,14 +197,14 @@ export default function UserPage() {
     }}
   >
     <div style={{ marginBottom: "0.5rem", textAlign: "center" }}>
-      {showImages.map((_, idx) => (
+      {showImageUrl.map((_, idx) => (
         <span
           key={idx}
           style={{
             height: "10px",
             width: "10px",
             margin: "0 5px",
-            backgroundColor: currentImgIndex === idx ? "white" : "gray",
+            backgroundColor: currentImageIndex === idx ? "white" : "gray",
             borderRadius: "50%",
             display: "inline-block",
           }}
@@ -222,7 +222,7 @@ export default function UserPage() {
       }}
     >
       <img
-        src={showImages[currentImgIndex]}
+        src={showImageUrl[currentImageIndex]}
         alt="náhled"
         style={{
           width: "100%",
@@ -244,9 +244,13 @@ export default function UserPage() {
         maxWidth: "300px",
       }}
     >
-      {showImages.length > 1 ? (
+      {showImageUrl.length > 1 ? (
         <button
-          onClick={handlePrev}
+          onClick={() =>
+            setCurrentImageIndex(
+              (currentImageIndex - 1 + showImageUrl.length) % showImageUrl.length
+            )
+          }
           style={{
             background: "transparent",
             color: "white",
@@ -262,7 +266,7 @@ export default function UserPage() {
       )}
 
       <button
-        onClick={() => setShowImages(null)}
+        onClick={() => setShowImageUrl(null)}
         style={{
           background: "white",
           color: "black",
@@ -277,9 +281,11 @@ export default function UserPage() {
         Zavřít
       </button>
 
-      {showImages.length > 1 ? (
+      {showImageUrl.length > 1 ? (
         <button
-          onClick={handleNext}
+          onClick={() =>
+            setCurrentImageIndex((currentImageIndex + 1) % showImageUrl.length)
+          }
           style={{
             background: "transparent",
             color: "white",
@@ -296,7 +302,3 @@ export default function UserPage() {
     </div>
   </div>
 )}
-    </>
-  );
-}
-
