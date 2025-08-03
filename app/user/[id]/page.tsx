@@ -191,26 +191,18 @@ export default function UserPage() {
       ))}
     </div>
 
-    <div
+    <img
+      src={showImageUrl[currentImageIndex]}
       style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        flex: 1
+        maxWidth: "90vw",
+        maxHeight: "70vh",
+        objectFit: "contain",
+        borderRadius: "8px",
+        marginBottom: "1rem"
       }}
-    >
-      <img
-        src={showImageUrl[currentImageIndex]}
-        style={{
-          maxWidth: "90vw",
-          maxHeight: "70vh",
-          objectFit: "contain",
-          borderRadius: "8px"
-        }}
-      />
-    </div>
+    />
 
-    <div style={{ display: "flex", gap: "2rem", alignItems: "center", justifyContent: "center", marginTop: "1rem" }}>
+    <div style={{ display: "flex", gap: "2rem", alignItems: "center", justifyContent: "center" }}>
       {showImageUrl.length > 1 && (
         <button
           onClick={() =>
