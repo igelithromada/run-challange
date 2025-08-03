@@ -179,25 +179,28 @@ export default function RunForm({ type }: { type: string }) {
             width: "100%"
           }}>
             <button
-              onClick={() => setShowForm(false)}
-              style={{
-                ...buttonStyle,
-                background: "#eee",
-                color: "#333",
-                flex: 1
-              }}
-            >
-              Zavřít
-            </button>
+  onClick={() => setShowForm(false)}
+  style={{
+    ...buttonStyle,
+    flex: 1
+  }}
+  onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
+  onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+>
+  Zavřít
+</button>
 
-            <button
-              onClick={handleSubmit}
-              style={{ ...buttonStyle, flex: 2 }}
-              onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
-              onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-            >
-              Uložit záznam
-            </button>
+<button
+  onClick={handleSubmit}
+  style={{
+    ...buttonStyle,
+    background: "#eee",
+    color: "#333",
+    flex: 2
+  }}
+>
+  Uložit záznam
+</button>
           </div>
         </div>
       )}
