@@ -278,6 +278,7 @@ export default function Page() {
         maxWidth: "100%",
         maxHeight: "70vh",
         overflow: "hidden",
+        gap: "1rem", // místo pro šipky
       }}
     >
       {showImages.length > 1 && (
@@ -289,7 +290,6 @@ export default function Page() {
             fontSize: "2rem",
             border: "none",
             cursor: "pointer",
-            marginRight: "1rem",
           }}
         >
           ❮
@@ -300,7 +300,7 @@ export default function Page() {
         src={showImages[currentImgIndex]}
         alt="náhled"
         style={{
-          maxWidth: "90vw",
+          maxWidth: "80vw", // zmenšeno pro místo na šipky
           maxHeight: "70vh",
           objectFit: "contain",
           borderRadius: "10px",
@@ -317,7 +317,6 @@ export default function Page() {
             fontSize: "2rem",
             border: "none",
             cursor: "pointer",
-            marginLeft: "1rem",
           }}
         >
           ❯
@@ -347,6 +346,7 @@ export default function Page() {
     </>
   );
 }
+
 
 
 
