@@ -178,7 +178,7 @@ export default function UserPage() {
         </div>
       </div>
 
-      {showImages && (
+      {showImageUrl && (
   <div
     style={{
       position: "fixed",
@@ -299,3 +299,4 @@ export default function UserPage() {
     </>
   );
 }
+
