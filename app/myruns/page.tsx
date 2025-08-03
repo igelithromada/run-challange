@@ -145,6 +145,85 @@ const avgTempo = totalKm > 0 ? (totalTimeMin + totalTimeSec / 60) / totalKm : 0;
     const sec = totalSeconds % 60;
     return `${min}′${sec.toString().padStart(2, "0")}″`;
   };
+  const renderRunTile = (run: RunData) => {
+    const user = userAvatars[run.uid || ""] || {};
+    const nickname = user.nickname || run.nickname || run.email?.split("@")[0] || "Anonym";
+    const avatarLetter = nickname.charAt(0).toUpperCase();
+    const avatar = user.avatarUrl
+      ? <img src={user.avatarUrl} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
+      : avatarLetter;
+    const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
+    const pos = Math.min(100, Math.max(0, ((range.max - run.tempo) / (range.max - range.min)) * 100));
+    const dateStr = new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ", {
+      hour: "2-digit", minute: "2-digit", year: "numeric", month: "numeric", day: "numeric"
+    });
+
+    return (
+      <div key={run.id} className="tile list-tile"
+        style={{
+          display: "flex", alignItems: "flex-start", gap: "0.5rem",
+          position: "relative", margin: "6px 0", padding: "6px 8px"
+        }}>
+        <div className="avatar" style={{ marginRight: "0.1rem" }}>{avatar}</div>
+        <div style={{ flex: 1 }}>
+          <div>
+            <span style={{ fontWeight: "bold", color: "white" }}>{nickname}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.2rem" }}>
+            <div>{run.km} km, {formatTime(run.minuty)}</div>
+            <div style={{
+              background: "rgba(0,0,0,0.0)", padding: "0.1rem 0.6rem",
+              borderRadius: "10px", display: "flex", flexDirection: "column", alignItems: "center"
+            }}>
+              <div style={{ fontSize: "1rem", marginBottom: "0.1px" }}>{formatTime(run.tempo)} /km</div>
+              <div style={{
+                height: "5px", width: "70px",
+                background: "linear-gradient(90deg, red, yellow, green)",
+                borderRadius: "3px", position: "relative"
+              }}>
+                <div style={{
+                  position: "absolute", top: "-4px", left: `${pos}%`,
+                  width: "10px", height: "10px", background: "white",
+                  border: "2px solid #333", borderRadius: "50%",
+                  transform: "translateX(-50%)"
+                }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style={{
+  display: "flex", flexDirection: "column", alignItems: "flex-end",
+  position: "absolute", right: "0.8rem", top: "0.4rem", gap: "0.3rem"
+}}>
+  <small style={{ whiteSpace: "nowrap" }}>{dateStr}</small>
+  <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+    <div onClick={() => handleDelete(run.id)} style={{ cursor: "pointer" }}>
+      {/* 🗑 SVG ikona koše */}
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
+        stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+        viewBox="0 0 24 24">
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        <line x1="10" y1="11" x2="10" y2="17" />
+        <line x1="14" y1="11" x2="14" y2="17" />
+      </svg>
+    </div>
+    {(run.imageUrls?.length || run.imageUrl) && (
+      <div onClick={() => handleShowImages(run.imageUrls ?? [], run.imageUrl ?? "")} style={{ cursor: "pointer" }}>
+        {/* 📷 SVG ikona fotky */}
+        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5"
+          strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <path d="M21 15l-5-5L5 21" />
+        </svg>
+      </div>
+    )}
+  </div>
+</div>
+    );
+  }
+}
   const handleShowImages = (images: string[], fallback: string) => {
     let urls: string[] = [];
 
@@ -306,85 +385,8 @@ const handlePrev = () => {
     </>
   );
 
-  function renderRunTile(run: RunData) {
-    const user = userAvatars[run.uid || ""] || {};
-    const nickname = user.nickname || run.nickname || run.email?.split("@")[0] || "Anonym";
-    const avatarLetter = nickname.charAt(0).toUpperCase();
-    const avatar = user.avatarUrl
-      ? <img src={user.avatarUrl} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
-      : avatarLetter;
-    const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
-    const pos = Math.min(100, Math.max(0, ((range.max - run.tempo) / (range.max - range.min)) * 100));
-    const dateStr = new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ", {
-      hour: "2-digit", minute: "2-digit", year: "numeric", month: "numeric", day: "numeric"
-    });
+  
 
-    return (
-      <div key={run.id} className="tile list-tile"
-        style={{
-          display: "flex", alignItems: "flex-start", gap: "0.5rem",
-          position: "relative", margin: "6px 0", padding: "6px 8px"
-        }}>
-        <div className="avatar" style={{ marginRight: "0.1rem" }}>{avatar}</div>
-        <div style={{ flex: 1 }}>
-          <div>
-            <span style={{ fontWeight: "bold", color: "white" }}>{nickname}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.2rem" }}>
-            <div>{run.km} km, {formatTime(run.minuty)}</div>
-            <div style={{
-              background: "rgba(0,0,0,0.0)", padding: "0.1rem 0.6rem",
-              borderRadius: "10px", display: "flex", flexDirection: "column", alignItems: "center"
-            }}>
-              <div style={{ fontSize: "1rem", marginBottom: "0.1px" }}>{formatTime(run.tempo)} /km</div>
-              <div style={{
-                height: "5px", width: "70px",
-                background: "linear-gradient(90deg, red, yellow, green)",
-                borderRadius: "3px", position: "relative"
-              }}>
-                <div style={{
-                  position: "absolute", top: "-4px", left: `${pos}%`,
-                  width: "10px", height: "10px", background: "white",
-                  border: "2px solid #333", borderRadius: "50%",
-                  transform: "translateX(-50%)"
-                }}></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div style={{
-  display: "flex", flexDirection: "column", alignItems: "flex-end",
-  position: "absolute", right: "0.8rem", top: "0.4rem", gap: "0.3rem"
-}}>
-  <small style={{ whiteSpace: "nowrap" }}>{dateStr}</small>
-  <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
-    <div onClick={() => handleDelete(run.id)} style={{ cursor: "pointer" }}>
-      {/* 🗑 SVG ikona koše */}
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
-        stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-        viewBox="0 0 24 24">
-        <polyline points="3 6 5 6 21 6" />
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-        <line x1="10" y1="11" x2="10" y2="17" />
-        <line x1="14" y1="11" x2="14" y2="17" />
-      </svg>
-    </div>
-    {(run.imageUrls?.length || run.imageUrl) && (
-      <div onClick={() => handleShowImages(run.imageUrls ?? [], run.imageUrl ?? "")} style={{ cursor: "pointer" }}>
-        {/* 📷 SVG ikona fotky */}
-        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5"
-          strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-          <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <path d="M21 15l-5-5L5 21" />
-        </svg>
-      </div>
-    )}
-  </div>
-</div>
-    );
-  }
-}
 
 
 
