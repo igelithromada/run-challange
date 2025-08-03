@@ -253,22 +253,38 @@ export default function Page() {
       padding: "1rem",
     }}
   >
-    <div style={{ position: "relative", maxWidth: "100%", maxHeight: "100%" }}>
-      <div style={{ textAlign: "center", marginBottom: "0.5rem" }}>
-        {showImages.map((_, idx) => (
-          <span
-            key={idx}
-            style={{
-              height: "10px",
-              width: "10px",
-              margin: "0 5px",
-              backgroundColor: currentImgIndex === idx ? "white" : "gray",
-              borderRadius: "50%",
-              display: "inline-block",
-            }}
-          />
-        ))}
-      </div>
+    <div style={{ textAlign: "center", marginBottom: "0.5rem" }}>
+      {showImages.map((_, idx) => (
+        <span
+          key={idx}
+          style={{
+            height: "10px",
+            width: "10px",
+            margin: "0 5px",
+            backgroundColor: currentImgIndex === idx ? "white" : "gray",
+            borderRadius: "50%",
+            display: "inline-block",
+          }}
+        />
+      ))}
+    </div>
+
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>
+      {showImages.length > 1 && (
+        <button
+          onClick={handlePrev}
+          style={{
+            background: "transparent",
+            color: "white",
+            fontSize: "2rem",
+            border: "none",
+            cursor: "pointer",
+            marginRight: "1rem",
+          }}
+        >
+          ❮
+        </button>
+      )}
 
       <img
         src={showImages[currentImgIndex]}
@@ -276,81 +292,51 @@ export default function Page() {
         style={{
           maxWidth: "90vw",
           maxHeight: "70vh",
-          width: "auto",
-          height: "auto",
           objectFit: "contain",
           borderRadius: "10px",
-          display: "block",
-          margin: "0 auto",
         }}
       />
 
-      <div style={{ marginTop: "1rem" }}>
-        <button
-          onClick={() => setShowImages(null)}
-          style={{
-            background: "white",
-            color: "black",
-            border: "none",
-            borderRadius: "12px",
-            padding: "0.6rem 1.4rem",
-            fontWeight: "bold",
-            fontSize: "16px",
-            cursor: "pointer",
-          }}
-        >
-          Zavřít
-        </button>
-      </div>
-
       {showImages.length > 1 && (
-        <div
+        <button
+          onClick={handleNext}
           style={{
-            position: "absolute",
-            top: "50%",
-            left: 0,
-            right: 0,
-            display: "flex",
-            justifyContent: "space-between",
-            padding: "0 1rem",
-            transform: "translateY(-50%)",
-            pointerEvents: "none",
+            background: "transparent",
+            color: "white",
+            fontSize: "2rem",
+            border: "none",
+            cursor: "pointer",
+            marginLeft: "1rem",
           }}
         >
-          <button
-            onClick={handlePrev}
-            style={{
-              background: "transparent",
-              color: "white",
-              fontSize: "2rem",
-              border: "none",
-              cursor: "pointer",
-              pointerEvents: "auto",
-            }}
-          >
-            ❮
-          </button>
-          <button
-            onClick={handleNext}
-            style={{
-              background: "transparent",
-              color: "white",
-              fontSize: "2rem",
-              border: "none",
-              cursor: "pointer",
-              pointerEvents: "auto",
-            }}
-          >
-            ❯
-          </button>
-        </div>
+          ❯
+        </button>
       )}
+    </div>
+
+    <div style={{ marginTop: "1rem", textAlign: "center" }}>
+      <button
+        onClick={() => setShowImages(null)}
+        style={{
+          background: "white",
+          color: "black",
+          border: "none",
+          borderRadius: "12px",
+          padding: "0.6rem 1.4rem",
+          fontWeight: "bold",
+          fontSize: "16px",
+          cursor: "pointer",
+        }}
+      >
+        Zavřít
+      </button>
     </div>
   </div>
 )}
     </>
   );
 }
+
 
 
 
