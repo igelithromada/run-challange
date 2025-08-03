@@ -159,30 +159,87 @@ export default function UserPage() {
       </div>
 
       {showImageUrl && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.8)", zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
-            {showImageUrl.map((_, i) => (
-              <button key={i} onClick={() => setCurrentImageIndex(i)} style={{ background: currentImageIndex === i ? "white" : "#666", border: "none", borderRadius: "50%", width: "10px", height: "10px" }} />
-            ))}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {showImageUrl.length > 1 && (
-              <button onClick={() => setCurrentImageIndex((currentImageIndex - 1 + showImageUrl.length) % showImageUrl.length)} style={{ background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer", marginRight: "10px" }}>
-                ❮
-              </button>
-            )}
-            <img src={showImageUrl[currentImageIndex]} style={{ maxWidth: "90vw", maxHeight: "75vh", objectFit: "contain", borderRadius: "8px" }} />
-            {showImageUrl.length > 1 && (
-              <button onClick={() => setCurrentImageIndex((currentImageIndex + 1) % showImageUrl.length)} style={{ background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer", marginLeft: "10px" }}>
-                ❯
-              </button>
-            )}
-          </div>
-          <button onClick={() => setShowImageUrl(null)} style={{ marginTop: "20px", background: "white", border: "none", borderRadius: "8px", padding: "0.5rem 1rem", fontWeight: "bold" }}>
-            Zavřít
-          </button>
-        </div>
+  <div style={{ 
+    position: "fixed", 
+    top: 0, left: 0, width: "100%", height: "100%", 
+    background: "rgba(0,0,0,0.8)", 
+    zIndex: 1000, 
+    display: "flex", 
+    flexDirection: "column", 
+    alignItems: "center", 
+    justifyContent: "center" 
+  }}>
+    {/* Puntíky nahoře */}
+    <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
+      {showImageUrl.map((_, i) => (
+        <button 
+          key={i} 
+          onClick={() => setCurrentImageIndex(i)} 
+          style={{ 
+            background: currentImageIndex === i ? "white" : "#666", 
+            border: "none", 
+            borderRadius: "50%", 
+            width: "10px", 
+            height: "10px" 
+          }} 
+        />
+      ))}
+    </div>
+
+    {/* Fotka */}
+    <img 
+      src={showImageUrl[currentImageIndex]} 
+      style={{ 
+        maxWidth: "90vw", 
+        maxHeight: "75vh", 
+        objectFit: "contain", 
+        borderRadius: "8px" 
+      }} 
+    />
+
+    {/* Šipky a Zavřít pod fotkou */}
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "2rem", marginTop: "1rem" }}>
+      {showImageUrl.length > 1 && (
+        <button 
+          onClick={() => setCurrentImageIndex((currentImageIndex - 1 + showImageUrl.length) % showImageUrl.length)} 
+          style={{ 
+            background: "transparent", 
+            color: "white", 
+            fontSize: "2rem", 
+            border: "none", 
+            cursor: "pointer" 
+          }}
+        >
+          ❮
+        </button>
       )}
-    </>
-  );
-}
+      <button 
+        onClick={() => setShowImageUrl(null)} 
+        style={{ 
+          background: "white", 
+          border: "none", 
+          borderRadius: "8px", 
+          padding: "0.5rem 1rem", 
+          fontWeight: "bold" 
+        }}
+      >
+        Zavřít
+      </button>
+      {showImageUrl.length > 1 && (
+        <button 
+          onClick={() => setCurrentImageIndex((currentImageIndex + 1) % showImageUrl.length)} 
+          style={{ 
+            background: "transparent", 
+            color: "white", 
+            fontSize: "2rem", 
+            border: "none", 
+            cursor: "pointer" 
+          }}
+        >
+          ❯
+        </button>
+      )}
+    </div>
+  </div>
+)}
+
