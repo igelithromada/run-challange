@@ -64,9 +64,7 @@ export default function TeamsPage() {
   const deleteTeam = async (teamId: string) => {
     if (!confirm("Opravdu chceš smazat tento tým?")) return;
     await deleteDoc(doc(db, "teams", teamId));
-    if (joinedTeam === teamId) {
-      leaveTeam();
-    }
+    if (joinedTeam === teamId) leaveTeam();
   };
 
   const handleSelect = async (item: string) => {
@@ -110,7 +108,8 @@ export default function TeamsPage() {
               padding: "0.5rem",
               borderRadius: "8px",
               border: "none",
-              marginTop: "0.5rem"
+              marginTop: "0.5rem",
+              boxSizing: "border-box"
             }}
           />
           <button
@@ -142,7 +141,9 @@ export default function TeamsPage() {
                     style={{
                       background: "rgba(255,0,0,0.3)",
                       minWidth: "90px",
-                      padding: "0.4rem 0.7rem"
+                      padding: "0.4rem 0.7rem",
+                      display: "flex",
+                      justifyContent: "center"
                     }}
                   >
                     🚪 Odejít
@@ -153,7 +154,9 @@ export default function TeamsPage() {
                     className="tile-button"
                     style={{
                       minWidth: "90px",
-                      padding: "0.4rem 0.7rem"
+                      padding: "0.4rem 0.7rem",
+                      display: "flex",
+                      justifyContent: "center"
                     }}
                   >
                     ➕ Přidat se
@@ -165,7 +168,9 @@ export default function TeamsPage() {
                     className="tile-button"
                     style={{
                       background: "rgba(255,0,0,0.15)",
-                      padding: "0.4rem 0.7rem"
+                      padding: "0.4rem 0.7rem",
+                      display: "flex",
+                      justifyContent: "center"
                     }}
                     title="Smazat tým"
                   >
