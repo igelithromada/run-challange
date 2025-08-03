@@ -191,18 +191,26 @@ export default function UserPage() {
       ))}
     </div>
 
-    <img
-      src={showImageUrl[currentImageIndex]}
+    <div
       style={{
-        maxWidth: "90vw",
-        maxHeight: "70vh",
-        objectFit: "contain",
-        borderRadius: "8px",
-        marginBottom: "1rem"
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        flex: 1
       }}
-    />
+    >
+      <img
+        src={showImageUrl[currentImageIndex]}
+        style={{
+          maxWidth: "90vw",
+          maxHeight: "70vh",
+          objectFit: "contain",
+          borderRadius: "8px"
+        }}
+      />
+    </div>
 
-    <div style={{ display: "flex", gap: "2rem", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ display: "flex", gap: "2rem", alignItems: "center", justifyContent: "center", marginTop: "1rem" }}>
       {showImageUrl.length > 1 && (
         <button
           onClick={() =>
@@ -251,3 +259,4 @@ export default function UserPage() {
 </>
 );
 }
+
