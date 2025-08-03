@@ -64,6 +64,7 @@ export default function MyRunsPage() {
             ...data,
             km: Number(data.km) || 0,
             minuty: Number(data.minuty) || 0,
+            sekundy: Number(data.sekundy) || 0,
             tempo: Number(data.tempo) || 0
           } as RunData;
         }).sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
@@ -379,6 +380,7 @@ const handlePrev = () => {
     );
   }
 }
+
 
 
 
