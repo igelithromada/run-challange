@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { collection, query, onSnapshot, addDoc } from "firebase/firestore";
+import { collection, query, onSnapshot, addDoc, deleteDoc, doc } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
@@ -34,12 +34,18 @@ export default function TeamsPage() {
       setTeams(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
-    return () => { unsubAuth(); unsubTeams(); }
+    return () => {
+      unsubAuth();
+      unsubTeams();
+    };
   }, [router]);
 
   const createTeam = async () => {
-    if (!teamName.trim()) return;
-    const newTeam = await addDoc(collection(db, "teams"), { name: teamName.trim() });
+    if (!teamName.trim() || !user) return;
+    const newTeam = await addDoc(collection(db, "teams"), {
+      name: teamName.trim(),
+      createdBy: user.uid,
+    });
     localStorage.setItem("joinedTeam", newTeam.id);
     setJoinedTeam(newTeam.id);
     setTeamName("");
@@ -53,6 +59,14 @@ export default function TeamsPage() {
   const leaveTeam = () => {
     localStorage.removeItem("joinedTeam");
     setJoinedTeam(null);
+  };
+
+  const deleteTeam = async (teamId: string) => {
+    if (!confirm("Opravdu chceš smazat tento tým?")) return;
+    await deleteDoc(doc(db, "teams", teamId));
+    if (joinedTeam === teamId) {
+      leaveTeam();
+    }
   };
 
   const handleSelect = async (item: string) => {
@@ -79,7 +93,7 @@ export default function TeamsPage() {
         <h1 className="centered-title">Týmy</h1>
 
         {joinedTeam && (
-          <div className="tile" style={{ marginBottom: "1.5rem", textAlign: "center" }}>
+          <div className="tile" style={{ marginBottom: "1rem", textAlign: "center" }}>
             🏅 Jsi členem týmu: {teams.find(t => t.id === joinedTeam)?.name || "?"}
           </div>
         )}
@@ -96,8 +110,7 @@ export default function TeamsPage() {
               padding: "0.5rem",
               borderRadius: "8px",
               border: "none",
-              marginTop: "0.5rem",
-              boxSizing: "border-box"
+              marginTop: "0.5rem"
             }}
           />
           <button
@@ -107,54 +120,59 @@ export default function TeamsPage() {
               width: "100%",
               marginTop: "0.5rem",
               display: "flex",
-              justifyContent: "center",
               alignItems: "center",
-              gap: "0.3rem"
+              justifyContent: "center",
+              gap: "0.5rem"
             }}
           >
-            <span style={{ fontSize: "1.2rem" }}>➕</span> Vytvořit
+            ➕ Vytvořit
           </button>
         </div>
 
         <h3 className="centered-title" style={{ marginTop: "2rem" }}>Dostupné týmy</h3>
         <div className="list-container" style={{ gap: "0.5rem" }}>
           {teams.map(team => (
-            <div key={team.id} className="tile list-tile" style={{ justifyContent: "space-between", alignItems: "center" }}>
-              <div className="tile-content">
-                <div style={{ fontWeight: "bold", fontSize: "1.1rem" }}>{team.name}</div>
+            <div key={team.id} className="tile list-tile" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontWeight: "bold", fontSize: "1.1rem" }}>{team.name}</div>
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                {joinedTeam === team.id ? (
+                  <button
+                    onClick={leaveTeam}
+                    className="tile-button"
+                    style={{
+                      background: "rgba(255,0,0,0.3)",
+                      minWidth: "90px",
+                      padding: "0.4rem 0.7rem"
+                    }}
+                  >
+                    🚪 Odejít
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => joinTeam(team.id)}
+                    className="tile-button"
+                    style={{
+                      minWidth: "90px",
+                      padding: "0.4rem 0.7rem"
+                    }}
+                  >
+                    ➕ Přidat se
+                  </button>
+                )}
+                {user?.uid === team.createdBy && (
+                  <button
+                    onClick={() => deleteTeam(team.id)}
+                    className="tile-button"
+                    style={{
+                      background: "rgba(255,0,0,0.15)",
+                      padding: "0.4rem 0.7rem"
+                    }}
+                    title="Smazat tým"
+                  >
+                    🗑️
+                  </button>
+                )}
               </div>
-              {joinedTeam === team.id ? (
-                <button
-                  onClick={leaveTeam}
-                  className="tile-button"
-                  style={{
-                    width: "100px",
-                    padding: "0.5rem",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "0.3rem",
-                    background: "rgba(255,0,0,0.3)"
-                  }}
-                >
-                  <span style={{ fontSize: "1.2rem" }}>🚪</span> Odejít
-                </button>
-              ) : (
-                <button
-                  onClick={() => joinTeam(team.id)}
-                  className="tile-button"
-                  style={{
-                    width: "100px",
-                    padding: "0.5rem",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "0.3rem"
-                  }}
-                >
-                  <span style={{ fontSize: "1.2rem" }}>➕</span> Přidat se
-                </button>
-              )}
             </div>
           ))}
         </div>
