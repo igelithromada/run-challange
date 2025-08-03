@@ -79,7 +79,6 @@ export default function UserPage() {
     else if (item === "statistics") router.push("/statistics");
     else router.push("/");
   };
-
   return (
     <>
       <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
@@ -102,35 +101,16 @@ export default function UserPage() {
               const teamName = run.teamId ? teams.find(t => t.id === run.teamId)?.name || "?" : null;
 
               const avatar = userInfo.avatarUrl ? (
-                <img
-                  src={userInfo.avatarUrl}
-                  alt="avatar"
-                  style={{ width: "40px", height: "40px", borderRadius: "50%" }}
-                />
+                <img src={userInfo.avatarUrl} alt="avatar" style={{ width: 40, height: 40, borderRadius: "50%" }} />
               ) : (
-                <div
-                  style={{
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "50%",
-                    backgroundColor: "#ccc",
-                    color: "#000",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: "bold",
-                    fontSize: "1rem",
-                  }}
-                >
+                <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#ccc", color: "#000", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "1rem" }}>
                   {(userInfo.nickname?.charAt(0) || userInfo.email?.charAt(0) || "?").toUpperCase()}
                 </div>
               );
 
-              const pos = (() => {
-                const tempo = parseFloat(run.tempo as string);
-                const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
-                return Math.min(100, Math.max(0, ((range.max - tempo) / (range.max - range.min)) * 100));
-              })();
+              const tempo = parseFloat(run.tempo as string);
+              const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
+              const pos = Math.min(100, Math.max(0, ((range.max - tempo) / (range.max - range.min)) * 100));
 
               const dateStr = new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ", {
                 hour: "2-digit", minute: "2-digit", year: "numeric", month: "numeric", day: "numeric"
@@ -179,18 +159,30 @@ export default function UserPage() {
       </div>
 
       {showImageUrl && (
-  <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000 }}>
-    <div style={{ textAlign: "center" }}>
-      <img src={showImageUrl[currentImageIndex]} style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain" }} />
-      <div style={{ marginTop: "10px", display: "flex", justifyContent: "center", gap: "10px" }}>
-        {showImageUrl.length > 1 && showImageUrl.map((_, i) => (
-          <button key={i} onClick={() => setCurrentImageIndex(i)} style={{ background: currentImageIndex === i ? "white" : "#666", border: "none", borderRadius: "50%", width: "10px", height: "10px" }} />
-        ))}
-        <button onClick={() => setShowImageUrl(null)} style={{ marginLeft: "20px", background: "white", border: "none", borderRadius: "5px", padding: "5px 10px", fontWeight: "bold" }}>
-          Zavřít
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.8)", zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
+            {showImageUrl.map((_, i) => (
+              <button key={i} onClick={() => setCurrentImageIndex(i)} style={{ background: currentImageIndex === i ? "white" : "#666", border: "none", borderRadius: "50%", width: "10px", height: "10px" }} />
+            ))}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {showImageUrl.length > 1 && (
+              <button onClick={() => setCurrentImageIndex((currentImageIndex - 1 + showImageUrl.length) % showImageUrl.length)} style={{ background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer", marginRight: "10px" }}>
+                ❮
+              </button>
+            )}
+            <img src={showImageUrl[currentImageIndex]} style={{ maxWidth: "90vw", maxHeight: "75vh", objectFit: "contain", borderRadius: "8px" }} />
+            {showImageUrl.length > 1 && (
+              <button onClick={() => setCurrentImageIndex((currentImageIndex + 1) % showImageUrl.length)} style={{ background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer", marginLeft: "10px" }}>
+                ❯
+              </button>
+            )}
+          </div>
+          <button onClick={() => setShowImageUrl(null)} style={{ marginTop: "20px", background: "white", border: "none", borderRadius: "8px", padding: "0.5rem 1rem", fontWeight: "bold" }}>
+            Zavřít
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
