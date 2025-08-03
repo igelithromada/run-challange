@@ -22,6 +22,7 @@ type RunData = {
   nickname?: string;
   km: number;
   minuty: number;
+  sekundy?: number;
   tempo: number;
   type?: string;
   imageUrl?: string;
@@ -378,6 +379,7 @@ const handlePrev = () => {
     );
   }
 }
+
 
 
 
