@@ -78,6 +78,12 @@ export default function TeamsPage() {
       <div className="container">
         <h1 className="centered-title">Týmy</h1>
 
+        {joinedTeam && (
+          <div className="tile" style={{ marginBottom: "1.5rem", textAlign: "center" }}>
+            🏅 Jsi členem týmu: {teams.find(t => t.id === joinedTeam)?.name || "?"}
+          </div>
+        )}
+
         <div className="tile">
           <h3>Vytvořit tým</h3>
           <input
@@ -90,22 +96,30 @@ export default function TeamsPage() {
               padding: "0.5rem",
               borderRadius: "8px",
               border: "none",
-              marginTop: "0.5rem"
+              marginTop: "0.5rem",
+              boxSizing: "border-box"
             }}
           />
           <button
             onClick={createTeam}
             className="tile-button"
-            style={{ width: "100%", marginTop: "0.5rem" }}
+            style={{
+              width: "100%",
+              marginTop: "0.5rem",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "0.3rem"
+            }}
           >
-            ➕ Vytvořit
+            <span style={{ fontSize: "1.2rem" }}>➕</span> Vytvořit
           </button>
         </div>
 
         <h3 className="centered-title" style={{ marginTop: "2rem" }}>Dostupné týmy</h3>
         <div className="list-container" style={{ gap: "0.5rem" }}>
           {teams.map(team => (
-            <div key={team.id} className="tile list-tile">
+            <div key={team.id} className="tile list-tile" style={{ justifyContent: "space-between", alignItems: "center" }}>
               <div className="tile-content">
                 <div style={{ fontWeight: "bold", fontSize: "1.1rem" }}>{team.name}</div>
               </div>
@@ -113,27 +127,37 @@ export default function TeamsPage() {
                 <button
                   onClick={leaveTeam}
                   className="tile-button"
-                  style={{ background: "rgba(255,0,0,0.3)" }}
+                  style={{
+                    width: "100px",
+                    padding: "0.5rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.3rem",
+                    background: "rgba(255,0,0,0.3)"
+                  }}
                 >
-                  🚪 Odejít
+                  <span style={{ fontSize: "1.2rem" }}>🚪</span> Odejít
                 </button>
               ) : (
                 <button
                   onClick={() => joinTeam(team.id)}
                   className="tile-button"
+                  style={{
+                    width: "100px",
+                    padding: "0.5rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.3rem"
+                  }}
                 >
-                  ➕ Přidat se
+                  <span style={{ fontSize: "1.2rem" }}>➕</span> Přidat se
                 </button>
               )}
             </div>
           ))}
         </div>
-
-        {joinedTeam && (
-          <div className="tile" style={{ marginTop: "2rem", textAlign: "center" }}>
-            🏅 Jsi členem týmu: {teams.find(t => t.id === joinedTeam)?.name || "?"}
-          </div>
-        )}
       </div>
     </>
   );
