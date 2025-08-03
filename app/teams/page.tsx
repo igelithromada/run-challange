@@ -16,6 +16,7 @@ import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
+import { Plus, DoorOpen, Trash2 } from "lucide-react";
 
 export default function TeamsPage() {
   useThemeLoader();
@@ -137,9 +138,9 @@ export default function TeamsPage() {
           <button
             onClick={createTeam}
             className="tile-button"
-            style={{ width: "100%", marginTop: "0.5rem" }}
+            style={{ width: "100%", marginTop: "0.5rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}
           >
-            ➕ Vytvořit
+            <Plus size={18} /> Vytvořit
           </button>
         </div>
 
@@ -155,24 +156,17 @@ export default function TeamsPage() {
                   <button
                     onClick={leaveTeam}
                     className="tile-button"
-                    style={{
-                      background: "rgba(255,0,0,0.3)",
-                      minWidth: "100px",
-                      padding: "0.4rem 0.7rem",
-                    }}
+                    style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
                   >
-                    🧱 Odejít
+                    <DoorOpen size={18} /> Odejít
                   </button>
                 ) : (
                   <button
                     onClick={() => joinTeam(team.id)}
                     className="tile-button"
-                    style={{
-                      minWidth: "100px",
-                      padding: "0.4rem 0.7rem",
-                    }}
+                    style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
                   >
-                    ➕ Přidat se
+                    <Plus size={18} /> Přidat se
                   </button>
                 )}
                 {user?.uid === team.createdBy && (
@@ -180,12 +174,16 @@ export default function TeamsPage() {
                     onClick={() => deleteTeam(team.id)}
                     className="tile-button"
                     style={{
-                      background: "rgba(255,0,0,0.3)",
-                      width: "2.5rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       padding: "0.4rem",
+                      width: "2.5rem",
+                      minWidth: "2.5rem",
                     }}
+                    title="Smazat tým"
                   >
-                    🗑️
+                    <Trash2 size={18} />
                   </button>
                 )}
               </div>
