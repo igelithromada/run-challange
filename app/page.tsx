@@ -272,16 +272,37 @@ export default function Page() {
 
     <div
       style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        maxWidth: "100%",
+        maxWidth: "90vw",
         maxHeight: "70vh",
-        overflow: "hidden",
-        gap: "1rem", // místo pro šipky
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
-      {showImages.length > 1 && (
+      <img
+        src={showImages[currentImgIndex]}
+        alt="náhled"
+        style={{
+          width: "100%",
+          height: "auto",
+          maxHeight: "70vh",
+          objectFit: "contain",
+          borderRadius: "10px",
+        }}
+      />
+    </div>
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: "1.5rem",
+        width: "100%",
+        maxWidth: "300px",
+      }}
+    >
+      {showImages.length > 1 ? (
         <button
           onClick={handlePrev}
           style={{
@@ -294,37 +315,10 @@ export default function Page() {
         >
           ❮
         </button>
+      ) : (
+        <div style={{ width: "2rem" }} />
       )}
 
-      <img
-        src={showImages[currentImgIndex]}
-        alt="náhled"
-        style={{
-          maxWidth: "80vw", // zmenšeno pro místo na šipky
-          maxHeight: "70vh",
-          objectFit: "contain",
-          borderRadius: "10px",
-          display: "block",
-        }}
-      />
-
-      {showImages.length > 1 && (
-        <button
-          onClick={handleNext}
-          style={{
-            background: "transparent",
-            color: "white",
-            fontSize: "2rem",
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          ❯
-        </button>
-      )}
-    </div>
-
-    <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
       <button
         onClick={() => setShowImages(null)}
         style={{
@@ -340,12 +334,30 @@ export default function Page() {
       >
         Zavřít
       </button>
+
+      {showImages.length > 1 ? (
+        <button
+          onClick={handleNext}
+          style={{
+            background: "transparent",
+            color: "white",
+            fontSize: "2rem",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          ❯
+        </button>
+      ) : (
+        <div style={{ width: "2rem" }} />
+      )}
     </div>
   </div>
 )}
     </>
   );
 }
+
 
 
 
