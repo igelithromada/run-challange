@@ -76,8 +76,9 @@ export default function MyRunsPage() {
         setLoading(false);
       });
 
-      return () => unsubRuns();
+      return unsubRuns;
     });
+     return () => unsubAuth();
   }, [router]);
 
   useEffect(() => {
@@ -384,6 +385,7 @@ const handlePrev = () => {
     );
   }
 }
+
 
 
 
