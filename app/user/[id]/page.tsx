@@ -1,3 +1,5 @@
+user id 
+
 "use client";
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -179,126 +181,20 @@ export default function UserPage() {
       </div>
 
       {showImageUrl && (
-  <div
-    style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      width: "100vw",
-      height: "100vh",
-      background: "rgba(0,0,0,0.9)",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: 2000,
-      padding: "1rem",
-      boxSizing: "border-box",
-    }}
-  >
-    <div style={{ marginBottom: "0.5rem", textAlign: "center" }}>
-      {showImageUrl.map((_, idx) => (
-        <span
-          key={idx}
-          style={{
-            height: "10px",
-            width: "10px",
-            margin: "0 5px",
-            backgroundColor: currentImageIndex === idx ? "white" : "gray",
-            borderRadius: "50%",
-            display: "inline-block",
-          }}
-        />
-      ))}
-    </div>
-
-    <div
-      style={{
-        maxWidth: "90vw",
-        maxHeight: "70vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <img
-        src={showImageUrl[currentImageIndex]}
-        alt="náhled"
-        style={{
-          width: "100%",
-          height: "auto",
-          maxHeight: "70vh",
-          objectFit: "contain",
-          borderRadius: "10px",
-        }}
-      />
-    </div>
-
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: "1.5rem",
-        width: "100%",
-        maxWidth: "300px",
-      }}
-    >
-      {showImageUrl.length > 1 ? (
-        <button
-          onClick={() =>
-            setCurrentImageIndex(
-              (currentImageIndex - 1 + showImageUrl.length) % showImageUrl.length
-            )
-          }
-          style={{
-            background: "transparent",
-            color: "white",
-            fontSize: "2rem",
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          ❮
-        </button>
-      ) : (
-        <div style={{ width: "2rem" }} />
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000 }}>
+          <div style={{ textAlign: "center" }}>
+            <img src={showImageUrl[currentImageIndex]} style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain" }} />
+            <div style={{ marginTop: "10px", display: "flex", justifyContent: "center", gap: "10px" }}>
+              {showImageUrl.length > 1 && showImageUrl.map((_, i) => (
+                <button key={i} onClick={() => setCurrentImageIndex(i)} style={{ background: currentImageIndex === i ? "white" : "#666", border: "none", borderRadius: "50%", width: "10px", height: "10px" }} />
+              ))}
+              <button onClick={() => setShowImageUrl(null)} style={{ marginLeft: "20px", background: "white", border: "none", borderRadius: "5px", padding: "5px 10px", fontWeight: "bold" }}>
+                Zavřít
+              </button>
+            </div>
+          </div>
+        </div>
       )}
-
-      <button
-        onClick={() => setShowImageUrl(null)}
-        style={{
-          background: "white",
-          color: "black",
-          border: "none",
-          borderRadius: "12px",
-          padding: "0.6rem 1.4rem",
-          fontWeight: "bold",
-          fontSize: "16px",
-          cursor: "pointer",
-        }}
-      >
-        Zavřít
-      </button>
-
-      {showImageUrl.length > 1 ? (
-        <button
-          onClick={() =>
-            setCurrentImageIndex((currentImageIndex + 1) % showImageUrl.length)
-          }
-          style={{
-            background: "transparent",
-            color: "white",
-            fontSize: "2rem",
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          ❯
-        </button>
-      ) : (
-        <div style={{ width: "2rem" }} />
-      )}
-    </div>
-  </div>
-)}
+    </>
+  );
+}
