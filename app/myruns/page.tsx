@@ -348,10 +348,23 @@ const handlePrev = () => {
           </div>
         </div>
         <div style={{
-  display: "flex", flexDirection: "row", alignItems: "center",
-  position: "absolute", right: "0.8rem", top: "0.4rem", gap: "0.6rem"
+  display: "flex", flexDirection: "column", alignItems: "flex-end",
+  position: "absolute", right: "0.8rem", top: "0.4rem", gap: "0.3rem"
 }}>
   <small style={{ whiteSpace: "nowrap" }}>{dateStr}</small>
+
+  <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.2rem" }}>
+    <div onClick={() => handleDelete(run.id)} style={{ cursor: "pointer" }}>
+      {/* SVG koše */}
+    </div>
+
+    {(run.imageUrls?.length || run.imageUrl) && (
+      <div onClick={() => handleShowImages(run.imageUrls ?? [], run.imageUrl ?? "")} style={{ cursor: "pointer" }}>
+        {/* SVG fotky */}
+      </div>
+    )}
+  </div>
+</div>
 
   {/* Ikona koše pro smazání */}
   <div onClick={() => handleDelete(run.id)} style={{ cursor: "pointer" }}>
@@ -380,6 +393,7 @@ const handlePrev = () => {
     );
   }
 }
+
 
 
 
