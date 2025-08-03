@@ -122,12 +122,15 @@ const longestRun = [...filteredRuns]
   .sort((a, b) => b.km - a.km)[0];
 
 const fastestRun = [...filteredRuns]
-  .filter(run => run.tempo && run.type === selectedType)
-  .sort((a, b) => parseFloat(a.tempo) - parseFloat(b.tempo))[0];
+  .filter(run => typeof run.tempo === "number" && run.type === selectedType)
+  .sort((a, b) => a.tempo - b.tempo)[0];
   
   const totalKm = filteredRuns.reduce((sum, run) => sum + run.km, 0);
   const totalMin = filteredRuns.reduce((sum, run) => sum + run.minuty, 0);
-  const avgTempo = totalKm > 0 ? totalMin / totalKm : 0;
+  const totalSec = filteredRuns.reduce((sum, run) => sum + (Number(run.sekundy) || 0), 0);
+  const totalTimeMin = totalMin + Math.floor(totalSec / 60);
+const totalTimeSec = totalSec % 60;
+const avgTempo = totalKm > 0 ? (totalTimeMin + totalTimeSec / 60) / totalKm : 0;
 
   const formatTime = (minutes: number) => {
     const totalSeconds = Math.round(minutes * 60);
@@ -375,6 +378,7 @@ const handlePrev = () => {
     );
   }
 }
+
 
 
 
