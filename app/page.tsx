@@ -142,7 +142,8 @@ export default function Page() {
         <h2 className="centered-title">Poslední záznamy</h2>
         <div className="list-container" style={{ gap: "0", display: "flex", flexDirection: "column" }}>
           {runs.map(run => {
-            
+            const teamName = run.teamId ? teams.find(t => t.id === run.teamId)?.name || "?" : null;
+
             const user = userAvatars[run.uid] || {};
             const nickname = user.nickname || run.nickname || run.email?.split("@")[0] || "Anonym";
             const avatarLetter = nickname.charAt(0).toUpperCase();
@@ -175,15 +176,14 @@ export default function Page() {
                     <span onClick={() => router.push(`/user/${run.uid}`)} style={{ fontWeight: "bold", color: "white", cursor: "pointer" }}>
                       {nickname}
                     </span>
-                    {teams.length > 0 && (() => {
-  const team = run.teamId ? teams.find(t => t.id === run.teamId) : null;
+                    {run.teamId && Array.isArray(teams) && teams.length > 0 && (() => {
+  const team = teams.find((t) => t.id === run.teamId);
   return (
     <span style={{ marginLeft: "10px", fontWeight: "bold", color: "white" }}>
       ({team?.name || "?"})
     </span>
   );
 })()}
-                  </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.2rem" }}>
                     <div>{run.km} km, {formatTime(run.minuty)}</div>
@@ -363,10 +363,6 @@ export default function Page() {
     </>
   );
 }
-
-
-
-
 
 
 
