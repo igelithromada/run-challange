@@ -52,8 +52,8 @@ export default function RunForm({ type }: { type: string }) {
         }
       }
 
-      const joinedTeam = localStorage.getItem("joinedTeam");
       let avatarUrl = "";
+      let teamId = null;
 
       const uid = auth.currentUser?.uid;
       if (!uid) {
@@ -63,13 +63,15 @@ export default function RunForm({ type }: { type: string }) {
 
       const userDoc = await getDoc(doc(db, "users", uid));
       if (userDoc.exists()) {
-        avatarUrl = userDoc.data().avatarUrl || "";
+        const userData = userDoc.data();
+        avatarUrl = userData.avatarUrl || "";
+        teamId = userData.teamId || null;
       }
 
       const totalMinutes = minVal + secVal / 60;
 
       await addDoc(collection(db, "runs"), {
-        uid: auth.currentUser?.uid,
+        uid: uid,
         email: auth.currentUser?.email,
         avatarUrl,
         km: kmVal,
@@ -78,7 +80,7 @@ export default function RunForm({ type }: { type: string }) {
         type,
         timestamp: serverTimestamp(),
         imageUrls,
-        teamId: joinedTeam || null
+        teamId
       });
 
       setKm(""); setMinuty(""); setSekundy(""); setFiles([]);
@@ -179,28 +181,25 @@ export default function RunForm({ type }: { type: string }) {
             width: "100%"
           }}>
             <button
-  onClick={() => setShowForm(false)}
-  style={{
-    ...buttonStyle,
-    flex: 1
-  }}
-  onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
-  onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
->
-  Zavřít
-</button>
+              onClick={() => setShowForm(false)}
+              style={{ ...buttonStyle, flex: 1 }}
+              onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
+              onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+            >
+              Zavřít
+            </button>
 
-<button
-  onClick={handleSubmit}
-  style={{
-    ...buttonStyle,
-    background: "#eee",
-    color: "#333",
-    flex: 2
-  }}
->
-  Uložit záznam
-</button>
+            <button
+              onClick={handleSubmit}
+              style={{
+                ...buttonStyle,
+                background: "#eee",
+                color: "#333",
+                flex: 2
+              }}
+            >
+              Uložit záznam
+            </button>
           </div>
         </div>
       )}
