@@ -5,10 +5,9 @@ type SidebarProps = {
   visible: boolean;
   onClose: () => void;
   onSelect: (item: string) => void;
-  isAdmin?: boolean;
 };
 
-export default function Sidebar({ visible, onClose, onSelect, isAdmin = false }: SidebarProps) {
+export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
   if (!visible) return null;
 
   return (
@@ -57,15 +56,6 @@ export default function Sidebar({ visible, onClose, onSelect, isAdmin = false }:
         <HoverTile onClick={() => onSelect("settings")}>
           <SettingsIcon /> Nastavení
         </HoverTile>
-
-        {isAdmin && (
-          <HoverTile onClick={() => onSelect("admin")}
-            styleOverride={{ background: "rgba(255,255,255,0.1)" }}
-          >
-            <SettingsIcon /> Admin sekce
-          </HoverTile>
-        )}
-
         <HoverTile onClick={() => onSelect("logout")}
           styleOverride={{ background: "rgba(255,0,0,0.2)" }}
         >
@@ -178,4 +168,5 @@ function LogoutIcon() {
       <line x1="21" y1="12" x2="9" y2="12"/>
     </svg>
   );
+
 }
