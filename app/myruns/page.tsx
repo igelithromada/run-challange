@@ -160,11 +160,22 @@ const fastestRun = useMemo(() => {
     }
   };
 
-  const handlePrev = () => {
-    if (showImages) {
-      setCurrentImgIndex((currentImgIndex - 1 + showImages.length) % showImages.length);
-    }
-  };
+ const handleDelete = async (id: string) => {
+  const confirmed = window.confirm("Opravdu chceš tento záznam smazat?");
+  if (!confirmed) return;
+  try {
+    await deleteDoc(doc(db, "runs", id));
+  } catch (error) {
+    console.error("Chyba při mazání záznamu:", error);
+    alert("Nepodařilo se smazat záznam.");
+  }
+};
+
+const handlePrev = () => {
+  if (showImages) {
+    setCurrentImgIndex((currentImgIndex - 1 + showImages.length) % showImages.length);
+  }
+};
 
   
   return (
@@ -336,25 +347,39 @@ const fastestRun = useMemo(() => {
           </div>
         </div>
         <div style={{
-          display: "flex", flexDirection: "column", alignItems: "flex-end",
-          position: "absolute", right: "0.8rem", top: "0.4rem", gap: "0.3rem"
-        }}>
-          <small style={{ whiteSpace: "nowrap" }}>{dateStr}</small>
-          {(run.imageUrls?.length || run.imageUrl) && (
-            <div onClick={() => handleShowImages(run.imageUrls ?? [], run.imageUrl ?? "")} style={{ cursor: "pointer" }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5"
-                strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <path d="M21 15l-5-5L5 21" />
-              </svg>
-            </div>
-          )}
-        </div>
+  display: "flex", flexDirection: "column", alignItems: "flex-end",
+  position: "absolute", right: "0.8rem", top: "0.4rem", gap: "0.3rem"
+}}>
+  <small style={{ whiteSpace: "nowrap" }}>{dateStr}</small>
+
+  {/* Ikona koše pro smazání */}
+  <div onClick={() => handleDelete(run.id)} style={{ cursor: "pointer" }}>
+    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5"
+      strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
+    </svg>
+  </div>
+
+  {/* Ikona fotky */}
+  {(run.imageUrls?.length || run.imageUrl) && (
+    <div onClick={() => handleShowImages(run.imageUrls ?? [], run.imageUrl ?? "")} style={{ cursor: "pointer" }}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5"
+        strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <path d="M21 15l-5-5L5 21" />
+      </svg>
+    </div>
+  )}
+</div>
       </div>
     );
   }
 }
+
 
 
 
