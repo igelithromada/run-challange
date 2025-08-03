@@ -154,6 +154,7 @@ export default function RunForm({ type }: { type: string }) {
           }}>
             <input
               type="file"
+              accept="image/*"
               multiple
               onChange={(e) => setFiles(Array.from(e.target.files || []))}
               style={{ display: "none" }}
