@@ -159,6 +159,7 @@ const avgTempo = totalKm > 0 ? (totalTimeMin + totalTimeSec / 60) / totalKm : 0;
     });
 
     return (
+      <>
       <div key={run.id} className="tile list-tile"
         style={{
           display: "flex", alignItems: "flex-start", gap: "0.5rem",
@@ -386,6 +387,7 @@ const handlePrev = () => {
   );
 
   
+
 
 
 
