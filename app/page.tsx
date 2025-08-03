@@ -175,11 +175,14 @@ export default function Page() {
                     <span onClick={() => router.push(`/user/${run.uid}`)} style={{ fontWeight: "bold", color: "white", cursor: "pointer" }}>
                       {nickname}
                     </span>
-                    {run.teamId && (
-  <span style={{ marginLeft: "10px", fontWeight: "bold", color: "white" }}>
-    ({teams.find(t => t.id === run.teamId)?.name ?? "?"})
-  </span>
-)}
+                    {run.teamId && teams.length > 0 && (() => {
+  const team = teams.find(t => t.id === run.teamId);
+  return team?.name ? (
+    <span style={{ marginLeft: "10px", fontWeight: "bold", color: "white" }}>
+      ({team.name})
+    </span>
+  ) : null;
+})()}
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.2rem" }}>
@@ -360,6 +363,7 @@ export default function Page() {
     </>
   );
 }
+
 
 
 
