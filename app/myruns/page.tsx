@@ -268,127 +268,32 @@ const handlePrev = () => {
         </div>
 
         {showImages && (
-  <div
-    style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      width: "100vw",
-      height: "100vh",
-      backgroundColor: "rgba(0, 0, 0, 0.8)",
-      zIndex: 2000,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "1rem",
-    }}
-  >
-    {/* Puntíky */}
-    <div style={{ display: "flex", gap: "0.4rem", marginBottom: "0.5rem" }}>
-      {showImages.map((_, idx) => (
-        <div
-          key={idx}
-          style={{
-            width: "10px",
-            height: "10px",
-            borderRadius: "50%",
-            backgroundColor: idx === currentImgIndex ? "white" : "gray",
-          }}
-        />
-      ))}
-    </div>
-
-    {/* Obrázek */}
-    <div
-      style={{
-        maxWidth: "90vw",
-        maxHeight: "70vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <img
-        src={showImages[currentImgIndex]}
-        alt="náhled"
-        style={{
-          width: "100%",
-          height: "auto",
-          maxHeight: "70vh",
-          objectFit: "contain",
-          borderRadius: "10px",
-        }}
-      />
-    </div>
-
-    {/* Tlačítko Zavřít + Šipky */}
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: "1.5rem",
-        width: "100%",
-        maxWidth: "300px",
-      }}
-    >
-      {showImages.length > 1 ? (
-        <button
-          onClick={() =>
-            setCurrentImgIndex((currentImgIndex - 1 + showImages.length) % showImages.length)
-          }
-          style={{
-            background: "transparent",
-            color: "white",
-            fontSize: "2rem",
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          ❮
-        </button>
-      ) : (
-        <div style={{ width: "2rem" }} />
-      )}
-
-      <button
-        onClick={() => setShowImages(null)}
-        style={{
-          background: "white",
-          color: "black",
-          border: "none",
-          borderRadius: "12px",
-          padding: "0.6rem 1.4rem",
-          fontWeight: "bold",
-          fontSize: "16px",
-          cursor: "pointer",
-        }}
-      >
-        Zavřít
-      </button>
-
-      {showImages.length > 1 ? (
-        <button
-          onClick={() =>
-            setCurrentImgIndex((currentImgIndex + 1) % showImages.length)
-          }
-          style={{
-            background: "transparent",
-            color: "white",
-            fontSize: "2rem",
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          ❯
-        </button>
-      ) : (
-        <div style={{ width: "2rem" }} />
-      )}
-    </div>
-  </div>
-)}
+          <div style={{
+            position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+            background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000
+          }}>
+            <div style={{ position: "relative", textAlign: "center" }}>
+              <img src={showImages[currentImgIndex]} alt="náhled" style={{ maxWidth: "90%", maxHeight: "80%", borderRadius: "10px" }} />
+              <div style={{ marginTop: "1.2rem" }}>
+                <button onClick={() => setShowImages(null)} style={{
+                  background: "white", color: "black", border: "none",
+                  borderRadius: "12px", padding: "0.6rem 1.4rem",
+                  fontWeight: "bold", fontSize: "16px", cursor: "pointer"
+                }}>Zavřít</button>
+              </div>
+              {showImages.length > 1 && (
+                <div style={{
+                  position: "absolute", top: "50%", width: "100%", display: "flex",
+                  justifyContent: "space-between", transform: "translateY(-50%)", padding: "0 1rem"
+                }}>
+                  <button onClick={handlePrev} style={{
+                    background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer"
+                  }}>❮</button>
+                  <button onClick={handleNext} style={{
+                    background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer"
+                  }}>❯</button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -477,43 +382,3 @@ const handlePrev = () => {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
