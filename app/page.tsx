@@ -237,38 +237,114 @@ export default function Page() {
       </div>
 
       {showImages && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-          background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center",
-          zIndex: 2000
-        }}>
-          <div style={{ position: "relative", textAlign: "center" }}>
-            <img src={showImages[currentImgIndex]} alt="náhled" style={{
-              maxWidth: "90%", maxHeight: "80%", borderRadius: "10px"
-            }} />
-            <div style={{ marginTop: "1.2rem" }}>
-              <button onClick={() => setShowImages(null)} style={{
-                background: "white", color: "black", border: "none",
-                borderRadius: "12px", padding: "0.6rem 1.4rem",
-                fontWeight: "bold", fontSize: "16px", cursor: "pointer"
-              }}>Zavřít</button>
-            </div>
-            {showImages.length > 1 && (
-              <div style={{
-                position: "absolute", top: "50%", width: "100%", display: "flex",
-                justifyContent: "space-between", transform: "translateY(-50%)", padding: "0 1rem"
-              }}>
-                <button onClick={handlePrev} style={{
-                  background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer"
-                }}>❮</button>
-                <button onClick={handleNext} style={{
-                  background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer"
-                }}>❯</button>
-              </div>
-            )}
-          </div>
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      background: "rgba(0,0,0,0.9)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      flexDirection: "column",
+      zIndex: 2000,
+      padding: "1rem",
+    }}
+  >
+    <div style={{ position: "relative", maxWidth: "100%", maxHeight: "100%" }}>
+      <div style={{ textAlign: "center", marginBottom: "0.5rem" }}>
+        {showImages.map((_, idx) => (
+          <span
+            key={idx}
+            style={{
+              height: "10px",
+              width: "10px",
+              margin: "0 5px",
+              backgroundColor: currentImgIndex === idx ? "white" : "gray",
+              borderRadius: "50%",
+              display: "inline-block",
+            }}
+          />
+        ))}
+      </div>
+
+      <img
+        src={showImages[currentImgIndex]}
+        alt="náhled"
+        style={{
+          maxWidth: "100vw",
+          maxHeight: "70vh",
+          objectFit: "contain",
+          borderRadius: "10px",
+        }}
+      />
+
+      <div style={{ marginTop: "1rem" }}>
+        <button
+          onClick={() => setShowImages(null)}
+          style={{
+            background: "white",
+            color: "black",
+            border: "none",
+            borderRadius: "12px",
+            padding: "0.6rem 1.4rem",
+            fontWeight: "bold",
+            fontSize: "16px",
+            cursor: "pointer",
+          }}
+        >
+          Zavřít
+        </button>
+      </div>
+
+      {showImages.length > 1 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: 0,
+            right: 0,
+            display: "flex",
+            justifyContent: "space-between",
+            padding: "0 1rem",
+            transform: "translateY(-50%)",
+            pointerEvents: "none",
+          }}
+        >
+          <button
+            onClick={handlePrev}
+            style={{
+              background: "transparent",
+              color: "white",
+              fontSize: "2rem",
+              border: "none",
+              cursor: "pointer",
+              pointerEvents: "auto",
+            }}
+          >
+            ❮
+          </button>
+          <button
+            onClick={handleNext}
+            style={{
+              background: "transparent",
+              color: "white",
+              fontSize: "2rem",
+              border: "none",
+              cursor: "pointer",
+              pointerEvents: "auto",
+            }}
+          >
+            ❯
+          </button>
         </div>
       )}
+    </div>
+  </div>
+)}
     </>
   );
 }
+
