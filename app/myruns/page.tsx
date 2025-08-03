@@ -247,10 +247,10 @@ const handlePrev = () => {
 </div>
 
        <div className="tile-group" style={{ margin: "0.8rem 0", rowGap: "0.4rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-  <div className="tile">📊 Počet aktivit: {filteredRuns.length}</div>
-  <div className="tile">📏 Celková vzdálenost: {totalKm.toFixed(2)} km</div>
-  <div className="tile">⏱️ Celkový čas: {formatTime(totalMin)}</div>
-  <div className="tile">⚖️ Průměrné tempo: {formatTime(avgTempo)} /km</div>
+  <div className="tile">Počet aktivit: {filteredRuns.length}</div>
+  <div className="tile">Celková vzdálenost: {totalKm.toFixed(2)} km</div>
+  <div className="tile">Celkový čas: {formatTime(totalMin)}</div>
+  <div className="tile">Průměrné tempo: {formatTime(avgTempo)} /km</div>
 </div>
        <div className="centered-title" style={{ marginTop: "2rem" }}>
   {selectedType === "běh" ? "🏅 Nejdelší běh" : "🏅 Nejdelší chůze"}
@@ -382,6 +382,7 @@ const handlePrev = () => {
     );
   }
 }
+
 
 
 
