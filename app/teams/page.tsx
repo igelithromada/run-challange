@@ -131,6 +131,7 @@ export default function TeamsPage() {
               borderRadius: "8px",
               border: "none",
               marginTop: "0.5rem",
+              boxSizing: "border-box",
             }}
           />
           <button
@@ -149,17 +150,28 @@ export default function TeamsPage() {
               <div className="tile-content" style={{ fontWeight: "bold", fontSize: "1.1rem" }}>
                 {team.name}
               </div>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
                 {joinedTeam === team.id ? (
                   <button
                     onClick={leaveTeam}
                     className="tile-button"
-                    style={{ background: "rgba(255,0,0,0.3)" }}
+                    style={{
+                      background: "rgba(255,0,0,0.3)",
+                      minWidth: "100px",
+                      padding: "0.4rem 0.7rem",
+                    }}
                   >
                     🧱 Odejít
                   </button>
                 ) : (
-                  <button onClick={() => joinTeam(team.id)} className="tile-button">
+                  <button
+                    onClick={() => joinTeam(team.id)}
+                    className="tile-button"
+                    style={{
+                      minWidth: "100px",
+                      padding: "0.4rem 0.7rem",
+                    }}
+                  >
                     ➕ Přidat se
                   </button>
                 )}
@@ -167,7 +179,11 @@ export default function TeamsPage() {
                   <button
                     onClick={() => deleteTeam(team.id)}
                     className="tile-button"
-                    style={{ background: "rgba(255,0,0,0.3)", width: "2.5rem" }}
+                    style={{
+                      background: "rgba(255,0,0,0.3)",
+                      width: "2.5rem",
+                      padding: "0.4rem",
+                    }}
                   >
                     🗑️
                   </button>
