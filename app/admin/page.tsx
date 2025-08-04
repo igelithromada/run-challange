@@ -1,45 +1,55 @@
 "use client";
-import { useEffect, useState } from "react";
-import { collection, doc, getDocs, setDoc, query, where } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useRouter } from "next/navigation";
 
+type User = {
+  id: string;
+  nickname: string;
+  email: string;
+  role?: string;
+};
+
 export default function AdminPage() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [runs, setRuns] = useState<any[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
   const router = useRouter();
 
   useEffect(() => {
     const fetchUsers = async () => {
       const snapshot = await getDocs(collection(db, "users"));
-      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setUsers(data);
+      const list: User[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        list.push({
+          id: docSnap.id,
+          nickname: data.nickname || "",
+          email: data.email || "",
+          role: data.role,
+        });
+      });
+      setUsers(list);
     };
     fetchUsers();
   }, []);
 
-  const toggleAdmin = async (id: string, isAdmin: boolean) => {
-    await setDoc(doc(db, "users", id), { role: isAdmin ? "" : "admin" }, { merge: true });
+  const handleToggleAdmin = async (user: User) => {
+    const newRole = user.role === "admin" ? "" : "admin";
+    await updateDoc(doc(db, "users", user.id), { role: newRole });
     setUsers((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, role: isAdmin ? "" : "admin" } : u))
+      prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
     );
-  };
-
-  const showRuns = async (userId: string) => {
-    setSelectedUserId(userId);
-    const runsQuery = query(collection(db, "runs"), where("userId", "==", userId));
-    const snapshot = await getDocs(runsQuery);
-    const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    setRuns(data);
+    if (selectedUser) setSelectedUser({ ...selectedUser, role: newRole });
   };
 
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
-    if (item === "logout") return router.push("/login");
+    if (item === "logout") router.push("/login");
     else if (item === "myrun") router.push("/myruns");
     else if (item === "teams") router.push("/teams");
     else if (item === "settings") router.push("/settings");
@@ -53,48 +63,95 @@ export default function AdminPage() {
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
       <div className="container">
-        <h1 className="centered-title">Správa uživatelů</h1>
+        <h1 className="centered-title">Admin – Správa uživatelů</h1>
 
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {users.map((user) => {
-            const isAdmin = user.role === "admin";
-            return (
-              <li key={user.id} style={{ marginBottom: "1rem" }}>
-                <strong>{user.nickname || user.email}</strong>
-                {isAdmin && <span style={{ marginLeft: "1rem", color: "green" }}>✅ Admin</span>}
-                <button style={{ marginLeft: "1rem" }} onClick={() => toggleAdmin(user.id, isAdmin)}>
-                  {isAdmin ? "Odebrat admina" : "Povýšit na admina"}
-                </button>
-                <button style={{ marginLeft: "1rem" }} onClick={() => showRuns(user.id)}>
-                  Zobrazit záznamy
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-
-        {selectedUserId && (
-          <>
-            <h2>Záznamy uživatele</h2>
-            <ul style={{ listStyle: "none", padding: 0 }}>
-              {runs.map((run) => (
-                <li key={run.id} style={{
+        {!selectedUser ? (
+          <div className="tile">
+            <h3>Seznam uživatelů</h3>
+            {users.map((user) => (
+              <div
+                key={user.id}
+                onClick={() => setSelectedUser(user)}
+                style={{
+                  padding: "0.5rem",
+                  marginBottom: "0.3rem",
+                  borderRadius: "8px",
                   background: "rgba(255,255,255,0.1)",
-                  padding: "1rem",
-                  marginBottom: "1rem",
-                  borderRadius: "8px"
-                }}>
-                  <div><strong>Typ:</strong> {run.typ}</div>
-                  <div><strong>Vzdálenost:</strong> {run.km} km</div>
-                  <div><strong>Čas:</strong> {run.minuty} min {run.sekundy} s</div>
-                  <div><strong>Tempo:</strong> {run.tempo}</div>
-                  <div><strong>Datum:</strong> {run.datum}</div>
-                </li>
-              ))}
-            </ul>
-          </>
+                  cursor: "pointer",
+                }}
+              >
+                <strong>{user.nickname || "Beze jména"}</strong> – {user.email} {user.role === "admin" && "🛡️"}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="tile">
+            <h3>{selectedUser.nickname || "Beze jména"}</h3>
+            <p>{selectedUser.email}</p>
+
+            <button
+              onClick={() => handleToggleAdmin(selectedUser)}
+              style={buttonStyle}
+            >
+              {selectedUser.role === "admin" ? "Odebrat roli admin" : "Přidat jako admin"}
+            </button>
+
+            <button
+              onClick={() => router.push(`/user/${selectedUser.id}`)}
+              style={buttonStyle}
+            >
+              Zobrazit záznamy
+            </button>
+
+            <button
+              onClick={() => router.push(`/gallery/${selectedUser.id}`)}
+              style={buttonStyle}
+            >
+              Zobrazit galerii
+            </button>
+
+            <button
+              onClick={() => alert("Tady bude blokování účtu")}
+              style={buttonStyle}
+            >
+              Zablokovat účet
+            </button>
+
+            <button
+              onClick={() => alert("Tady bude smazání účtu")}
+              style={buttonStyle}
+            >
+              Smazat účet
+            </button>
+
+            <button
+              onClick={() => alert("Tady bude reset hesla")}
+              style={buttonStyle}
+            >
+              Reset hesla
+            </button>
+
+            <button
+              onClick={() => setSelectedUser(null)}
+              style={{ ...buttonStyle, background: "rgba(255,255,255,0.2)", color: "white" }}
+            >
+              Zpět
+            </button>
+          </div>
         )}
       </div>
     </>
   );
 }
+
+const buttonStyle = {
+  width: "100%",
+  padding: "0.5rem",
+  marginTop: "0.4rem",
+  borderRadius: "8px",
+  border: "none",
+  fontWeight: "bold" as const,
+  cursor: "pointer",
+  background: "white",
+  color: "black",
+};
