@@ -1,9 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
-import { db } from "../lib/firebase";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
+import { db } from "../../lib/firebase";
+import Navbar from "../../components/Navbar";
+import Sidebar from "../../components/Sidebar";
 import { useRouter } from "next/navigation";
 
 type User = {
