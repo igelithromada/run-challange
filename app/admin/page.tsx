@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { collection, getDocs, doc, setDoc } from "firebase/firestore";
-import { db } from "../../lib/firebase";
+import { db } from "../lib/firebase";
 
 export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
