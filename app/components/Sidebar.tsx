@@ -60,8 +60,7 @@ export default function Sidebar({ visible, onClose, onSelect, isAdmin = false }:
 
         {isAdmin && (
           <HoverTile onClick={() => onSelect("admin")}
-            styleOverride={{ background: "rgba(255,255,255,0.1)" }}
-          >
+            styleOverride={{ background: "rgba(255,255,255,0.1)" }}>
             <SettingsIcon /> Admin sekce
           </HoverTile>
         )}
@@ -179,3 +178,4 @@ function LogoutIcon() {
     </svg>
   );
 }
+
