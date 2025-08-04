@@ -86,6 +86,7 @@ export default function Page() {
     else if (item === "teams") router.push("/teams");
     else if (item === "settings") router.push("/settings");
     else if (item === "statistics") router.push("/statistics");
+    else if (item === "admin") router.push("/admin");
     else router.push("/");
   };
 
@@ -357,6 +358,7 @@ export default function Page() {
     </>
   );
 }
+
 
 
 
