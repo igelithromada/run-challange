@@ -104,7 +104,7 @@ export default function AdminPage() {
             </button>
 
             <button
-              onClick={() => router.push(`/gallery/${selectedUser.id}`)}
+              onClick={() => router.push(`/admin/${selectedUser.id}/gallery`)}
               style={buttonStyle}
             >
               Zobrazit galerii
