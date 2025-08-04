@@ -56,6 +56,9 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
         <HoverTile onClick={() => onSelect("settings")}>
           <SettingsIcon /> Nastavení
         </HoverTile>
+        <HoverTile onClick={() => onSelect("admin")}>
+          <SettingsIcon /> Admin
+        </HoverTile>
         <HoverTile onClick={() => onSelect("logout")}
           styleOverride={{ background: "rgba(255,0,0,0.2)" }}
         >
@@ -170,3 +173,4 @@ function LogoutIcon() {
   );
 
 }
+
