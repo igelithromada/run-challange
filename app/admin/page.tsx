@@ -97,7 +97,7 @@ export default function AdminPage() {
             </button>
 
             <button
-              onClick={() => router.push(`/user/${selectedUser.id}`)}
+              onClick={() => router.push(`/admin/${selectedUser.id}/records`)}
               style={buttonStyle}
             >
               Zobrazit záznamy
