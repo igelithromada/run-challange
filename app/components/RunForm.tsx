@@ -11,10 +11,12 @@ export default function RunForm({ type }: { type: string }) {
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const uploadToCloudinary = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
+    // POZOR: musí existovat unsigned upload preset v tvém Cloudinary účtu!
     formData.append("upload_preset", "lhota_unsigned");
 
     const res = await fetch("https://api.cloudinary.com/v1_1/dvb4jm8cw/image/upload", {
@@ -22,12 +24,20 @@ export default function RunForm({ type }: { type: string }) {
       body: formData
     });
 
-    if (!res.ok) throw new Error("Chyba při nahrávání na Cloudinary");
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`Cloudinary upload selhal (HTTP ${res.status}) ${txt ? "– " + txt : ""}`);
+    }
     const data = await res.json();
-    return data.secure_url;
+    return data.secure_url as string;
   };
 
   const handleSubmit = async () => {
+    setError("");
+    setSuccess("");
+    if (saving) return;
+
+    // 1) validace vstupů
     const kmVal = parseFloat(km);
     const minVal = parseInt(minuty);
     const secVal = parseInt(sekundy);
@@ -36,62 +46,84 @@ export default function RunForm({ type }: { type: string }) {
       setError("Vyplňte prosím všechny údaje.");
       return;
     }
-
+    if (Number.isNaN(kmVal) || Number.isNaN(minVal) || Number.isNaN(secVal)) {
+      setError("Zadejte platné číselné hodnoty.");
+      return;
+    }
     if (kmVal <= 0 || minVal < 0 || secVal < 0 || secVal >= 60) {
       setError("Zadejte platné hodnoty. Sekundy 0–59, minuty 0+, km > 0.");
       return;
     }
 
-    try {
-      let imageUrls: string[] = [];
+    // 2) přihlášený uživatel?
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      setError("Nejsi přihlášen. Prosím přihlas se a zkus to znovu.");
+      return;
+    }
 
+    setSaving(true);
+    try {
+      // 3) upload fotek (pokud nějaké jsou)
+      let imageUrls: string[] = [];
       if (files.length > 0) {
-        for (let file of files) {
-          const url = await uploadToCloudinary(file);
+        for (const f of files) {
+          const url = await uploadToCloudinary(f);
           imageUrls.push(url);
         }
       }
 
+      // 4) dotáhnout doplňkové info o uživateli (volitelné)
       let avatarUrl = "";
-      let teamId = null;
-
-      const uid = auth.currentUser?.uid;
-      if (!uid) {
-        console.warn("Uživatel není přihlášen");
-        return;
+      let teamId: string | null = null;
+      try {
+        const userDoc = await getDoc(doc(db, "users", uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data() as any;
+          avatarUrl = userData.avatarUrl || "";
+          teamId = userData.teamId || null;
+        }
+      } catch (e) {
+        // čtení users může být blokované rules – není kritické; jen pokračujeme bez avataru/týmu
+        console.warn("Nepodařilo se načíst users/<uid>:", e);
       }
 
-      const userDoc = await getDoc(doc(db, "users", uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        avatarUrl = userData.avatarUrl || "";
-        teamId = userData.teamId || null;
-      }
-
+      // 5) výpočet času/tempa – ulož jako čísla
       const totalMinutes = minVal + secVal / 60;
+      const tempoNum = Number((totalMinutes / kmVal).toFixed(2)); // číslo, ne string
 
+      // 6) zápis do Firestore
       await addDoc(collection(db, "runs"), {
-        uid: uid,
-        email: auth.currentUser?.email,
-        avatarUrl,
+        uid,
+        email: auth.currentUser?.email || null,
+        avatarUrl: avatarUrl || null,
         km: kmVal,
-        minuty: totalMinutes,
-        tempo: (totalMinutes / kmVal).toFixed(2),
+        minuty: totalMinutes,        // číslo
+        tempo: tempoNum,             // číslo
         type,
         timestamp: serverTimestamp(),
         imageUrls,
-        teamId
+        teamId: teamId || null
       });
 
-      setKm(""); setMinuty(""); setSekundy(""); setFiles([]);
-      setError("");
+      // 7) úklid UI
+      setKm("");
+      setMinuty("");
+      setSekundy("");
+      setFiles([]);
       setSuccess(`${type[0].toUpperCase() + type.slice(1)} byl úspěšně uložen.`);
-      setTimeout(() => setSuccess(""), 3000);
       setShowForm(false);
-
-    } catch (err) {
-      console.error(err);
-      setError("Chyba při ukládání záznamu.");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: any) {
+      console.error("Ukládání selhalo:", err);
+      // vypiš smysluplnou hlášku
+      const msg =
+        err?.name === "FirebaseError"
+          ? `Firebase: ${err.code || ""} ${err.message || ""}`
+          : err?.message || "Neznámá chyba";
+      setError(`Chyba při ukládání záznamu: ${msg}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -101,8 +133,8 @@ export default function RunForm({ type }: { type: string }) {
         <button
           onClick={() => setShowForm(true)}
           style={buttonStyle}
-          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
-          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+          onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
+          onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
         >
           ➕ Přidat nový záznam
         </button>
@@ -119,50 +151,13 @@ export default function RunForm({ type }: { type: string }) {
           flexDirection: "column",
           alignItems: "center"
         }}>
-          <input
-            type="number"
-            min="0.1"
-            placeholder="Kilometry"
-            value={km}
-            onChange={(e) => setKm(e.target.value)}
-            style={inputStyle}
-          />
-          <input
-            type="number"
-            min="1"
-            placeholder="Minuty"
-            value={minuty}
-            onChange={(e) => setMinuty(e.target.value)}
-            style={inputStyle}
-          />
-          <input
-            type="number"
-            min="0"
-            max="59"
-            placeholder="Sekundy"
-            value={sekundy}
-            onChange={(e) => setSekundy(e.target.value)}
-            style={inputStyle}
-          />
+          <input type="number" min="0.1" placeholder="Kilometry" value={km} onChange={(e) => setKm(e.target.value)} style={inputStyle} />
+          <input type="number" min="1" placeholder="Minuty" value={minuty} onChange={(e) => setMinuty(e.target.value)} style={inputStyle} />
+          <input type="number" min="0" max="59" placeholder="Sekundy" value={sekundy} onChange={(e) => setSekundy(e.target.value)} style={inputStyle} />
 
-          <label style={{
-            ...inputStyle,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "10px",
-            cursor: "pointer",
-            marginTop: "10px"
-          }}>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => setFiles(Array.from(e.target.files || []))}
-              style={{ display: "none" }}
-            />
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#333" strokeWidth="1.5"
-              strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <label style={{ ...inputStyle, display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", cursor: "pointer", marginTop: "10px" }}>
+            <input type="file" accept="image/*" multiple onChange={(e) => setFiles(Array.from(e.target.files || []))} style={{ display: "none" }} />
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#333" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
               <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
               <circle cx="8.5" cy="8.5" r="1.5" />
               <path d="M21 15l-5-5L5 21" />
@@ -172,39 +167,23 @@ export default function RunForm({ type }: { type: string }) {
             </span>
           </label>
 
-          <div style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: "12px",
-            marginTop: "20px",
-            width: "100%"
-          }}>
-            <button
-              onClick={() => setShowForm(false)}
-              style={{ ...buttonStyle, flex: 1 }}
-              onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
-              onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "12px", marginTop: "20px", width: "100%" }}>
+            <button onClick={() => setShowForm(false)} style={{ ...buttonStyle, flex: 1 }}
+              onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
+              onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+              disabled={saving}
             >
               Zavřít
             </button>
 
-            <button
-              onClick={handleSubmit}
-              style={{
-                ...buttonStyle,
-                background: "#eee",
-                color: "#333",
-                flex: 2
-              }}
-            >
-              Uložit záznam
+            <button onClick={handleSubmit} style={{ ...buttonStyle, background: "#eee", color: "#333", flex: 2 }} disabled={saving}>
+              {saving ? "Ukládám…" : "Uložit záznam"}
             </button>
           </div>
         </div>
       )}
 
-      {error && <div style={{ color: "red", marginTop: "10px" }}>{error}</div>}
+      {error && <div style={{ color: "red", marginTop: "10px", whiteSpace: "pre-wrap" }}>{error}</div>}
       {success && <div style={{ color: "lightgreen", marginTop: "10px" }}>{success}</div>}
     </div>
   );
