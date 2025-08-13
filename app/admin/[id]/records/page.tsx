@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { collection, query, where, onSnapshot, deleteDoc, doc } from "firebase/firestore";
-import { db } from "../../../../lib/firebase";
-import Navbar from "../../../../components/Navbar";
-import Sidebar from "../../../../components/Sidebar";
+import { db } from "../../../lib/firebase";
+import Navbar from "../../../components/Navbar";
+import Sidebar from "../../../components/Sidebar";
 
 type Run = {
   id: string;
