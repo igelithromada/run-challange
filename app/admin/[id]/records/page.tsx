@@ -1,166 +1,189 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
-import { db, storage } from "../../../lib/firebase";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  getDoc,
-  doc,
-  deleteDoc,
-} from "firebase/firestore";
-import { deleteObject, ref } from "firebase/storage";
+import { useParams, useRouter } from "next/navigation";
+import { collection, query, where, onSnapshot, deleteDoc, doc } from "firebase/firestore";
+import { db } from "../../../../lib/firebase";
+import Navbar from "../../../../components/Navbar";
+import Sidebar from "../../../../components/Sidebar";
 
-type RunData = {
+type Run = {
   id: string;
-  timestamp?: { seconds: number };
+  uid?: string;
   km?: number;
-  minuty?: number;
-  tempo?: number | string;
-  type?: string;
-  teamId?: string;
+  minuty?: number;        // celkový čas v minutách
+  tempo?: number;         // min/km
+  type?: string;          // "běh" | "chůze"
+  timestamp?: { seconds: number };
   imageUrls?: string[];
-  imageUrl?: string;
+  imageUrl?: string;      // starší single fotka
 };
 
-type Props = {
-  userId: string;
-};
+export default function RecordsPage() {
+  const { id } = useParams() as { id: string };   // id uživatele
+  const router = useRouter();
 
-export default function UserRecordsAdmin({ userId }: Props) {
-  const [runs, setRuns] = useState<RunData[]>([]);
-  const [userInfo, setUserInfo] = useState({ nickname: "", avatarUrl: "", email: "" });
-  const [teams, setTeams] = useState<{ id: string; name?: string }[]>([]);
-  const [showImageUrl, setShowImageUrl] = useState<string[] | null>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [runs, setRuns] = useState<Run[]>([]);
+  const [selectedType, setSelectedType] = useState<"běh" | "chůze">("běh");
+  const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
 
+  // načtení záznamů uživatele
   useEffect(() => {
-    const q = query(collection(db, "runs"), where("uid", "==", userId));
-    const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((doc): RunData => ({ id: doc.id, ...doc.data() }));
-      const sorted = items.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-      setRuns(sorted);
+    if (!id) return;
+    const qRef = query(collection(db, "runs"), where("uid", "==", id));
+    const unsub = onSnapshot(qRef, (snap) => {
+      const items: Run[] = snap.docs
+        .map(d => ({ id: d.id, ...(d.data() as any) }))
+        .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+      setRuns(items);
     });
     return () => unsub();
-  }, [userId]);
+  }, [id]);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const snapshot = await getDoc(doc(db, "users", userId));
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        setUserInfo({
-          nickname: data.nickname || "",
-          avatarUrl: data.avatarUrl || "",
-          email: data.email || "",
-        });
-      }
-    };
-    fetchUser();
-  }, [userId]);
-
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "teams"), (snap) => {
-      setTeams(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-    return () => unsub();
-  }, []);
-
-  const formatTime = (minutes?: number | string) => {
-    const totalSeconds = Math.round(parseFloat(minutes as string) * 60);
-    const min = Math.floor(totalSeconds / 60);
-    const sec = totalSeconds % 60;
-    return `${min}′${sec.toString().padStart(2, "0")}″`;
+  const formatMinutes = (minutes?: number) => {
+    const totalSeconds = Math.round((minutes || 0) * 60);
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return `${m}′${s.toString().padStart(2, "0")}″`;
   };
 
-  const handleDeleteRun = async (run: RunData) => {
-    if (!confirm("Opravdu smazat tento záznam včetně fotek?")) return;
-    await deleteDoc(doc(db, "runs", run.id));
-    if (run.imageUrls?.length) {
-      for (const url of run.imageUrls) {
-        const match = url.match(/\/([^/?#]+)\.(jpg|jpeg|png|webp)/i);
-        if (match) {
-          const fileName = match[1];
-          await deleteObject(ref(storage, `images/${fileName}`));
-        }
-      }
+  const handleDelete = async (runId: string) => {
+    const ok = confirm("Opravdu smazat tento záznam?");
+    if (!ok) return;
+    try {
+      await deleteDoc(doc(db, "runs", runId));
+      // (Pokud bys chtěl mazat i fotky z Cloudinary, je potřeba serverová funkce — zatím mažeme jen dokument.)
+    } catch (e) {
+      alert("Smazání se nepodařilo. Zkus to prosím znovu.");
+      console.error(e);
     }
   };
 
+  const handleSelect = (item: string) => {
+    setMenuVisible(false);
+    if (item === "logout") router.push("/login");
+    else if (item === "myrun") router.push("/myruns");
+    else if (item === "teams") router.push("/teams");
+    else if (item === "settings") router.push("/settings");
+    else if (item === "statistics") router.push("/statistics");
+    else if (item === "admin") router.push("/admin");
+    else router.push("/");
+  };
+
   return (
-    <div className="list-container" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      {runs.map((run) => {
-        const teamName = run.teamId ? teams.find(t => t.id === run.teamId)?.name || "?" : null;
-        const dateStr = new Date((run.timestamp?.seconds || 0) * 1000).toLocaleDateString("cs-CZ");
+    <>
+      <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
+      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
-        return (
-          <div key={run.id} className="tile" style={{ padding: "10px" }}>
-            <div style={{ fontWeight: "bold", marginBottom: "4px", color: "white" }}>
-              {dateStr} – {run.km} km, {formatTime(run.minuty)} ({formatTime(run.tempo)})
-            </div>
-            {run.imageUrls?.length > 0 && (
-              <div onClick={() => { setCurrentImageIndex(0); setShowImageUrl(run.imageUrls!); }} style={{ cursor: "pointer" }}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                  <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <path d="M21 15l-5-5L5 21" />
-                </svg>
-              </div>
-            )}
-            <button onClick={() => handleDeleteRun(run)} style={{ marginTop: "4px", backgroundColor: "red", color: "white", border: "none", padding: "6px", borderRadius: "4px" }}>
-              Smazat záznam
-            </button>
-          </div>
-        );
-      })}
+      <div className="container">
+        <h1 className="centered-title">Záznamy uživatele</h1>
 
-      {showImageUrl && (
+        <div className="tile-group">
+          <button
+            className={`tile-button ${selectedType === "běh" ? "active" : ""}`}
+            onClick={() => setSelectedType("běh")}
+          >
+            🏃 Běh
+          </button>
+          <button
+            className={`tile-button ${selectedType === "chůze" ? "active" : ""}`}
+            onClick={() => setSelectedType("chůze")}
+          >
+            🚶 Chůze
+          </button>
+        </div>
+
+        <div className="list-container" style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          {runs
+            .filter(r => (r.type || "běh") === selectedType)
+            .map(run => {
+              const dateStr = new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ", {
+                year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit"
+              });
+              const imgs = (run.imageUrls && run.imageUrls.length > 0)
+                ? run.imageUrls
+                : (run.imageUrl ? [run.imageUrl] : []);
+
+              return (
+                <div key={run.id} className="tile list-tile" style={{ position: "relative", padding: "6px 8px", margin: "6px 0" }}>
+                  <div style={{ fontWeight: 700, marginBottom: 4 }}>{dateStr}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                    <div>{run.km} km</div>
+                    <div>čas {formatMinutes(run.minuty)}</div>
+                    <div>tempo {formatMinutes(run.tempo)}</div>
+                  </div>
+
+                  <div style={{ position: "absolute", right: 8, top: 8, display: "flex", gap: 10 }}>
+                    {imgs.length > 0 && (
+                      <button
+                        onClick={() => setLightbox({ urls: imgs, index: 0 })}
+                        title="Zobrazit fotky"
+                        style={{ background: "transparent", border: "none", cursor: "pointer" }}
+                      >
+                        {/* ikona fotky */}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                          <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
+                          <circle cx="8.5" cy="8.5" r="1.5" />
+                          <path d="M21 15l-5-5L5 21" />
+                        </svg>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(run.id)}
+                      title="Smazat záznam"
+                      style={{ background: "transparent", border: "none", cursor: "pointer" }}
+                    >
+                      {/* koš */}
+                      <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        <line x1="10" y1="11" x2="10" y2="17" />
+                        <line x1="14" y1="11" x2="14" y2="17" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+
+      {/* Lightbox */}
+      {lightbox && (
         <div
+          onClick={() => setLightbox(null)}
           style={{
-            position: "fixed",
-            top: 0, left: 0, width: "100%", height: "100%",
-            background: "rgba(0,0,0,0.8)",
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-            zIndex: 1000
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 2000,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "1rem"
           }}
         >
-          <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
-            {showImageUrl.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentImageIndex(i)}
-                style={{
-                  background: currentImageIndex === i ? "white" : "#666",
-                  borderRadius: "50%",
-                  width: "10px", height: "10px", border: "none"
-                }}
-              />
-            ))}
-          </div>
           <img
-            src={showImageUrl[currentImageIndex]}
-            style={{
-              maxWidth: "90vw", maxHeight: "70vh", objectFit: "contain", borderRadius: "8px", marginBottom: "1rem"
-            }}
+            src={lightbox.urls[lightbox.index]}
+            alt="photo"
+            style={{ maxWidth: "92vw", maxHeight: "76vh", objectFit: "contain", borderRadius: 8 }}
+            onClick={(e) => e.stopPropagation()}
           />
-          <div style={{ display: "flex", gap: "2rem" }}>
-            {showImageUrl.length > 1 && (
-              <button onClick={() => setCurrentImageIndex((currentImageIndex - 1 + showImageUrl.length) % showImageUrl.length)} style={{ fontSize: "2rem", color: "white", background: "transparent", border: "none" }}>
-                ❮
-              </button>
-            )}
-            <button onClick={() => setShowImageUrl(null)} style={{ background: "white", padding: "6px 12px", borderRadius: "6px", fontWeight: "bold" }}>
-              Zavřít
-            </button>
-            {showImageUrl.length > 1 && (
-              <button onClick={() => setCurrentImageIndex((currentImageIndex + 1) % showImageUrl.length)} style={{ fontSize: "2rem", color: "white", background: "transparent", border: "none" }}>
-                ❯
-              </button>
-            )}
-          </div>
+          {lightbox.urls.length > 1 && (
+            <div style={{ display: "flex", gap: 16, marginTop: 12 }}>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox(s => s && ({ ...s, index: (s.index - 1 + s.urls.length) % s.urls.length })); }}
+                style={{ background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer" }}
+              >❮</button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox(s => s && ({ ...s, index: (s.index + 1) % s.urls.length })); }}
+                style={{ background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer" }}
+              >❯</button>
+            </div>
+          )}
+          <button
+            onClick={() => setLightbox(null)}
+            style={{ marginTop: 12, background: "white", color: "#000", border: "none", borderRadius: 8, padding: "0.5rem 1rem", fontWeight: 700 }}
+          >
+            Zavřít
+          </button>
         </div>
       )}
-    </div>
+    </>
   );
 }
