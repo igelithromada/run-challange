@@ -295,23 +295,21 @@ html[data-weather="snow-wind"] body::before {
 @media (prefers-reduced-motion: reduce) { .wind-icon-animated { animation: none; } }
 
 
-/* Jemné proudění větru přes celou obrazovku – pod kartami a ovládacími prvky. */
-body::after {
-  content: ""; position: fixed; inset: -12%; z-index: 0; pointer-events: none;
-  opacity: 0; transition: opacity .5s ease;
-}
+/* Původní celoplošná animace větru – pohybující se světelné částice. */
 html[data-windy="true"] body::after {
-  opacity: calc(.10 + var(--wind-strength, .25) * .16);
+  opacity: calc(.28 + var(--wind-strength, .3) * .42);
   background-image:
-    linear-gradient(174deg, transparent 0 48%, rgba(238,249,255,.72) 49%, transparent 50%),
-    linear-gradient(177deg, transparent 0 48%, rgba(238,249,255,.5) 49%, transparent 50%),
-    linear-gradient(171deg, transparent 0 48%, rgba(238,249,255,.38) 49%, transparent 50%);
-  background-size: 260px 95px, 340px 145px, 420px 190px;
-  background-repeat: repeat;
-  animation: simple-wind-flow calc(18s - var(--wind-strength, .25) * 8s) linear infinite;
+    radial-gradient(ellipse 2px 2px at 18px 22px, rgba(255,255,255,.9) 70%, transparent 100%),
+    radial-gradient(ellipse 3px 1.5px at 78px 64px, rgba(225,246,255,.82) 70%, transparent 100%),
+    radial-gradient(ellipse 2px 2px at 132px 108px, rgba(255,255,255,.72) 70%, transparent 100%),
+    radial-gradient(ellipse 4px 1.5px at 42px 145px, rgba(220,242,255,.7) 70%, transparent 100%),
+    radial-gradient(ellipse 2px 2px at 166px 34px, rgba(255,255,255,.8) 70%, transparent 100%);
+  background-size: 190px 170px;
+  animation: weather-wind-particles calc(5s - var(--wind-strength, .3) * 3.4s) linear infinite;
+  pointer-events: none;
 }
-@keyframes simple-wind-flow {
-  from { background-position: 0 0, 0 35px, 0 80px; }
-  to { background-position: 260px 0, 340px 35px, 420px 80px; }
+@keyframes weather-wind-particles {
+  from { background-position: 0 0; transform: translate3d(-5%, -1%, 0); }
+  to { background-position: 190px 0; transform: translate3d(5%, 1%, 0); }
 }
 @media (prefers-reduced-motion: reduce) { html[data-windy="true"] body::after { animation: none; } }
