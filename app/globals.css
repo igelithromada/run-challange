@@ -7,6 +7,10 @@
   --card-margin: 0.6rem 0;
   --card-shadow: none;
   --card-blur: 0px;
+  --list-card-padding: 0.85rem;
+  --list-card-margin: 0.6rem 0;
+  --list-card-min-height: 96px;
+  --list-card-gap: 0.85rem;
 
   /* Společné nastavení tlačítek */
   --control-background: rgba(255, 255, 255, 0.2);
@@ -58,11 +62,12 @@ body {
   grid-template-columns: 52px minmax(0,1fr);
   grid-template-rows: 1fr;
   align-items: center;
-  column-gap: .85rem;
+  column-gap: var(--list-card-gap);
   width: 100%;
   min-width: 0;
-  min-height: 96px;
-  padding: .85rem;
+  min-height: var(--list-card-min-height);
+  padding: var(--list-card-padding);
+  margin: var(--list-card-margin);
 }
 .tile-content { display: flex; align-items: center; gap: 1rem; width: 100%; }
 .avatar {
