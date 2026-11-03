@@ -48,7 +48,8 @@ export async function applyTheme(selectedTheme: string, color: string) {
       let weather = "clear";
       const isSnow = condition.includes("SNOW") || condition.includes("SLEET") || condition.includes("HAIL");
       const isRain = condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER");
-      const isWindy = wind >= 20;
+      const isWindy = wind >= 8;
+      root.style.setProperty("--wind-strength", String(Math.min(1, Math.max(0.2, wind / 45))));
       if (isSnow) weather = isWindy ? "snow-wind" : "snow";
       else if (isRain) weather = isWindy ? "rain-wind" : "rain";
       else if (condition.includes("FOG")) weather = "fog";
