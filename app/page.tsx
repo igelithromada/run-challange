@@ -7,7 +7,9 @@ import {
   limit,
   onSnapshot,
   doc,
-  getDoc,
+  getDocs,
+  documentId,
+  where,
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -36,9 +38,7 @@ export default function Page() {
 
     const q = query(collection(db, "runs"), orderBy("timestamp", "desc"), limit(30));
     const unsubRuns = onSnapshot(q, (snap) => {
-      const items = snap.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() } as RunData))
-        .filter((item) => (item.type || "běh") === selectedType);
+      const items = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as RunData));
       setRuns(items);
     });
 
@@ -51,26 +51,37 @@ export default function Page() {
       unsubRuns();
       unsubTeams();
     };
-  }, [selectedType, router]);
+  }, [router]);
 
   useEffect(() => {
-    runs.forEach((run) => {
-      if (run.uid && !userAvatars[run.uid]) {
-        getDoc(doc(db, "users", run.uid)).then((snapshot) => {
-          if (snapshot.exists()) {
-            const data = snapshot.data();
-            setUserAvatars((prev) => ({
-              ...prev,
-              [run.uid]: {
-                avatarUrl: data.avatarUrl || "",
-                nickname: data.nickname || "",
-              },
-            }));
-          }
+    const userIds = Array.from(new Set(runs.map((run) => run.uid).filter((uid): uid is string => !!uid && !userAvatars[uid])));
+    if (userIds.length === 0) return;
+
+    let cancelled = false;
+    const loadUsers = async () => {
+      try {
+        // Firestore "in" dotaz načte profily dávkově místo jednoho požadavku pro každý záznam.
+        const chunks: string[][] = [];
+        for (let i = 0; i < userIds.length; i += 30) chunks.push(userIds.slice(i, i + 30));
+        const snapshots = await Promise.all(chunks.map((ids) =>
+          getDocs(query(collection(db, "users"), where(documentId(), "in", ids)))
+        ));
+        if (cancelled) return;
+        setUserAvatars((prev) => {
+          const next = { ...prev };
+          snapshots.forEach((snapshot) => snapshot.docs.forEach((userDoc) => {
+            const data = userDoc.data();
+            next[userDoc.id] = { avatarUrl: data.avatarUrl || "", nickname: data.nickname || "" };
+          }));
+          return next;
         });
+      } catch (error) {
+        console.error("Nepodařilo se načíst profily uživatelů", error);
       }
-    });
-  }, [runs]);
+    };
+    loadUsers();
+    return () => { cancelled = true; };
+  }, [runs, userAvatars]);
 
   const formatTime = (minutes: string) => {
     const totalSeconds = Math.round(parseFloat(minutes) * 60);
@@ -142,7 +153,7 @@ export default function Page() {
 
         <h2 className="centered-title">Poslední záznamy</h2>
         <div className="list-container" style={{ gap: "0", display: "flex", flexDirection: "column" }}>
-          {runs.map(run => {
+          {runs.filter((run) => (run.type || "běh") === selectedType).map(run => {
             const teamName = run.teamId ? teams.find(t => t.id === run.teamId)?.name || "?" : null;
 
             const user = userAvatars[run.uid] || {};
