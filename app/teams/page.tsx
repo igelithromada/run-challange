@@ -117,8 +117,8 @@ export default function TeamsPage() {
       <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
-      <div className="container">
-        <h1 className="centered-title">Týmy</h1>
+      <div className="container teams-page">
+        <header className="teams-header"><span className="teams-eyebrow">SPOLEČNĚ ZA POHYBEM</span><h1>Týmy</h1><p>Vytvoř vlastní tým nebo se přidej k ostatním z Dolní Lhoty.</p></header>
 
         {joinedTeam && (
           <div className="tile" style={{ marginBottom: "1rem", textAlign: "center" }}>
@@ -126,8 +126,8 @@ export default function TeamsPage() {
           </div>
         )}
 
-        <div className="tile">
-          <h3>Vytvořit tým</h3>
+        <div className="tile teams-create">
+          <h3>Vytvořit nový tým</h3>
           <input
             type="text"
             placeholder="Název týmu"
@@ -151,19 +151,16 @@ export default function TeamsPage() {
           </button>
         </div>
 
-        <h3 className="centered-title" style={{ marginTop: "2rem" }}>Dostupné týmy</h3>
+        <h2 className="teams-list-heading">Dostupné týmy <span>{teams.length}</span></h2>
         <div className="list-container" style={{ gap: "0.5rem" }}>
           {teams.map((team) => (
             <div key={team.id} className="tile list-tile">
-              <div className="tile-content" style={{ fontWeight: "bold", fontSize: "1.1rem" }}>
-                {team.name}
-              </div>
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <div className="team-card-title"><div className="team-avatar">{(team.name || "T").charAt(0).toUpperCase()}</div><strong>{team.name}</strong>{joinedTeam === team.id && <span className="team-member-label">Tvůj tým</span>}</div>
+              <div className="team-card-actions">
                 {joinedTeam === team.id ? (
                   <button
                     onClick={leaveTeam}
-                    className="tile-button"
-                    style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
+                    className="tile-button team-action-button"
                   >
                     <DoorOpen size={18} /> Odejít
                   </button>
@@ -179,15 +176,7 @@ export default function TeamsPage() {
                 {user?.uid === team.createdBy && (
                   <button
                     onClick={() => deleteTeam(team.id)}
-                    className="tile-button"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: "0.4rem",
-                      width: "2.5rem",
-                      minWidth: "2.5rem",
-                    }}
+                    className="tile-button team-delete-button"
                     title="Smazat tým"
                   >
                     <Trash2 size={18} />
