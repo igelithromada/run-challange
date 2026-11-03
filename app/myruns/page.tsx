@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import {
-  collection, query, where, onSnapshot, doc,
+  collection, query, where, onSnapshot, doc, getDoc,
   deleteDoc, updateDoc
 } from "firebase/firestore";
 import {
@@ -15,6 +15,7 @@ import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
+import ActivityCard from "../components/ActivityCard";
 
 type RunData = {
   id: string;
@@ -34,6 +35,7 @@ export default function MyRunsPage() {
   useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<RunData[]>([]);
+  const [profile, setProfile] = useState<{ nickname: string; avatarUrl: string }>({ nickname: "", avatarUrl: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showImageUrls, setShowImageUrls] = useState<string[] | null>(null);
@@ -59,6 +61,13 @@ export default function MyRunsPage() {
         router.push("/login");
         return;
       }
+
+      getDoc(doc(db, "users", user.uid)).then((profileDoc) => {
+        if (profileDoc.exists()) {
+          const data = profileDoc.data();
+          setProfile({ nickname: data.nickname || "", avatarUrl: data.avatarUrl || "" });
+        }
+      }).catch((err) => console.error("Nepodařilo se načíst profil", err));
 
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
       unsubRuns = onSnapshot(q, (snap) => {
@@ -236,27 +245,14 @@ export default function MyRunsPage() {
                 <button onClick={() => handleUpdate(run.id)}>💾 Uložit</button>
               </div>
             ) : (
-              <div key={run.id} className="tile list-tile">
-                <div className="avatar">{(run.nickname || run.email)?.charAt(0).toUpperCase() || "?"}</div>
-                <div className="run-meta">
-                  <small>{new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ")}</small>
-                  {(run.imageUrls?.length || run.imageUrl) && (
-                    <div className="run-photo-icon" onClick={() => { setCurrentImageIndex(0); setShowImageUrls(imageUrls); }} role="button" aria-label="Zobrazit fotografie" style={{ cursor: "pointer", display: "flex" }}>📷</div>
-                  )}
-                </div>
-                <div className="run-info">
-                  <div className="run-heading"><span style={{ fontWeight: "bold", color: "white" }}>{run.nickname || run.email?.split("@")[0]}</span></div>
-                  <div className="run-stats">
-                    <div className="run-distance">{run.km} km, {formatTime(run.minuty)}</div>
-                    <div className="run-pace">
-                      <div className="run-pace-label">{formatTime(run.tempo)} /km</div>
-                      <div style={{ height: "5px", width: "70px", background: "linear-gradient(90deg, red, yellow, green)", borderRadius: "3px", position: "relative" }}>
-                        <div style={{ position: "absolute", top: "-4px", left: Math.min(100, Math.max(0, (((selectedType === "chůze" ? 20 : 8) - run.tempo) / ((selectedType === "chůze" ? 20 - 8 : 8 - 3))) * 100)) + "%", width: "10px", height: "10px", background: "white", border: "2px solid #333", borderRadius: "50%", transform: "translateX(-50%)" }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ActivityCard
+                key={run.id}
+                run={run}
+                nickname={profile.nickname || run.nickname || run.email?.split("@")[0] || "Anonym"}
+                avatarUrl={profile.avatarUrl}
+                activityType={selectedType}
+                onPhotosClick={(images) => { setCurrentImageIndex(0); setShowImageUrls(images); }}
+              />
             );
           })}
         </div>
