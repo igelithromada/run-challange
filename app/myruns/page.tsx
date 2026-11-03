@@ -37,6 +37,7 @@ export default function MyRunsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showImageUrls, setShowImageUrls] = useState<string[] | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedType, setSelectedType] = useState("běh");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -266,9 +267,10 @@ export default function MyRunsPage() {
                   <small>{new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ")}</small>
                   {(run.imageUrls?.length || run.imageUrl) && (
                     <div
-                      onClick={() => setShowImageUrls(
-                        run.imageUrls?.length ? run.imageUrls : run.imageUrl ? [run.imageUrl] : []
-                      )}
+                      onClick={() => {
+                        setCurrentImageIndex(0);
+                        setShowImageUrls(imageUrls);
+                      }}
                       style={{ cursor: "pointer" }}
                       title="Zobrazit fotografie"
                     >
