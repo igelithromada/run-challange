@@ -33,7 +33,7 @@ export default function RecordsPage() {
 
   // načtení záznamů uživatele
   useEffect(() => {
-    if (!id) return;
+    if (adminAccess !== "allowed" || !id) return;
     const qRef = query(collection(db, "runs"), where("uid", "==", id));
     const unsub = onSnapshot(qRef, (snap) => {
       const items: Run[] = snap.docs
@@ -42,7 +42,7 @@ export default function RecordsPage() {
       setRuns(items);
     });
     return () => unsub();
-  }, [id]);
+  }, [adminAccess, id]);
 
   const formatMinutes = (minutes?: number) => {
     const totalSeconds = Math.round((minutes || 0) * 60);
