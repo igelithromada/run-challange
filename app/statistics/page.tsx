@@ -192,7 +192,7 @@ export default function StatisticsPage() {
           {(startDate || endDate) && <button className="date-clear" onClick={()=>{setStartDate("");setEndDate("");}}>Zrušit filtr</button>}
         </div>
 
-        <div className="tile-group" style={{ flexWrap:"wrap" }}>
+        <div className="tile-group stat-summary-grid" style={{ flexWrap:"wrap" }}>
           <div className="tile">Celkem km<br />{totalKm.toFixed(2)}</div>
           <div className="tile">Prům. tempo<br />{avgTempo} min/km</div>
           <div className="tile">Počet<br />{view==="já"?filtered.filter(r=>r.uid===user?.uid).length:view==="jednotlivci"?userList.length:teamList.length}</div>
