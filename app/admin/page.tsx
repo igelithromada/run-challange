@@ -1,7 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { signOut } from "firebase/auth";
+import { db, auth } from "../lib/firebase";
+import useAdminGuard from "../lib/useAdminGuard";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useRouter } from "next/navigation";
@@ -19,6 +21,7 @@ export default function AdminPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const router = useRouter();
+  const adminAccess = useAdminGuard();
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -49,13 +52,20 @@ export default function AdminPage() {
 
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
-    if (item === "logout") router.push("/login");
+    if (item === "logout") {
+      await signOut(auth);
+      router.push("/login");
+    }
     else if (item === "myrun") router.push("/myruns");
     else if (item === "teams") router.push("/teams");
     else if (item === "settings") router.push("/settings");
     else if (item === "statistics") router.push("/statistics");
     else if (item === "admin") router.push("/admin");
   };
+
+  if (adminAccess !== "allowed") {
+    return <div className="container"><p>Ověřuji administrátorská oprávnění…</p></div>;
+  }
 
   return (
     <>
