@@ -26,8 +26,7 @@ body {
 .list-container { display: flex; flex-direction: column; gap: .65rem; }
 .list-tile {
   display: grid;
-  grid-template-columns: 52px minmax(0,1fr) auto;
-  grid-template-rows: auto auto;
+  grid-template-columns: 52px minmax(0,1fr);
   align-items: center;
   column-gap: .85rem;
   width: 100%;
@@ -43,22 +42,30 @@ body {
 }
 .avatar img { display: block; width: 100% !important; height: 100% !important; object-fit: cover; }
 .run-info { min-width: 0; padding-right: 0; }
-.run-heading { font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.run-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .5rem;
+  min-width: 0;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
 .run-stats { display: flex; align-items: center; flex-wrap: wrap; column-gap: .5rem; row-gap: .15rem; margin-top: .35rem; }
 .run-distance { white-space: nowrap; }
 .run-pace { padding: .1rem .35rem; border-radius: 10px; display: flex; flex-direction: column; align-items: center; }
 .run-pace-label { font-size: 1rem; white-space: nowrap; margin-bottom: 1px; }
 .run-meta {
-  grid-column: 3;
-  grid-row: 1;
   display: flex;
+  flex: 0 0 auto;
   justify-content: flex-end;
   align-items: center;
   gap: .5rem;
-  align-self: start;
   margin-top: .1rem;
   color: rgba(255,255,255,.78);
   font-size: .78rem;
+  font-weight: 400;
 }
 .run-meta small { white-space: nowrap; }
 .link { color: lightgreen; text-decoration: underline; cursor: pointer; }
@@ -68,8 +75,8 @@ body {
   .tile-group { gap: .6rem; margin: 1.25rem 0; }
   .tile-button { min-height: 56px; padding: .65rem .5rem; }
   .run-form-wrap { margin: 1.25rem 0 1.75rem; }
-  .list-tile { grid-template-columns: 48px minmax(0,1fr) auto; column-gap: .55rem; padding: .8rem .7rem; }
-  .run-meta { font-size: .7rem; }
+  .list-tile { grid-template-columns: 48px minmax(0,1fr); column-gap: .55rem; padding: .8rem .7rem; }
+  .run-meta { font-size: .7rem; gap: .35rem; }
   .avatar { width: 48px; height: 48px; min-width: 48px; }
   .run-stats { font-size: .95rem; }
   .run-pace-label { font-size: .95rem; }
