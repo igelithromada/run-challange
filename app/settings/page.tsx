@@ -1,8 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { db, auth } from "../lib/firebase";
+import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
@@ -17,6 +18,7 @@ export default function SettingsPage() {
   const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [theme, setTheme] = useState("default");
   const [customColor, setCustomColor] = useState("#36D1DC");
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -101,15 +103,41 @@ export default function SettingsPage() {
     setTimeout(() => setShowNotification(false), 2000);
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarUrl(reader.result as string);
-        saveSettings({ avatarUrl: reader.result });
-      };
-      reader.readAsDataURL(file);
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!userId) {
+      alert("Uživatel ještě není načtený. Zkus to prosím znovu.");
+      input.value = "";
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      alert("Vyber prosím obrázek.");
+      input.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Avatar může mít maximálně 5 MB.");
+      input.value = "";
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const avatarRef = ref(storage, `avatars/${userId}/${Date.now()}-${safeFileName}`);
+      await uploadBytes(avatarRef, file);
+      const downloadUrl = await getDownloadURL(avatarRef);
+      setAvatarUrl(downloadUrl);
+      await saveSettings({ avatarUrl: downloadUrl });
+    } catch (err) {
+      console.error("Chyba při nahrávání avataru:", err);
+      alert("Avatar se nepodařilo uložit. Zkus to prosím znovu.");
+    } finally {
+      setAvatarUploading(false);
+      input.value = "";
     }
   };
 
@@ -167,7 +195,13 @@ export default function SettingsPage() {
               {(nickname || email)?.charAt(0).toUpperCase() || "?"}
             </div>
           )}
-          <input type="file" onChange={handleAvatarChange} />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarChange}
+            disabled={avatarUploading}
+          />
+          {avatarUploading && <p>Nahrávám avatar…</p>}
         </div>
 
         <div className="tile">
