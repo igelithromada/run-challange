@@ -135,7 +135,8 @@ export default function SettingsPage() {
       } catch (err) {
         console.error("Chyba při odhlašování: ", err);
       }
-    } else if (item === "myrun") router.push("/myruns");
+    } else if (item === "home") router.push("/");
+    else if (item === "myrun") router.push("/myruns");
     else if (item === "teams") router.push("/teams");
     else if (item === "settings") router.push("/settings");
     else if (item === "statistics") router.push("/statistics");
@@ -143,7 +144,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
+      <Navbar title="Nastavení" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
       <div className="container">
@@ -164,30 +165,20 @@ export default function SettingsPage() {
           />
         </div>
 
-        <div className="tile" style={{ textAlign: "center" }}>
-          <h3>Změnit avatar</h3>
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="avatar" style={{
-              width: "80px", height: "80px", borderRadius: "50%", marginBottom: "0.0rem"
-            }} />
-          ) : (
-            <div style={{
-              width: "80px", height: "80px", borderRadius: "50%",
-              background: "rgba(255,255,255,0.3)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "5rem", marginBottom: "0.5rem"
-            }}>
-              {(nickname || email)?.charAt(0).toUpperCase() || "?"}
-            </div>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleAvatarChange}
-            disabled={avatarUploading}
-          />
-          {avatarUploading && <p>Nahrávám avatar…</p>}
-        </div>
+        <section className="tile settings-avatar">
+          <div className="settings-avatar-preview">
+            {avatarUrl ? <img src={avatarUrl} alt="Profilový avatar" /> : <span>{(nickname || email)?.charAt(0).toUpperCase() || "?"}</span>}
+          </div>
+          <div className="settings-avatar-copy">
+            <h3>Profilová fotografie</h3>
+            <p>Vyber obrázek, který se zobrazí u tvých aktivit.</p>
+            <label className="avatar-upload-button">
+              {avatarUploading ? "Nahrávám obrázek…" : avatarUrl ? "Změnit fotografii" : "Vybrat fotografii"}
+              <input type="file" accept="image/*" onChange={handleAvatarChange} disabled={avatarUploading} />
+            </label>
+            <small>JPG, PNG nebo WEBP · maximálně 5 MB</small>
+          </div>
+        </section>
 
         <div className="tile">
           <h3>Nastavení vzhledu</h3>
