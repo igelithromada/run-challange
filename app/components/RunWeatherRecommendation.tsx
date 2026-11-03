@@ -84,7 +84,7 @@ export default function RunWeatherRecommendation() {
         <span className="run-weather-eyebrow"><Footprints size={14} /> Doporučení pro běh · Dolní Lhota</span>
         <strong>{title}</strong>
         <p>{advice}</p>
-        {current && <small>{Math.round(temperature)} °C · vítr {Math.round(wind)} km/h{rainChance > 0 ? ` · srážky ${Math.round(rainChance)} %` : ""}</small>}
+        {current && <small>{Math.round(temperature)} °C · <span className="run-weather-wind"><Wind size={14} className="wind-icon-animated" /> vítr {Math.round(wind)} km/h</span>{rainChance > 0 ? ` · srážky ${Math.round(rainChance)} %` : ""}</small>}
       </div>
     </section>
   );
