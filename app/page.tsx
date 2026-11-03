@@ -131,12 +131,12 @@ export default function Page() {
       <div className="container">
         <h1 className="centered-title"></h1>
 
-        <div className="tile-group">
+        <div className="tile-group" role="group" aria-label="Typ aktivity">
           <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
           <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
         </div>
 
-        <div className="tile">
+        <div className="run-form-panel">
           <RunForm type={selectedType} />
         </div>
 
@@ -161,36 +161,21 @@ export default function Page() {
             });
 
             return (
-              <div key={run.id} className="tile list-tile"
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "0.5rem",
-                  position: "relative",
-                  margin: "6px 0",
-                  padding: "6px 8px"
-                }}>
-                <div className="avatar" style={{ marginRight: "0.1rem" }}>{avatar}</div>
+              <div key={run.id} className="tile list-tile">
+                <div className="avatar">{avatar}</div>
 
-                <div style={{ flex: 1 }}>
-                  <div>
+                <div className="run-info">
+                  <div className="run-heading">
                     <span onClick={() => router.push(`/user/${run.uid}`)} style={{ fontWeight: "bold", color: "white", cursor: "pointer" }}>
                       {nickname}
                     </span>
                     {teamName && <span style={{ marginLeft: "10px", fontWeight: "bold", color: "white" }}>({teamName})</span>}
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.2rem" }}>
-                    <div>{run.km} km, {formatTime(run.minuty)}</div>
-                    <div style={{
-                      background: "rgba(0,0,0,0.0)",
-                      padding: "0.1rem 0.6rem",
-                      borderRadius: "10px",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center"
-                    }}>
-                      <div style={{ fontSize: "1rem", marginBottom: "0.1px" }}>
+                  <div className="run-stats">
+                    <div className="run-distance">{run.km} km, {formatTime(run.minuty)}</div>
+                    <div className="run-pace">
+                      <div className="run-pace-label">
                         {formatTime(run.tempo)} /km
                       </div>
                       <div style={{
@@ -210,16 +195,8 @@ export default function Page() {
                   </div>
                 </div>
 
-                <div style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-end",
-                  position: "absolute",
-                  right: "0.8rem",
-                  top: "0.4rem",
-                  gap: "0.3rem"
-                }}>
-                  <small style={{ whiteSpace: "nowrap" }}>{dateStr}</small>
+                <div className="run-meta">
+                  <small>{dateStr}</small>
                   {showPhotoIcon(run) && (
                     <div onClick={() => handleShowImages(run.imageUrls ?? [], run.imageUrl ?? "")} style={{ cursor: "pointer" }}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5"
