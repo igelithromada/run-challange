@@ -26,7 +26,8 @@ export default function WeatherPage() {
     if (item === "logout") {
       await signOut(auth);
       router.push("/login");
-    } else if (item === "myrun") router.push("/myruns");
+    } else if (item === "home") router.push("/");
+    else if (item === "myrun") router.push("/myruns");
     else if (item === "teams") router.push("/teams");
     else if (item === "statistics") router.push("/statistics");
     else if (item === "settings") router.push("/settings");
@@ -36,10 +37,10 @@ export default function WeatherPage() {
 
   return (
     <>
-      <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
+      <Navbar title="Počasí pro běh" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
       <main className="container">
-        <h1 className="centered-title">Počasí pro běh</h1>
+        
         <WeatherCard />
         <p style={{ textAlign: "center", opacity: 0.75, fontSize: "0.85rem" }}>
           Předpověď pro Dolní Lhotu u Ostravy. Data se obnovují automaticky.
