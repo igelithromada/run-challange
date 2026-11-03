@@ -313,3 +313,48 @@ html[data-windy="true"] body::after {
   to { background-position: 190px 0; transform: translate3d(5%, 1%, 0); }
 }
 @media (prefers-reduced-motion: reduce) { html[data-windy="true"] body::after { animation: none; } }
+
+
+/* Počasí: animace musí být viditelné i skrz karty napříč celou aplikací. */
+html[data-windy="true"] .tile,
+html[data-windy="true"] .list-tile,
+html[data-windy="true"] .run-weather-recommendation,
+html[data-windy="true"] [class*="card"],
+html[data-windy="true"] [class*="Card"],
+html[data-weather="rain"] .tile,
+html[data-weather="rain"] .list-tile,
+html[data-weather="rain"] .run-weather-recommendation,
+html[data-weather="rain"] [class*="card"],
+html[data-weather="rain"] [class*="Card"],
+html[data-weather="rain-wind"] .tile,
+html[data-weather="rain-wind"] .list-tile,
+html[data-weather="rain-wind"] .run-weather-recommendation,
+html[data-weather="rain-wind"] [class*="card"],
+html[data-weather="rain-wind"] [class*="Card"],
+html[data-weather="snow"] .tile,
+html[data-weather="snow"] .list-tile,
+html[data-weather="snow"] .run-weather-recommendation,
+html[data-weather="snow"] [class*="card"],
+html[data-weather="snow"] [class*="Card"],
+html[data-weather="snow-wind"] .tile,
+html[data-weather="snow-wind"] .list-tile,
+html[data-weather="snow-wind"] .run-weather-recommendation,
+html[data-weather="snow-wind"] [class*="card"],
+html[data-weather="snow-wind"] [class*="Card"] {
+  background-color: rgba(0, 0, 0, .20) !important;
+  border-color: rgba(255, 255, 255, .13);
+}
+
+/* Vnitřní prvky karet zůstávají nad animovanou vrstvou a plně čitelné. */
+html[data-windy="true"] .tile > *,
+html[data-windy="true"] .list-tile > *,
+html[data-weather="rain"] .tile > *,
+html[data-weather="rain"] .list-tile > *,
+html[data-weather="rain-wind"] .tile > *,
+html[data-weather="rain-wind"] .list-tile > *,
+html[data-weather="snow"] .tile > *,
+html[data-weather="snow"] .list-tile > *,
+html[data-weather="snow-wind"] .tile > *,
+html[data-weather="snow-wind"] .list-tile > * {
+  position: relative;
+}
