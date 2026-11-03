@@ -120,7 +120,7 @@ export default function UserPage() {
               });
 
               return (
-                <div key={run.id} className="tile list-tile" style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", position: "relative", margin: "6px 0", padding: "6px 8px" }}>
+                <div key={run.id} className="tile list-tile" style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", position: "relative", margin: "var(--list-card-margin)", padding: "var(--list-card-padding)" }}>
                   <div className="avatar" style={{ marginRight: "0.1rem" }}>{avatar}</div>
                   <div style={{ flex: 1 }}>
                     <div>
