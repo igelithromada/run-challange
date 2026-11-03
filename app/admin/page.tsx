@@ -58,6 +58,7 @@ export default function AdminPage() {
       await signOut(auth);
       router.push("/login");
     }
+    else if (item === "home") router.push("/");
     else if (item === "myrun") router.push("/myruns");
     else if (item === "teams") router.push("/teams");
     else if (item === "settings") router.push("/settings");
@@ -71,11 +72,11 @@ export default function AdminPage() {
 
   return (
     <>
-      <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
+      <Navbar title="Administrace" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
       <div className="container">
-        <h1 className="centered-title">Admin – Správa uživatelů</h1>
+        
 
         {!selectedUser ? (
           <div className="tile">
