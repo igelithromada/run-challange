@@ -116,7 +116,7 @@ export default function RecordsPage() {
                 : (run.imageUrl ? [run.imageUrl] : []);
 
               return (
-                <div key={run.id} className="tile list-tile" style={{ position: "relative", padding: "6px 8px", margin: "6px 0" }}>
+                <div key={run.id} className="tile list-tile" style={{ position: "relative", padding: "var(--list-card-padding)", margin: "var(--list-card-margin)" }}>
                   <div style={{ fontWeight: 700, marginBottom: 4 }}>{dateStr}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
                     <div>{run.km} km</div>
