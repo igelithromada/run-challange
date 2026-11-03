@@ -50,6 +50,12 @@ export default function RunForm({ type }: { type: string }) {
       return;
     }
 
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      setError("Pro uložení záznamu se nejprve přihlas.");
+      return;
+    }
+
     try {
       let imageUrls: string[] = [];
 
@@ -62,12 +68,6 @@ export default function RunForm({ type }: { type: string }) {
 
       let avatarUrl = "";
       let teamId = null;
-
-      const uid = auth.currentUser?.uid;
-      if (!uid) {
-        setError("Pro uložení záznamu se nejprve přihlas.");
-        return;
-      }
 
       const userDoc = await getDoc(doc(db, "users", uid));
       if (userDoc.exists()) {
