@@ -6,7 +6,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import useThemeLoader from "../lib/useThemeLoader";
+import useThemeLoader, { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
 
@@ -57,21 +57,6 @@ export default function SettingsPage() {
     });
     return () => unsub();
   }, [router]);
-
-  const applyTheme = (selectedTheme: string, color: string) => {
-    let gradient = "";
-    if (selectedTheme === "default") gradient = "linear-gradient(180deg, #36D1DC, #5B86E5)";
-    else if (selectedTheme === "man") gradient = "linear-gradient(180deg, #2980b9, #2c3e50)";
-    else if (selectedTheme === "woman") gradient = "linear-gradient(180deg, #ff7eb3, #ff758c)";
-    else if (selectedTheme === "auto") {
-      const hour = new Date().getHours();
-      gradient = hour >= 6 && hour < 18
-        ? "linear-gradient(180deg, #36D1DC, #5B86E5)"
-        : "linear-gradient(180deg, #0f2027, #203a43, #2c5364)";
-    }
-    else if (selectedTheme === "custom") gradient = `linear-gradient(180deg, ${color}, #000000)`;
-    document.documentElement.style.setProperty("--main-gradient", gradient);
-  };
 
   const saveSettings = async (newData = {}) => {
     if (!userId) return;
@@ -211,6 +196,7 @@ export default function SettingsPage() {
             <ThemeItem color="linear-gradient(180deg, #2980b9, #2c3e50)" active={theme === "man"} onClick={() => handleThemeChange("man")} text="Muž" />
             <ThemeItem color="linear-gradient(180deg, #ff7eb3, #ff758c)" active={theme === "woman"} onClick={() => handleThemeChange("woman")} text="Žena" />
             <ThemeItem color="linear-gradient(180deg, #36D1DC, #5B86E5)" active={theme === "auto"} onClick={() => handleThemeChange("auto")} text="Automaticky podle času" />
+            <ThemeItem color="linear-gradient(160deg, #263849, #6bc6dc, #f5b94c)" active={theme === "weather"} onClick={() => handleThemeChange("weather")} text="Podle aktuálního počasí" />
 
             <div style={{
               marginTop: "0.7rem",
