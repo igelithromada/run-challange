@@ -45,6 +45,9 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
           color: "white"
         }}
       >
+        <HoverTile onClick={() => onSelect("home")}>
+          <Home size={21} strokeWidth={2} /> Hlavní obrazovka
+        </HoverTile>
         <HoverTile onClick={() => onSelect("myrun")}>
           <Footprints size={21} strokeWidth={2} /> Moje aktivity
         </HoverTile>
