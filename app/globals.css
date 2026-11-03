@@ -275,3 +275,38 @@ html[data-weather="snow"] body::before {
 @media (prefers-reduced-motion: reduce) {
   html[data-weather="rain"] body::before, html[data-weather="snow"] body::before { animation: none; }
 }
+
+
+/* Vítr a mraky – druhá vrstva animace, aby se mohla kombinovat s deštěm i sněhem */
+body::after {
+  content: ""; position: fixed; inset: -25%; z-index: 0; pointer-events: none;
+  opacity: 0; transition: opacity .7s ease;
+}
+html[data-weather="wind"] body::before,
+html[data-weather="rain-wind"] body::after,
+html[data-weather="snow-wind"] body::after {
+  opacity: .24;
+  background: repeating-linear-gradient(168deg, transparent 0 34px, rgba(230,245,255,.24) 35px, transparent 37px 72px);
+  animation: weather-wind 3.8s ease-in-out infinite alternate;
+}
+html[data-weather="cloudy"] body::before,
+html[data-weather="fog"] body::before {
+  opacity: .24;
+  background:
+    radial-gradient(ellipse at 18% 30%, rgba(255,255,255,.22) 0 9%, transparent 28%),
+    radial-gradient(ellipse at 72% 48%, rgba(255,255,255,.18) 0 12%, transparent 32%),
+    radial-gradient(ellipse at 45% 78%, rgba(255,255,255,.14) 0 10%, transparent 30%);
+  filter: blur(20px);
+  animation: weather-clouds 24s ease-in-out infinite alternate;
+}
+@keyframes weather-wind {
+  from { transform: translate3d(-4%, -1%, 0) skewX(-5deg); }
+  to { transform: translate3d(5%, 2%, 0) skewX(5deg); }
+}
+@keyframes weather-clouds {
+  from { transform: translate3d(-5%, 0, 0); }
+  to { transform: translate3d(5%, 2%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before, body::after { animation: none !important; }
+}
