@@ -145,6 +145,8 @@ export default function Page() {
       <div className="container">
         <h1 className="centered-title"></h1>
 
+        <WeatherCard />
+
         <div className="tile-group" role="group" aria-label="Typ aktivity">
           <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
           <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
