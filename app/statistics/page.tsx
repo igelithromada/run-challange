@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import type { User } from "firebase/auth";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, getDocs, where, documentId } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
@@ -15,6 +15,7 @@ export default function StatisticsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
+  const [avatars, setAvatars] = useState<Record<string, string>>({});
   const [user, setUser] = useState<User | null>(null);
   const [selectedType, setSelectedType] = useState("běh");
   const [view, setView] = useState("já");
@@ -39,6 +40,29 @@ export default function StatisticsPage() {
 
     return () => { unsubAuth(); unsubRuns(); unsubTeams(); }
   }, [router]);
+
+  useEffect(() => {
+    const ids = Array.from(new Set(runs.map((run) => run.uid).filter((id): id is string => typeof id === "string" && !!id)));
+    if (!ids.length) { setAvatars({}); return; }
+    let cancelled = false;
+    const loadAvatars = async () => {
+      try {
+        const batches: string[][] = [];
+        for (let i = 0; i < ids.length; i += 30) batches.push(ids.slice(i, i + 30));
+        const snapshots = await Promise.all(batches.map((batch) =>
+          getDocs(query(collection(db, "users"), where(documentId(), "in", batch)))
+        ));
+        if (cancelled) return;
+        const next: Record<string, string> = {};
+        snapshots.forEach((snapshot) => snapshot.docs.forEach((profile) => {
+          next[profile.id] = profile.data().avatarUrl || "";
+        }));
+        setAvatars(next);
+      } catch (error) { console.error("Nepodařilo se načíst avatary ve výsledcích", error); }
+    };
+    void loadAvatars();
+    return () => { cancelled = true; };
+  }, [runs]);
 
   const filtered = runs.filter(run => {
     if ((run.type || "běh") !== selectedType) return false;
@@ -86,7 +110,7 @@ export default function StatisticsPage() {
   });
 
   const userList = Object.entries(userMap).map(([uid, data]) => ({
-    uid, name: data.name, km: data.km, tempo: data.km ? data.min / data.km : 0
+    uid, name: data.name, avatarUrl: avatars[uid] || "", km: data.km, tempo: data.km ? data.min / data.km : 0
   })).sort((a, b) => metric === "tempo" ? a.tempo - b.tempo : b.km - a.km);
 
   const teamList = Object.entries(teamMap).map(([id, data]) => ({
@@ -195,7 +219,7 @@ export default function StatisticsPage() {
                   <li key={idx} className="tile" style={{ display:"flex", alignItems:"center",
                     background: idx===0?"gold":idx===1?"silver":idx===2?"#cd7f32":"rgba(0,0,0,0.2)" }}>
                     <div style={{ marginRight:"0.8rem" }}>{idx+1}.</div>
-                    <div className="avatar">{label?.charAt(0).toUpperCase()}</div>
+                    <div className="avatar">{view === "jednotlivci" && "uid" in item && item.avatarUrl ? <img src={item.avatarUrl} alt={`Avatar ${label}`} /> : label?.charAt(0).toUpperCase()}</div>
                     <div style={{ marginLeft:"0.6rem" }}>
                       {label} — {metric==="km"
                         ? `${item.km.toFixed(2)} km`
