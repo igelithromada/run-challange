@@ -173,15 +173,18 @@ export default function StatisticsPage() {
       <div className="container">
         
 
+        <div className="control-caption">Typ aktivity</div>
         <div className="tile-group">
           <button className={`tile-button ${selectedType==="běh"?"active":""}`} onClick={()=>setSelectedType("běh")}>🏃 Běh</button>
           <button className={`tile-button ${selectedType==="chůze"?"active":""}`} onClick={()=>setSelectedType("chůze")}>🚶 Chůze</button>
         </div>
+        <div className="control-caption">Zobrazit výsledky</div>
         <div className="tile-group">
           <button className={`tile-button ${view==="já"?"active":""}`} onClick={()=>setView("já")}>Já</button>
           <button className={`tile-button ${view==="jednotlivci"?"active":""}`} onClick={()=>setView("jednotlivci")}>Jednotlivci</button>
           <button className={`tile-button ${view==="týmy"?"active":""}`} onClick={()=>setView("týmy")}>Týmy</button>
         </div>
+        <div className="control-caption">Hodnocené podle</div>
         <div className="tile-group">
           <button className={`tile-button ${metric==="km"?"active":""}`} onClick={()=>setMetric("km")}>Km</button>
           <button className={`tile-button ${metric==="tempo"?"active":""}`} onClick={()=>setMetric("tempo")}>Tempo</button>
