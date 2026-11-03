@@ -176,7 +176,7 @@ export default function StatisticsPage() {
         <div className="control-caption">Typ aktivity</div>
         <div className="tile-group">
           <button className={`tile-button ${selectedType==="běh"?"active":""}`} onClick={()=>setSelectedType("běh")}><PersonStanding size={25} strokeWidth={2.8} /> Běh</button>
-          <button className={`tile-button ${selectedType==="chůze"?"active":""}`} onClick={()=>setSelectedType("chůze")}>🚶 Chůze</button>
+          <button className={`tile-button ${selectedType==="chůze"?"active":""}`} onClick={()=>setSelectedType("chůze")}><Footprints size={25} strokeWidth={2.8} /> Chůze</button>
         </div>
         <div className="control-caption">Zobrazit výsledky</div>
         <div className="tile-group">
