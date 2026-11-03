@@ -254,13 +254,15 @@ body::before {
   opacity: 0; transition: opacity .6s ease;
 }
 body > * { position: relative; z-index: 1; }
-html[data-weather="rain"] body::before {
+html[data-weather="rain"] body::before,
+html[data-weather="rain-wind"] body::before {
   opacity: .32;
   background-image: repeating-linear-gradient(105deg, transparent 0 17px, rgba(220,240,255,.28) 18px, transparent 19px 34px);
   background-size: 90px 150px;
   animation: weather-rain 1.1s linear infinite;
 }
-html[data-weather="snow"] body::before {
+html[data-weather="snow"] body::before,
+html[data-weather="snow-wind"] body::before {
   opacity: .68;
   background-image:
     radial-gradient(3px 3px at 18px 24px, rgba(255,255,255,.9) 98%, transparent),
@@ -273,59 +275,16 @@ html[data-weather="snow"] body::before {
 @keyframes weather-rain { from { transform: translate3d(0,-8%,0); } to { transform: translate3d(-5%,8%,0); } }
 @keyframes weather-snow { from { transform: translate3d(0,-5%,0); } to { transform: translate3d(3%,10%,0); } }
 @media (prefers-reduced-motion: reduce) {
-  html[data-weather="rain"] body::before, html[data-weather="snow"] body::before { animation: none; }
+  html[data-weather="rain"] body::before, html[data-weather="rain-wind"] body::before, html[data-weather="snow"] body::before, html[data-weather="snow-wind"] body::before { animation: none; }
 }
 
 
-/* Vítr a mraky – druhá vrstva animace, aby se mohla kombinovat s deštěm i sněhem */
-body::after {
-  content: ""; position: fixed; inset: -25%; z-index: 0; pointer-events: none;
-  opacity: 0; transition: opacity .7s ease;
-}
-html[data-weather="wind"] body::before,
-html[data-weather="rain-wind"] body::after,
-html[data-weather="snow-wind"] body::after {
-  opacity: calc(.08 + var(--wind-strength, .3) * .28);
-  background: repeating-linear-gradient(168deg, transparent 0 34px, rgba(230,245,255,.32) 35px, transparent 37px 72px);
-  animation: weather-wind calc(5.5s - var(--wind-strength, .3) * 3.5s) ease-in-out infinite alternate;
-}
-html[data-weather="cloudy"] body::before,
-html[data-weather="fog"] body::before {
-  opacity: .24;
-  background:
-    radial-gradient(ellipse at 18% 30%, rgba(255,255,255,.22) 0 9%, transparent 28%),
-    radial-gradient(ellipse at 72% 48%, rgba(255,255,255,.18) 0 12%, transparent 32%),
-    radial-gradient(ellipse at 45% 78%, rgba(255,255,255,.14) 0 10%, transparent 30%);
-  filter: blur(20px);
-  animation: weather-clouds 24s ease-in-out infinite alternate;
-}
-@keyframes weather-wind {
-  from { transform: translate3d(-4%, -1%, 0) skewX(-5deg); }
-  to { transform: translate3d(5%, 2%, 0) skewX(5deg); }
-}
-@keyframes weather-clouds {
-  from { transform: translate3d(-5%, 0, 0); }
-  to { transform: translate3d(5%, 2%, 0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  body::before, body::after { animation: none !important; }
-}
 
 
-/* Vítr je samostatná vrstva – zobrazí se i při oblačnosti nebo mlze. */
-/* Jemné světelné proudnice větru – držíme je pod obsahem aplikace. */
-/* Plynulé bezešvé proudnice větru – levý a pravý okraj vzoru na sebe navazují. */
-html[data-windy="true"] body::after {
-  z-index: 0;
-  opacity: calc(.16 + var(--wind-strength, .3) * .22);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='700' height='260' viewBox='0 0 700 260'%3E%3Cdefs%3E%3Cfilter id='g' x='-20%25' y='-100%25' width='140%25' height='300%25'%3E%3CfeGaussianBlur stdDeviation='5'/%3E%3C/filter%3E%3C/defs%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cg stroke='%23e8f8ff' stroke-width='12' opacity='.32' filter='url(%23g)'%3E%3Cpath d='M0 55 C58 10 117 10 175 55 S292 100 350 55 S467 10 525 55 S642 100 700 55'/%3E%3Cpath d='M0 130 C58 85 117 85 175 130 S292 175 350 130 S467 85 525 130 S642 175 700 130'/%3E%3Cpath d='M0 205 C58 160 117 160 175 205 S292 250 350 205 S467 160 525 205 S642 250 700 205'/%3E%3C/g%3E%3Cg stroke='%23ffffff' stroke-width='2.2' opacity='.85'%3E%3Cpath d='M0 55 C58 10 117 10 175 55 S292 100 350 55 S467 10 525 55 S642 100 700 55'/%3E%3Cpath d='M0 130 C58 85 117 85 175 130 S292 175 350 130 S467 85 525 130 S642 175 700 130'/%3E%3Cpath d='M0 205 C58 160 117 160 175 205 S292 250 350 205 S467 160 525 205 S642 250 700 205'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  background-size: 700px 260px;
-  background-repeat: repeat;
-  animation: weather-wind-ribbons calc(18s - var(--wind-strength, .3) * 9s) linear infinite;
-  pointer-events: none;
+/* Jednoduchá animace pouze ikony větru – nezatěžuje pozadí celé stránky. */
+.wind-icon-animated { animation: wind-icon-gust 2.4s ease-in-out infinite; transform-origin: center; }
+@keyframes wind-icon-gust {
+  0%, 100% { transform: translateX(0); opacity: .85; }
+  50% { transform: translateX(3px); opacity: 1; }
 }
-@keyframes weather-wind-ribbons {
-  from { background-position: 0 0; }
-  to { background-position: 700px 0; }
-}
-/* Zachovat původní průhlednost karet a ovládacích prvků i při větru. */
+@media (prefers-reduced-motion: reduce) { .wind-icon-animated { animation: none; } }
