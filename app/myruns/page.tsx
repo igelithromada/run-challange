@@ -236,47 +236,25 @@ export default function MyRunsPage() {
                 <button onClick={() => handleUpdate(run.id)}>💾 Uložit</button>
               </div>
             ) : (
-              <div key={run.id} className="tile list-tile"
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "0.5rem",
-                  position: "relative",
-                  margin: "var(--list-card-margin)",
-                  padding: "var(--list-card-padding)"
-                }}>
+              <div key={run.id} className="tile list-tile">
                 <div className="avatar">{(run.nickname || run.email)?.charAt(0).toUpperCase() || "?"}</div>
-                <div style={{ flex: 1 }}>
-                  <div>
-                    <span style={{ fontWeight: "bold", color: "white" }}>
-                      {run.nickname || run.email?.split("@")[0]}
-                    </span>
-                  </div>
-                  <div>{run.km} km, {formatTime(run.minuty)}</div>
-                  {renderTempoBar(run.tempo)}
-                </div>
-                <div style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-end",
-                  position: "absolute",
-                  right: "0.8rem",
-                  top: "0.4rem",
-                  gap: "0.3rem"
-                }}>
+                <div className="run-meta">
                   <small>{new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ")}</small>
                   {(run.imageUrls?.length || run.imageUrl) && (
-                    <div
-                      onClick={() => {
-                        setCurrentImageIndex(0);
-                        setShowImageUrls(imageUrls);
-                      }}
-                      style={{ cursor: "pointer" }}
-                      title="Zobrazit fotografie"
-                    >
-                      📷
-                    </div>
+                    <div className="run-photo-icon" onClick={() => { setCurrentImageIndex(0); setShowImageUrls(imageUrls); }} role="button" aria-label="Zobrazit fotografie" style={{ cursor: "pointer", display: "flex" }}>📷</div>
                   )}
+                </div>
+                <div className="run-info">
+                  <div className="run-heading"><span style={{ fontWeight: "bold", color: "white" }}>{run.nickname || run.email?.split("@")[0]}</span></div>
+                  <div className="run-stats">
+                    <div className="run-distance">{run.km} km, {formatTime(run.minuty)}</div>
+                    <div className="run-pace">
+                      <div className="run-pace-label">{formatTime(run.tempo)} /km</div>
+                      <div style={{ height: "5px", width: "70px", background: "linear-gradient(90deg, red, yellow, green)", borderRadius: "3px", position: "relative" }}>
+                        <div style={{ position: "absolute", top: "-4px", left: Math.min(100, Math.max(0, (((selectedType === "chůze" ? 20 : 8) - run.tempo) / ((selectedType === "chůze" ? 20 - 8 : 8 - 3))) * 100)) + "%", width: "10px", height: "10px", background: "white", border: "2px solid #333", borderRadius: "50%", transform: "translateX(-50%)" }} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             );
