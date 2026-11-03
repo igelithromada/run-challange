@@ -37,7 +37,6 @@ export default function Navbar({ onMenuClick, onHomeClick, showHome = true, titl
         background: "rgba(0, 0, 0, 0.2)",
         color: "white",
         padding: "0.6rem 1.2rem",
-        display: "flex",
         display: "grid",
         gridTemplateColumns: "40px minmax(0, 1fr) 40px",
         gap: "0.5rem",
