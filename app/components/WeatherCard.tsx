@@ -8,6 +8,7 @@ import {
 
 type WeatherResponse = {
   configured: boolean;
+  source?: string;
   current?: any;
   hourly?: any[];
   timeZone?: { id?: string };
@@ -137,7 +138,7 @@ export default function WeatherCard() {
               </div>
             </>
           )}
-          <p style={{ margin: "0.85rem 0 0", fontSize: "0.72rem", opacity: 0.7, textAlign: "right" }}>Zdroj: Google Weather · obnoveno {lastUpdated}</p>
+          <p style={{ margin: "0.85rem 0 0", fontSize: "0.72rem", opacity: 0.7, textAlign: "right" }}>Zdroj: {weather.source || "Google Weather"} · obnoveno {lastUpdated}</p>
         </>
       )}
     </section>
