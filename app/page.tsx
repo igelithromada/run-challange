@@ -81,7 +81,7 @@ export default function Page() {
     };
     loadUsers();
     return () => { cancelled = true; };
-  }, [runs, userAvatars]);
+  }, [runs]);
 
   const formatTime = (minutes: string) => {
     const totalSeconds = Math.round(parseFloat(minutes) * 60);
