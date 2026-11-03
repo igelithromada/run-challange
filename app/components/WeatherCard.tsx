@@ -104,7 +104,7 @@ export default function WeatherCard() {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "0.5rem", marginBottom: "1.1rem" }}>
             <div style={{ background: "rgba(0,0,0,0.12)", borderRadius: "12px", padding: "0.65rem 0.5rem", textAlign: "center" }}>
-              <Wind size={19} style={{ margin: "0 auto 0.25rem" }} />
+              <Wind size={19} className="wind-icon-animated" style={{ margin: "0 auto 0.25rem" }} />
               <strong style={{ display: "block" }}>{wind !== undefined ? Math.round(wind) : "—"} {wind !== undefined ? windUnit : ""}</strong>
               <small>Vítr</small>
             </div>
