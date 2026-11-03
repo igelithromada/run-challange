@@ -150,7 +150,7 @@ export default function Page() {
 
         <div className="tile-group" role="group" aria-label="Typ aktivity">
           <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}><PersonStanding size={25} strokeWidth={2.8} /> Běh</button>
-          <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
+          <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}><Footprints size={25} strokeWidth={2.8} /> Chůze</button>
         </div>
 
         <div className="run-form-wrap">
