@@ -147,3 +147,45 @@ body {
   .run-stats { font-size: .95rem; }
   .run-pace-label { font-size: .95rem; }
 }
+
+
+/* Stránka týmů – přehledné responzivní rozložení */
+.teams-page { padding-top: 1.5rem; }
+.teams-header { text-align: center; margin: 1.5rem 0 2rem; }
+.teams-eyebrow, .teams-section-label { display: block; font-size: .7rem; letter-spacing: .14em; font-weight: 700; opacity: .72; }
+.teams-header h1 { margin: .35rem 0; font-size: clamp(2rem, 7vw, 2.7rem); }
+.teams-header p, .teams-section-heading p { margin: .35rem 0 0; opacity: .78; line-height: 1.5; }
+.teams-current { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.teams-current-icon, .teams-create-icon, .team-avatar { display: grid; place-items: center; flex: 0 0 auto; width: 48px; height: 48px; border-radius: 15px; background: rgba(255,255,255,.16); font-size: 1.5rem; }
+.teams-current strong { display: block; margin-top: .2rem; font-size: 1.1rem; }
+.teams-create { padding: 1.25rem; }
+.teams-section-heading { display: flex; align-items: center; gap: .85rem; }
+.teams-section-heading h2, .teams-list-heading h2 { margin: 0; font-size: 1.2rem; }
+.teams-create-form { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .65rem; margin-top: 1rem; }
+.teams-create-form input { width: 100%; min-width: 0; box-sizing: border-box; padding: .85rem 1rem; border: 1px solid rgba(255,255,255,.18); border-radius: 12px; color: white; background: rgba(0,0,0,.18); font: inherit; }
+.teams-create-form input::placeholder { color: rgba(255,255,255,.65); }
+.teams-primary-button { display: flex; align-items: center; justify-content: center; gap: .4rem; white-space: nowrap; min-height: 48px; }
+.teams-primary-button:disabled { opacity: .5; cursor: not-allowed; }
+.teams-list-section { margin-top: 2rem; }
+.teams-list-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: .8rem; }
+.teams-list-heading h2 { margin-top: .2rem; }
+.teams-count { display: grid; place-items: center; min-width: 34px; height: 34px; padding: 0 .5rem; border-radius: 20px; background: rgba(255,255,255,.17); font-weight: 700; }
+.teams-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .8rem; }
+.team-card { margin: 0; min-width: 0; padding: 1rem; }
+.team-card-joined { border-color: rgba(255,255,255,.38); background: rgba(0,0,0,.4); }
+.team-card-top { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+.team-avatar { font-weight: 700; }
+.team-member-label { font-size: .7rem; font-weight: 700; border-radius: 20px; padding: .3rem .55rem; background: rgba(255,255,255,.18); white-space: nowrap; }
+.team-card h3 { margin: .85rem 0 1rem; overflow-wrap: anywhere; font-size: 1.08rem; }
+.team-card-actions { display: flex; gap: .5rem; align-items: stretch; }
+.team-action-button { display: flex; align-items: center; justify-content: center; gap: .35rem; max-width: none; min-width: 0; min-height: 42px; flex: 1; padding: .55rem .6rem; font-size: .9rem; }
+.team-delete-button { display: grid; place-items: center; flex: 0 0 42px; width: 42px; min-width: 42px; max-width: 42px; min-height: 42px; padding: .4rem; }
+.teams-empty { text-align: center; padding: 2rem 1rem; }
+.teams-empty-icon { font-size: 2rem; margin-bottom: .5rem; }
+.teams-empty p { margin-bottom: 0; opacity: .75; }
+@media (max-width: 520px) {
+  .teams-create-form { grid-template-columns: 1fr; }
+  .teams-primary-button { width: 100%; max-width: none; }
+  .teams-grid { grid-template-columns: 1fr; }
+  .team-card { padding: .9rem; }
+}
