@@ -159,7 +159,8 @@ export default function MyRunsPage() {
     if (item === "logout") {
       await signOut(auth);
       router.push("/login");
-    } else if (item === "myrun") {
+    } else if (item === "home") { router.push("/"); }
+    else if (item === "myrun") {
       router.push("/myruns");
     } else {
       router.push("/" + item);
@@ -197,7 +198,7 @@ export default function MyRunsPage() {
 
   return (
     <>
-      <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
+      <Navbar title="Moje aktivity" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
       <div className="container">
@@ -208,9 +209,10 @@ export default function MyRunsPage() {
           <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
         </div>
 
-        <div className="tile" style={{ textAlign: "center" }}>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ marginLeft: "1rem" }} />
+        <div className="tile date-filter">
+          <label className="date-field"><span>Od data</span><input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></label>
+          <label className="date-field"><span>Do data</span><input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} /></label>
+          {(dateFrom || dateTo) && <button className="date-clear" onClick={() => { setDateFrom(""); setDateTo(""); }}>Zrušit filtr</button>}
         </div>
 
         <div className="tile-group">
