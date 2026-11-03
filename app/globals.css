@@ -402,3 +402,14 @@ html[data-weather="snow-wind"] .list-tile > * {
   .teams-grid { grid-template-columns: 1fr; }
   .team-card h3 { min-height: 0; }
 }
+
+
+/* Dlaždice se na úzkých displejích zalamují místo vytlačování mimo obrazovku. */
+.tile-group { flex-wrap: wrap; }
+.tile-group > .tile { flex: 1 1 135px; min-width: 0; text-align: center; }
+.tile-group > .tile-button { min-width: 0; }
+@media (max-width: 380px) {
+  .tile-group { gap: .45rem; }
+  .tile-group > .tile { flex-basis: calc(50% - .5rem); padding: .75rem .5rem; font-size: .9rem; }
+  .navbar-title { font-size: .9rem; }
+}
