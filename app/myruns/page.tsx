@@ -242,8 +242,8 @@ export default function MyRunsPage() {
                   alignItems: "flex-start",
                   gap: "0.5rem",
                   position: "relative",
-                  margin: "6px 0",
-                  padding: "6px 8px"
+                  margin: "var(--list-card-margin)",
+                  padding: "var(--list-card-padding)"
                 }}>
                 <div className="avatar">{(run.nickname || run.email)?.charAt(0).toUpperCase() || "?"}</div>
                 <div style={{ flex: 1 }}>
