@@ -3,7 +3,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { collection, query, where, onSnapshot, deleteDoc, doc } from "firebase/firestore";
-import { db } from "../../../lib/firebase";
+import { db, auth } from "../../../lib/firebase";
+import { signOut } from "firebase/auth";
+import useAdminGuard from "../../../lib/useAdminGuard";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/Sidebar";
 
@@ -20,6 +22,7 @@ type Run = {
 };
 
 export default function RecordsPage() {
+  const adminAccess = useAdminGuard();
   const { id } = useParams() as { id: string };   // id uživatele
   const router = useRouter();
 
@@ -60,9 +63,12 @@ export default function RecordsPage() {
     }
   };
 
-  const handleSelect = (item: string) => {
+  const handleSelect = async (item: string) => {
     setMenuVisible(false);
-    if (item === "logout") router.push("/login");
+    if (item === "logout") {
+      await signOut(auth);
+      router.push("/login");
+    }
     else if (item === "myrun") router.push("/myruns");
     else if (item === "teams") router.push("/teams");
     else if (item === "settings") router.push("/settings");
@@ -105,7 +111,11 @@ export default function RecordsPage() {
                 ? run.imageUrls
                 : (run.imageUrl ? [run.imageUrl] : []);
 
-              return (
+              if (adminAccess !== "allowed") {
+    return <div className="container"><p>Ověřuji administrátorská oprávnění…</p></div>;
+  }
+
+  return (
                 <div key={run.id} className="tile list-tile" style={{ position: "relative", padding: "6px 8px", margin: "6px 0" }}>
                   <div style={{ fontWeight: 700, marginBottom: 4 }}>{dateStr}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
