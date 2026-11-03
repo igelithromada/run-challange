@@ -38,7 +38,8 @@ export default function TeamsPage() {
         const userDoc = await getDoc(doc(db, "users", u.uid));
         if (userDoc.exists()) {
           const data = userDoc.data();
-          if (data.joinedTeam) setJoinedTeam(data.joinedTeam);
+          const activeTeamId = data.teamId || data.joinedTeam;
+          if (activeTeamId) setJoinedTeam(activeTeamId);
         }
       }
     });
@@ -60,7 +61,10 @@ export default function TeamsPage() {
       name: teamName.trim(),
       createdBy: user.uid,
     });
-    await setDoc(doc(db, "users", user.uid), { joinedTeam: newTeam.id }, { merge: true });
+    await setDoc(doc(db, "users", user.uid), {
+      teamId: newTeam.id,
+      joinedTeam: newTeam.id,
+    }, { merge: true });
     setJoinedTeam(newTeam.id);
     setTeamName("");
   };
@@ -68,14 +72,17 @@ export default function TeamsPage() {
   const joinTeam = async (teamId: string) => {
     setJoinedTeam(teamId);
     if (user) {
-      await setDoc(doc(db, "users", user.uid), { joinedTeam: teamId }, { merge: true });
+      await setDoc(doc(db, "users", user.uid), {
+        teamId,
+        joinedTeam: teamId,
+      }, { merge: true });
     }
   };
 
   const leaveTeam = async () => {
     setJoinedTeam(null);
     if (user) {
-      await setDoc(doc(db, "users", user.uid), { joinedTeam: null }, { merge: true });
+      await setDoc(doc(db, "users", user.uid), { teamId: null, joinedTeam: null }, { merge: true });
     }
   };
 
@@ -85,7 +92,7 @@ export default function TeamsPage() {
     if (joinedTeam === teamId) {
       setJoinedTeam(null);
       if (user) {
-        await setDoc(doc(db, "users", user.uid), { joinedTeam: null }, { merge: true });
+        await setDoc(doc(db, "users", user.uid), { teamId: null, joinedTeam: null }, { merge: true });
       }
     }
   };
