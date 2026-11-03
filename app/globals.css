@@ -285,9 +285,9 @@ body::after {
 html[data-weather="wind"] body::before,
 html[data-weather="rain-wind"] body::after,
 html[data-weather="snow-wind"] body::after {
-  opacity: .24;
-  background: repeating-linear-gradient(168deg, transparent 0 34px, rgba(230,245,255,.24) 35px, transparent 37px 72px);
-  animation: weather-wind 3.8s ease-in-out infinite alternate;
+  opacity: calc(.08 + var(--wind-strength, .3) * .28);
+  background: repeating-linear-gradient(168deg, transparent 0 34px, rgba(230,245,255,.32) 35px, transparent 37px 72px);
+  animation: weather-wind calc(5.5s - var(--wind-strength, .3) * 3.5s) ease-in-out infinite alternate;
 }
 html[data-weather="cloudy"] body::before,
 html[data-weather="fog"] body::before {
