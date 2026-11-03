@@ -136,7 +136,7 @@ export default function Page() {
           <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
         </div>
 
-        <div className="run-form-panel">
+        <div className="run-form-wrap">
           <RunForm type={selectedType} />
         </div>
 
