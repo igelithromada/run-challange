@@ -306,28 +306,29 @@ body::after {
   transition: opacity .5s ease;
 }
 
-/* Celoplošná animace větru – jemné protáhlé proudnice, nikoliv tečky. */
+/* Celoplošné proudnice větru – dlaždice se přesně opakuje, takže smyčka nemá přechod. */
 html[data-windy="true"] body::after {
   opacity: calc(.42 + var(--wind-strength, .3) * .32);
   background-image:
-    repeating-linear-gradient(172deg,
-      transparent 0 38px,
-      rgba(255,255,255,.0) 39px,
-      rgba(235,249,255,.48) 40px,
-      rgba(255,255,255,.12) 42px,
-      transparent 45px 94px),
-    repeating-linear-gradient(168deg,
-      transparent 0 73px,
-      rgba(220,244,255,.0) 74px,
-      rgba(220,244,255,.30) 75px,
-      transparent 77px 142px);
-  background-size: 100% 100%, 100% 100%;
+    repeating-linear-gradient(180deg,
+      transparent 0 34px,
+      rgba(235,249,255,.0) 35px,
+      rgba(235,249,255,.38) 36px,
+      rgba(255,255,255,.12) 38px,
+      transparent 40px 88px),
+    repeating-linear-gradient(90deg,
+      transparent 0 28px,
+      rgba(220,244,255,.0) 29px,
+      rgba(220,244,255,.22) 30px,
+      transparent 33px 160px);
+  background-size: 320px 220px, 480px 220px;
+  background-repeat: repeat;
   animation: weather-wind-streaks calc(7s - var(--wind-strength, .3) * 3s) linear infinite;
   pointer-events: none;
 }
 @keyframes weather-wind-streaks {
-  from { background-position: 0 0, 0 0; transform: translate3d(-2%, -1%, 0); }
-  to { background-position: 180px 0, -120px 0; transform: translate3d(2%, 1%, 0); }
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 320px 0, 480px 0; }
 }
 @media (prefers-reduced-motion: reduce) { html[data-windy="true"] body::after { animation: none; } }
 
