@@ -215,7 +215,7 @@ export default function MyRunsPage() {
           {(dateFrom || dateTo) && <button className="date-clear" onClick={() => { setDateFrom(""); setDateTo(""); }}>Zrušit filtr</button>}
         </div>
 
-        <div className="tile-group">
+        <div className="tile-group activity-summary-grid">
           <div className="tile">Počet aktivit<br />{filteredRuns.length}</div>
           <div className="tile">Celkem km<br />{totalKm.toFixed(2)}</div>
           <div className="tile">Čas<br />{totalHours.toFixed(2)} h</div>
