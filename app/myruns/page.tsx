@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
+import ActivityIcon from "../components/ActivityIcon";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
 import ActivityCard from "../components/ActivityCard";
@@ -205,8 +206,8 @@ export default function MyRunsPage() {
         
 
         <div className="tile-group">
-          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
-          <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
+          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}><ActivityIcon type="run" size={24} /> Běh</button>
+          <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}><ActivityIcon type="walk" size={24} /> Chůze</button>
         </div>
 
         <div className="tile date-filter">
