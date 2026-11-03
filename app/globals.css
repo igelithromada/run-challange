@@ -295,9 +295,20 @@ html[data-weather="snow-wind"] body::before {
 @media (prefers-reduced-motion: reduce) { .wind-icon-animated { animation: none; } }
 
 
+/* Celoplošná vrstva větru – pseudo-element musí mít obsah i pevné umístění. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .5s ease;
+}
+
 /* Původní celoplošná animace větru – pohybující se světelné částice. */
 html[data-windy="true"] body::after {
-  opacity: calc(.28 + var(--wind-strength, .3) * .42);
+  opacity: calc(.55 + var(--wind-strength, .3) * .35);
   background-image:
     radial-gradient(ellipse 2px 2px at 18px 22px, rgba(255,255,255,.9) 70%, transparent 100%),
     radial-gradient(ellipse 3px 1.5px at 78px 64px, rgba(225,246,255,.82) 70%, transparent 100%),
