@@ -55,9 +55,25 @@ export async function applyTheme(selectedTheme: string, color: string) {
         temperature: current.temperature?.degrees, wind: windSpeed, condition
       }));
     } catch (error) {
-      console.warn("Aktuální počasí se nepodařilo načíst, používám denní vzhled.", error);
-      const hour = new Date().getHours();
-      gradient = `linear-gradient(180deg, ${getColorByHour(hour)}, #000000)`;
+      console.warn("Google Počasí není dostupné, používám záložní zdroj Open-Meteo.", error);
+      try {
+        const fallbackResponse = await fetch("https://api.open-meteo.com/v1/forecast?latitude=49.84&longitude=18.10&current=precipitation,weather_code,wind_speed_10m&timezone=Europe%2FPrague");
+        if (!fallbackResponse.ok) throw new Error("Záložní počasí není dostupné");
+        const fallback = (await fallbackResponse.json()).current || {};
+        const code = Number(fallback.weather_code);
+        const rain = Number(fallback.precipitation) > 0 || [51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(code);
+        const cloudy = [1, 2, 3, 45, 48].includes(code);
+        const windy = Number(fallback.wind_speed_10m) >= 30;
+        const hour = new Date().getHours();
+        if (rain) gradient = "linear-gradient(160deg, #263849 0%, #526b82 52%, #172633 100%)";
+        else if (windy) gradient = "linear-gradient(160deg, #537b91 0%, #9ab6c1 52%, #304c60 100%)";
+        else if (cloudy) gradient = "linear-gradient(160deg, #71818d 0%, #aeb9c0 52%, #465763 100%)";
+        else if (hour < 6 || hour >= 20) gradient = "linear-gradient(160deg, #101b3a 0%, #283d67 55%, #111827 100%)";
+        else gradient = "linear-gradient(160deg, #f5b94c 0%, #6bc6dc 52%, #397ca8 100%)";
+      } catch {
+        const hour = new Date().getHours();
+        gradient = `linear-gradient(180deg, ${getColorByHour(hour)}, #000000)`;
+      }
     }
   }
   document.documentElement.style.setProperty("--main-gradient", gradient);
