@@ -148,7 +148,7 @@ export default function SettingsPage() {
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
       <div className="container">
-        <h1 className="centered-title">Nastavení</h1>
+        
 
         <div className="tile">
           <h3>Uživatelské jméno</h3>
