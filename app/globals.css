@@ -288,3 +288,8 @@ html[data-weather="snow-wind"] body::before {
   50% { transform: translateX(3px); opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) { .wind-icon-animated { animation: none; } }
+
+.run-weather-wind { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+.wind-icon-animated { animation: wind-icon-gust 1.35s ease-in-out infinite; transform-origin: center; }
+@keyframes wind-icon-gust { 0%, 100% { transform: translateX(-1px); opacity: .72; } 50% { transform: translateX(4px); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .wind-icon-animated { animation: none; } }
