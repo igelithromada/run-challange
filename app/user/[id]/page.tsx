@@ -120,33 +120,12 @@ export default function UserPage() {
               });
 
               return (
-                <div key={run.id} className="tile list-tile" style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", position: "relative", margin: "var(--list-card-margin)", padding: "var(--list-card-padding)" }}>
-                  <div className="avatar" style={{ marginRight: "0.1rem" }}>{avatar}</div>
-                  <div style={{ flex: 1 }}>
-                    <div>
-                      <span style={{ fontWeight: "bold", color: "white" }}>{userInfo.nickname || userInfo.email?.split("@")[0] || "Anonym"}</span>
-                      {teamName && (
-                        <span style={{ marginLeft: "10px", fontWeight: "bold", color: "white" }}>
-                          ({teamName})
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.2rem" }}>
-                      <div>{run.km} km, {formatTime(run.minuty)}</div>
-                      <div style={{ background: "rgba(0,0,0,0.0)", padding: "0.1rem 0.6rem", borderRadius: "10px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                        <div style={{ fontSize: "1rem", marginBottom: "0.1px", color: "white", fontWeight: "bold" }}>
-                          {formatTime(run.tempo)} /km
-                        </div>
-                        <div style={{ height: "5px", width: "70px", background: "linear-gradient(90deg, red, yellow, green)", borderRadius: "3px", position: "relative" }}>
-                          <div style={{ position: "absolute", top: "-4px", left: `${pos}%`, width: "10px", height: "10px", background: "white", border: "2px solid #333", borderRadius: "50%", transform: "translateX(-50%)" }}></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", position: "absolute", right: "0.8rem", top: "0.4rem", gap: "0.3rem" }}>
+                <div key={run.id} className="tile list-tile">
+                  <div className="avatar">{avatar}</div>
+                  <div className="run-meta">
                     <small>{dateStr}</small>
                     {(run.imageUrls?.length || run.imageUrl) && (
-                      <div onClick={() => { setCurrentImageIndex(0); setShowImageUrl(run.imageUrls || [run.imageUrl!]); }} style={{ cursor: "pointer" }}>
+                      <div className="run-photo-icon" onClick={() => { setCurrentImageIndex(0); setShowImageUrl(run.imageUrls || [run.imageUrl!]); }} role="button" aria-label="Zobrazit fotografie" style={{ cursor: "pointer", display: "flex" }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                           <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
                           <circle cx="8.5" cy="8.5" r="1.5" />
@@ -154,6 +133,21 @@ export default function UserPage() {
                         </svg>
                       </div>
                     )}
+                  </div>
+                  <div className="run-info">
+                    <div className="run-heading">
+                      <span style={{ fontWeight: "bold", color: "white" }}>{userInfo.nickname || userInfo.email?.split("@")[0] || "Anonym"}</span>
+                      {teamName && <span style={{ marginLeft: "10px", fontWeight: "bold", color: "white" }}>({teamName})</span>}
+                    </div>
+                    <div className="run-stats">
+                      <div className="run-distance">{run.km} km, {formatTime(run.minuty)}</div>
+                      <div className="run-pace">
+                        <div className="run-pace-label">{formatTime(run.tempo)} /km</div>
+                        <div style={{ height: "5px", width: "70px", background: "linear-gradient(90deg, red, yellow, green)", borderRadius: "3px", position: "relative" }}>
+                          <div style={{ position: "absolute", top: "-4px", left: pos + "%", width: "10px", height: "10px", background: "white", border: "2px solid #333", borderRadius: "50%", transform: "translateX(-50%)" }} />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
