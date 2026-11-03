@@ -24,6 +24,8 @@ export default function AdminPage() {
   const adminAccess = useAdminGuard();
 
   useEffect(() => {
+    if (adminAccess !== "allowed") return;
+
     const fetchUsers = async () => {
       const snapshot = await getDocs(collection(db, "users"));
       const list: User[] = [];
@@ -38,8 +40,8 @@ export default function AdminPage() {
       });
       setUsers(list);
     };
-    fetchUsers();
-  }, []);
+    void fetchUsers();
+  }, [adminAccess]);
 
   const handleToggleAdmin = async (user: User) => {
     const newRole = user.role === "admin" ? "" : "admin";
