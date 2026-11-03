@@ -77,6 +77,10 @@ export default function RecordsPage() {
     else router.push("/");
   };
 
+  if (adminAccess !== "allowed") {
+    return <div className="container"><p>Ověřuji administrátorská oprávnění…</p></div>;
+  }
+
   return (
     <>
       <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
@@ -111,11 +115,7 @@ export default function RecordsPage() {
                 ? run.imageUrls
                 : (run.imageUrl ? [run.imageUrl] : []);
 
-              if (adminAccess !== "allowed") {
-    return <div className="container"><p>Ověřuji administrátorská oprávnění…</p></div>;
-  }
-
-  return (
+              return (
                 <div key={run.id} className="tile list-tile" style={{ position: "relative", padding: "6px 8px", margin: "6px 0" }}>
                   <div style={{ fontWeight: 700, marginBottom: 4 }}>{dateStr}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
