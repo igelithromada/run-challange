@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { db, auth, storage } from "../lib/firebase";
 import Navbar from "../components/Navbar";
+import { Footprints, PersonStanding } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
 import ActivityCard from "../components/ActivityCard";
