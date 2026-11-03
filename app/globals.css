@@ -413,3 +413,56 @@ html[data-weather="snow-wind"] .list-tile > * {
   .tile-group > .tile { flex-basis: calc(50% - .5rem); padding: .75rem .5rem; font-size: .9rem; }
   .navbar-title { font-size: .9rem; }
 }
+
+
+/* Finální sjednocení rozložení – mobilní zařízení */
+* { box-sizing: border-box; }
+html, body { max-width: 100%; overflow-x: hidden; }
+.container, .teams-page { width: min(800px, 100%); max-width: 100%; padding-top: 5.25rem; }
+.container > .tile, .container > section.tile { min-width: 0; }
+.tile-group { width: 100%; min-width: 0; flex-wrap: wrap; }
+.tile-group > .tile, .tile-group > .tile-button { min-width: 0; }
+.date-filter { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.date-field { min-width: 0; }
+.date-field input { width: 100%; max-width: 100%; min-width: 0; }
+.teams-page { overflow: hidden; }
+.teams-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; min-width: 0; }
+.team-card { width: 100%; min-width: 0; overflow: hidden; }
+.team-card-top { width: 100%; min-width: 0; }
+.team-card h3 { min-width: 0; overflow-wrap: break-word; word-break: normal; }
+.team-card-actions { width: 100%; min-width: 0; flex-wrap: wrap; }
+.team-action-button { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.settings-avatar { width: 100%; min-width: 0; }
+.settings-avatar-copy { overflow-wrap: anywhere; }
+.avatar-upload-button { position: relative; overflow: hidden; }
+.avatar-upload-button input {
+  display: block; position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer;
+}
+.stat-summary-grid, .activity-summary-grid {
+  display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .65rem; width: 100%; margin: 1rem 0;
+}
+.stat-summary-grid > .tile, .activity-summary-grid > .tile { margin: 0; min-width: 0; text-align: center; }
+@media (max-width: 520px) {
+  .container, .teams-page { padding: 5rem .8rem 1.25rem; margin: 0 auto; }
+  .teams-grid { grid-template-columns: minmax(0, 1fr); gap: .7rem; }
+  .team-card { display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: .8rem; row-gap: .5rem; align-items: center; }
+  .team-card-top { grid-column: 1; grid-row: 1 / span 2; align-self: start; flex-direction: column; align-items: center; }
+  .team-card h3 { grid-column: 2; grid-row: 1; margin: 0; min-height: 0; }
+  .team-card-actions { grid-column: 2; grid-row: 2; margin: 0; }
+  .team-member-label { white-space: normal; text-align: center; }
+  .teams-create { padding: 1rem; }
+  .teams-create-form { grid-template-columns: minmax(0, 1fr); }
+  .teams-primary-button { width: 100%; max-width: none; }
+  .date-filter { gap: .5rem; padding: .8rem; }
+  .date-field input { font-size: .8rem; padding: .65rem .35rem; }
+  .tile-group { gap: .5rem; }
+  .tile-button { min-height: 48px; font-size: .95rem; }
+  .settings-avatar { align-items: center; padding: .8rem; }
+  .stat-summary-grid, .activity-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 360px) {
+  .container, .teams-page { padding-left: .6rem; padding-right: .6rem; }
+  .team-card-actions { grid-column: 1 / -1; }
+}
