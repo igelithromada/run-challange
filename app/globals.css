@@ -25,6 +25,7 @@ body {
 .tile { background: rgba(0,0,0,.32); border: 1px solid rgba(255,255,255,.07); border-radius: 18px; padding: 1rem; margin: .6rem 0; box-sizing: border-box; }
 .list-container { display: flex; flex-direction: column; gap: .65rem; }
 .list-tile {
+  position: relative;
   display: grid;
   grid-template-columns: 52px minmax(0,1fr);
   align-items: center;
@@ -41,12 +42,9 @@ body {
   justify-content: center; overflow: hidden; align-self: center;
 }
 .avatar img { display: block; width: 100% !important; height: 100% !important; object-fit: cover; }
-.run-info { min-width: 0; padding-right: 0; }
+.run-info { min-width: 0; padding-right: 112px; }
 .run-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: .5rem;
+  display: block;
   min-width: 0;
   font-weight: 600;
   line-height: 1.35;
@@ -57,17 +55,22 @@ body {
 .run-pace { padding: .1rem .35rem; border-radius: 10px; display: flex; flex-direction: column; align-items: center; }
 .run-pace-label { font-size: 1rem; white-space: nowrap; margin-bottom: 1px; }
 .run-meta {
+  position: absolute;
+  top: .85rem;
+  right: .85rem;
+  width: 104px;
+  min-height: 42px;
   display: flex;
-  flex: 0 0 auto;
-  justify-content: flex-end;
-  align-items: center;
-  gap: .5rem;
-  margin-top: .1rem;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-end;
+  gap: .3rem;
   color: rgba(255,255,255,.78);
   font-size: .78rem;
   font-weight: 400;
 }
 .run-meta small { white-space: nowrap; }
+.run-photo-icon { line-height: 0; }
 .link { color: lightgreen; text-decoration: underline; cursor: pointer; }
 .link:hover { text-decoration: none; }
 @media (max-width: 480px) {
@@ -76,7 +79,8 @@ body {
   .tile-button { min-height: 56px; padding: .65rem .5rem; }
   .run-form-wrap { margin: 1.25rem 0 1.75rem; }
   .list-tile { grid-template-columns: 48px minmax(0,1fr); column-gap: .55rem; padding: .8rem .7rem; }
-  .run-meta { font-size: .7rem; gap: .35rem; }
+  .run-info { padding-right: 104px; }
+  .run-meta { top: .8rem; right: .7rem; width: 96px; font-size: .68rem; gap: .25rem; }
   .avatar { width: 48px; height: 48px; min-width: 48px; }
   .run-stats { font-size: .95rem; }
   .run-pace-label { font-size: .95rem; }
