@@ -28,17 +28,31 @@ export default function RunForm({ type }: { type: string }) {
   };
 
   const handleSubmit = async () => {
-    const kmVal = parseFloat(km);
-    const minVal = parseInt(minuty);
-    const secVal = parseInt(sekundy);
+    const kmVal = Number(km);
+    const minVal = Number(minuty);
+    const secVal = Number(sekundy);
 
     if (!km || !minuty || sekundy === "") {
       setError("Vyplňte prosím všechny údaje.");
       return;
     }
 
-    if (kmVal <= 0 || minVal < 0 || secVal < 0 || secVal >= 60) {
-      setError("Zadejte platné hodnoty. Sekundy 0–59, minuty 0+, km > 0.");
+    if (
+      !Number.isFinite(kmVal) ||
+      !Number.isInteger(minVal) ||
+      !Number.isInteger(secVal) ||
+      kmVal <= 0 ||
+      minVal < 0 ||
+      secVal < 0 ||
+      secVal >= 60
+    ) {
+      setError("Zadejte platné hodnoty. Sekundy 0–59, celé minuty 0+, km > 0.");
+      return;
+    }
+
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      setError("Pro uložení záznamu se nejprve přihlas.");
       return;
     }
 
@@ -55,17 +69,11 @@ export default function RunForm({ type }: { type: string }) {
       let avatarUrl = "";
       let teamId = null;
 
-      const uid = auth.currentUser?.uid;
-      if (!uid) {
-        console.warn("Uživatel není přihlášen");
-        return;
-      }
-
       const userDoc = await getDoc(doc(db, "users", uid));
       if (userDoc.exists()) {
         const userData = userDoc.data();
         avatarUrl = userData.avatarUrl || "";
-        teamId = userData.teamId || null;
+        teamId = userData.teamId || userData.joinedTeam || null;
       }
 
       const totalMinutes = minVal + secVal / 60;

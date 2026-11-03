@@ -3,7 +3,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { collection, query, where, onSnapshot, deleteDoc, doc } from "firebase/firestore";
-import { db } from "../../../lib/firebase";
+import { db, auth } from "../../../lib/firebase";
+import { signOut } from "firebase/auth";
+import useAdminGuard from "../../../lib/useAdminGuard";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/Sidebar";
 
@@ -20,6 +22,7 @@ type Run = {
 };
 
 export default function RecordsPage() {
+  const adminAccess = useAdminGuard();
   const { id } = useParams() as { id: string };   // id uživatele
   const router = useRouter();
 
@@ -30,7 +33,7 @@ export default function RecordsPage() {
 
   // načtení záznamů uživatele
   useEffect(() => {
-    if (!id) return;
+    if (adminAccess !== "allowed" || !id) return;
     const qRef = query(collection(db, "runs"), where("uid", "==", id));
     const unsub = onSnapshot(qRef, (snap) => {
       const items: Run[] = snap.docs
@@ -39,7 +42,7 @@ export default function RecordsPage() {
       setRuns(items);
     });
     return () => unsub();
-  }, [id]);
+  }, [adminAccess, id]);
 
   const formatMinutes = (minutes?: number) => {
     const totalSeconds = Math.round((minutes || 0) * 60);
@@ -60,9 +63,12 @@ export default function RecordsPage() {
     }
   };
 
-  const handleSelect = (item: string) => {
+  const handleSelect = async (item: string) => {
     setMenuVisible(false);
-    if (item === "logout") router.push("/login");
+    if (item === "logout") {
+      await signOut(auth);
+      router.push("/login");
+    }
     else if (item === "myrun") router.push("/myruns");
     else if (item === "teams") router.push("/teams");
     else if (item === "settings") router.push("/settings");
@@ -70,6 +76,10 @@ export default function RecordsPage() {
     else if (item === "admin") router.push("/admin");
     else router.push("/");
   };
+
+  if (adminAccess !== "allowed") {
+    return <div className="container"><p>Ověřuji administrátorská oprávnění…</p></div>;
+  }
 
   return (
     <>

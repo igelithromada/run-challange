@@ -39,12 +39,29 @@ export default function LoginPage() {
     }
   };
 
-  const handleZkontrolovatKod = () => {
-    if (kod === "Lhota2025") {
-      setZobrazeni("register");
-      setError("");
-    } else {
-      setError("Neplatný registrační kód.");
+  const handleZkontrolovatKod = async () => {
+    setError("");
+    try {
+      const response = await fetch("/api/registration-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: kod }),
+      });
+
+      if (response.ok) {
+        setZobrazeni("register");
+        return;
+      }
+
+      if (response.status === 503) {
+        setError("Registrace zatím není na serveru nastavena. Kontaktuj správce.");
+      } else if (response.status === 403 || response.status === 400) {
+        setError("Neplatný registrační kód.");
+      } else {
+        setError("Kód se nepodařilo ověřit. Zkus to prosím znovu.");
+      }
+    } catch {
+      setError("Kód se nepodařilo ověřit. Zkontroluj připojení k internetu.");
     }
   };
 

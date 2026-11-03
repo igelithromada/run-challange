@@ -48,54 +48,66 @@ export default function StatisticsPage() {
     return true;
   });
 
-  const userMap: { [key: string]: { km: number; min: number } } = {};
-  const teamMap: {
-    [team: string]: {
-      km: number;
-      min: number;
-      members: { [member: string]: { km: number; min: number } };
-    };
-  } = {};
+  // Agregujeme podle UID, nikoli podle přezdívky: dva lidé mohou mít stejné jméno.
+  const userMap: Record<string, { name: string; km: number; min: number }> = {};
+  const teamMap: Record<string, {
+    team: string;
+    km: number;
+    min: number;
+    members: Record<string, { name: string; km: number; min: number }>;
+  }> = {};
 
   filtered.forEach(run => {
+    const uid = typeof run.uid === "string" ? run.uid : "";
+    if (!uid) return;
+
     const name = run.nickname || run.email?.split("@")[0] || "Anonym";
-    const team = teams.find(t => t.id===run.teamId)?.name || "?";
+    const km = Number(run.km) || 0;
+    const min = Number(run.minuty) || 0;
 
-    if (!userMap[name]) userMap[name]={ km:0,min:0 };
-    userMap[name].km += Number(run.km||0);
-    userMap[name].min += Number(run.minuty||0);
+    if (!userMap[uid]) userMap[uid] = { name, km: 0, min: 0 };
+    userMap[uid].name = name;
+    userMap[uid].km += km;
+    userMap[uid].min += min;
 
-    if (!teamMap[team]) teamMap[team]={ km:0,min:0, members:{} };
-    teamMap[team].km += Number(run.km||0);
-    teamMap[team].min += Number(run.minuty||0);
-    if (!teamMap[team].members[name]) teamMap[team].members[name]={ km:0,min:0 };
-    teamMap[team].members[name].km += Number(run.km||0);
-    teamMap[team].members[name].min += Number(run.minuty||0);
+    if (typeof run.teamId === "string" && run.teamId) {
+      const teamId = run.teamId;
+      const teamName = teams.find(t => t.id === teamId)?.name || "Smazaný tým";
+      if (!teamMap[teamId]) teamMap[teamId] = { team: teamName, km: 0, min: 0, members: {} };
+      teamMap[teamId].km += km;
+      teamMap[teamId].min += min;
+      if (!teamMap[teamId].members[uid]) {
+        teamMap[teamId].members[uid] = { name, km: 0, min: 0 };
+      }
+      teamMap[teamId].members[uid].name = name;
+      teamMap[teamId].members[uid].km += km;
+      teamMap[teamId].members[uid].min += min;
+    }
   });
 
-  const userList = Object.entries(userMap).map(([name,data])=>({
-    name, km:data.km, tempo:data.km?(data.min/data.km):0
-  })).sort((a, b) => Number(b[metric as keyof typeof b]) - Number(a[metric as keyof typeof a]));
+  const userList = Object.entries(userMap).map(([uid, data]) => ({
+    uid, name: data.name, km: data.km, tempo: data.km ? data.min / data.km : 0
+  })).sort((a, b) => metric === "tempo" ? a.tempo - b.tempo : b.km - a.km);
 
-  const teamList = Object.entries(teamMap).map(([team,data])=>({
-    team, km:data.km, tempo:data.km?(data.min/data.km):0, members:data.members
-  })).sort((a, b) => Number(b[metric as keyof typeof b]) - Number(a[metric as keyof typeof a]));
+  const teamList = Object.entries(teamMap).map(([id, data]) => ({
+    id, team: data.team, km: data.km,
+    tempo: data.km ? data.min / data.km : 0, members: data.members
+  })).sort((a, b) => metric === "tempo" ? a.tempo - b.tempo : b.km - a.km);
 
-  let myName = user?.email?.split("@")[0] || "?";
-  let myTeamName = null;
-  let myPos = userList.findIndex(x=>x.name===myName)+1;
-  let myTeamPos = null;
-  let myTeamPosInside = null;
+  let myTeamName: string | null = null;
+  let myPos = userList.findIndex(x => x.uid === user?.uid) + 1;
+  let myTeamPos: number | null = null;
+  let myTeamPosInside: number | null = null;
 
-  teamList.forEach((t, idx) => {
-    if (Object.keys(t.members).includes(myName)) {
-      myTeamName = t.team;
-      myTeamPos = idx+1;
+  teamList.forEach((team, idx) => {
+    if (user?.uid && team.members[user.uid]) {
+      myTeamName = team.team;
+      myTeamPos = idx + 1;
 
-      const insideList = Object.entries(t.members).map(([name,data])=>({
-        name, km:data.km, tempo:data.km?(data.min/data.km):0
-      })).sort((a, b) => Number(b[metric as keyof typeof b]) - Number(a[metric as keyof typeof a]));
-      myTeamPosInside = insideList.findIndex(x=>x.name===myName)+1;
+      const insideList = Object.entries(team.members).map(([uid, data]) => ({
+        uid, name: data.name, km: data.km, tempo: data.km ? data.min / data.km : 0
+      })).sort((a, b) => metric === "tempo" ? a.tempo - b.tempo : b.km - a.km);
+      myTeamPosInside = insideList.findIndex(member => member.uid === user.uid) + 1;
     }
   });
 
@@ -115,8 +127,14 @@ export default function StatisticsPage() {
 
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
-    if (item==="logout") await signOut(auth).then(()=>router.push("/login"));
-    else router.push(`/${item}`);
+    if (item === "logout") {
+      await signOut(auth);
+      router.push("/login");
+    } else if (item === "myrun") {
+      router.push("/myruns");
+    } else {
+      router.push(`/${item}`);
+    }
   };
 
   const podiumData = view==="jednotlivci" ? userList : teamList;

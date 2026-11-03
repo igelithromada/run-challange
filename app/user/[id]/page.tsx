@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { db } from "../../lib/firebase";
+import { db, auth } from "../../lib/firebase";
+import { signOut } from "firebase/auth";
 import { collection, query, where, onSnapshot, getDoc, doc } from "firebase/firestore";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
@@ -70,10 +71,12 @@ export default function UserPage() {
     return `${min}′${sec.toString().padStart(2, "0")}″`;
   };
 
-  const handleSelect = (item: string) => {
+  const handleSelect = async (item: string) => {
     setMenuVisible(false);
-    if (item === "logout") router.push("/login");
-    else if (item === "myruns") window.location.href = "/myruns";
+    if (item === "logout") {
+      await signOut(auth);
+      router.push("/login");
+    } else if (item === "myrun") router.push("/myruns");
     else if (item === "teams") router.push("/teams");
     else if (item === "settings") router.push("/settings");
     else if (item === "statistics") router.push("/statistics");
