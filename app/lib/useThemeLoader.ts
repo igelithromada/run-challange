@@ -26,57 +26,47 @@ export default function useThemeLoader() {
 
 export async function applyTheme(selectedTheme: string, color: string) {
   let gradient = "linear-gradient(180deg, #36D1DC, #5B86E5)";
+  const root = document.documentElement;
+  root.removeAttribute("data-weather");
   if (selectedTheme === "man") gradient = "linear-gradient(180deg, #2980b9, #2c3e50)";
   else if (selectedTheme === "woman") gradient = "linear-gradient(180deg, #ff7eb3, #ff758c)";
   else if (selectedTheme === "auto") {
-    const hour = new Date().getHours();
-    gradient = `linear-gradient(180deg, ${getColorByHour(hour)}, #000000)`;
+    gradient = `linear-gradient(180deg, ${getColorByHour(new Date().getHours())}, #000000)`;
   } else if (selectedTheme === "custom") gradient = `linear-gradient(180deg, ${color}, #000000)`;
   else if (selectedTheme === "weather") {
     try {
-      // Open-Meteo poskytuje aktuální počasí zdarma, bez API klíče.
       const response = await fetch("/api/weather", { cache: "no-store" });
-      if (!response.ok) throw new Error("Google Počasí není dostupné");
+      if (!response.ok) throw new Error("Počasí není dostupné");
       const data = await response.json();
-      if (!data.configured || !data.current) throw new Error("Google Weather API není nakonfigurované");
       const current = data.current;
+      if (!current) throw new Error("Chybí aktuální počasí");
       const condition = String(current.weatherCondition?.type || "").toUpperCase();
-      const windSpeed = Number(current.wind?.speed?.value || 0);
-      const rain = condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER") || Number(current.precipitation?.qpf?.quantity || 0) > 0;
-      const cloudy = condition.includes("CLOUD") || condition.includes("FOG");
-      const windy = windSpeed >= 30;
-      const night = (() => { const h = new Date().getHours(); return h < 6 || h >= 20; })();
-      if (rain) gradient = "linear-gradient(160deg, #263849 0%, #526b82 52%, #172633 100%)";
-      else if (windy) gradient = "linear-gradient(160deg, #537b91 0%, #9ab6c1 52%, #304c60 100%)";
-      else if (cloudy) gradient = "linear-gradient(160deg, #71818d 0%, #aeb9c0 52%, #465763 100%)";
-      else if (night) gradient = "linear-gradient(160deg, #101b3a 0%, #283d67 55%, #111827 100%)";
-      else gradient = "linear-gradient(160deg, #f5b94c 0%, #6bc6dc 52%, #397ca8 100%)";
-      document.documentElement.style.setProperty("--weather-description", JSON.stringify({
-        temperature: current.temperature?.degrees, wind: windSpeed, condition
-      }));
+      const wind = Number(current.wind?.speed?.value || 0);
+      const temperature = Number(current.temperature?.degrees ?? 10);
+      const hour = new Date().getHours();
+      const night = hour < 6 || hour >= 20;
+      let weather = "clear";
+      if (condition.includes("SNOW") || condition.includes("SLEET") || condition.includes("HAIL")) weather = "snow";
+      else if (condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER")) weather = "rain";
+      else if (condition.includes("FOG")) weather = "fog";
+      else if (wind >= 30) weather = "wind";
+      else if (condition.includes("CLOUD")) weather = "cloudy";
+      else if (night) weather = "night";
+      root.setAttribute("data-weather", weather);
+      if (weather === "rain") gradient = "linear-gradient(160deg, #263849 0%, #526b82 52%, #172633 100%)";
+      else if (weather === "snow") gradient = "linear-gradient(160deg, #607d91 0%, #a9c4d5 52%, #344b60 100%)";
+      else if (weather === "fog" || weather === "cloudy") gradient = "linear-gradient(160deg, #71818d 0%, #aeb9c0 52%, #465763 100%)";
+      else if (weather === "wind") gradient = "linear-gradient(160deg, #537b91 0%, #9ab6c1 52%, #304c60 100%)";
+      else if (weather === "night") gradient = "linear-gradient(160deg, #101b3a 0%, #283d67 55%, #111827 100%)";
+      else gradient = temperature >= 25
+        ? "linear-gradient(160deg, #e7a34b 0%, #e98b68 52%, #397ca8 100%)"
+        : "linear-gradient(160deg, #f5b94c 0%, #6bc6dc 52%, #397ca8 100%)";
     } catch (error) {
-      console.warn("Google Počasí není dostupné, používám záložní zdroj Open-Meteo.", error);
-      try {
-        const fallbackResponse = await fetch("https://api.open-meteo.com/v1/forecast?latitude=49.84&longitude=18.10&current=precipitation,weather_code,wind_speed_10m&timezone=Europe%2FPrague");
-        if (!fallbackResponse.ok) throw new Error("Záložní počasí není dostupné");
-        const fallback = (await fallbackResponse.json()).current || {};
-        const code = Number(fallback.weather_code);
-        const rain = Number(fallback.precipitation) > 0 || [51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(code);
-        const cloudy = [1, 2, 3, 45, 48].includes(code);
-        const windy = Number(fallback.wind_speed_10m) >= 30;
-        const hour = new Date().getHours();
-        if (rain) gradient = "linear-gradient(160deg, #263849 0%, #526b82 52%, #172633 100%)";
-        else if (windy) gradient = "linear-gradient(160deg, #537b91 0%, #9ab6c1 52%, #304c60 100%)";
-        else if (cloudy) gradient = "linear-gradient(160deg, #71818d 0%, #aeb9c0 52%, #465763 100%)";
-        else if (hour < 6 || hour >= 20) gradient = "linear-gradient(160deg, #101b3a 0%, #283d67 55%, #111827 100%)";
-        else gradient = "linear-gradient(160deg, #f5b94c 0%, #6bc6dc 52%, #397ca8 100%)";
-      } catch {
-        const hour = new Date().getHours();
-        gradient = `linear-gradient(180deg, ${getColorByHour(hour)}, #000000)`;
-      }
+      console.warn("Vzhled podle počasí se nepodařilo aktualizovat.", error);
+      gradient = `linear-gradient(180deg, ${getColorByHour(new Date().getHours())}, #000000)`;
     }
   }
-  document.documentElement.style.setProperty("--main-gradient", gradient);
+  root.style.setProperty("--main-gradient", gradient);
 }
 
 const getColorByHour = (hour: number): string => {
