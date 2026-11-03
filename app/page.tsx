@@ -164,25 +164,26 @@ export default function Page() {
               <div key={run.id} className="tile list-tile">
                 <div className="avatar">{avatar}</div>
 
+                <div className="run-meta">
+                  <small>{dateStr}</small>
+                  {showPhotoIcon(run) && (
+                    <div onClick={() => handleShowImages(run.imageUrls ?? [], run.imageUrl ?? "")} role="button" aria-label="Zobrazit fotografie" style={{ cursor: "pointer", display: "flex" }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5"
+                        strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                        <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path d="M21 15l-5-5L5 21" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
                 <div className="run-info">
                   <div className="run-heading">
                     <span onClick={() => router.push(`/user/${run.uid}`)} style={{ fontWeight: "bold", color: "white", cursor: "pointer" }}>
                       {nickname}
                     </span>
                     {teamName && <span style={{ marginLeft: "10px", fontWeight: "bold", color: "white" }}>({teamName})</span>}
-                    <div className="run-meta">
-                      <small>{dateStr}</small>
-                      {showPhotoIcon(run) && (
-                        <div onClick={() => handleShowImages(run.imageUrls ?? [], run.imageUrl ?? "")} style={{ cursor: "pointer", display: "flex" }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5"
-                            strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                            <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
-                            <circle cx="8.5" cy="8.5" r="1.5" />
-                            <path d="M21 15l-5-5L5 21" />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
+
                   </div>
 
                   <div className="run-stats">
