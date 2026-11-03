@@ -106,7 +106,8 @@ export default function TeamsPage() {
       } catch (err) {
         console.error("Chyba při odhlašování: ", err);
       }
-    } else if (item === "myrun") router.push("/myruns");
+    } else if (item === "home") router.push("/");
+    else if (item === "myrun") router.push("/myruns");
     else if (item === "teams") router.push("/teams");
     else if (item === "settings") router.push("/settings");
     else if (item === "statistics") router.push("/statistics");
@@ -114,78 +115,50 @@ export default function TeamsPage() {
 
   return (
     <>
-      <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
+      <Navbar title="Týmy" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
       <div className="container teams-page">
         <header className="teams-header"><span className="teams-eyebrow">SPOLEČNĚ ZA POHYBEM</span><h1>Týmy</h1><p>Vytvoř vlastní tým nebo se přidej k ostatním z Dolní Lhoty.</p></header>
 
         {joinedTeam && (
-          <div className="tile" style={{ marginBottom: "1rem", textAlign: "center" }}>
-            🏅 Jsi členem týmu: {teams.find((t) => t.id === joinedTeam)?.name || "?"}
+          <div className="tile teams-current">
+            <div className="teams-current-icon">🏅</div>
+            <div><small>TVŮJ AKTUÁLNÍ TÝM</small><strong>{teams.find((t) => t.id === joinedTeam)?.name || "?"}</strong></div>
           </div>
         )}
 
-        <div className="tile teams-create">
-          <h3>Vytvořit nový tým</h3>
-          <input
-            type="text"
-            placeholder="Název týmu"
-            value={teamName}
-            onChange={(e) => setTeamName(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              borderRadius: "8px",
-              border: "none",
-              marginTop: "0.5rem",
-              boxSizing: "border-box",
-            }}
-          />
-          <button
-            onClick={createTeam}
-            className="tile-button"
-            style={{ width: "100%", marginTop: "0.5rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}
-          >
-            <Plus size={18} /> Vytvořit
-          </button>
-        </div>
+        <section className="tile teams-create">
+          <div className="teams-section-heading"><div className="teams-create-icon"><Plus size={22} /></div><div><h2>Vytvořit nový tým</h2><p>Založ tým a pozvi ostatní běžce.</p></div></div>
+          <div className="teams-create-form">
+            <input type="text" placeholder="Zadej název týmu" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
+            <button onClick={createTeam} className="tile-button teams-primary-button" disabled={!teamName.trim()}><Plus size={18} /> Vytvořit tým</button>
+          </div>
+        </section>
 
-        <h2 className="teams-list-heading">Dostupné týmy <span>{teams.length}</span></h2>
-        <div className="list-container" style={{ gap: "0.5rem" }}>
-          {teams.map((team) => (
-            <div key={team.id} className="tile list-tile">
-              <div className="team-card-title"><div className="team-avatar">{(team.name || "T").charAt(0).toUpperCase()}</div><strong>{team.name}</strong>{joinedTeam === team.id && <span className="team-member-label">Tvůj tým</span>}</div>
-              <div className="team-card-actions">
-                {joinedTeam === team.id ? (
-                  <button
-                    onClick={leaveTeam}
-                    className="tile-button team-action-button"
-                  >
-                    <DoorOpen size={18} /> Odejít
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => joinTeam(team.id)}
-                    className="tile-button"
-                    style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
-                  >
-                    <Plus size={18} /> Přidat se
-                  </button>
-                )}
-                {user?.uid === team.createdBy && (
-                  <button
-                    onClick={() => deleteTeam(team.id)}
-                    className="tile-button team-delete-button"
-                    title="Smazat tým"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <section className="teams-list-section">
+          <div className="teams-list-heading"><h2>Dostupné týmy</h2><span className="teams-count">{teams.length}</span></div>
+          <div className="teams-grid">
+            {teams.map((team) => (
+              <article key={team.id} className={joinedTeam === team.id ? "tile team-card team-card-joined" : "tile team-card"}>
+                <div className="team-card-top">
+                  <div className="team-avatar">{(team.name || "T").charAt(0).toUpperCase()}</div>
+                  {joinedTeam === team.id && <span className="team-member-label">Tvůj tým</span>}
+                </div>
+                <h3>{team.name}</h3>
+                <div className="team-card-actions">
+                  {joinedTeam === team.id ? (
+                    <button onClick={leaveTeam} className="tile-button team-action-button"><DoorOpen size={18} /> Odejít z týmu</button>
+                  ) : (
+                    <button onClick={() => joinTeam(team.id)} className="tile-button team-action-button"><Plus size={18} /> Přidat se</button>
+                  )}
+                  {user?.uid === team.createdBy && <button onClick={() => deleteTeam(team.id)} className="tile-button team-delete-button" title="Smazat tým" aria-label="Smazat tým"><Trash2 size={18} /></button>}
+                </div>
+              </article>
+            ))}
+            {teams.length === 0 && <div className="tile teams-empty"><div className="teams-empty-icon">👟</div><strong>Zatím tu nejsou žádné týmy</strong><p>Buď první a založ vlastní tým.</p></div>}
+          </div>
+        </section>
       </div>
     </>
   );
