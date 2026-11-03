@@ -1,3 +1,21 @@
+:root {
+  /* Centrální nastavení vzhledu všech karet a dlaždic */
+  --card-background: rgba(0, 0, 0, 0.32);
+  --card-border: 1px solid rgba(255, 255, 255, 0.07);
+  --card-radius: 18px;
+  --card-padding: 1rem;
+  --card-margin: 0.6rem 0;
+  --card-shadow: none;
+  --card-blur: 0px;
+
+  /* Společné nastavení tlačítek */
+  --control-background: rgba(255, 255, 255, 0.2);
+  --control-background-hover: rgba(255, 255, 255, 0.3);
+  --control-background-active: rgba(255, 255, 255, 0.38);
+  --control-radius: 16px;
+  --control-shadow-active: 0 5px 18px rgba(0, 0, 0, 0.22);
+}
+
 html { min-height: 100%; background: #071000; }
 body {
   font-family: 'Poppins', sans-serif;
@@ -9,20 +27,30 @@ body {
 .centered-title { text-align: center; margin: 2rem 0 1.5rem; }
 .tile-group { display: flex; justify-content: center; align-items: stretch; gap: .75rem; margin: 1.5rem 0; }
 .tile-button {
-  flex: 1 1 0; max-width: 220px; min-height: 58px; background: rgba(255,255,255,.2);
-  border: 1px solid rgba(255,255,255,.12); padding: .7rem 1rem; border-radius: 16px;
+  flex: 1 1 0; max-width: 220px; min-height: 58px; background: var(--control-background);
+  border: 1px solid rgba(255,255,255,.12); padding: .7rem 1rem; border-radius: var(--control-radius);
   color: white; cursor: pointer; transition: background .2s ease, box-shadow .2s ease;
   font-size: clamp(1rem, 4vw, 1.25rem); font-weight: 500;
 }
-.tile-button:hover { background: rgba(255,255,255,.3); }
-.tile-button.active { background: rgba(255,255,255,.38); box-shadow: 0 5px 18px rgba(0,0,0,.22); border-color: rgba(255,255,255,.28); }
+.tile-button:hover { background: var(--control-background-hover); }
+.tile-button.active { background: var(--control-background-active); box-shadow: var(--control-shadow-active); border-color: rgba(255,255,255,.28); }
 .run-form-wrap {
   margin: 1.5rem 0 2rem;
   display: flex;
   justify-content: center;
   box-sizing: border-box;
 }
-.tile { background: rgba(0,0,0,.32); border: 1px solid rgba(255,255,255,.07); border-radius: 18px; padding: 1rem; margin: .6rem 0; box-sizing: border-box; }
+.tile {
+  background: var(--card-background);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
+  margin: var(--card-margin);
+  box-shadow: var(--card-shadow);
+  -webkit-backdrop-filter: blur(var(--card-blur));
+  backdrop-filter: blur(var(--card-blur));
+  box-sizing: border-box;
+}
 .list-container { display: flex; flex-direction: column; gap: .65rem; }
 .list-tile {
   position: relative;
