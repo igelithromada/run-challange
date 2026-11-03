@@ -28,31 +28,54 @@ body {
   position: relative;
   display: grid;
   grid-template-columns: 52px minmax(0,1fr);
+  grid-template-rows: 1fr;
   align-items: center;
   column-gap: .85rem;
   width: 100%;
   min-width: 0;
+  min-height: 96px;
   padding: .85rem;
 }
 .tile-content { display: flex; align-items: center; gap: 1rem; width: 100%; }
 .avatar {
-  grid-row: 1 / span 2;
+  grid-column: 1;
+  grid-row: 1;
   background: rgba(255,255,255,.2); border-radius: 50%; width: 52px; height: 52px;
   min-width: 52px; font-size: 1.2rem; color: white; display: flex; align-items: center;
   justify-content: center; overflow: hidden; align-self: center;
 }
 .avatar img { display: block; width: 100% !important; height: 100% !important; object-fit: cover; }
-.run-info { min-width: 0; padding-right: 112px; }
+.run-info {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  padding-right: 0;
+}
 .run-heading {
   display: block;
   min-width: 0;
   font-weight: 600;
   line-height: 1.35;
   overflow-wrap: anywhere;
+  padding-right: 108px;
+  min-height: 1.35em;
 }
-.run-stats { display: flex; align-items: center; flex-wrap: wrap; column-gap: .5rem; row-gap: .15rem; margin-top: .35rem; }
+.run-stats {
+  display: grid;
+  grid-template-columns: 145px minmax(0,1fr);
+  align-items: start;
+  column-gap: .5rem;
+  margin-top: .35rem;
+}
 .run-distance { white-space: nowrap; }
-.run-pace { padding: .1rem .35rem; border-radius: 10px; display: flex; flex-direction: column; align-items: center; }
+.run-pace {
+  padding: .1rem .35rem;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-self: start;
+}
 .run-pace-label { font-size: 1rem; white-space: nowrap; margin-bottom: 1px; }
 .run-meta {
   position: absolute;
@@ -78,8 +101,8 @@ body {
   .tile-group { gap: .6rem; margin: 1.25rem 0; }
   .tile-button { min-height: 56px; padding: .65rem .5rem; }
   .run-form-wrap { margin: 1.25rem 0 1.75rem; }
-  .list-tile { grid-template-columns: 48px minmax(0,1fr); column-gap: .55rem; padding: .8rem .7rem; }
-  .run-info { padding-right: 104px; }
+  .list-tile { grid-template-columns: 48px minmax(0,1fr); column-gap: .55rem; padding: .8rem .7rem; min-height: 96px; }
+  .run-stats { grid-template-columns: 145px minmax(0,1fr); }
   .run-meta { top: .8rem; right: .7rem; width: 96px; font-size: .68rem; gap: .25rem; }
   .avatar { width: 48px; height: 48px; min-width: 48px; }
   .run-stats { font-size: .95rem; }
