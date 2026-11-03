@@ -327,12 +327,4 @@ html[data-windy="true"] body::after {
   from { background-position: 0 0; transform: translate3d(-1%, 0, 0); }
   to { background-position: 700px 0; transform: translate3d(1%, 0, 0); }
 }
-/* Neprůhlednější povrchy zabrání prosvítání animace skrz ovládání a karty. */
-html[data-windy="true"] .tile,
-html[data-windy="true"] .list-tile,
-html[data-windy="true"] .run-weather-recommendation,
-html[data-windy="true"] .tile-button,
-html[data-windy="true"] button,
-html[data-windy="true"] a[role="button"] {
-  background-color: rgba(10, 31, 48, .78);
-}
+/* Zachovat původní průhlednost karet a ovládacích prvků i při větru. */
