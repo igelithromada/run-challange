@@ -71,7 +71,6 @@ export default function Navbar({ onMenuClick, onHomeClick, showHome = true, titl
         }}
       >
         {title}
-        <span style={{ marginLeft: "0.45rem", padding: "0.15rem 0.4rem", borderRadius: "6px", background: "#f59e0b", color: "#111827", fontSize: "0.62rem", fontWeight: 800, letterSpacing: "0.04em", verticalAlign: "middle" }}>TEST NASAZENÍ</span>
       </div>
 
       <div
