@@ -1,0 +1,35 @@
+name: Kontrola běžecké aplikace
+
+on:
+  push:
+    branches:
+      - fix/run-app-issues
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Instalace a sestavení aplikace
+    runs-on: ubuntu-latest
+    steps:
+      - name: Načtení zdrojového kódu
+        uses: actions/checkout@v4
+
+      - name: Nastavení Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalace závislostí
+        run: npm ci
+
+      - name: Kontrola TypeScriptu
+        run: npx tsc --noEmit
+
+      - name: Produkční sestavení
+        run: npm run build
