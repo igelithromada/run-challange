@@ -5,9 +5,10 @@ type NavbarProps = {
   onMenuClick: () => void;
   onHomeClick?: () => void;
   showHome?: boolean;
+  title?: string;
 };
 
-export default function Navbar({ onMenuClick, onHomeClick, showHome = true }: NavbarProps) {
+export default function Navbar({ onMenuClick, onHomeClick, showHome = true, title = "Dolní Lhota v pohybu" }: NavbarProps) {
   const [visible, setVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -37,7 +38,9 @@ export default function Navbar({ onMenuClick, onHomeClick, showHome = true }: Na
         color: "white",
         padding: "0.6rem 1.2rem",
         display: "flex",
-        justifyContent: "space-between",
+        display: "grid",
+        gridTemplateColumns: "40px minmax(0, 1fr) 40px",
+        gap: "0.5rem",
         alignItems: "center",
         fontFamily: "'Poppins', sans-serif",
         borderRadius: "0 0 15px 15px",
@@ -59,14 +62,16 @@ export default function Navbar({ onMenuClick, onHomeClick, showHome = true }: Na
 
       <div
         style={{
-          position: "absolute",
-          left: "50%",
-          transform: "translateX(-50%)",
+          minWidth: 0,
+          textAlign: "center",
           fontWeight: 600,
-          fontSize: "1.2rem"
+          fontSize: "clamp(.95rem, 4vw, 1.15rem)",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis"
         }}
       >
-        Dolní Lhota v pohybu
+        {title}
       </div>
 
       <div
@@ -74,7 +79,8 @@ export default function Navbar({ onMenuClick, onHomeClick, showHome = true }: Na
         style={{
           fontSize: "1.6rem",
           cursor: "pointer",
-          userSelect: "none"
+          userSelect: "none",
+          textAlign: "right"
         }}
       >
         ☰
