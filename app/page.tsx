@@ -18,6 +18,7 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import RunForm from "./components/RunForm";
 import ActivityCard from "./components/ActivityCard";
+import WeatherCard from "./components/WeatherCard";
 import useThemeLoader from "./lib/useThemeLoader";
 import { RunData } from "./types";
 
