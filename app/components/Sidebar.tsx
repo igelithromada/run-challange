@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X } from "lucide-react";
+import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X, CloudSun } from "lucide-react";
 
 type SidebarProps = {
   visible: boolean;
