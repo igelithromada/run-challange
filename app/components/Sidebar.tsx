@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X } from "lucide-react";
 
 type SidebarProps = {
   visible: boolean;
@@ -45,24 +46,24 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
         }}
       >
         <HoverTile onClick={() => onSelect("myrun")}>
-          <RunIcon /> Moje aktivity
+          <Footprints size={21} strokeWidth={2} /> Moje aktivity
         </HoverTile>
         <HoverTile onClick={() => onSelect("teams")}>
-          <UsersIcon /> Týmy
+          <Users size={21} strokeWidth={2} /> Týmy
         </HoverTile>
         <HoverTile onClick={() => onSelect("statistics")}>
-          <ChartIcon /> Výsledky
+          <Trophy size={21} strokeWidth={2} /> Výsledky
         </HoverTile>
         <HoverTile onClick={() => onSelect("settings")}>
-          <SettingsIcon /> Nastavení
+          <SlidersHorizontal size={21} strokeWidth={2} /> Nastavení
         </HoverTile>
         <HoverTile onClick={() => onSelect("admin")}>
-          <SettingsIcon /> Admin
+          <ShieldCheck size={21} strokeWidth={2} /> Admin
         </HoverTile>
         <HoverTile onClick={() => onSelect("logout")}
           styleOverride={{ background: "rgba(255,0,0,0.2)" }}
         >
-          <LogoutIcon /> Odhlásit
+          <LogOut size={21} strokeWidth={2} /> Odhlásit
         </HoverTile>
 
         <div
@@ -74,7 +75,7 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
           }}
           onClick={onClose}
         >
-          ✕ Zavřít
+          <X size={18} /> Zavřít
         </div>
       </div>
     </div>
