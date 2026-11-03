@@ -75,11 +75,11 @@ export default function StatisticsPage() {
 
   const userList = Object.entries(userMap).map(([name,data])=>({
     name, km:data.km, tempo:data.km?(data.min/data.km):0
-  })).sort((a, b) => Number(b[metric as keyof typeof b]) - Number(a[metric as keyof typeof a]));
+  })).sort((a, b) => metric === "tempo" ? a.tempo - b.tempo : b.km - a.km);
 
   const teamList = Object.entries(teamMap).map(([team,data])=>({
     team, km:data.km, tempo:data.km?(data.min/data.km):0, members:data.members
-  })).sort((a, b) => Number(b[metric as keyof typeof b]) - Number(a[metric as keyof typeof a]));
+  })).sort((a, b) => metric === "tempo" ? a.tempo - b.tempo : b.km - a.km);
 
   let myName = user?.email?.split("@")[0] || "?";
   let myTeamName = null;
@@ -94,7 +94,7 @@ export default function StatisticsPage() {
 
       const insideList = Object.entries(t.members).map(([name,data])=>({
         name, km:data.km, tempo:data.km?(data.min/data.km):0
-      })).sort((a, b) => Number(b[metric as keyof typeof b]) - Number(a[metric as keyof typeof a]));
+      })).sort((a, b) => metric === "tempo" ? a.tempo - b.tempo : b.km - a.km);
       myTeamPosInside = insideList.findIndex(x=>x.name===myName)+1;
     }
   });
@@ -115,8 +115,14 @@ export default function StatisticsPage() {
 
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
-    if (item==="logout") await signOut(auth).then(()=>router.push("/login"));
-    else router.push(`/${item}`);
+    if (item === "logout") {
+      await signOut(auth);
+      router.push("/login");
+    } else if (item === "myrun") {
+      router.push("/myruns");
+    } else {
+      router.push(`/${item}`);
+    }
   };
 
   const podiumData = view==="jednotlivci" ? userList : teamList;
