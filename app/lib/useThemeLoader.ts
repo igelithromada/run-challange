@@ -28,6 +28,7 @@ export async function applyTheme(selectedTheme: string, color: string) {
   let gradient = "linear-gradient(180deg, #36D1DC, #5B86E5)";
   const root = document.documentElement;
   root.removeAttribute("data-weather");
+  root.removeAttribute("data-windy");
   if (selectedTheme === "man") gradient = "linear-gradient(180deg, #2980b9, #2c3e50)";
   else if (selectedTheme === "woman") gradient = "linear-gradient(180deg, #ff7eb3, #ff758c)";
   else if (selectedTheme === "auto") {
@@ -49,6 +50,8 @@ export async function applyTheme(selectedTheme: string, color: string) {
       const isSnow = condition.includes("SNOW") || condition.includes("SLEET") || condition.includes("HAIL");
       const isRain = condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER");
       const isWindy = wind >= 8;
+      root.style.setProperty("--wind-strength", String(Math.min(1, Math.max(0.15, wind / 45))));
+      if (isWindy) root.setAttribute("data-windy", "true");
       if (isSnow) weather = isWindy ? "snow-wind" : "snow";
       else if (isRain) weather = isWindy ? "rain-wind" : "rain";
       else if (condition.includes("FOG")) weather = "fog";
