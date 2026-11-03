@@ -293,3 +293,25 @@ html[data-weather="snow-wind"] body::before {
 .wind-icon-animated { animation: wind-icon-gust 1.35s ease-in-out infinite; transform-origin: center; }
 @keyframes wind-icon-gust { 0%, 100% { transform: translateX(-1px); opacity: .72; } 50% { transform: translateX(4px); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .wind-icon-animated { animation: none; } }
+
+
+/* Jemné proudění větru přes celou obrazovku – pod kartami a ovládacími prvky. */
+body::after {
+  content: ""; position: fixed; inset: -12%; z-index: 0; pointer-events: none;
+  opacity: 0; transition: opacity .5s ease;
+}
+html[data-windy="true"] body::after {
+  opacity: calc(.10 + var(--wind-strength, .25) * .16);
+  background-image:
+    linear-gradient(174deg, transparent 0 48%, rgba(238,249,255,.72) 49%, transparent 50%),
+    linear-gradient(177deg, transparent 0 48%, rgba(238,249,255,.5) 49%, transparent 50%),
+    linear-gradient(171deg, transparent 0 48%, rgba(238,249,255,.38) 49%, transparent 50%);
+  background-size: 260px 95px, 340px 145px, 420px 190px;
+  background-repeat: repeat;
+  animation: simple-wind-flow calc(18s - var(--wind-strength, .25) * 8s) linear infinite;
+}
+@keyframes simple-wind-flow {
+  from { background-position: 0 0, 0 35px, 0 80px; }
+  to { background-position: 260px 0, 340px 35px, 420px 80px; }
+}
+@media (prefers-reduced-motion: reduce) { html[data-windy="true"] body::after { animation: none; } }
