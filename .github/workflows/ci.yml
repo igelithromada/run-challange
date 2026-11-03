@@ -31,6 +31,7 @@ jobs:
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
       - name: Uložení opraveného zámku závislostí
+        if: github.event_name == 'push' && github.ref == 'refs/heads/fix/run-app-issues'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
