@@ -18,7 +18,7 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import RunForm from "./components/RunForm";
 import ActivityCard from "./components/ActivityCard";
-import WeatherCard from "./components/WeatherCard";
+import RunWeatherRecommendation from "./components/RunWeatherRecommendation";
 import useThemeLoader from "./lib/useThemeLoader";
 import { RunData } from "./types";
 
@@ -145,7 +145,7 @@ export default function Page() {
       <div className="container">
         <h1 className="centered-title"></h1>
 
-        <WeatherCard />
+        <RunWeatherRecommendation />
 
         <div className="tile-group" role="group" aria-label="Typ aktivity">
           <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
