@@ -54,6 +54,9 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
         <HoverTile onClick={() => onSelect("statistics")}>
           <Trophy size={21} strokeWidth={2} /> Výsledky
         </HoverTile>
+        <HoverTile onClick={() => onSelect("weather")}>
+          <CloudSun size={21} strokeWidth={2} /> Počasí pro běh
+        </HoverTile>
         <HoverTile onClick={() => onSelect("settings")}>
           <SlidersHorizontal size={21} strokeWidth={2} /> Nastavení
         </HoverTile>
