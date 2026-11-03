@@ -6,6 +6,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
+import ActivityIcon from "../components/ActivityIcon";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader from "../lib/useThemeLoader";
 
@@ -173,8 +174,8 @@ export default function StatisticsPage() {
         
 
         <div className="tile-group">
-          <button className={`tile-button ${selectedType==="běh"?"active":""}`} onClick={()=>setSelectedType("běh")}>🏃 Běh</button>
-          <button className={`tile-button ${selectedType==="chůze"?"active":""}`} onClick={()=>setSelectedType("chůze")}>🚶 Chůze</button>
+          <button className={`tile-button ${selectedType==="běh"?"active":""}`} onClick={()=>setSelectedType("běh")}><ActivityIcon type="run" size={24} /> Běh</button>
+          <button className={`tile-button ${selectedType==="chůze"?"active":""}`} onClick={()=>setSelectedType("chůze")}><ActivityIcon type="walk" size={24} /> Chůze</button>
         </div>
         <div className="tile-group">
           <button className={`tile-button ${view==="já"?"active":""}`} onClick={()=>setView("já")}>Já</button>
