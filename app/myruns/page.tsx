@@ -26,6 +26,7 @@ type RunData = {
   tempo: number;
   type?: string;
   imageUrl?: string;
+  imageUrls?: string[];
   timestamp?: { seconds: number };
 };
 
@@ -35,7 +36,7 @@ export default function MyRunsPage() {
   const [runs, setRuns] = useState<RunData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showImageUrl, setShowImageUrl] = useState<string | null>(null);
+  const [showImageUrls, setShowImageUrls] = useState<string[] | null>(null);
   const [selectedType, setSelectedType] = useState("běh");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -46,13 +47,20 @@ export default function MyRunsPage() {
   const router = useRouter();
 
   useEffect(() => {
+    let unsubRuns: (() => void) | null = null;
+
     const unsubAuth = onAuthStateChanged(auth, (user) => {
+      unsubRuns?.();
+      unsubRuns = null;
+
       if (!user) {
+        setLoading(false);
         router.push("/login");
         return;
       }
+
       const q = query(collection(db, "runs"), where("uid", "==", user.uid));
-      const unsubRuns = onSnapshot(q, (snap) => {
+      unsubRuns = onSnapshot(q, (snap) => {
         const items = snap.docs.map(doc => {
           const data = doc.data();
           return {
@@ -70,9 +78,12 @@ export default function MyRunsPage() {
         setError("Chyba při načítání dat.");
         setLoading(false);
       });
-
-      return () => unsubRuns();
     });
+
+    return () => {
+      unsubAuth();
+      unsubRuns?.();
+    };
   }, [router]);
 
   const formatTime = (minutes: number) => {
@@ -138,7 +149,11 @@ export default function MyRunsPage() {
     if (item === "logout") {
       await signOut(auth);
       router.push("/login");
-    } else router.push("/" + item);
+    } else if (item === "myrun") {
+      router.push("/myruns");
+    } else {
+      router.push("/" + item);
+    }
   };
 
   const renderTempoBar = (tempo: number) => {
@@ -208,8 +223,11 @@ export default function MyRunsPage() {
 
         <h2 className="centered-title">Moje záznamy</h2>
         <div className="list-container" style={{ display: "flex", flexDirection: "column", gap: "0" }}>
-          {filteredRuns.map(run =>
-            editingId === run.id ? (
+          {filteredRuns.map(run => {
+            const imageUrls = run.imageUrls?.length
+              ? run.imageUrls
+              : run.imageUrl ? [run.imageUrl] : [];
+            return editingId === run.id ? (
               <div key={run.id} className="tile list-tile" style={{ textAlign: "center" }}>
                 <input type="number" value={km} onChange={(e) => setKm(e.target.value)} placeholder="km" />
                 <input type="number" value={minuty} onChange={(e) => setMinuty(e.target.value)} placeholder="min" />
@@ -246,29 +264,65 @@ export default function MyRunsPage() {
                   gap: "0.3rem"
                 }}>
                   <small>{new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ")}</small>
-                  {run.imageUrl && (
-                    <div onClick={() => setShowImageUrl(run.imageUrl ?? null)} style={{ cursor: "pointer" }}>📷</div>
+                  {(run.imageUrls?.length || run.imageUrl) && (
+                    <div
+                      onClick={() => setShowImageUrls(
+                        run.imageUrls?.length ? run.imageUrls : run.imageUrl ? [run.imageUrl] : []
+                      )}
+                      style={{ cursor: "pointer" }}
+                      title="Zobrazit fotografie"
+                    >
+                      📷
+                    </div>
                   )}
                 </div>
               </div>
-            )
-          )}
+            );
+          })}
         </div>
 
-        {showImageUrl && (
+        {showImageUrls && showImageUrls.length > 0 && (
           <div style={{
-            position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-            background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.85)",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 2000,
+            padding: "1rem",
           }}>
-            <div style={{ position: "relative" }}>
-              <img src={showImageUrl} alt="náhled" style={{ maxHeight: "90%", maxWidth: "90%", borderRadius: "10px" }} />
-              <button onClick={() => setShowImageUrl(null)} style={{
-                position: "absolute", top: "-10px", right: "-10px",
-                background: "white", color: "black", border: "none",
-                borderRadius: "50%", width: "30px", height: "30px",
-                cursor: "pointer", fontWeight: "bold", fontSize: "16px"
-              }}>×</button>
+            <img
+              src={showImageUrls[currentImageIndex]}
+              alt={`Fotografie ${currentImageIndex + 1}`}
+              style={{ maxHeight: "75vh", maxWidth: "90vw", objectFit: "contain", borderRadius: "10px" }}
+            />
+            <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginTop: "1rem" }}>
+              {showImageUrls.length > 1 && (
+                <button
+                  onClick={() => setCurrentImageIndex((currentImageIndex - 1 + showImageUrls.length) % showImageUrls.length)}
+                  style={{ background: "transparent", color: "white", border: "none", fontSize: "2rem", cursor: "pointer" }}
+                  aria-label="Předchozí fotografie"
+                >❮</button>
+              )}
+              <button
+                onClick={() => { setShowImageUrls(null); setCurrentImageIndex(0); }}
+                style={{ background: "white", color: "black", border: "none", borderRadius: "8px", padding: "0.6rem 1.2rem", fontWeight: "bold" }}
+              >Zavřít</button>
+              {showImageUrls.length > 1 && (
+                <button
+                  onClick={() => setCurrentImageIndex((currentImageIndex + 1) % showImageUrls.length)}
+                  style={{ background: "transparent", color: "white", border: "none", fontSize: "2rem", cursor: "pointer" }}
+                  aria-label="Další fotografie"
+                >❯</button>
+              )}
             </div>
+            {showImageUrls.length > 1 && (
+              <p style={{ color: "white", marginTop: "0.5rem" }}>
+                {currentImageIndex + 1} / {showImageUrls.length}
+              </p>
+            )}
           </div>
         )}
 
