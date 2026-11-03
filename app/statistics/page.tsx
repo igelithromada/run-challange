@@ -154,7 +154,8 @@ export default function StatisticsPage() {
     if (item === "logout") {
       await signOut(auth);
       router.push("/login");
-    } else if (item === "myrun") {
+    } else if (item === "home") { router.push("/"); }
+    else if (item === "myrun") {
       router.push("/myruns");
     } else {
       router.push(`/${item}`);
@@ -165,7 +166,7 @@ export default function StatisticsPage() {
 
   return (
     <>
-      <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
+      <Navbar title="Výsledky" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
       <div className="container">
@@ -185,11 +186,10 @@ export default function StatisticsPage() {
           <button className={`tile-button ${metric==="tempo"?"active":""}`} onClick={()=>setMetric("tempo")}>Tempo</button>
         </div>
 
-        <div className="tile" style={{ textAlign:"center" }}>
-          <input type="date" value={startDate} onChange={(e)=>setStartDate(e.target.value)}
-            style={{ padding:"0.4rem", borderRadius:"8px", border:"none", marginRight:"0.5rem" }} />
-          <input type="date" value={endDate} onChange={(e)=>setEndDate(e.target.value)}
-            style={{ padding:"0.4rem", borderRadius:"8px", border:"none" }} />
+        <div className="tile date-filter">
+          <label className="date-field"><span>Od data</span><input type="date" value={startDate} onChange={(e)=>setStartDate(e.target.value)} /></label>
+          <label className="date-field"><span>Do data</span><input type="date" value={endDate} onChange={(e)=>setEndDate(e.target.value)} /></label>
+          {(startDate || endDate) && <button className="date-clear" onClick={()=>{setStartDate("");setEndDate("");}}>Zrušit filtr</button>}
         </div>
 
         <div className="tile-group" style={{ flexWrap:"wrap" }}>
