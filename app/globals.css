@@ -306,22 +306,28 @@ body::after {
   transition: opacity .5s ease;
 }
 
-/* Původní celoplošná animace větru – pohybující se světelné částice. */
+/* Celoplošná animace větru – jemné protáhlé proudnice, nikoliv tečky. */
 html[data-windy="true"] body::after {
-  opacity: calc(.55 + var(--wind-strength, .3) * .35);
+  opacity: calc(.42 + var(--wind-strength, .3) * .32);
   background-image:
-    radial-gradient(ellipse 2px 2px at 18px 22px, rgba(255,255,255,.9) 70%, transparent 100%),
-    radial-gradient(ellipse 3px 1.5px at 78px 64px, rgba(225,246,255,.82) 70%, transparent 100%),
-    radial-gradient(ellipse 2px 2px at 132px 108px, rgba(255,255,255,.72) 70%, transparent 100%),
-    radial-gradient(ellipse 4px 1.5px at 42px 145px, rgba(220,242,255,.7) 70%, transparent 100%),
-    radial-gradient(ellipse 2px 2px at 166px 34px, rgba(255,255,255,.8) 70%, transparent 100%);
-  background-size: 190px 170px;
-  animation: weather-wind-particles calc(5s - var(--wind-strength, .3) * 3.4s) linear infinite;
+    repeating-linear-gradient(172deg,
+      transparent 0 38px,
+      rgba(255,255,255,.0) 39px,
+      rgba(235,249,255,.48) 40px,
+      rgba(255,255,255,.12) 42px,
+      transparent 45px 94px),
+    repeating-linear-gradient(168deg,
+      transparent 0 73px,
+      rgba(220,244,255,.0) 74px,
+      rgba(220,244,255,.30) 75px,
+      transparent 77px 142px);
+  background-size: 100% 100%, 100% 100%;
+  animation: weather-wind-streaks calc(7s - var(--wind-strength, .3) * 3s) linear infinite;
   pointer-events: none;
 }
-@keyframes weather-wind-particles {
-  from { background-position: 0 0; transform: translate3d(-5%, -1%, 0); }
-  to { background-position: 190px 0; transform: translate3d(5%, 1%, 0); }
+@keyframes weather-wind-streaks {
+  from { background-position: 0 0, 0 0; transform: translate3d(-2%, -1%, 0); }
+  to { background-position: 180px 0, -120px 0; transform: translate3d(2%, 1%, 0); }
 }
 @media (prefers-reduced-motion: reduce) { html[data-windy="true"] body::after { animation: none; } }
 
