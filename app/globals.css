@@ -310,3 +310,18 @@ html[data-weather="fog"] body::before {
 @media (prefers-reduced-motion: reduce) {
   body::before, body::after { animation: none !important; }
 }
+
+
+/* Vítr je samostatná vrstva – zobrazí se i při oblačnosti nebo mlze. */
+html[data-windy="true"] body::after {
+  opacity: calc(.22 + var(--wind-strength, .3) * .32);
+  background-image:
+    repeating-linear-gradient(165deg, transparent 0 24px, rgba(255,255,255,.42) 25px, transparent 28px 54px),
+    linear-gradient(110deg, transparent 20%, rgba(220,245,255,.13) 48%, transparent 72%);
+  background-size: 115px 100%, 100% 100%;
+  animation: weather-wind-gust calc(3.8s - var(--wind-strength, .3) * 2.2s) linear infinite;
+}
+@keyframes weather-wind-gust {
+  from { transform: translate3d(-9%, -2%, 0); }
+  to { transform: translate3d(9%, 2%, 0); }
+}
