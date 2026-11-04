@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, doc, getDoc, deleteDoc, updateDoc, Timestamp } from "firebase/firestore";
+import React, { useEffect, useMemo, useState } from "react";
+import { collection, query, where, doc, getDoc, deleteDoc, updateDoc, Timestamp } from "firebase/firestore";
+import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
@@ -40,9 +41,9 @@ const formatTime = (minutes: number) => {
 
 export default function MyRunsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState<RunData[]>([]);
+  const [uid, setUid] = useState("");
   const [profile, setProfile] = useState({ nickname: "", avatarUrl: "" });
-  const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -60,26 +61,28 @@ export default function MyRunsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    let unsubRuns: (() => void) | null = null;
     const unsubAuth = onAuthStateChanged(auth, user => {
-      unsubRuns?.(); unsubRuns = null;
-      if (!user) { setLoading(false); router.push("/login"); return; }
+      if (!user) { router.push("/login"); return; }
+      setUid(user.uid);
       getDoc(doc(db, "users", user.uid)).then(profileDoc => {
         if (profileDoc.exists()) {
           const data = profileDoc.data();
           setProfile({ nickname: data.nickname || "", avatarUrl: data.avatarUrl || "" });
         }
       }).catch(err => console.error("Nepodařilo se načíst profil", err));
-      unsubRuns = onSnapshot(query(collection(db, "runs"), where("uid", "==", user.uid)), snap => {
-        const items = snap.docs.map(item => {
-          const data = item.data();
-          return { id: item.id, ...data, km: Number(data.km) || 0, minuty: Number(data.minuty) || 0, tempo: Number(data.tempo) || 0 } as RunData;
-        }).sort((a,b) => dateOf(b.timestamp).getTime() - dateOf(a.timestamp).getTime());
-        setRuns(items); setLoading(false);
-      }, err => { console.error(err); setError("Chyba při načítání dat."); setLoading(false); });
     });
-    return () => { unsubAuth(); unsubRuns?.(); };
+    return () => unsubAuth();
   }, [router]);
+
+  const runsQuery = useMemo(() => query(collection(db, "runs"), where("uid", "==", uid || "__no_user__")), [uid]);
+  const runsState = useSharedFirestoreQuery<RunData>("runs:user:" + (uid || "none"), runsQuery);
+  const runs = useMemo(() => runsState.data.map(run => ({
+    ...run, km: Number(run.km) || 0, minuty: Number(run.minuty) || 0, tempo: Number(run.tempo) || 0
+  })).sort((a,b) => dateOf(b.timestamp).getTime() - dateOf(a.timestamp).getTime()), [runsState.data]);
+  const loading = runsState.loading;
+  useEffect(() => {
+    if (runsState.error) setError("Chyba při načítání dat.");
+  }, [runsState.error]);
 
   const filteredRuns = runs.filter(run => {
     if ((run.type || "běh") !== selectedType) return false;
