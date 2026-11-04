@@ -15,7 +15,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "./lib/firebase";
 import Navbar from "./components/Navbar";
-import { Footprints, PersonStanding } from "lucide-react";
+import { Footprints } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import RunForm from "./components/RunForm";
 import ActivityCard from "./components/ActivityCard";
@@ -177,7 +177,7 @@ export default function Page() {
         <RunWeatherRecommendation />
 
         <div className="tile-group" role="group" aria-label="Typ aktivity">
-          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}><PersonStanding size={26} strokeWidth={2.5} aria-hidden="true" /> Běh</button>
+          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}><svg className="run-profile-icon" viewBox="0 0 64 64" aria-hidden="true"><circle cx="43" cy="9" r="6" fill="currentColor"/><path d="M28 20h15l8 12 9 1M34 21l-9 13-13 2M37 24l-9 18 17 11-8 7M29 42 15 59" fill="none" stroke="currentColor" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"/><path d="M7 24h13M3 34h11M1 44h10" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/></svg> Běh</button>
           <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}><Footprints size={25} strokeWidth={2.8} /> Chůze</button>
         </div>
 
