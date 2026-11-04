@@ -1,12 +1,12 @@
 "use client";
-import React, { useState } from "react";
+
+import React, { FormEvent, useState } from "react";
+import { ArrowLeft, KeyRound, LogIn, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail
-} from "firebase/auth";
+import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../lib/firebase";
+
+type View = "login" | "code" | "register";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,46 +14,62 @@ export default function LoginPage() {
   const [potvrzeniHesla, setPotvrzeniHesla] = useState("");
   const [kod, setKod] = useState("");
   const [error, setError] = useState("");
-  const [zobrazeni, setZobrazeni] = useState<"login" | "code" | "register">("login");
+  const [message, setMessage] = useState("");
+  const [view, setView] = useState<View>("login");
+  const [busy, setBusy] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async () => {
+  const switchView = (next: View) => {
+    setError("");
+    setMessage("");
+    setView(next);
+  };
+
+  const handleLogin = async (event: FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
     try {
-      await signInWithEmailAndPassword(auth, email, heslo);
+      await signInWithEmailAndPassword(auth, email.trim(), heslo);
       router.push("/");
     } catch {
-      setError("Chyba při přihlášení: Špatný email nebo heslo.");
+      setError("Špatný email nebo heslo.");
+    } finally {
+      setBusy(false);
     }
   };
 
   const handleForgotPassword = async () => {
-    if (!email) {
-      setError("Zadejte email pro obnovení hesla.");
+    setError("");
+    setMessage("");
+    if (!email.trim()) {
+      setError("Nejprve zadej email, na který chceš poslat odkaz.");
       return;
     }
+    setBusy(true);
     try {
-      await sendPasswordResetEmail(auth, email);
-      alert("Na váš email byl odeslán odkaz pro obnovení hesla.");
+      await sendPasswordResetEmail(auth, email.trim());
+      setMessage("Na zadaný email jsme poslali odkaz pro obnovení hesla.");
     } catch {
-      setError("Chyba při odesílání emailu.");
+      setError("Odkaz pro obnovení se nepodařilo odeslat. Zkontroluj email a zkus to znovu.");
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleZkontrolovatKod = async () => {
+  const handleCheckCode = async (event: FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
     setError("");
     try {
       const response = await fetch("/api/registration-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: kod }),
+        body: JSON.stringify({ code: kod.trim() }),
       });
-
       if (response.ok) {
-        setZobrazeni("register");
-        return;
-      }
-
-      if (response.status === 503) {
+        setView("register");
+      } else if (response.status === 503) {
         setError("Registrace zatím není na serveru nastavena. Kontaktuj správce.");
       } else if (response.status === 403 || response.status === 400) {
         setError("Neplatný registrační kód.");
@@ -62,127 +78,88 @@ export default function LoginPage() {
       }
     } catch {
       setError("Kód se nepodařilo ověřit. Zkontroluj připojení k internetu.");
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleRegister = async () => {
+  const handleRegister = async (event: FormEvent) => {
+    event.preventDefault();
+    if (heslo.length < 6) {
+      setError("Heslo musí mít alespoň 6 znaků.");
+      return;
+    }
     if (heslo !== potvrzeniHesla) {
       setError("Hesla se neshodují.");
       return;
     }
+    setBusy(true);
+    setError("");
     try {
-      await createUserWithEmailAndPassword(auth, email, heslo);
+      await createUserWithEmailAndPassword(auth, email.trim(), heslo);
       router.push("/");
     } catch {
-      setError("Chyba při registraci: Email už existuje nebo je neplatný.");
+      setError("Registrace se nepodařila. Email už může být použitý nebo není platný.");
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "var(--main-gradient, linear-gradient(180deg, #36D1DC, #5B86E5))",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "flex-start", // Změna: dlaždice výše
-      flexDirection: "column",
-      color: "white",
-      fontFamily: "'Poppins', sans-serif",
-      paddingTop: "0rem" // Posun od vrchu
-    }}>
-      <div className="tile" style={{
-        maxWidth: "400px",
-        width: "90%",
-        textAlign: "center",
-        margin: "0 auto"
-      }}>
-        <h2>
-          {zobrazeni === "login" && "Přihlášení"}
-          {zobrazeni === "code" && "Registrační kód"}
-          {zobrazeni === "register" && "Registrace"}
-        </h2>
+    <main className="auth-page">
+      <section className="auth-card" aria-labelledby="auth-title">
+        <div className="auth-brand">
+          <span className="auth-brand-mark" aria-hidden="true">👟</span>
+          <div>
+            <span className="auth-eyebrow">DOLNÍ LHOTA</span>
+            <strong>v pohybu</strong>
+          </div>
+        </div>
 
-        {zobrazeni === "login" && (
-          <>
-            <input type="email" placeholder="Email" value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={inputStyle} /><br />
-            <input type="password" placeholder="Heslo" value={heslo}
-              onChange={(e) => setHeslo(e.target.value)}
-              style={inputStyle} /><br />
-            <button onClick={handleLogin} style={buttonStyle}>Přihlásit</button>
-            <button onClick={handleForgotPassword} style={buttonStyle}>Zapomněl jsem heslo</button>
-            <div style={{ marginTop: "1rem", fontSize: "0.9rem" }}>
-              Nemáte účet?{" "}
-              <span onClick={() => setZobrazeni("code")} style={{ cursor: "pointer", textDecoration: "underline" }}>
-                Registrovat
-              </span>
-            </div>
-          </>
+        <div className="auth-heading">
+          <h1 id="auth-title">
+            {view === "login" ? "Vítej zpět" : view === "code" ? "Registrace" : "Vytvořit účet"}
+          </h1>
+          <p>
+            {view === "login"
+              ? "Přihlas se a pokračuj ve svém progresu."
+              : view === "code"
+                ? "Pro registraci potřebuješ platný registrační kód."
+                : "Nastav si účet a začni zaznamenávat své aktivity."}
+          </p>
+        </div>
+
+        {view === "login" && (
+          <form className="auth-form" onSubmit={handleLogin}>
+            <label><span>Email</span><input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required /></label>
+            <label><span>Heslo</span><input type="password" autoComplete="current-password" value={heslo} onChange={e => setHeslo(e.target.value)} required /></label>
+            <button type="submit" className="auth-primary" disabled={busy}><LogIn size={18} /> {busy ? "Přihlašuji…" : "Přihlásit"}</button>
+            <button type="button" className="auth-secondary" onClick={handleForgotPassword} disabled={busy}>Zapomněl jsem heslo</button>
+            <button type="button" className="auth-link-button" onClick={() => switchView("code")}>Nemáš účet? <strong>Registrovat</strong></button>
+          </form>
         )}
 
-        {zobrazeni === "code" && (
-          <>
-            <input type="text" placeholder="Registrační kód" value={kod}
-              onChange={(e) => setKod(e.target.value)}
-              style={inputStyle} /><br />
-            <button onClick={handleZkontrolovatKod} style={buttonStyle}>Potvrdit</button>
-            <div style={{ marginTop: "1rem", fontSize: "0.9rem" }}>
-              <span onClick={() => setZobrazeni("login")} style={{ cursor: "pointer", textDecoration: "underline" }}>
-                Zpět na přihlášení
-              </span>
-            </div>
-          </>
+        {view === "code" && (
+          <form className="auth-form" onSubmit={handleCheckCode}>
+            <label><span>Registrační kód</span><input type="text" autoComplete="one-time-code" value={kod} onChange={e => setKod(e.target.value)} required /></label>
+            <button type="submit" className="auth-primary" disabled={busy}><KeyRound size={18} /> {busy ? "Ověřuji…" : "Ověřit kód"}</button>
+            <button type="button" className="auth-link-button" onClick={() => switchView("login")}><ArrowLeft size={16} /> Zpět na přihlášení</button>
+          </form>
         )}
 
-        {zobrazeni === "register" && (
-          <>
-            <input type="email" placeholder="Email" value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={inputStyle} /><br />
-            <input type="password" placeholder="Heslo" value={heslo}
-              onChange={(e) => setHeslo(e.target.value)}
-              style={inputStyle} /><br />
-            <input type="password" placeholder="Potvrzení hesla" value={potvrzeniHesla}
-              onChange={(e) => setPotvrzeniHesla(e.target.value)}
-              style={inputStyle} /><br />
-            <button onClick={handleRegister} style={buttonStyle}>Registrovat</button>
-            <div style={{ marginTop: "1rem", fontSize: "0.9rem" }}>
-              <span onClick={() => setZobrazeni("login")} style={{ cursor: "pointer", textDecoration: "underline" }}>
-                Zpět na přihlášení
-              </span>
-            </div>
-          </>
+        {view === "register" && (
+          <form className="auth-form" onSubmit={handleRegister}>
+            <label><span>Email</span><input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required /></label>
+            <label><span>Heslo</span><input type="password" autoComplete="new-password" minLength={6} value={heslo} onChange={e => setHeslo(e.target.value)} required /></label>
+            <label><span>Potvrzení hesla</span><input type="password" autoComplete="new-password" minLength={6} value={potvrzeniHesla} onChange={e => setPotvrzeniHesla(e.target.value)} required /></label>
+            <button type="submit" className="auth-primary" disabled={busy}><UserPlus size={18} /> {busy ? "Vytvářím účet…" : "Vytvořit účet"}</button>
+            <button type="button" className="auth-link-button" onClick={() => switchView("login")}><ArrowLeft size={16} /> Zpět na přihlášení</button>
+          </form>
         )}
 
-        {error && <div style={{ color: "#ffcccc", marginTop: "1rem" }}>{error}</div>}
-      </div>
-    </div>
+        {error && <p className="form-message form-message-error" role="alert">{error}</p>}
+        {message && <p className="form-message form-message-success" role="status">{message}</p>}
+      </section>
+    </main>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: "0.6rem 1rem",
-  borderRadius: "8px",
-  border: "none",
-  outline: "none",
-  margin: "0.5rem 0",
-  width: "100%",
-  fontSize: "1rem",
-  boxSizing: "border-box"
-};
-
-const buttonStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "0.6rem 1rem",
-  margin: "0.5rem 0",
-  background: "rgba(255,255,255,0.3)",
-  color: "white",
-  border: "none",
-  borderRadius: "8px",
-  fontWeight: "bold",
-  fontSize: "1rem",
-  cursor: "pointer",
-  transition: "0.3s",
-  boxSizing: "border-box"
-};
