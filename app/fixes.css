@@ -129,7 +129,7 @@ html[data-animations="true"][data-weather="night"] body::before {
   padding: clamp(14px, 3vw, 24px) !important;
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  grid-template-rows: repeat(4, minmax(0, 1fr)) auto !important;
+  grid-template-rows: repeat(3, minmax(0, 1fr)) auto !important;
   gap: clamp(10px, 2vw, 16px) !important;
   align-content: stretch !important;
   overflow-y: auto !important;
