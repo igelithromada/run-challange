@@ -9,6 +9,7 @@ import Navbar from "../components/Navbar";
 import { Footprints } from "lucide-react";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import Sidebar from "../components/Sidebar";
+import LoadingSkeleton from "../components/LoadingSkeleton";
 
 export default function StatisticsPage() {
 
