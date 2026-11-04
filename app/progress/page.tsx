@@ -5,7 +5,7 @@ import { collection, doc, getDoc, query, setDoc, where } from "firebase/firestor
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { Award, CalendarDays, Footprints, Medal, Target, Trophy, Users, TrendingUp, Save, CheckCircle2, LockKeyhole } from "lucide-react";
+import { Award, CalendarDays, Footprints, Medal, Target, Trophy, Users, TrendingUp, Save, CheckCircle2, Lock } from "lucide-react";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
