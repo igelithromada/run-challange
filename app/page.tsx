@@ -50,7 +50,7 @@ export default function Page() {
   const teamsState = useSharedFirestoreQuery<any>("teams:all", teamsQuery);
   const runs = runsState.data;
   const teams = teamsState.data;
-  const allRuns = Array.from(new Map([...runs, ...olderRuns].map(run => [run.id, run])).values());
+  const allRuns = Array.from(new Map<string, RunData>([...runs, ...olderRuns].map(run => [run.id, run] as const)).values());
 
   useEffect(() => {
     if (!runsState.loading && runs.length < 30) setHasMore(false);
