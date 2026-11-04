@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import type { User } from "firebase/auth";
-import { collection, query, orderBy, onSnapshot, getDocs, where, documentId } from "firebase/firestore";
+import { collection, query, orderBy, getDocs, where, documentId } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
@@ -14,8 +14,6 @@ import LoadingSkeleton from "../components/LoadingSkeleton";
 export default function StatisticsPage() {
 
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState<any[]>([]);
-  const [teams, setTeams] = useState<any[]>([]);
   const [avatars, setAvatars] = useState<Record<string, string>>({});
   const [user, setUser] = useState<User | null>(null);
   const [selectedType, setSelectedType] = useState("běh");
