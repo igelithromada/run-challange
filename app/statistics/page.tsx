@@ -31,7 +31,12 @@ export default function StatisticsPage() {
     return () => unsubAuth();
   }, [router]);
 
-  const runsQuery = useMemo(() => {\n    const constraints: any[] = [orderBy("timestamp", "desc")];\n    if (startDate) constraints.unshift(where("timestamp", ">=", Timestamp.fromDate(new Date(startDate + "T00:00:00"))));\n    if (endDate) constraints.unshift(where("timestamp", "<=", Timestamp.fromDate(new Date(endDate + "T23:59:59.999"))));\n    return query(collection(db, "runs"), ...constraints);\n  }, [startDate, endDate]);
+  const runsQuery = useMemo(() => {
+    const constraints: any[] = [orderBy("timestamp", "desc")];
+    if (startDate) constraints.unshift(where("timestamp", ">=", Timestamp.fromDate(new Date(startDate + "T00:00:00"))));
+    if (endDate) constraints.unshift(where("timestamp", "<=", Timestamp.fromDate(new Date(endDate + "T23:59:59.999"))));
+    return query(collection(db, "runs"), ...constraints);
+  }, [startDate, endDate]);
   const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
   const runsState = useSharedFirestoreQuery<any>("runs:statistics:" + (startDate || "all") + ":" + (endDate || "all"), runsQuery);
   const teamsState = useSharedFirestoreQuery<any>("teams:all", teamsQuery);
