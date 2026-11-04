@@ -1,11 +1,11 @@
 "use client";
 import React, { useEffect } from "react";
-import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X, CloudSun, Home, TrendingUp } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X, CloudSun, TrendingUp } from "lucide-react";
 
 type SidebarProps = { visible: boolean; onClose: () => void; onSelect: (item: string) => void };
 
 const items = [
-  { id: "home", label: "Hlavní obrazovka", Icon: Home },
   { id: "myrun", label: "Moje aktivity", Icon: Footprints },
   { id: "teams", label: "Týmy", Icon: Users },
   { id: "progress", label: "Můj progres", Icon: TrendingUp },
@@ -26,7 +26,7 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
   }, [visible, onClose]);
 
   if (!visible) return null;
-  return (
+  return createPortal(
     <div className="site-sidebar-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Navigační nabídka">
       <nav className="site-sidebar-panel" onClick={e => e.stopPropagation()} aria-label="Hlavní navigace">
         {items.map(({id,label,Icon}) => (
@@ -41,6 +41,7 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
           <X size={20} /><span>Zavřít</span>
         </button>
       </nav>
-    </div>
+    </div>,
+    document.body
   );
 }
