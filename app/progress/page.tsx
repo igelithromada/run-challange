@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { collection, doc, getDoc, onSnapshot, query, setDoc } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { Award, CalendarDays, Flame, Footprints, Medal, Target, Trophy, Users, TrendingUp, Save, CheckCircle2, LockKeyhole } from "lucide-react";
+import { Award, CalendarDays, Footprints, Medal, Target, Trophy, Users, TrendingUp, Save, CheckCircle2, LockKeyhole } from "lucide-react";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -114,7 +114,6 @@ export default function ProgressPage() {
     { name:"Legenda 2.0", min:2000, next:5000, icon:"💎" }
   ];
   const level = [...levels].reverse().find(item => allKm >= item.min) || levels[0];
-  const nextLevel = levels.find(item => item.min === level.next) || { min: level.next, next: level.next*2, name:"Mistr kilometrů", icon:"💎" };
   const levelProgress = Math.min(100, Math.max(0, (allKm-level.min)/(level.next-level.min)*100));
 
   const badges = [
@@ -196,7 +195,7 @@ export default function ProgressPage() {
 
       <section className="tile progress-calendar">
         <div className="progress-section-title"><CalendarDays/><div><h2>Kalendář aktivit</h2><p>Posledních 12 týdnů – čím tmavší políčko, tím větší vzdálenost.</p></div></div>
-        <div className="progress-calendar-grid">{calendarDays.map(day=>{const km=dailyTotals.get(dateKey(day))||0;return <div key={dateKey(day)} className={`progress-day ${km===0?"":km<3?"level-1":km<7?"level-2":km<12?"level-3":"level-4"}`} title={`${day.toLocaleDateString("cs-CZ")}: ${km.toFixed(1)} km`}/>)}</div>
+        <div className="progress-calendar-grid">{calendarDays.map(day=>{const km=dailyTotals.get(dateKey(day))||0;return <div key={dateKey(day)} className={`progress-day ${km===0?"":km<3?"level-1":km<7?"level-2":km<12?"level-3":"level-4"}`} title={`${day.toLocaleDateString("cs-CZ")}: ${km.toFixed(1)} km`}/>})}</div>
         <div className="progress-calendar-legend"><span>Méně</span><i/><i/><i/><i/><span>Více</span></div>
         <p className="progress-calendar-summary">{activityDays} aktivních dní · {maxDay.toFixed(1)} km nejvíce za jeden den</p>
       </section>
