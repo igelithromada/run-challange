@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   collection,
   query,
@@ -21,6 +21,7 @@ import RunForm from "./components/RunForm";
 import ActivityCard from "./components/ActivityCard";
 import RunWeatherRecommendation from "./components/RunWeatherRecommendation";
 import { RunData } from "./types";
+import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
 
 export default function Page() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -33,26 +34,18 @@ export default function Page() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, (user) => {
+    const unsubAuth = onAuthStateChanged(auth, user => {
       if (!user) router.push("/login");
     });
-
-    const q = query(collection(db, "runs"), orderBy("timestamp", "desc"), limit(30));
-    const unsubRuns = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as RunData));
-      setRuns(items);
-    });
-
-    const unsubTeams = onSnapshot(collection(db, "teams"), (snap) => {
-      setTeams(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-    });
-
-    return () => {
-      unsubAuth();
-      unsubRuns();
-      unsubTeams();
-    };
+    return () => unsubAuth();
   }, [router]);
+
+  const runsQuery = useMemo(() => query(collection(db, "runs"), orderBy("timestamp", "desc"), limit(30)), []);
+  const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
+  const runsState = useSharedFirestoreQuery<RunData>("runs:latest:30", runsQuery);
+  const teamsState = useSharedFirestoreQuery<any>("teams:all", teamsQuery);
+  const runs = runsState.data;
+  const teams = teamsState.data;
 
   useEffect(() => {
     const userIds = Array.from(new Set(runs.map((run) => run.uid).filter((uid): uid is string => !!uid && !userAvatars[uid])));
