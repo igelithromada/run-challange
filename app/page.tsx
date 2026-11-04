@@ -7,6 +7,7 @@ import {
   limit,
   doc,
   getDocs,
+  startAfter,
   documentId,
   where,
 } from "firebase/firestore";
@@ -49,6 +50,38 @@ export default function Page() {
   const teamsState = useSharedFirestoreQuery<any>("teams:all", teamsQuery);
   const runs = runsState.data;
   const teams = teamsState.data;
+  const allRuns = Array.from(new Map([...runs, ...olderRuns].map(run => [run.id, run])).values());
+
+  useEffect(() => {
+    if (!runsState.loading && runs.length < 30) setHasMore(false);
+  }, [runsState.loading, runs.length]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      ["/myruns", "/statistics", "/teams", "/weather"].forEach(path => router.prefetch(path));
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [router]);
+
+  const loadOlderRuns = async () => {
+    const cursor = olderCursor || runsState.lastDocument;
+    if (!cursor || loadingOlder || !hasMore) return;
+    setLoadingOlder(true);
+    try {
+      const next = await getDocs(query(collection(db, "runs"), orderBy("timestamp", "desc"), startAfter(cursor), limit(20)));
+      const items = next.docs.map(item => ({ id: item.id, ...item.data() } as RunData));
+      setOlderRuns(previous => [
+        ...previous,
+        ...items.filter(item => !previous.some(old => old.id === item.id) && !runs.some(current => current.id === item.id))
+      ]);
+      setOlderCursor(next.docs.length ? next.docs[next.docs.length - 1] : cursor);
+      setHasMore(next.docs.length === 20);
+    } catch (error) {
+      console.error("Nepodařilo se načíst starší aktivity", error);
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
 
   useEffect(() => {
     const userIds = Array.from(new Set(runs.map((run) => run.uid).filter((uid): uid is string => !!uid && !userAvatars[uid])));
