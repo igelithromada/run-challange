@@ -8,7 +8,6 @@ import { Award, CalendarDays, Footprints, Medal, Target, Trophy, Users, Trending
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import useThemeLoader from "../lib/useThemeLoader";
 
 type Activity = {
   id: string; uid?: string; km?: number | string; minuty?: number | string; tempo?: number | string;
@@ -37,7 +36,6 @@ const mondayOf = (date: Date) => {
 };
 
 export default function ProgressPage() {
-  useThemeLoader();
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const [uid, setUid] = useState("");

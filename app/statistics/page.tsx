@@ -8,10 +8,8 @@ import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import { Footprints } from "lucide-react";
 import Sidebar from "../components/Sidebar";
-import useThemeLoader from "../lib/useThemeLoader";
 
 export default function StatisticsPage() {
-  useThemeLoader();
 
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<any[]>([]);

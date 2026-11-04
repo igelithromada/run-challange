@@ -20,11 +20,9 @@ import Sidebar from "./components/Sidebar";
 import RunForm from "./components/RunForm";
 import ActivityCard from "./components/ActivityCard";
 import RunWeatherRecommendation from "./components/RunWeatherRecommendation";
-import useThemeLoader from "./lib/useThemeLoader";
 import { RunData } from "./types";
 
 export default function Page() {
-  useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<RunData[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
