@@ -43,7 +43,7 @@ export default function WeatherCard() {
 
   const loadWeather = async () => {
     try {
-      const response = await fetch("/api/weather", { cache: "no-store" });
+      const response = await fetch("/api/weather");
       const data = await response.json();
       setWeather(data);
       setLastUpdated(new Date().toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" }));
