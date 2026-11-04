@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { Camera, Clock3, Gauge, MapPin, Pencil, Trash2 } from "lucide-react";
+import { cloudinaryImageUrl } from "../lib/imageUrl";
 
 export type ActivityCardRun = {
   id: string; uid?: string; nickname?: string; email?: string;
@@ -25,7 +26,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
   return (
     <article className="tile list-tile activity-card activity-card-modern">
       <button type="button" className="activity-avatar" onClick={onUserClick} disabled={!onUserClick} aria-label={`Profil uživatele ${nickname}`}>
-        {avatarUrl ? <img src={avatarUrl} alt="" /> : nickname.charAt(0).toUpperCase()}
+        {avatarUrl ? <img src={cloudinaryImageUrl(avatarUrl, 128)} alt="" loading="lazy" decoding="async" /> : nickname.charAt(0).toUpperCase()}
       </button>
       <div className="activity-main">
         <div className="activity-card-heading">
