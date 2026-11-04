@@ -17,6 +17,7 @@ export default function SettingsPage() {
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
   const [theme, setTheme] = useState("default");
   const [customColor, setCustomColor] = useState("#36D1DC");
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -133,19 +134,24 @@ export default function SettingsPage() {
     }
 
     setAvatarUploading(true);
+    setAvatarError("");
     try {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("upload_preset", "lhota_unsigned");
       const response = await fetch("https://api.cloudinary.com/v1_1/dvb4jm8cw/image/upload", { method: "POST", body: formData });
-      const result = await response.json();
-      if (!response.ok || !result.secure_url) throw new Error(result.error?.message || "Nahrání obrázku selhalo.");
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.secure_url) throw new Error(result.error?.message || `Nahrání obrázku selhalo (HTTP ${response.status}).`);
       const downloadUrl = result.secure_url;
       setAvatarUrl(downloadUrl);
       await saveSettings({ avatarUrl: downloadUrl });
+      const savedProfile = await getDoc(doc(db, "users", userId));
+      if (!savedProfile.exists() || savedProfile.data().avatarUrl !== downloadUrl) throw new Error("Fotografie se nahrála, ale nepodařilo se ověřit její uložení do profilu.");
     } catch (err) {
       console.error("Chyba při nahrávání avataru:", err);
-      alert("Avatar se nepodařilo uložit. Zkus to prosím znovu.");
+      const message = err instanceof Error ? err.message : "Avatar se nepodařilo uložit.";
+      setAvatarError(message);
+      alert(message);
     } finally {
       setAvatarUploading(false);
       input.value = "";
@@ -203,6 +209,7 @@ export default function SettingsPage() {
               <input type="file" accept="image/*" onChange={handleAvatarChange} disabled={avatarUploading} />
             </label>
             <small>JPG, PNG nebo WEBP · maximálně 5 MB</small>
+            {avatarError && <small role="alert" className="avatar-upload-error">{avatarError}</small>}
           </div>
         </section>
 
@@ -214,7 +221,7 @@ export default function SettingsPage() {
             <ThemeItem color="linear-gradient(180deg, #2980b9, #2c3e50)" active={theme === "man"} onClick={() => handleThemeChange("man")} text="Muž" />
             <ThemeItem color="linear-gradient(180deg, #ff7eb3, #ff758c)" active={theme === "woman"} onClick={() => handleThemeChange("woman")} text="Žena" />
             <ThemeItem color="linear-gradient(180deg, #36D1DC, #5B86E5)" active={theme === "auto"} onClick={() => handleThemeChange("auto")} text="Automaticky podle času" />
-            <ThemeItem color="linear-gradient(160deg, #263849, #6bc6dc, #f5b94c)" active={theme === "weather"} onClick={() => handleThemeChange("weather")} text="Podle aktuálního počasí" />
+            <ThemeItem color="linear-gradient(160deg, #263849, #6bc6dc, #f5b94c)" active={theme === "weather"} onClick={() => handleThemeChange("weather")} text="Automaticky podle počasí" />
 
             <div style={{
               marginTop: "0.7rem",
