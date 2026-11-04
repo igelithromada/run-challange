@@ -91,17 +91,17 @@ export default function RunForm({ type }: { type: string }) {
       {!showForm && <button onClick={() => { reset(); setShowForm(true); }} style={buttonStyle}>➕ Přidat {type}</button>}
       {showForm && (
         <div className="run-form-panel">
-          <label className="run-form-field">Vzdálenost (km)
-            <input type="number" min="0.1" step="0.01" inputMode="decimal" placeholder="Např. 5.2" value={km} onChange={e => setKm(e.target.value)} style={inputStyle} />
+          <label className="run-form-field">Vzdálenost
+            <input aria-label="Vzdálenost v kilometrech" type="number" min="0.1" step="0.01" inputMode="decimal" placeholder="km · např. 5,2" value={km} onChange={e => setKm(e.target.value)} style={inputStyle} />
           </label>
           <div className="run-form-field">
             <span className="run-form-field-label">Celkový čas</span>
             <div className="run-form-time-fields">
-              <label>Minuty
-                <input type="number" min="0" max="9999" step="1" inputMode="numeric" pattern="[0-9]*" placeholder="Např. 34" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} style={inputStyle} />
+              <label className="run-form-unit-field">
+                <input aria-label="Minuty" type="number" min="0" max="9999" step="1" inputMode="numeric" pattern="[0-9]*" placeholder="min" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} style={inputStyle} />
               </label>
-              <label>Sekundy
-                <input type="number" min="0" max="59" step="1" inputMode="numeric" pattern="[0-9]*" placeholder="Např. 54" value={durationSeconds} onChange={e => setDurationSeconds(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} style={inputStyle} />
+              <label className="run-form-unit-field">
+                <input aria-label="Sekundy" type="number" min="0" max="59" step="1" inputMode="numeric" pattern="[0-9]*" placeholder="s" value={durationSeconds} onChange={e => setDurationSeconds(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} style={inputStyle} />
               </label>
             </div>
             {durationSeconds !== "" && Number(durationSeconds) > 59 && <small className="run-form-time-error">Sekundy mohou být maximálně 59.</small>}
