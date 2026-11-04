@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { onSnapshot, Query } from "firebase/firestore";
+import { onSnapshot, Query, QueryDocumentSnapshot } from "firebase/firestore";
 
 export type SharedQueryState<T> = {
   data: T[];
@@ -21,7 +21,7 @@ type CacheEntry = {
 
 const cache = new Map<string, CacheEntry>();
 const emptyState = <T,>(): SharedQueryState<T> => ({
-  data: [], loading: true, error: null, fromCache: true, hasPendingWrites: false
+  data: [], loading: true, error: null, fromCache: true, hasPendingWrites: false, lastDocument: null
 });
 
 function trimCache() {
