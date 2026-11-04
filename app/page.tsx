@@ -149,7 +149,7 @@ export default function Page() {
         <RunWeatherRecommendation />
 
         <div className="tile-group" role="group" aria-label="Typ aktivity">
-          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}><PersonStanding size={25} strokeWidth={2.8} /> Běh</button>
+          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}><svg className="run-profile-icon" viewBox="0 0 32 32" aria-hidden="true"><circle cx="21" cy="5" r="3" fill="currentColor"/><path d="M17 10l-5 5 5 3 4-5 5 2M12 15l-6-1-3 4M17 18l-4 6-7 4M20 18l4 5 5 2" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/></svg> Běh</button>
           <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}><Footprints size={25} strokeWidth={2.8} /> Chůze</button>
         </div>
 
