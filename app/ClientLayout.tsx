@@ -4,8 +4,10 @@ import { ReactNode, useEffect } from "react";
 import { auth, db } from "./lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import useThemeLoader from "./lib/useThemeLoader";
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
+  useThemeLoader();
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) return;
