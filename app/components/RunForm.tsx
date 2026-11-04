@@ -21,7 +21,8 @@ const formatDuration = (seconds: number) => `${Math.floor(seconds / 60)}:${Strin
 export default function RunForm({ type }: { type: string }) {
   const [showForm, setShowForm] = useState(false);
   const [km, setKm] = useState("");
-  const [duration, setDuration] = useState("");
+  const [durationMinutes, setDurationMinutes] = useState("");
+  const [durationSeconds, setDurationSeconds] = useState("");
   const [activityDate, setActivityDate] = useState(localDateTime);
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
@@ -32,22 +33,25 @@ export default function RunForm({ type }: { type: string }) {
   const previews = useMemo(() => files.map(file => ({ file, url: URL.createObjectURL(file) })), [files]);
   useEffect(() => () => previews.forEach(item => URL.revokeObjectURL(item.url)), [previews]);
 
-  const parsedDuration = (() => {
-    const match = duration.trim().match(/^(\d{1,4}):([0-5]?\d)$/);
-    return match ? Number(match[1]) * 60 + Number(match[2]) : null;
-  })();
+  const minutesValue = durationMinutes.trim() === "" ? null : Number(durationMinutes);
+  const secondsValue = durationSeconds.trim() === "" ? null : Number(durationSeconds);
+  const parsedDuration = minutesValue !== null && secondsValue !== null &&
+    Number.isInteger(minutesValue) && minutesValue >= 0 && minutesValue <= 9999 &&
+    Number.isInteger(secondsValue) && secondsValue >= 0 && secondsValue <= 59
+      ? minutesValue * 60 + secondsValue
+      : null;
   const distanceValue = Number(km.replace(",", "."));
   const pace = distanceValue > 0 && parsedDuration !== null ? parsedDuration / distanceValue : null;
 
   const reset = () => {
-    setKm(""); setDuration(""); setFiles([]); setActivityDate(localDateTime()); setError(""); setUploadStatus("");
+    setKm(""); setDurationMinutes(""); setDurationSeconds(""); setFiles([]); setActivityDate(localDateTime()); setError(""); setUploadStatus("");
   };
 
   const handleSubmit = async () => {
     if (saving) return;
     const kmVal = Number(km.replace(",", "."));
     if (!km.trim() || !Number.isFinite(kmVal) || kmVal <= 0 || parsedDuration === null || parsedDuration <= 0) {
-      setError("Zadej platnou vzdálenost a čas ve formátu minuty:sekundy (např. 32:45).");
+      setError("Zadej platnou vzdálenost, minuty a sekundy (sekundy musí být v rozsahu 0–59).");
       return;
     }
     if (!activityDate || Number.isNaN(new Date(activityDate).getTime())) {
@@ -90,9 +94,18 @@ export default function RunForm({ type }: { type: string }) {
           <label className="run-form-field">Vzdálenost (km)
             <input type="number" min="0.1" step="0.01" inputMode="decimal" placeholder="Např. 5.2" value={km} onChange={e => setKm(e.target.value)} style={inputStyle} />
           </label>
-          <label className="run-form-field">Celkový čas (minuty:sekundy)
-            <input type="text" inputMode="numeric" placeholder="Např. 32:45" value={duration} onChange={e => setDuration(e.target.value.replace(/[^0-9:]/g, "").slice(0, 7))} style={inputStyle} />
-          </label>
+          <div className="run-form-field">
+            <span className="run-form-field-label">Celkový čas</span>
+            <div className="run-form-time-fields">
+              <label>Minuty
+                <input type="number" min="0" max="9999" step="1" inputMode="numeric" pattern="[0-9]*" placeholder="Např. 34" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} style={inputStyle} />
+              </label>
+              <label>Sekundy
+                <input type="number" min="0" max="59" step="1" inputMode="numeric" pattern="[0-9]*" placeholder="Např. 54" value={durationSeconds} onChange={e => setDurationSeconds(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} style={inputStyle} />
+              </label>
+            </div>
+            {durationSeconds !== "" && Number(durationSeconds) > 59 && <small className="run-form-time-error">Sekundy mohou být maximálně 59.</small>}
+          </div>
           {pace !== null && pace > 0 && <div className="run-form-pace">Vypočítané tempo <strong>{formatDuration(Math.round(pace))} /km</strong></div>}
           <label className="run-form-field">Datum a čas aktivity
             <input type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} style={inputStyle} />

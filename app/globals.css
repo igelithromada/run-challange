@@ -781,3 +781,27 @@ html[data-animations="false"] .wind-icon-animated { animation: none !important; 
   cursor: pointer;
 }
 .activity-load-more:disabled { opacity: .6; cursor: wait; }
+
+
+/* Čas aktivity: samostatná pole pro minuty a sekundy */
+.run-form-time-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .7rem;
+}
+.run-form-time-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  min-width: 0;
+  color: white;
+  font-size: .78rem;
+  font-weight: 600;
+}
+.run-form-time-fields input { min-width: 0; }
+.run-form-time-error {
+  display: block;
+  margin-top: -.35rem;
+  color: #ffd0d0;
+  font-size: .76rem;
+}
