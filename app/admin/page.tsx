@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { collection, doc, getDocs, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { ArrowLeft, GalleryHorizontal, ShieldCheck, UserRound, Footprints } from "lucide-react";
+import { ArrowLeft, Images, ShieldCheck, User, Footprints } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import useAdminGuard from "../lib/useAdminGuard";
@@ -86,7 +86,7 @@ export default function AdminPage() {
               <div className="admin-user-list">
                 {users.map(user => (
                   <button type="button" className="admin-user-row" key={user.id} onClick={() => setSelectedUser(user)}>
-                    <span className="admin-user-avatar"><UserRound size={19} /></span>
+                    <span className="admin-user-avatar"><User size={19} /></span>
                     <span className="admin-user-copy"><strong>{user.nickname || "Beze jména"}</strong><small>{user.email}</small></span>
                     {user.role === "admin" && <span className="admin-role">ADMIN</span>}
                   </button>
@@ -98,13 +98,13 @@ export default function AdminPage() {
           <section className="tile admin-detail">
             <button type="button" className="admin-back-button" onClick={() => setSelectedUser(null)}><ArrowLeft size={17} /> Zpět na seznam</button>
             <div className="admin-detail-heading">
-              <span className="admin-user-avatar large"><UserRound size={25} /></span>
+              <span className="admin-user-avatar large"><User size={25} /></span>
               <div><h2>{selectedUser.nickname || "Beze jména"}</h2><p>{selectedUser.email}</p></div>
             </div>
             <div className="admin-actions">
               <button type="button" className="admin-action-button" onClick={() => handleToggleAdmin(selectedUser)} disabled={busy}><ShieldCheck size={18} /> {selectedUser.role === "admin" ? "Odebrat roli admin" : "Přidat jako admin"}</button>
               <button type="button" className="admin-action-button" onClick={() => router.push(`/admin/${selectedUser.id}/records`)}><Footprints size={18} /> Zobrazit záznamy</button>
-              <button type="button" className="admin-action-button" onClick={() => router.push(`/admin/${selectedUser.id}/gallery`)}><GalleryHorizontal size={18} /> Zobrazit galerii</button>
+              <button type="button" className="admin-action-button" onClick={() => router.push(`/admin/${selectedUser.id}/gallery`)}><Images size={18} /> Zobrazit galerii</button>
             </div>
             <p className="admin-muted admin-note">Akce jako blokování nebo mazání účtu nejsou v této verzi napojeny na Firebase Authentication, proto nejsou zobrazené jako falešná tlačítka.</p>
           </section>
