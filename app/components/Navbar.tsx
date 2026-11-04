@@ -1,5 +1,7 @@
 "use client";
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useRef, useState } from "react";
+import { Home, Menu } from "lucide-react";
 
 type NavbarProps = {
   onMenuClick: () => void;
@@ -8,82 +10,44 @@ type NavbarProps = {
   title?: string;
 };
 
-export default function Navbar({ onMenuClick, onHomeClick, showHome = true, title = "Dolní Lhota v pohybu" }: NavbarProps) {
+export default function Navbar({
+  onMenuClick,
+  onHomeClick,
+  showHome = true,
+  title = "Dolní Lhota v pohybu",
+}: NavbarProps) {
   const [visible, setVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const lastScrollY = useRef(0);
 
   useEffect(() => {
     const handleScroll = () => {
       const currentY = window.scrollY;
-      if (currentY > lastScrollY && currentY > 60) {
-        setVisible(false); // scroll dolů → skrýt
-      } else {
-        setVisible(true); // scroll nahoru → zobrazit
-      }
-      setLastScrollY(currentY);
+      const previousY = lastScrollY.current;
+      const scrollingDown = currentY > previousY && currentY > 72;
+      setVisible(!scrollingDown);
+      lastScrollY.current = currentY;
     };
 
-    window.addEventListener("scroll", handleScroll);
+    lastScrollY.current = window.scrollY;
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: visible ? 0 : -70, // skryje lištu
-        left: 0,
-        right: 0,
-        background: "rgba(0, 0, 0, 0.2)",
-        color: "white",
-        padding: "0.6rem 1.2rem",
-        display: "grid",
-        gridTemplateColumns: "40px minmax(0, 1fr) 40px",
-        gap: "0.5rem",
-        alignItems: "center",
-        fontFamily: "'Poppins', sans-serif",
-        borderRadius: "0 0 15px 15px",
-        zIndex: 1000,
-        backdropFilter: "blur(8px)",
-        transition: "top 0.3s ease"
-      }}
-    >
-      <div
-        onClick={onHomeClick}
-        style={{ cursor: showHome ? "pointer" : "default", minWidth: "24px" }}
-      >
-        {showHome && (
-          <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24" width="24" height="24">
-            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-          </svg>
+    <header className={`site-navbar ${visible ? "is-visible" : "is-hidden"}`}>
+      <div className="site-navbar-inner">
+        {showHome ? (
+          <button type="button" className="site-navbar-button" onClick={onHomeClick} aria-label="Domů">
+            <Home size={21} strokeWidth={2.2} aria-hidden="true" />
+          </button>
+        ) : (
+          <span className="site-navbar-spacer" aria-hidden="true" />
         )}
+        <div className="site-navbar-title" title={title}>{title}</div>
+        <button type="button" className="site-navbar-button" onClick={onMenuClick} aria-label="Otevřít navigaci">
+          <Menu size={25} strokeWidth={2.1} aria-hidden="true" />
+        </button>
       </div>
-
-      <div
-        style={{
-          minWidth: 0,
-          textAlign: "center",
-          fontWeight: 600,
-          fontSize: "clamp(.95rem, 4vw, 1.15rem)",
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis"
-        }}
-      >
-        {title}
-      </div>
-
-      <div
-        onClick={onMenuClick}
-        style={{
-          fontSize: "1.6rem",
-          cursor: "pointer",
-          userSelect: "none",
-          textAlign: "right"
-        }}
-      >
-        ☰
-      </div>
-    </div>
+    </header>
   );
 }
