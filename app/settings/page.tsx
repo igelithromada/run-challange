@@ -5,12 +5,11 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import useThemeLoader, { applyTheme } from "../lib/useThemeLoader";
+import { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
 
 export default function SettingsPage() {
-  useThemeLoader();
 
   const [menuVisible, setMenuVisible] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
