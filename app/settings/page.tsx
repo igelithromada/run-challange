@@ -37,8 +37,10 @@ export default function SettingsPage() {
           const data = userDoc.data();
           setNickname(data.nickname || "");
           setAvatarUrl(data.avatarUrl || "");
+          setTheme(data.theme === "weather" ? "default" : (data.theme || "default"));
           setCustomColor(data.customColor || "#36D1DC");
           setAnimationsEnabled(data.animationsEnabled !== false);
+          applyTheme(data.theme === "weather" ? "default" : (data.theme || "default"), data.customColor || "#36D1DC", data.animationsEnabled !== false);
         } else {
           const initialData = {
             id: user.uid,
@@ -211,7 +213,7 @@ export default function SettingsPage() {
           <h3>Nastavení vzhledu</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             <label className="settings-animation-toggle"><span><strong>Animace počasí</strong><small>Efekty deště, sněžení a větru i při vlastním barevném vzhledu.</small></span><input type="checkbox" checked={animationsEnabled} onChange={(e) => handleAnimationsChange(e.target.checked)} /></label>
-            <ThemeItem color="linear-gradient(180deg, #36D1DC, #5B86E5)" active={theme === "default"} onClick={() => handleThemeChange("default")} text="Výchozí vzhled · podle času" />
+            <ThemeItem color="linear-gradient(180deg, #36D1DC, #5B86E5)" active={theme === "default"} onClick={() => handleThemeChange("default")} text="Výchozí vzhled" />
             <ThemeItem color="linear-gradient(180deg, #2980b9, #2c3e50)" active={theme === "man"} onClick={() => handleThemeChange("man")} text="Muž" />
             <ThemeItem color="linear-gradient(180deg, #ff7eb3, #ff758c)" active={theme === "woman"} onClick={() => handleThemeChange("woman")} text="Žena" />
 
