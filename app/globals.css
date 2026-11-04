@@ -953,3 +953,7 @@ html[data-animations="true"][data-weather="wind"] body::before {
   .site-sidebar-panel { gap:.4rem !important; padding:.6rem !important; }
   .site-sidebar-panel > .site-sidebar-item { font-size:.72rem !important; }
 }
+
+
+/* Nahraná bílá ikona běžce na hlavním tlačítku */
+.tile-button .run-profile-icon { display:inline-block; width:28px; height:28px; object-fit:contain; vertical-align:middle; flex:0 0 auto; }
