@@ -102,3 +102,67 @@ html[data-animations="true"][data-weather="night"] body::before {
 .teams-challenge-current { margin: .5rem 0 0 !important; }
 .teams-challenge-message { display: block; margin-top: .6rem; opacity: .9; }
 @media(max-width:480px) { .teams-challenge-form { grid-template-columns: 1fr; } }
+
+
+/* Navigace – celoplošný modal mimo vrstvy aplikace */
+.site-sidebar-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  padding: 16px !important;
+  background: rgba(4, 12, 20, .78) !important;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.site-sidebar-panel {
+  position: relative !important;
+  width: min(100%, 720px) !important;
+  max-width: 720px !important;
+  height: calc(100dvh - 32px) !important;
+  max-height: calc(100dvh - 32px) !important;
+  box-sizing: border-box !important;
+  margin: auto !important;
+  padding: clamp(14px, 3vw, 24px) !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-template-rows: repeat(4, minmax(0, 1fr)) auto !important;
+  gap: clamp(10px, 2vw, 16px) !important;
+  align-content: stretch !important;
+  overflow-y: auto !important;
+  background: rgba(17, 31, 44, .98) !important;
+  border: 1px solid rgba(255,255,255,.2) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 24px 90px rgba(0,0,0,.65) !important;
+}
+.site-sidebar-panel > .site-sidebar-item {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  padding: clamp(8px, 2vh, 20px) 8px !important;
+  gap: clamp(7px, 1.5vh, 14px) !important;
+  border-radius: 18px !important;
+  font-size: clamp(.95rem, 2.8vw, 1.15rem) !important;
+}
+.site-sidebar-panel > .site-sidebar-item svg {
+  width: clamp(25px, 5vw, 34px);
+  height: clamp(25px, 5vw, 34px);
+  flex: 0 0 auto;
+}
+.site-sidebar-panel .sidebar-close {
+  grid-column: 1 / -1 !important;
+  height: auto !important;
+  min-height: 52px !important;
+  flex-direction: row !important;
+  background: rgba(255,255,255,.08) !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  box-shadow: none !important;
+}
+@media (max-height: 620px) {
+  .site-sidebar-panel { gap: 8px !important; padding: 10px !important; }
+  .site-sidebar-panel > .site-sidebar-item { font-size: .85rem !important; }
+}
