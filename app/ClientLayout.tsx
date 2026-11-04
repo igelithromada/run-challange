@@ -4,6 +4,7 @@ import { auth, db } from "./lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import useThemeLoader from "./lib/useThemeLoader";
+import NetworkStatus from "./components/NetworkStatus";
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   useThemeLoader();
@@ -27,5 +28,5 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     });
     return () => unsubscribe();
   }, []);
-  return <>{children}</>;
+  return <><NetworkStatus />{children}</>;
 }
