@@ -43,7 +43,7 @@ export default function Navbar({ onMenuClick, onHomeClick, showHome = true, titl
         alignItems: "center",
         fontFamily: "'Poppins', sans-serif",
         borderRadius: "0 0 15px 15px",
-        zIndex: 1000,
+        zIndex: 1100,
         backdropFilter: "blur(8px)",
         transition: "top 0.3s ease"
       }}
