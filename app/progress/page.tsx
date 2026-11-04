@@ -5,7 +5,7 @@ import { collection, doc, getDoc, query, setDoc, where } from "firebase/firestor
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { Award, CalendarDays, Footprints, Medal, Target, Trophy, Users, TrendingUp, Save, CheckCircle2, Lock } from "lucide-react";
+import { Award, CalendarDays, Footprints, Medal, Target, Trophy, Users, TrendingUp, Save, CheckCircle2, Lock, Route, Zap, Flame } from "lucide-react";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -228,10 +228,10 @@ export default function ProgressPage() {
       <section className="tile progress-records">
         <div className="progress-section-title"><Trophy/><div><h2>Osobní rekordy</h2><p>Nejlepší výkony v kategorii {goalType}.</p></div></div>
         <div className="progress-record-grid">
-          <div><span>🏃</span><small>Nejdelší aktivita</small><strong>{longest?asNumber(longest.km).toFixed(2)+" km":"—"}</strong></div>
-          <div><span>⚡</span><small>Nejrychlejší tempo</small><strong>{fastest?formatPace(asNumber(fastest.tempo)):"—"}</strong></div>
-          <div><span>📆</span><small>Nejvíce za měsíc</small><strong>{bestMonth.toFixed(1)} km</strong></div>
-          <div><span>🔥</span><small>Aktuální série</small><strong>{streak} {streak===1?"den":"dní"}</strong></div>
+          <div><span><Route size={20}/></span><small>Nejdelší aktivita</small><strong>{longest?asNumber(longest.km).toFixed(2)+" km":"—"}</strong></div>
+          <div><span><Zap size={20}/></span><small>Nejrychlejší tempo</small><strong>{fastest?formatPace(asNumber(fastest.tempo)):"—"}</strong></div>
+          <div><span><CalendarDays size={20}/></span><small>Nejvíce za měsíc</small><strong>{bestMonth.toFixed(1)} km</strong></div>
+          <div><span><Flame size={20}/></span><small>Aktuální série</small><strong>{streak} {streak===1?"den":"dní"}</strong></div>
         </div>
       </section>
 
