@@ -6,7 +6,6 @@ import { signOut } from "firebase/auth";
 import { collection, query, where, onSnapshot, getDoc, doc } from "firebase/firestore";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
-import useThemeLoader from "../../lib/useThemeLoader";
 
 type RunData = {
   id: string;
@@ -21,7 +20,6 @@ type RunData = {
 };
 
 export default function UserPage() {
-  useThemeLoader();
   const { id } = useParams();
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
