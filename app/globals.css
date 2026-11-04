@@ -605,3 +605,77 @@ html[data-animations="false"] .wind-icon-animated { animation: none !important; 
   .activity-metrics > div { padding: .45rem .3rem; }
   .activity-metrics strong { font-size: .82rem; }
 }
+
+
+/* Můj progres – přehled cílů, odznaků a aktivit */
+.progress-page { max-width: 980px; padding-bottom: 3rem; }
+.progress-header { text-align:center; margin:1.25rem 0 1.8rem; }
+.progress-eyebrow { font-size:.7rem; letter-spacing:.18em; font-weight:700; opacity:.75; }
+.progress-header h1 { margin:.35rem 0; font-size:clamp(2rem,7vw,2.7rem); }
+.progress-header p { margin:.3rem 0; opacity:.82; }
+.progress-section-title { display:flex; align-items:center; gap:.8rem; margin-bottom:1rem; }
+.progress-section-title > svg { width:27px; height:27px; flex:0 0 auto; }
+.progress-section-title h2 { margin:0; font-size:1.2rem; }
+.progress-section-title p { margin:.2rem 0 0; font-size:.86rem; opacity:.75; line-height:1.4; }
+.progress-goal-settings,.progress-level,.progress-calendar,.progress-records,.progress-challenges { padding:1.15rem; margin:0 0 1rem; }
+.progress-type-switch { display:flex; gap:.5rem; margin:.7rem 0; }
+.progress-type-switch button,.progress-save,.progress-link-button { display:flex; align-items:center; justify-content:center; gap:.45rem; border:1px solid rgba(255,255,255,.2); border-radius:11px; padding:.6rem .9rem; background:rgba(255,255,255,.12); color:white; font:inherit; cursor:pointer; }
+.progress-type-switch button.active { background:rgba(255,255,255,.3); border-color:rgba(255,255,255,.5); }
+.progress-goal-inputs { display:grid; grid-template-columns:1fr 1fr auto; gap:.7rem; align-items:end; }
+.progress-goal-inputs label { display:flex; flex-direction:column; gap:.35rem; font-size:.82rem; font-weight:600; }
+.progress-goal-inputs input { min-width:0; box-sizing:border-box; padding:.7rem .75rem; border:1px solid rgba(255,255,255,.22); border-radius:10px; background:rgba(0,0,0,.18); color:white; font:inherit; }
+.progress-save { min-height:42px; white-space:nowrap; }
+.progress-goal-bars { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1.2rem; }
+.progress-bar-heading,.progress-level-foot,.progress-team-heading { display:flex; justify-content:space-between; gap:.5rem; font-size:.85rem; margin-bottom:.45rem; }
+.progress-track { height:10px; border-radius:99px; background:rgba(255,255,255,.17); overflow:hidden; }
+.progress-track i { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#65d68a,#c5ef75); transition:width .3s ease; }
+.progress-level-main { display:flex; align-items:center; gap:1rem; margin:.5rem 0 1rem; }
+.progress-level-emoji { display:grid; place-items:center; width:64px; height:64px; border-radius:18px; background:rgba(255,255,255,.14); font-size:2.2rem; }
+.progress-level-caption { font-size:.65rem; letter-spacing:.15em; opacity:.7; font-weight:700; }
+.progress-level-main h3 { margin:.15rem 0; font-size:1.35rem; }
+.progress-level-main p { margin:0; opacity:.8; font-size:.85rem; }
+.level-track { height:12px; }
+.progress-level-foot { margin:.5rem 0 0; opacity:.8; }
+.progress-section { margin:1.4rem 0; }
+.progress-badges-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.7rem; }
+.progress-badge { display:flex; align-items:center; gap:.65rem; min-width:0; padding:.8rem; border:1px solid rgba(255,255,255,.12); border-radius:14px; background:rgba(0,0,0,.19); }
+.progress-badge > span { font-size:1.65rem; }
+.progress-badge > div { min-width:0; flex:1; }
+.progress-badge strong { display:block; font-size:.88rem; }
+.progress-badge p { margin:.2rem 0 0; font-size:.74rem; opacity:.75; line-height:1.35; }
+.progress-badge > svg { flex:0 0 auto; opacity:.85; }
+.progress-badge.locked { opacity:.58; filter:saturate(.4); }
+.progress-calendar-grid { display:grid; grid-template-rows:repeat(7,12px); grid-auto-flow:column; grid-auto-columns:12px; gap:4px; overflow-x:auto; padding:3px 0 8px; }
+.progress-day { width:12px; height:12px; border-radius:3px; background:rgba(255,255,255,.09); }
+.progress-day.level-1 { background:rgba(140,220,155,.35); }
+.progress-day.level-2 { background:rgba(140,220,155,.55); }
+.progress-day.level-3 { background:rgba(140,220,155,.75); }
+.progress-day.level-4 { background:#8cdb9b; }
+.progress-calendar-legend { display:flex; align-items:center; justify-content:flex-end; gap:4px; font-size:.7rem; opacity:.75; }
+.progress-calendar-legend i { width:11px; height:11px; border-radius:3px; background:rgba(140,220,155,.25); }
+.progress-calendar-legend i:nth-of-type(2) { background:rgba(140,220,155,.45); }
+.progress-calendar-legend i:nth-of-type(3) { background:rgba(140,220,155,.7); }
+.progress-calendar-legend i:nth-of-type(4) { background:#8cdb9b; }
+.progress-calendar-summary { margin:.65rem 0 0; font-size:.82rem; opacity:.8; }
+.progress-record-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.65rem; }
+.progress-record-grid > div { display:flex; flex-direction:column; gap:.3rem; min-width:0; padding:.85rem; border-radius:13px; background:rgba(0,0,0,.18); }
+.progress-record-grid span { font-size:1.35rem; }
+.progress-record-grid small { opacity:.75; font-size:.72rem; }
+.progress-record-grid strong { font-size:1rem; overflow-wrap:anywhere; }
+.progress-team-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.progress-team small { display:block; margin-top:.35rem; opacity:.7; font-size:.72rem; }
+.progress-empty,.progress-loading { opacity:.8; font-size:.9rem; }
+.progress-link-button { margin-top:1rem; }
+@media(max-width:650px) {
+ .progress-goal-inputs { grid-template-columns:1fr 1fr; }
+ .progress-save { grid-column:1/-1; }
+ .progress-badges-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .progress-record-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .progress-team-list { grid-template-columns:1fr; }
+}
+@media(max-width:390px) {
+ .progress-badges-grid { grid-template-columns:1fr; }
+ .progress-goal-inputs { grid-template-columns:1fr; }
+ .progress-save { grid-column:auto; }
+ .progress-goal-bars { grid-template-columns:1fr; }
+}
