@@ -82,7 +82,7 @@ export default function MyRunsPage() {
 
   const runsQuery = useMemo(() => query(collection(db, "runs"), where("uid", "==", uid || "__no_user__"), limit(30)), [uid]);
   const runsState = useSharedFirestoreQuery<RunData>("runs:user:" + (uid || "none"), runsQuery);
-  const runs = useMemo(() => Array.from(new Map([...runsState.data, ...olderRuns].map(run => [run.id, run])).values()).map(run => ({
+  const runs = useMemo(() => Array.from(new Map<string, RunData>([...runsState.data, ...olderRuns].map(run => [run.id, run] as const)).values()).map(run => ({
     ...run, km: Number(run.km) || 0, minuty: Number(run.minuty) || 0, tempo: Number(run.tempo) || 0
   })).sort((a,b) => dateOf(b.timestamp).getTime() - dateOf(a.timestamp).getTime()), [runsState.data, olderRuns]);
   const loading = runsState.loading;
