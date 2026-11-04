@@ -9,6 +9,7 @@ import { Award, CalendarDays, Footprints, Medal, Target, Trophy, Users, Trending
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import LoadingSkeleton from "../components/LoadingSkeleton";
 
 type Activity = {
   id: string; uid?: string; km?: number | string; minuty?: number | string; tempo?: number | string;
@@ -222,7 +223,7 @@ export default function ProgressPage() {
         {teamProgress.length===0?<p className="progress-empty">Zatím nejsi členem týmu. Přidej se k některému v sekci Týmy a zapoj se do výzvy.</p>:<div className="progress-team-list">{teamProgress.map(team=><div className="progress-team" key={team.id}><div className="progress-team-heading"><strong>{team.name||"Tým"}</strong><span>{team.km.toFixed(1)} / 500 km</span></div><div className="progress-track"><i style={{width:`${team.percent}%`}}/></div><small>{team.percent.toFixed(0)} % splněno</small></div>)}</div>}
         <button className="progress-link-button" onClick={()=>router.push("/teams")}><Users size={17}/> Zobrazit týmy</button>
       </section>
-      {loading&&<p className="progress-loading">Načítám tvoje aktivity…</p>}
+      {loading&&<LoadingSkeleton count={2} />}
     </main>
   </>;
 }
