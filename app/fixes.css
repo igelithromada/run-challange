@@ -89,3 +89,16 @@ html[data-animations="true"][data-weather="night"] body::before {
 @media (prefers-reduced-motion: reduce) {
   html[data-animations="true"] body::before { animation: none !important; }
 }
+
+
+/* Nastavení měsíční týmové výzvy */
+.teams-challenge-settings { margin: 1rem 0; padding: 1rem; }
+.teams-challenge-settings h2 { margin: 0; font-size: 1.1rem; }
+.teams-challenge-settings p { margin: .3rem 0 .8rem; opacity: .78; font-size: .86rem; }
+.teams-challenge-form { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .7rem; align-items: end; }
+.teams-challenge-form label { display: flex; flex-direction: column; gap: .3rem; font-size: .82rem; font-weight: 600; }
+.teams-challenge-form input { min-width: 0; width: 100%; box-sizing: border-box; padding: .7rem .75rem; border: 1px solid rgba(255,255,255,.22); border-radius: 10px; background: rgba(0,0,0,.18); color: white; font: inherit; }
+.teams-challenge-form button { min-height: 42px; }
+.teams-challenge-current { margin: .5rem 0 0 !important; }
+.teams-challenge-message { display: block; margin-top: .6rem; opacity: .9; }
+@media(max-width:480px) { .teams-challenge-form { grid-template-columns: 1fr; } }
