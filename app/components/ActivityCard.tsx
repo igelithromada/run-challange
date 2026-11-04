@@ -29,24 +29,4 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
         {avatarUrl ? <img src={cloudinaryImageUrl(avatarUrl, 128)} alt="" loading="lazy" decoding="async" /> : nickname.charAt(0).toUpperCase()}
       </button>
       <div className="activity-main">
-        <div className="activity-card-heading">
-          <div className="activity-person">
-            <span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{nickname}</span>
-            {teamName && <small>{teamName}</small>}
-          </div>
-          {date && <time dateTime={date.toISOString()}>{date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}
-        </div>
-        <div className="activity-metrics">
-          <div><MapPin size={16} /><strong>{run.km} km</strong><small>Vzdálenost</small></div>
-          <div><Clock3 size={16} /><strong>{formatTime(run.minuty)}</strong><small>Čas</small></div>
-          <div><Gauge size={16} /><strong>{formatTime(run.tempo)} /km</strong><small>Tempo</small><div className="activity-pace-bar" aria-label="Orientační škála tempa"><span style={{ left: `${pos}%` }} /></div></div>
-        </div>
-        <div className="activity-card-actions">
-          {images.length > 0 && <button type="button" className="activity-photos-button" onClick={() => onPhotosClick(images, run.imageUrl || "")}><Camera size={16} /> Fotografie ({images.length})</button>}
-          {onEdit && <button type="button" className="activity-manage-button" onClick={onEdit}><Pencil size={15} /> Upravit</button>}
-          {onDelete && <button type="button" className="activity-manage-button activity-delete-button" onClick={onDelete}><Trash2 size={15} /> Smazat</button>}
-        </div>
-      </div>
-    </article>
-  );
-}
+        <div cla...[truncated]
