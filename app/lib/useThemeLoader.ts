@@ -4,13 +4,32 @@ import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
+const CACHE_KEY = "dolni-lhota-theme-v1";
+type ThemeCache = { theme: string; customColor: string; animationsEnabled: boolean };
+const defaults: ThemeCache = { theme: "default", customColor: "#36D1DC", animationsEnabled: true };
+
+function readThemeCache(): ThemeCache {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return defaults;
+    const value = JSON.parse(raw);
+    return {
+      theme: typeof value.theme === "string" ? value.theme : defaults.theme,
+      customColor: typeof value.customColor === "string" ? value.customColor : defaults.customColor,
+      animationsEnabled: value.animationsEnabled !== false
+    };
+  } catch { return defaults; }
+}
+function writeThemeCache(value: ThemeCache) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(value)); } catch {}
+}
+
 export default function useThemeLoader() {
   useEffect(() => {
-    let userData = { theme: "default", customColor: "#36D1DC", animationsEnabled: true };
     let active = true;
-    const applyCurrentTheme = () => {
-      if (active) void applyTheme(userData.theme, userData.customColor, userData.animationsEnabled);
-    };
+    let userData = readThemeCache();
+    // Lokální kopie se aplikuje hned; Firestore ji později případně aktualizuje.
+    void applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, false);
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) return;
       try {
@@ -22,15 +41,20 @@ export default function useThemeLoader() {
           customColor: data.customColor || "#36D1DC",
           animationsEnabled: data.animationsEnabled !== false
         };
-        applyCurrentTheme();
+        writeThemeCache(userData);
+        await applyTheme(userData.theme, userData.customColor, userData.animationsEnabled);
       } catch (error) { console.error("Nepodařilo se načíst vzhled", error); }
     });
-    const interval = window.setInterval(applyCurrentTheme, 30 * 60 * 1000);
+    const interval = window.setInterval(() => {
+      if (userData.theme === "auto" || userData.theme === "weather" || userData.animationsEnabled) {
+        void applyTheme(userData.theme, userData.customColor, userData.animationsEnabled);
+      }
+    }, 30 * 60 * 1000);
     return () => { active = false; unsub(); window.clearInterval(interval); };
   }, []);
 }
 
-export async function applyTheme(selectedTheme: string, color: string, animationsEnabled = true) {
+export async function applyTheme(selectedTheme: string, color: string, animationsEnabled = true, persist = true) {
   let gradient = "linear-gradient(180deg, #36D1DC, #5B86E5)";
   const root = document.documentElement;
   root.removeAttribute("data-weather");
@@ -41,6 +65,11 @@ export async function applyTheme(selectedTheme: string, color: string, animation
   else if (selectedTheme === "woman") gradient = "linear-gradient(180deg, #ff7eb3, #ff758c)";
   else if (selectedTheme === "auto") gradient = `linear-gradient(180deg, ${getColorByHour(new Date().getHours())}, #000000)`;
   else if (selectedTheme === "custom") gradient = `linear-gradient(180deg, ${color}, #000000)`;
+  else if (selectedTheme === "weather") gradient = `linear-gradient(180deg, ${getColorByHour(new Date().getHours())}, #000000)`;
+
+  // Zapiš základní nastavení před síťovým požadavkem, aby další start neproblikl.
+  if (persist) writeThemeCache({ theme: selectedTheme, customColor: color, animationsEnabled });
+  root.style.setProperty("--main-gradient", gradient);
 
   if (animationsEnabled || selectedTheme === "weather") {
     try {
@@ -81,7 +110,6 @@ export async function applyTheme(selectedTheme: string, color: string, animation
       }
     } catch (error) {
       console.warn("Vzhled podle počasí se nepodařilo aktualizovat.", error);
-      if (selectedTheme === "weather") gradient = `linear-gradient(180deg, ${getColorByHour(new Date().getHours())}, #000000)`;
     }
   }
   root.style.setProperty("--main-gradient", gradient);
