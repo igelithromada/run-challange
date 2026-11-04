@@ -18,6 +18,11 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
         await setDoc(ref, { id:user.uid, email:user.email||"", nickname:defaultNickname, avatarUrl:"", theme:"default", customColor:"#36D1DC" });
       } else {
         const data = snap.data() || {};
+        if (data.blocked === true) {
+          await auth.signOut();
+          try { sessionStorage.setItem("dolni-lhota-blocked", "true"); } catch {}
+          return;
+        }
         const update: Record<string, unknown> = {};
         if (!data.nickname) update.nickname = defaultNickname;
         if (!data.theme) update.theme = "default";
