@@ -8,10 +8,8 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import WeatherCard from "../components/WeatherCard";
 import RunWeatherRecommendation from "../components/RunWeatherRecommendation";
-import useThemeLoader from "../lib/useThemeLoader";
 
 export default function WeatherPage() {
-  useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
   const router = useRouter();
 
