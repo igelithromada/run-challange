@@ -340,3 +340,26 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   html { scroll-behavior:auto; }
   *, *::before, *::after { animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
 }
+
+.run-form-shell { width:100%; display:flex; justify-content:center; }
+.run-primary-button,.run-secondary-button {
+  min-height:46px; display:inline-flex; align-items:center; justify-content:center; gap:.45rem;
+  padding:.7rem 1rem; border:1px solid var(--ui-border); border-radius:14px; cursor:pointer; font-weight:750;
+}
+.run-primary-button { color:#10202d; background:rgba(255,255,255,.92); box-shadow:0 8px 24px rgba(0,0,0,.18); }
+.run-primary-button:hover { background:#fff; transform:translateY(-1px); }
+.run-secondary-button { color:white; background:rgba(255,255,255,.08); }
+.run-form-heading { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; text-align:left; }
+.run-form-heading h3 { margin:.15rem 0 0; font-size:1.25rem; }
+.run-form-eyebrow { font-size:.68rem; letter-spacing:.12em; font-weight:800; opacity:.62; }
+.run-form-close { width:40px; height:40px; display:grid; place-items:center; border:1px solid var(--ui-border); border-radius:12px; color:white; background:rgba(255,255,255,.07); cursor:pointer; }
+.run-form-field > span { display:flex; justify-content:space-between; gap:.6rem; }
+.run-form-field > span small { color:var(--ui-muted); font-weight:500; }
+.run-form-field input { color:#13212c !important; background:rgba(255,255,255,.96) !important; }
+.run-form-upload { position:relative; color:white; }
+.run-form-upload input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+.run-form-status { margin:.7rem 0 0; color:var(--ui-muted); font-size:.82rem; }
+.form-message { margin:.75rem 0 0; padding:.7rem .8rem; border-radius:12px; font-size:.84rem; line-height:1.45; }
+.form-message-error { color:#ffd5d5; background:rgba(160,48,64,.24); border:1px solid rgba(255,150,160,.18); }
+.form-message-success { color:#d8ffe9; background:rgba(42,145,100,.2); border:1px solid rgba(130,240,185,.16); }
+@media(max-width:520px) { .run-form-panel { padding:.85rem; } .run-primary-button { width:100%; } }
