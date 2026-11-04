@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { collection, doc, getDocs, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { ArrowLeft, Images, ShieldCheck, User, Footprints } from "lucide-react";
+import { ArrowLeft, Camera, ShieldCheck, User, Footprints } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import useAdminGuard from "../lib/useAdminGuard";
@@ -104,7 +104,7 @@ export default function AdminPage() {
             <div className="admin-actions">
               <button type="button" className="admin-action-button" onClick={() => handleToggleAdmin(selectedUser)} disabled={busy}><ShieldCheck size={18} /> {selectedUser.role === "admin" ? "Odebrat roli admin" : "Přidat jako admin"}</button>
               <button type="button" className="admin-action-button" onClick={() => router.push(`/admin/${selectedUser.id}/records`)}><Footprints size={18} /> Zobrazit záznamy</button>
-              <button type="button" className="admin-action-button" onClick={() => router.push(`/admin/${selectedUser.id}/gallery`)}><Images size={18} /> Zobrazit galerii</button>
+              <button type="button" className="admin-action-button" onClick={() => router.push(`/admin/${selectedUser.id}/gallery`)}><Camera size={18} /> Zobrazit galerii</button>
             </div>
             <p className="admin-muted admin-note">Akce jako blokování nebo mazání účtu nejsou v této verzi napojeny na Firebase Authentication, proto nejsou zobrazené jako falešná tlačítka.</p>
           </section>
