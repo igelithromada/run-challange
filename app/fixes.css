@@ -39,3 +39,8 @@ html[data-animations="true"][data-weather="rain"] body::before,
 html[data-animations="true"][data-weather="rain-wind"] body::before,
 html[data-animations="true"][data-weather="snow"] body::before,
 html[data-animations="true"][data-weather="snow-wind"] body::before { z-index:0; pointer-events:none; }
+
+.site-sidebar-item { appearance:none; border:1px solid rgba(255,255,255,.13); background:rgba(0,0,0,.22); color:#fff; border-radius:16px; min-height:76px; padding:.8rem .5rem; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:.45rem; font:600 1rem/1.25 'Poppins',sans-serif; text-align:center; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,.14); }
+.site-sidebar-item:active { background:rgba(255,255,255,.28); transform:scale(.98); }
+.site-sidebar-logout { background:rgba(190,55,85,.5); }
+.site-sidebar-panel .sidebar-close { grid-column:1/-1; min-height:52px; flex-direction:row; background:transparent; border:0; box-shadow:none; }
