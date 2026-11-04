@@ -45,6 +45,7 @@ export default function ProgressPage() {
   const [goalWeekly, setGoalWeekly] = useState("25");
   const [goalMonthly, setGoalMonthly] = useState("100");
   const [goalType, setGoalType] = useState("běh");
+  const [goalsByType, setGoalsByType] = useState<Record<string, { weekly: number; monthly: number }>>({ běh: { weekly: 25, monthly: 100 }, chůze: { weekly: 25, monthly: 100 } });
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -56,9 +57,17 @@ export default function ProgressPage() {
         const profile = await getDoc(doc(db, "users", user.uid));
         if (profile.exists()) {
           const data = profile.data();
-          if (data.progressGoals?.weekly != null) setGoalWeekly(String(data.progressGoals.weekly));
-          if (data.progressGoals?.monthly != null) setGoalMonthly(String(data.progressGoals.monthly));
-          if (data.progressGoals?.type) setGoalType(data.progressGoals.type);
+          const storedGoals = data.progressGoalsByType || {};
+          const legacy = data.progressGoals || {};
+          const nextGoals = {
+            běh: { weekly: asNumber(storedGoals.běh?.weekly ?? (legacy.type === "běh" ? legacy.weekly : 25)) || 25, monthly: asNumber(storedGoals.běh?.monthly ?? (legacy.type === "běh" ? legacy.monthly : 100)) || 100 },
+            chůze: { weekly: asNumber(storedGoals.chůze?.weekly ?? (legacy.type === "chůze" ? legacy.weekly : 25)) || 25, monthly: asNumber(storedGoals.chůze?.monthly ?? (legacy.type === "chůze" ? legacy.monthly : 100)) || 100 }
+          };
+          setGoalsByType(nextGoals);
+          const initialType = legacy.type === "chůze" ? "chůze" : "běh";
+          setGoalType(initialType);
+          setGoalWeekly(String(nextGoals[initialType].weekly));
+          setGoalMonthly(String(nextGoals[initialType].monthly));
           setJoinedTeamId(data.teamId || data.joinedTeam || "");
         }
       } catch (error) { console.error("Nepodařilo se načíst profil a cíle", error); }
@@ -148,9 +157,17 @@ export default function ProgressPage() {
     return { ...team, km, percent:Math.min(100,km/500*100) };
   }).sort((a,b)=>b.km-a.km);
 
+  const switchGoalType = (nextType: string) => {
+    setGoalType(nextType);
+    const values = goalsByType[nextType] || { weekly: 25, monthly: 100 };
+    setGoalWeekly(String(values.weekly));
+    setGoalMonthly(String(values.monthly));
+  };
   const saveGoals = async () => {
     if (!uid || asNumber(goalWeekly)<=0 || asNumber(goalMonthly)<=0) return;
-    await setDoc(doc(db,"users",uid), { progressGoals:{ weekly:asNumber(goalWeekly), monthly:asNumber(goalMonthly), type:goalType } }, { merge:true });
+    const updatedGoals = { ...goalsByType, [goalType]: { weekly: asNumber(goalWeekly), monthly: asNumber(goalMonthly) } };
+    setGoalsByType(updatedGoals);
+    await setDoc(doc(db,"users",uid), { progressGoalsByType: updatedGoals, progressGoals:{ weekly:asNumber(goalWeekly), monthly:asNumber(goalMonthly), type:goalType } }, { merge:true });
     setSaved(true); window.setTimeout(()=>setSaved(false),2500);
   };
   const handleSelect = async (item: string) => {
@@ -174,8 +191,8 @@ export default function ProgressPage() {
       <section className="progress-goal-settings tile">
         <div className="progress-section-title"><Target/><div><h2>Moje cíle</h2><p>Nastav si vlastní vzdálenost, které chceš dosáhnout.</p></div></div>
         <div className="progress-type-switch">
-          <button className={goalType==="běh"?"active":""} onClick={()=>setGoalType("běh")}><TrendingUp size={17}/> Běh</button>
-          <button className={goalType==="chůze"?"active":""} onClick={()=>setGoalType("chůze")}><Footprints size={17}/> Chůze</button>
+          <button className={goalType==="běh"?"active":""} onClick={()=>switchGoalType("běh")}><TrendingUp size={17}/> Běh</button>
+          <button className={goalType==="chůze"?"active":""} onClick={()=>switchGoalType("chůze")}><Footprints size={17}/> Chůze</button>
         </div>
         <div className="progress-goal-inputs">
           <label>Týdenní cíl (km)<input type="number" min="0.1" step="0.5" value={goalWeekly} onChange={e=>setGoalWeekly(e.target.value)}/></label>
