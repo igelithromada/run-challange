@@ -25,7 +25,8 @@ export default function useThemeLoader() {
         applyCurrentTheme();
       } catch (error) { console.error("Nepodařilo se načíst vzhled", error); }
     });
-    return () => { active = false; unsub(); };
+    const interval = window.setInterval(applyCurrentTheme, 30 * 60 * 1000);
+    return () => { active = false; unsub(); window.clearInterval(interval); };
   }, []);
 }
 
