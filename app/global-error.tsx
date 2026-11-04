@@ -1,5 +1,8 @@
 "use client";
 
+import "./globals.css";
+import "./fixes.css";
+
 import { RefreshCw } from "lucide-react";
 
 export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
