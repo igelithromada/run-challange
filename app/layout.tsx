@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./fixes.css";
 import { ReactNode } from "react";
 import ClientLayout from "./ClientLayout";
 
