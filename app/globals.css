@@ -727,3 +727,57 @@ html[data-animations="false"] .wind-icon-animated { animation: none !important; 
  .activity-card-actions { gap:.3rem; }
  .activity-manage-button,.activity-photos-button { font-size:.7rem; padding:.32rem .42rem; }
 }
+
+
+/* Výkon, načítání a stav připojení */
+.network-status {
+  position: fixed;
+  z-index: 3000;
+  top: .65rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  padding: .65rem .9rem;
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 999px;
+  background: rgba(35,35,35,.94);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,.22);
+  font-size: .78rem;
+  text-align: center;
+}
+.network-status-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: #ffb44d; }
+.loading-skeleton-list { display: flex; flex-direction: column; gap: .75rem; width: 100%; }
+.loading-skeleton-card { display: flex; align-items: center; gap: .8rem; min-height: 92px; padding: .9rem; box-sizing: border-box; border: 1px solid rgba(255,255,255,.12); border-radius: 16px; background: rgba(255,255,255,.09); }
+.loading-skeleton-avatar,.loading-skeleton-lines span { display: block; background: linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,.22),rgba(255,255,255,.08)); background-size: 200% 100%; animation: skeleton-shimmer 1.4s ease-in-out infinite; }
+.loading-skeleton-avatar { width: 44px; height: 44px; flex: 0 0 auto; border-radius: 50%; }
+.loading-skeleton-lines { display: flex; flex: 1; flex-direction: column; gap: .55rem; }
+.loading-skeleton-lines span { height: 10px; border-radius: 99px; }
+.loading-skeleton-lines span:first-child { width: 42%; }
+.loading-skeleton-lines span:nth-child(2) { width: 88%; }
+.loading-skeleton-lines span:nth-child(3) { width: 62%; }
+@keyframes skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .loading-skeleton-avatar,.loading-skeleton-lines span { animation: none; }
+}
+
+
+.activity-load-more {
+  display: block;
+  width: min(100%, 340px);
+  margin: 1rem auto 1.5rem;
+  padding: .8rem 1rem;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 12px;
+  background: rgba(255,255,255,.14);
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.activity-load-more:disabled { opacity: .6; cursor: wait; }

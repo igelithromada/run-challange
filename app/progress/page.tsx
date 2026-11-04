@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { collection, doc, getDoc, onSnapshot, query, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, query, setDoc, where } from "firebase/firestore";
+import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { Award, CalendarDays, Footprints, Medal, Target, Trophy, Users, TrendingUp, Save, CheckCircle2, LockKeyhole } from "lucide-react";
+import { Award, CalendarDays, Footprints, Medal, Target, Trophy, Users, TrendingUp, Save, CheckCircle2, Lock } from "lucide-react";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import LoadingSkeleton from "../components/LoadingSkeleton";
 
 type Activity = {
   id: string; uid?: string; km?: number | string; minuty?: number | string; tempo?: number | string;
@@ -39,8 +41,7 @@ export default function ProgressPage() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const [uid, setUid] = useState("");
-  const [runs, setRuns] = useState<Activity[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [joinedTeamId, setJoinedTeamId] = useState("");
   const [goalWeekly, setGoalWeekly] = useState("25");
   const [goalMonthly, setGoalMonthly] = useState("100");
   const [goalType, setGoalType] = useState("běh");
@@ -48,8 +49,6 @@ export default function ProgressPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let stopRuns: (() => void) | undefined;
-    let stopTeams: (() => void) | undefined;
     const stopAuth = onAuthStateChanged(auth, async user => {
       if (!user) { router.push("/login"); return; }
       setUid(user.uid);
@@ -60,18 +59,28 @@ export default function ProgressPage() {
           if (data.progressGoals?.weekly != null) setGoalWeekly(String(data.progressGoals.weekly));
           if (data.progressGoals?.monthly != null) setGoalMonthly(String(data.progressGoals.monthly));
           if (data.progressGoals?.type) setGoalType(data.progressGoals.type);
+          setJoinedTeamId(data.teamId || data.joinedTeam || "");
         }
-      } catch (error) { console.error("Nepodařilo se načíst cíle", error); }
-      stopRuns = onSnapshot(query(collection(db, "runs")), snap => {
-        setRuns(snap.docs.map(item => ({ id: item.id, ...item.data() } as Activity)));
-        setLoading(false);
-      }, error => { console.error(error); setLoading(false); });
-      stopTeams = onSnapshot(collection(db, "teams"), snap => setTeams(snap.docs.map(item => ({ id: item.id, ...item.data() } as Team))));
+      } catch (error) { console.error("Nepodařilo se načíst profil a cíle", error); }
     });
-    return () => { stopAuth(); stopRuns?.(); stopTeams?.(); };
+    return () => stopAuth();
   }, [router]);
 
-  const mine = useMemo(() => runs.filter(run => run.uid === uid), [runs, uid]);
+  const personalQuery = useMemo(() => query(collection(db, "runs"), where("uid", "==", uid || "__no_user__")), [uid]);
+  const teamRunsQuery = useMemo(() => query(collection(db, "runs"), where("teamId", "==", joinedTeamId || "__no_team__")), [joinedTeamId]);
+  const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
+  const personalState = useSharedFirestoreQuery<Activity>("progress:personal:" + (uid || "none"), personalQuery);
+  const teamRunsState = useSharedFirestoreQuery<Activity>("progress:team:" + (joinedTeamId || "none"), teamRunsQuery);
+  const teamsState = useSharedFirestoreQuery<Team>("teams:all", teamsQuery);
+  const runs = useMemo(() => {
+    const merged = new Map<string, Activity>();
+    [...personalState.data, ...teamRunsState.data].forEach(run => merged.set(run.id, run));
+    return Array.from(merged.values());
+  }, [personalState.data, teamRunsState.data]);
+  const teams = teamsState.data;
+  useEffect(() => { setLoading(personalState.loading || (!!joinedTeamId && teamRunsState.loading)); }, [personalState.loading, teamRunsState.loading, joinedTeamId]);
+
+  const mine = useMemo(() => personalState.data, [personalState.data]);
   const selected = useMemo(() => mine.filter(run => (run.type || "běh") === goalType), [mine, goalType]);
   const now = new Date();
   const weekStart = mondayOf(now);
@@ -133,7 +142,7 @@ export default function ProgressPage() {
     return days;
   }, [runs.length]);
 
-  const teamProgress = teams.map(team => {
+  const teamProgress = teams.filter(team => team.id === joinedTeamId).map(team => {
     const km = runs.filter(run => run.teamId===team.id && activityDate(run).getFullYear()===now.getFullYear() && activityDate(run).getMonth()===now.getMonth())
       .reduce((sum,run)=>sum+asNumber(run.km),0);
     return { ...team, km, percent:Math.min(100,km/500*100) };
@@ -188,7 +197,7 @@ export default function ProgressPage() {
 
       <section className="progress-section">
         <div className="progress-section-title"><Award/><div><h2>Odznaky a úspěchy</h2><p>{badges.filter(b=>b.done).length} z {badges.length} získaných odznaků</p></div></div>
-        <div className="progress-badges-grid">{badges.map(badge=><article key={badge.title} className={badge.done?"progress-badge earned":"progress-badge locked"}><span>{badge.done?badge.icon:"🔒"}</span><div><strong>{badge.title}</strong><p>{badge.detail}</p></div>{badge.done?<CheckCircle2 size={18}/>:<LockKeyhole size={17}/>}</article>)}</div>
+        <div className="progress-badges-grid">{badges.map(badge=><article key={badge.title} className={badge.done?"progress-badge earned":"progress-badge locked"}><span>{badge.done?badge.icon:"🔒"}</span><div><strong>{badge.title}</strong><p>{badge.detail}</p></div>{badge.done?<CheckCircle2 size={18}/>:<Lock size={17}/>}</article>)}</div>
       </section>
 
       <section className="tile progress-calendar">
@@ -213,7 +222,7 @@ export default function ProgressPage() {
         {teamProgress.length===0?<p className="progress-empty">Zatím nejsi členem týmu. Přidej se k některému v sekci Týmy a zapoj se do výzvy.</p>:<div className="progress-team-list">{teamProgress.map(team=><div className="progress-team" key={team.id}><div className="progress-team-heading"><strong>{team.name||"Tým"}</strong><span>{team.km.toFixed(1)} / 500 km</span></div><div className="progress-track"><i style={{width:`${team.percent}%`}}/></div><small>{team.percent.toFixed(0)} % splněno</small></div>)}</div>}
         <button className="progress-link-button" onClick={()=>router.push("/teams")}><Users size={17}/> Zobrazit týmy</button>
       </section>
-      {loading&&<p className="progress-loading">Načítám tvoje aktivity…</p>}
+      {loading&&<LoadingSkeleton count={2} />}
     </main>
   </>;
 }

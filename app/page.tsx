@@ -1,13 +1,13 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   collection,
   query,
   orderBy,
   limit,
-  onSnapshot,
   doc,
   getDocs,
+  startAfter,
   documentId,
   where,
 } from "firebase/firestore";
@@ -19,13 +19,18 @@ import { Footprints } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import RunForm from "./components/RunForm";
 import ActivityCard from "./components/ActivityCard";
+import LoadingSkeleton from "./components/LoadingSkeleton";
+import { cloudinaryImageUrl } from "./lib/imageUrl";
 import RunWeatherRecommendation from "./components/RunWeatherRecommendation";
 import { RunData } from "./types";
+import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
 
 export default function Page() {
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState<RunData[]>([]);
-  const [teams, setTeams] = useState<any[]>([]);
+  const [olderRuns, setOlderRuns] = useState<RunData[]>([]);
+  const [olderCursor, setOlderCursor] = useState<any>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [selectedType, setSelectedType] = useState("běh");
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
@@ -33,26 +38,50 @@ export default function Page() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, (user) => {
+    const unsubAuth = onAuthStateChanged(auth, user => {
       if (!user) router.push("/login");
     });
-
-    const q = query(collection(db, "runs"), orderBy("timestamp", "desc"), limit(30));
-    const unsubRuns = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as RunData));
-      setRuns(items);
-    });
-
-    const unsubTeams = onSnapshot(collection(db, "teams"), (snap) => {
-      setTeams(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-    });
-
-    return () => {
-      unsubAuth();
-      unsubRuns();
-      unsubTeams();
-    };
+    return () => unsubAuth();
   }, [router]);
+
+  const runsQuery = useMemo(() => query(collection(db, "runs"), orderBy("timestamp", "desc"), limit(30)), []);
+  const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
+  const runsState = useSharedFirestoreQuery<RunData>("runs:latest:30", runsQuery);
+  const teamsState = useSharedFirestoreQuery<any>("teams:all", teamsQuery);
+  const runs = runsState.data;
+  const teams = teamsState.data;
+  const allRuns = Array.from(new Map<string, RunData>([...runs, ...olderRuns].map(run => [run.id, run] as const)).values());
+
+  useEffect(() => {
+    if (!runsState.loading && runs.length < 30) setHasMore(false);
+  }, [runsState.loading, runs.length]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      ["/myruns", "/statistics", "/teams", "/weather"].forEach(path => router.prefetch(path));
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [router]);
+
+  const loadOlderRuns = async () => {
+    const cursor = olderCursor || runsState.lastDocument;
+    if (!cursor || loadingOlder || !hasMore) return;
+    setLoadingOlder(true);
+    try {
+      const next = await getDocs(query(collection(db, "runs"), orderBy("timestamp", "desc"), startAfter(cursor), limit(20)));
+      const items = next.docs.map(item => ({ id: item.id, ...item.data() } as RunData));
+      setOlderRuns(previous => [
+        ...previous,
+        ...items.filter(item => !previous.some(old => old.id === item.id) && !runs.some(current => current.id === item.id))
+      ]);
+      setOlderCursor(next.docs.length ? next.docs[next.docs.length - 1] : cursor);
+      setHasMore(next.docs.length === 20);
+    } catch (error) {
+      console.error("Nepodařilo se načíst starší aktivity", error);
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
 
   useEffect(() => {
     const userIds = Array.from(new Set(runs.map((run) => run.uid).filter((uid): uid is string => !!uid && !userAvatars[uid])));
@@ -158,7 +187,7 @@ export default function Page() {
 
         <h2 className="centered-title">Poslední záznamy</h2>
         <div className="list-container" style={{ gap: "0", display: "flex", flexDirection: "column" }}>
-          {runs.filter((run) => (run.type || "běh") === selectedType).map(run => {
+          {allRuns.filter((run) => (run.type || "běh") === selectedType).map(run => {
             const teamName = run.teamId ? teams.find(t => t.id === run.teamId)?.name || "?" : null;
 
             const user = userAvatars[run.uid] || {};
@@ -189,6 +218,11 @@ export default function Page() {
               />
             );          })}
         </div>
+        {hasMore && allRuns.length >= 30 && (
+          <button className="activity-load-more" onClick={loadOlderRuns} disabled={loadingOlder}>
+            {loadingOlder ? "Načítám starší záznamy…" : "Načíst starší záznamy"}
+          </button>
+        )}
       </div>
 
       {showImages && (

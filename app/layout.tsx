@@ -2,7 +2,7 @@ import "./globals.css";
 import { ReactNode } from "react";
 import ClientLayout from "./ClientLayout";
 
-export const metadata = { title:"Dolní Lhota v pohybu", description:"Běžecká výzva Dolní Lhota" };
+export const metadata = { title:"Dolní Lhota v pohybu", description:"Běžecká výzva Dolní Lhota", manifest:"/manifest.webmanifest", icons:{ icon:"/icon.svg" } };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

@@ -1,19 +1,19 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { User } from "firebase/auth";
-import { collection, query, orderBy, onSnapshot, getDocs, where, documentId } from "firebase/firestore";
+import { collection, query, orderBy, getDocs, where, documentId, Timestamp } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import { Footprints } from "lucide-react";
+import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import Sidebar from "../components/Sidebar";
+import LoadingSkeleton from "../components/LoadingSkeleton";
 
 export default function StatisticsPage() {
 
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState<any[]>([]);
-  const [teams, setTeams] = useState<any[]>([]);
   const [avatars, setAvatars] = useState<Record<string, string>>({});
   const [user, setUser] = useState<User | null>(null);
   const [selectedType, setSelectedType] = useState("běh");
@@ -24,21 +24,24 @@ export default function StatisticsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, (u) => {
+    const unsubAuth = onAuthStateChanged(auth, u => {
       if (!u) router.push("/login");
       else setUser(u);
     });
-
-    const unsubRuns = onSnapshot(query(collection(db, "runs"), orderBy("timestamp", "desc")),
-      (snap) => setRuns(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
-    );
-
-    const unsubTeams = onSnapshot(collection(db, "teams"),
-      (snap) => setTeams(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
-    );
-
-    return () => { unsubAuth(); unsubRuns(); unsubTeams(); }
+    return () => unsubAuth();
   }, [router]);
+
+  const runsQuery = useMemo(() => {
+    const constraints: any[] = [orderBy("timestamp", "desc")];
+    if (startDate) constraints.unshift(where("timestamp", ">=", Timestamp.fromDate(new Date(startDate + "T00:00:00"))));
+    if (endDate) constraints.unshift(where("timestamp", "<=", Timestamp.fromDate(new Date(endDate + "T23:59:59.999"))));
+    return query(collection(db, "runs"), ...constraints);
+  }, [startDate, endDate]);
+  const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
+  const runsState = useSharedFirestoreQuery<any>("runs:statistics:" + (startDate || "all") + ":" + (endDate || "all"), runsQuery);
+  const teamsState = useSharedFirestoreQuery<any>("teams:all", teamsQuery);
+  const runs = runsState.data;
+  const teams = teamsState.data;
 
   useEffect(() => {
     const ids = Array.from(new Set(runs.map((run) => run.uid).filter((id): id is string => typeof id === "string" && !!id)));

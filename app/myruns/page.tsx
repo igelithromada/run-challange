@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, doc, getDoc, deleteDoc, updateDoc, Timestamp } from "firebase/firestore";
+import React, { useEffect, useMemo, useState } from "react";
+import { collection, query, where, doc, getDoc, deleteDoc, updateDoc, Timestamp, limit, startAfter, getDocs } from "firebase/firestore";
+import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
@@ -8,6 +9,8 @@ import Navbar from "../components/Navbar";
 import { Footprints } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import ActivityCard from "../components/ActivityCard";
+import LoadingSkeleton from "../components/LoadingSkeleton";
+import { cloudinaryImageUrl } from "../lib/imageUrl";
 
 type RunData = {
   id: string; uid?: string; email?: string; nickname?: string;
@@ -40,9 +43,13 @@ const formatTime = (minutes: number) => {
 
 export default function MyRunsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState<RunData[]>([]);
+  const [uid, setUid] = useState("");
+  const [olderRuns, setOlderRuns] = useState<RunData[]>([]);
+  const [olderCursor, setOlderCursor] = useState<any>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [profile, setProfile] = useState({ nickname: "", avatarUrl: "" });
-  const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -60,26 +67,42 @@ export default function MyRunsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    let unsubRuns: (() => void) | null = null;
     const unsubAuth = onAuthStateChanged(auth, user => {
-      unsubRuns?.(); unsubRuns = null;
-      if (!user) { setLoading(false); router.push("/login"); return; }
+      if (!user) { router.push("/login"); return; }
+      setUid(user.uid);
       getDoc(doc(db, "users", user.uid)).then(profileDoc => {
         if (profileDoc.exists()) {
           const data = profileDoc.data();
           setProfile({ nickname: data.nickname || "", avatarUrl: data.avatarUrl || "" });
         }
       }).catch(err => console.error("Nepodařilo se načíst profil", err));
-      unsubRuns = onSnapshot(query(collection(db, "runs"), where("uid", "==", user.uid)), snap => {
-        const items = snap.docs.map(item => {
-          const data = item.data();
-          return { id: item.id, ...data, km: Number(data.km) || 0, minuty: Number(data.minuty) || 0, tempo: Number(data.tempo) || 0 } as RunData;
-        }).sort((a,b) => dateOf(b.timestamp).getTime() - dateOf(a.timestamp).getTime());
-        setRuns(items); setLoading(false);
-      }, err => { console.error(err); setError("Chyba při načítání dat."); setLoading(false); });
     });
-    return () => { unsubAuth(); unsubRuns?.(); };
+    return () => unsubAuth();
   }, [router]);
+
+  const runsQuery = useMemo(() => query(collection(db, "runs"), where("uid", "==", uid || "__no_user__"), limit(30)), [uid]);
+  const runsState = useSharedFirestoreQuery<RunData>("runs:user:" + (uid || "none"), runsQuery);
+  const runs = useMemo(() => Array.from(new Map<string, RunData>([...runsState.data, ...olderRuns].map(run => [run.id, run] as const)).values()).map(run => ({
+    ...run, km: Number(run.km) || 0, minuty: Number(run.minuty) || 0, tempo: Number(run.tempo) || 0
+  })).sort((a,b) => dateOf(b.timestamp).getTime() - dateOf(a.timestamp).getTime()), [runsState.data, olderRuns]);
+  const loading = runsState.loading;
+  useEffect(() => { if (!runsState.loading && runsState.data.length < 30) setHasMore(false); }, [runsState.loading, runsState.data.length]);
+  const loadOlderRuns = async () => {
+    const cursor = olderCursor || runsState.lastDocument;
+    if (!cursor || loadingOlder || !hasMore || !uid) return;
+    setLoadingOlder(true);
+    try {
+      const next = await getDocs(query(collection(db, "runs"), where("uid", "==", uid), startAfter(cursor), limit(30)));
+      const items = next.docs.map(item => ({ id: item.id, ...item.data() } as RunData));
+      setOlderRuns(previous => [...previous, ...items.filter(item => !previous.some(old => old.id === item.id) && !runsState.data.some(current => current.id === item.id))]);
+      setOlderCursor(next.docs.length ? next.docs[next.docs.length - 1] : cursor);
+      setHasMore(next.docs.length === 30);
+    } catch (err) { console.error("Nepodařilo se načíst starší aktivity", err); setActionError("Starší záznamy se nepodařilo načíst."); }
+    finally { setLoadingOlder(false); }
+  };
+  useEffect(() => {
+    if (runsState.error) setError("Chyba při načítání dat.");
+  }, [runsState.error]);
 
   const filteredRuns = runs.filter(run => {
     if ((run.type || "běh") !== selectedType) return false;
@@ -118,7 +141,7 @@ export default function MyRunsPage() {
     }
     setBusy(true); setActionError("");
     try {
-      const updates: Record<string, unknown> = {
+      const updates: Record<string, any> = {
         km: parsedKm, minuty: seconds / 60, tempo: (seconds / 60 / parsedKm).toFixed(2),
         timestamp: Timestamp.fromDate(new Date(activityDate))
       };
@@ -192,7 +215,7 @@ export default function MyRunsPage() {
         </div> : <ActivityCard key={run.id} run={run} nickname={profile.nickname || run.nickname || run.email?.split("@")[0] || "Anonym"} avatarUrl={profile.avatarUrl} activityType={selectedType} onEdit={() => handleEdit(run)} onDelete={() => handleDelete(run.id)} onPhotosClick={images => { setCurrentImageIndex(0); setShowImageUrls(images); }} />)}
       </div>
       {showImageUrls && showImageUrls.length > 0 && <div className="activity-lightbox" onClick={() => setShowImageUrls(null)}>
-        <img src={showImageUrls[currentImageIndex]} alt={`Fotografie ${currentImageIndex + 1}`} onClick={e => e.stopPropagation()} />
+        <img loading="lazy" decoding="async" src={cloudinaryImageUrl(showImageUrls[currentImageIndex], 1600)} alt={`Fotografie ${currentImageIndex + 1}`} onClick={e => e.stopPropagation()} />
         <div className="activity-lightbox-actions" onClick={e => e.stopPropagation()}>
           {showImageUrls.length > 1 && <button onClick={() => setCurrentImageIndex(i => (i - 1 + showImageUrls.length) % showImageUrls.length)} aria-label="Předchozí fotografie">❮</button>}
           <button onClick={() => { setShowImageUrls(null); setCurrentImageIndex(0); }}>Zavřít</button>
@@ -200,7 +223,8 @@ export default function MyRunsPage() {
         </div>
         {showImageUrls.length > 1 && <p>{currentImageIndex + 1} / {showImageUrls.length}</p>}
       </div>}
-      {loading && <p>Načítám…</p>}
+      {loading && runs.length === 0 && <LoadingSkeleton count={3} />}
+      {hasMore && runs.length >= 30 && <button className="activity-load-more" onClick={loadOlderRuns} disabled={loadingOlder}>{loadingOlder ? "Načítám starší záznamy…" : "Načíst starší záznamy"}</button>}
       {error && <p style={{ color:"red" }}>{error}</p>}
       {!loading && filteredRuns.length === 0 && <div className="tile activity-empty-state"><strong>Zatím tu nic není.</strong><p>Pro zvolené období nemáš žádné záznamy. Zkus jiný filtr nebo přidej novou aktivitu.</p></div>}
     </div>
