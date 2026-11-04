@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import type { User } from "firebase/auth";
+import type { User as AuthUser } from "firebase/auth";
 import { collection, query, orderBy, getDocs, where, documentId, Timestamp } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -14,7 +14,7 @@ import Sidebar from "../components/Sidebar";
 export default function StatisticsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [avatars, setAvatars] = useState<Record<string, string>>({});
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [selectedType, setSelectedType] = useState("běh");
   const [view, setView] = useState("já");
   const [metric, setMetric] = useState("km");
