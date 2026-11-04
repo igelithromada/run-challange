@@ -141,7 +141,7 @@ export default function MyRunsPage() {
     }
     setBusy(true); setActionError("");
     try {
-      const updates: Record<string, unknown> = {
+      const updates: Record<string, any> = {
         km: parsedKm, minuty: seconds / 60, tempo: (seconds / 60 / parsedKm).toFixed(2),
         timestamp: Timestamp.fromDate(new Date(activityDate))
       };
