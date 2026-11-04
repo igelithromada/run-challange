@@ -46,7 +46,7 @@ export default function useThemeLoader() {
       } catch (error) { console.error("Nepodařilo se načíst vzhled", error); }
     });
     const interval = window.setInterval(() => {
-      if (userData.theme === "auto" || userData.theme === "default") {
+      if (userData.theme === "auto") {
         void applyTheme(userData.theme, userData.customColor, userData.animationsEnabled);
       }
     }, 30 * 60 * 1000);
@@ -63,7 +63,7 @@ export async function applyTheme(selectedTheme: string, color: string, animation
 
   if (selectedTheme === "man") gradient = "linear-gradient(180deg, #2980b9, #2c3e50)";
   else if (selectedTheme === "woman") gradient = "linear-gradient(180deg, #ff7eb3, #ff758c)";
-  else if (selectedTheme === "auto" || selectedTheme === "default") gradient = `linear-gradient(180deg, ${getColorByHour(new Date().getHours())}, #000000)`;
+  else if (selectedTheme === "auto") gradient = `linear-gradient(180deg, ${getColorByHour(new Date().getHours())}, #000000)`;
   else if (selectedTheme === "custom") gradient = `linear-gradient(180deg, ${color}, #000000)`;
 
 
