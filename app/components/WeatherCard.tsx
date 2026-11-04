@@ -41,9 +41,9 @@ export default function WeatherCard() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState("");
 
-  const loadWeather = async () => {
+  const loadWeather = async (forceRefresh = false) => {
     try {
-      const response = await fetch("/api/weather");
+      const response = await fetch("/api/weather", forceRefresh ? { cache: "reload" } : undefined);
       const data = await response.json();
       setWeather(data);
       setLastUpdated(new Date().toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" }));
@@ -77,7 +77,7 @@ export default function WeatherCard() {
           <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Počasí pro běh</h2>
           <p style={{ margin: "0.2rem 0 0", opacity: 0.78, fontSize: "0.85rem" }}>Dolní Lhota u Ostravy</p>
         </div>
-        <button type="button" onClick={loadWeather} aria-label="Obnovit počasí" title="Obnovit počasí" style={{ background: "rgba(255,255,255,0.16)", border: 0, borderRadius: 999, color: "inherit", padding: "0.55rem", cursor: "pointer" }}>
+        <button type="button" onClick={() => void loadWeather(true)} aria-label="Obnovit počasí" title="Obnovit počasí" style={{ background: "rgba(255,255,255,0.16)", border: 0, borderRadius: 999, color: "inherit", padding: "0.55rem", cursor: "pointer" }}>
           <RefreshCw size={18} />
         </button>
       </div>
