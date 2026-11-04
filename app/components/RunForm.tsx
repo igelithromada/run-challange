@@ -1,17 +1,21 @@
 "use client";
+
 import React, { useEffect, useMemo, useState } from "react";
-import { collection, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore";
+import { collection, addDoc, getDoc, doc } from "firebase/firestore";
 import { db, auth } from "../lib/firebase";
+import { ImagePlus, Plus, Save, X } from "lucide-react";
 
 const uploadToCloudinary = async (file: File) => {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("upload_preset", "lhota_unsigned");
   const res = await fetch("https://api.cloudinary.com/v1_1/dvb4jm8cw/image/upload", { method: "POST", body: formData });
-  if (!res.ok) throw new Error("Chyba při nahrávání fotografie.");
+  if (!res.ok) throw new Error("Fotografii se nepodařilo nahrát.");
   const data = await res.json();
+  if (!data.secure_url) throw new Error("Server fotografii nevrátil platnou adresu.");
   return data.secure_url as string;
 };
+
 const localDateTime = () => {
   const now = new Date();
   return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -35,7 +39,8 @@ export default function RunForm({ type }: { type: string }) {
 
   const minutesValue = durationMinutes.trim() === "" ? null : Number(durationMinutes);
   const secondsValue = durationSeconds.trim() === "" ? null : Number(durationSeconds);
-  const parsedDuration = minutesValue !== null && secondsValue !== null &&
+  const parsedDuration =
+    minutesValue !== null && secondsValue !== null &&
     Number.isInteger(minutesValue) && minutesValue >= 0 && minutesValue <= 9999 &&
     Number.isInteger(secondsValue) && secondsValue >= 0 && secondsValue <= 59
       ? minutesValue * 60 + secondsValue
@@ -44,89 +49,178 @@ export default function RunForm({ type }: { type: string }) {
   const pace = distanceValue > 0 && parsedDuration !== null ? parsedDuration / distanceValue : null;
 
   const reset = () => {
-    setKm(""); setDurationMinutes(""); setDurationSeconds(""); setFiles([]); setActivityDate(localDateTime()); setError(""); setUploadStatus("");
+    setKm("");
+    setDurationMinutes("");
+    setDurationSeconds("");
+    setFiles([]);
+    setActivityDate(localDateTime());
+    setError("");
+    setUploadStatus("");
   };
 
   const handleSubmit = async () => {
     if (saving) return;
+
     const kmVal = Number(km.replace(",", "."));
     if (!km.trim() || !Number.isFinite(kmVal) || kmVal <= 0 || parsedDuration === null || parsedDuration <= 0) {
-      setError("Zadej platnou vzdálenost, minuty a sekundy (sekundy musí být v rozsahu 0–59).");
+      setError("Zadej platnou vzdálenost a celkový čas. Sekundy musí být v rozsahu 0–59.");
       return;
     }
     if (!activityDate || Number.isNaN(new Date(activityDate).getTime())) {
-      setError("Zkontroluj datum a čas aktivity."); return;
+      setError("Zkontroluj datum a čas aktivity.");
+      return;
     }
     if (files.length > 6 || files.some(file => !file.type.startsWith("image/") || file.size > 10 * 1024 * 1024)) {
-      setError("Vyber maximálně 6 obrázků, každý do 10 MB."); return;
+      setError("Vyber maximálně 6 obrázků, každý do 10 MB.");
+      return;
     }
-    const user = auth.currentUser;
-    if (!user) { setError("Pro uložení záznamu se nejprve přihlas."); return; }
 
-    setSaving(true); setError(""); setSuccess("");
+    const user = auth.currentUser;
+    if (!user) {
+      setError("Pro uložení záznamu se nejprve přihlas.");
+      return;
+    }
+    if (!navigator.onLine && files.length > 0) {
+      setError("Fotografie lze přidat jen s připojením k internetu. Záznam můžeš uložit offline bez fotografií.");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    setSuccess("");
+
     try {
       const imageUrls: string[] = [];
       for (let i = 0; i < files.length; i++) {
         setUploadStatus(`Nahrávám fotografie ${i + 1}/${files.length}…`);
         imageUrls.push(await uploadToCloudinary(files[i]));
       }
-      setUploadStatus("Ukládám aktivitu…");
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      const userData = userDoc.exists() ? userDoc.data() : {};
+
+      setUploadStatus(navigator.onLine ? "Ukládám aktivitu…" : "Ukládám aktivitu offline…");
+
+      let userData: Record<string, unknown> = {};
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) userData = userDoc.data();
+      } catch {
+        // Firestore může při offline režimu načtení profilu odmítnout.
+        // Samotný zápis lze i tak zařadit do lokální fronty Firestore.
+      }
+
       await addDoc(collection(db, "runs"), {
-        uid: user.uid, email: user.email, avatarUrl: userData.avatarUrl || "",
-        km: kmVal, minuty: parsedDuration / 60, tempo: (parsedDuration / 60 / kmVal).toFixed(2),
-        type, timestamp: new Date(activityDate), imageUrls,
-        teamId: userData.teamId || userData.joinedTeam || null
+        uid: user.uid,
+        email: user.email,
+        avatarUrl: typeof userData.avatarUrl === "string" ? userData.avatarUrl : "",
+        km: kmVal,
+        minuty: parsedDuration / 60,
+        tempo: (parsedDuration / 60 / kmVal).toFixed(2),
+        type,
+        timestamp: new Date(activityDate),
+        imageUrls,
+        teamId: typeof userData.teamId === "string" ? userData.teamId : (typeof userData.joinedTeam === "string" ? userData.joinedTeam : null)
       });
-      reset(); setShowForm(false);
-      setSuccess(`${type[0].toUpperCase() + type.slice(1)} byl úspěšně uložen.`);
+
+      reset();
+      setShowForm(false);
+      setSuccess(
+        navigator.onLine
+          ? `${type[0].toUpperCase() + type.slice(1)} byl úspěšně uložen.`
+          : `${type[0].toUpperCase() + type.slice(1)} je uložen offline a po připojení se synchronizuje.`
+      );
     } catch (err) {
-      console.error(err); setError(err instanceof Error ? err.message : "Chyba při ukládání záznamu.");
-    } finally { setSaving(false); setUploadStatus(""); }
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Chyba při ukládání záznamu.");
+    } finally {
+      setSaving(false);
+      setUploadStatus("");
+    }
   };
 
   return (
-    <div style={{ textAlign: "center", fontFamily: "'Poppins', sans-serif", marginTop: "0rem" }}>
-      {!showForm && <button onClick={() => { reset(); setShowForm(true); }} style={buttonStyle}>➕ Přidat {type}</button>}
+    <div className="run-form-shell">
+      {!showForm && (
+        <button type="button" className="run-primary-button" onClick={() => { reset(); setShowForm(true); }}>
+          <Plus size={19} aria-hidden="true" /> Přidat {type}
+        </button>
+      )}
+
       {showForm && (
-        <div className="run-form-panel">
-          <label className="run-form-field">Vzdálenost
-            <input aria-label="Vzdálenost v kilometrech" type="number" min="0.1" step="0.01" inputMode="decimal" placeholder="km · např. 5,2" value={km} onChange={e => setKm(e.target.value)} style={inputStyle} />
+        <section className="run-form-panel" aria-label={`Nový záznam: ${type}`}>
+          <div className="run-form-heading">
+            <div>
+              <span className="run-form-eyebrow">NOVÁ AKTIVITA</span>
+              <h3>Přidat {type}</h3>
+            </div>
+            <button type="button" className="run-form-close" onClick={() => { setShowForm(false); reset(); }} disabled={saving} aria-label="Zavřít formulář">
+              <X size={19} aria-hidden="true" />
+            </button>
+          </div>
+
+          <label className="run-form-field">
+            <span>Vzdálenost <small>km</small></span>
+            <input aria-label="Vzdálenost v kilometrech" type="number" min="0.1" step="0.01" inputMode="decimal" placeholder="Např. 5,2" value={km} onChange={e => setKm(e.target.value)} />
           </label>
+
           <div className="run-form-field">
-            <span className="run-form-field-label">Celkový čas</span>
+            <span>Celkový čas <small>minuty a sekundy</small></span>
             <div className="run-form-time-fields">
               <label className="run-form-unit-field">
-                <input aria-label="Minuty" type="number" min="0" max="9999" step="1" inputMode="numeric" pattern="[0-9]*" placeholder="min" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} style={inputStyle} />
+                <input aria-label="Minuty" type="number" min="0" max="9999" step="1" inputMode="numeric" placeholder="min" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} />
               </label>
               <label className="run-form-unit-field">
-                <input aria-label="Sekundy" type="number" min="0" max="59" step="1" inputMode="numeric" pattern="[0-9]*" placeholder="s" value={durationSeconds} onChange={e => setDurationSeconds(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} style={inputStyle} />
+                <input aria-label="Sekundy" type="number" min="0" max="59" step="1" inputMode="numeric" placeholder="s" value={durationSeconds} onChange={e => setDurationSeconds(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} />
               </label>
             </div>
-            {durationSeconds !== "" && Number(durationSeconds) > 59 && <small className="run-form-time-error">Sekundy mohou být maximálně 59.</small>}
           </div>
-          {pace !== null && pace > 0 && <div className="run-form-pace">Vypočítané tempo <strong>{formatDuration(Math.round(pace))} /km</strong></div>}
-          <label className="run-form-field">Datum a čas aktivity
-            <input type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} style={inputStyle} />
+
+          {pace !== null && pace > 0 && (
+            <div className="run-form-pace" role="status">
+              <span>Vypočítané tempo</span>
+              <strong>{formatDuration(Math.round(pace))} /km</strong>
+            </div>
+          )}
+
+          <label className="run-form-field">
+            <span>Datum a čas aktivity</span>
+            <input type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} />
           </label>
+
           <label className="run-form-upload">
-            <span>📷 {files.length ? `Vybráno fotografií: ${files.length}` : "Přidat fotografie (max. 6)"}</span>
+            <ImagePlus size={19} aria-hidden="true" />
+            <span>{files.length ? `Vybráno fotografií: ${files.length}` : "Přidat fotografie (max. 6)"}</span>
             <input type="file" accept="image/*" multiple onChange={e => setFiles(Array.from(e.target.files || []).slice(0, 6))} />
           </label>
-          {previews.length > 0 && <div className="run-form-previews">{previews.map((item, index) => <div key={item.url}><img src={item.url} alt={`Náhled ${index + 1}`} /><button type="button" onClick={() => setFiles(current => current.filter(file => file !== item.file))} aria-label="Odebrat fotografii">×</button></div>)}</div>}
-          {uploadStatus && <p className="run-form-status">{uploadStatus}</p>}
+
+          {previews.length > 0 && (
+            <div className="run-form-previews">
+              {previews.map((item, index) => (
+                <div key={item.url}>
+                  <img src={item.url} alt={`Náhled fotografie ${index + 1}`} />
+                  <button type="button" onClick={() => setFiles(current => current.filter(file => file !== item.file))} aria-label={`Odebrat fotografii ${index + 1}`}>
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {uploadStatus && <p className="run-form-status" role="status">{uploadStatus}</p>}
+          {error && <p className="form-message form-message-error" role="alert">{error}</p>}
+          {success && <p className="form-message form-message-success" role="status">{success}</p>}
+
           <div className="run-form-actions">
-            <button onClick={() => { setShowForm(false); reset(); }} style={buttonStyle} disabled={saving}>Zavřít</button>
-            <button onClick={handleSubmit} style={{ ...buttonStyle, background: "#eee", color: "#333", opacity: saving ? .6 : 1 }} disabled={saving}>{saving ? "Ukládám…" : "Uložit " + type}</button>
+            <button type="button" className="run-secondary-button" onClick={() => { setShowForm(false); reset(); }} disabled={saving}>
+              Zrušit
+            </button>
+            <button type="button" className="run-primary-button" onClick={handleSubmit} disabled={saving}>
+              <Save size={18} aria-hidden="true" /> {saving ? "Ukládám…" : "Uložit aktivitu"}
+            </button>
           </div>
-        </div>
+        </section>
       )}
-      {error && <div style={{ color: "#ffb4b4", marginTop: "10px" }}>{error}</div>}
-      {success && <div style={{ color: "lightgreen", marginTop: "10px" }}>{success}</div>}
+
+      {!showForm && error && <p className="form-message form-message-error" role="alert">{error}</p>}
+      {!showForm && success && <p className="form-message form-message-success" role="status">{success}</p>}
     </div>
   );
 }
-
-const inputStyle: React.CSSProperties = { margin: "6px 0 12px", padding: "11px 14px", width: "100%", border: "1px solid #ddd", borderRadius: "10px", fontSize: "1rem", color: "#333", backgroundColor: "white", boxShadow: "0 2px 5px rgba(0,0,0,0.1)", outline: "none", boxSizing: "border-box" };
-const buttonStyle: React.CSSProperties = { padding: "12px 20px", background: "rgba(255,255,255,0.34)", color: "white", fontWeight: 600, border: "none", borderRadius: "12px", cursor: "pointer", fontSize: "1rem", boxShadow: "0 4px 12px rgba(0,0,0,0.22)", transition: "all 0.3s" };
