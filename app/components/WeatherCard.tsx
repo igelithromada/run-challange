@@ -131,7 +131,7 @@ export default function WeatherCard() {
                       <small>{hourLabel(item)}</small>
                       <HourIcon size={23} style={{ display: "block", margin: "0.35rem auto" }} />
                       <strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong>
-                      <small style={{ display: "block", opacity: 0.8 }}>{item?.precipitation?.probability?.percent ?? 0}% déšť</small>
+                      <small style={{ display: "block", opacity: 0.8 }}>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}%` : "—"} déšť</small>
                     </div>
                   );
                 })}

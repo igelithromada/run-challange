@@ -191,10 +191,10 @@ export default function MyRunsPage() {
         {(dateFrom || dateTo) && <button className="date-clear" onClick={() => { setDateFrom(""); setDateTo(""); }}>Zrušit filtr</button>}
       </div>
       <div className="tile-group activity-summary-grid">
-        <div className="tile">Počet aktivit<br />{filteredRuns.length}</div>
-        <div className="tile">Celkem km<br />{totalKm.toFixed(2)}</div>
-        <div className="tile">Čas<br />{(totalMin / 60).toFixed(2)} h</div>
-        <div className="tile">Prům. tempo<br />{formatTime(avgTempo)}</div>
+        <div className="tile"><span>Počet aktivit</span><strong>{filteredRuns.length}</strong></div>
+        <div className="tile"><span>Celkem km</span><strong>{totalKm.toFixed(2)} km</strong></div>
+        <div className="tile"><span>Čas</span><strong>{(totalMin / 60).toFixed(2)} h</strong></div>
+        <div className="tile"><span>Prům. tempo</span><strong>{formatTime(avgTempo)} /km</strong></div>
       </div>
       {longestRun && <div className="tile">🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(longestRun.minuty)} ({formatTime(longestRun.tempo)} /km)</div>}
       {fastestRun && <div className="tile">⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(fastestRun.minuty)} ({formatTime(fastestRun.tempo)} /km)</div>}

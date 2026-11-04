@@ -8,135 +8,76 @@ import { db, auth } from "../../../lib/firebase";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/Sidebar";
 import useAdminGuard from "../../../lib/useAdminGuard";
+import { Camera, X } from "lucide-react";
 
-type GalleryPhoto = {
-  id: string;
-  photoUrl: string;
-  date: string;
-};
+type GalleryPhoto = { id:string; photoUrl:string; date:string; runId:string };
 
 export default function GalleryPage() {
-  const { id } = useParams() as { id: string };
+  const { id } = useParams() as {id:string};
   const router = useRouter();
   const adminAccess = useAdminGuard();
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [menuVisible,setMenuVisible] = useState(false);
+  const [photos,setPhotos] = useState<GalleryPhoto[]>([]);
+  const [loading,setLoading] = useState(true);
+  const [error,setError] = useState("");
+  const [lightbox,setLightbox] = useState<number|null>(null);
 
   useEffect(() => {
     if (adminAccess !== "allowed" || !id) return;
-
-    let active = true;
-    const fetchPhotos = async () => {
-      setLoading(true);
-      setError("");
+    let active=true;
+    const load=async()=>{
+      setLoading(true); setError("");
       try {
-        const runsQuery = query(collection(db, "runs"), where("uid", "==", id));
-        const snapshot = await getDocs(runsQuery);
-        const userPhotos: GalleryPhoto[] = [];
-
-        snapshot.forEach((runDoc) => {
-          const data = runDoc.data();
-          const imageUrls: string[] = Array.isArray(data.imageUrls)
-            ? data.imageUrls.filter(
-                (url: unknown): url is string => typeof url === "string" && url.length > 0
-              )
-            : [];
-
-          if (
-            imageUrls.length === 0 &&
-            typeof data.imageUrl === "string" &&
-            data.imageUrl.length > 0
-          ) {
-            imageUrls.push(data.imageUrl);
-          }
-
-          const seconds = data.timestamp?.seconds;
-          const date = typeof seconds === "number"
-            ? new Date(seconds * 1000).toLocaleString("cs-CZ")
-            : "Neznámé datum";
-
-          imageUrls.forEach((photoUrl, index) => {
-            userPhotos.push({
-              id: `${runDoc.id}-${index}`,
-              photoUrl,
-              date,
-            });
-          });
+        const snapshot=await getDocs(query(collection(db,"runs"),where("uid","==",id)));
+        const result:GalleryPhoto[]=[];
+        snapshot.forEach(d=>{
+          const data=d.data();
+          const urls:string[] = Array.isArray(data.imageUrls) ? data.imageUrls.filter((u:unknown):u is string=>typeof u==="string"&&u.length>0) : [];
+          if (!urls.length && typeof data.imageUrl==="string" && data.imageUrl) urls.push(data.imageUrl);
+          const date = data.timestamp?.seconds ? new Date(data.timestamp.seconds*1000).toLocaleString("cs-CZ",{day:"numeric",month:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "Neznámé datum";
+          urls.forEach((photoUrl,index)=>result.push({id:`${d.id}-${index}`,photoUrl,date,runId:d.id}));
         });
-
-        userPhotos.sort((a, b) => {
-          const parseDate = (value: string) => {
-            const parsed = new Date(value).getTime();
-            return Number.isFinite(parsed) ? parsed : 0;
-          };
-          return parseDate(b.date) - parseDate(a.date);
-        });
-
-        if (active) setPhotos(userPhotos);
-      } catch (err) {
-        console.error("Nepodařilo se načíst galerii:", err);
-        if (active) setError("Galerii se nepodařilo načíst.");
-      } finally {
-        if (active) setLoading(false);
-      }
+        result.sort((a,b)=>a.date<b.date?1:-1);
+        if(active) setPhotos(result);
+      } catch(e) { console.error(e); if(active) setError("Galerii se nepodařilo načíst."); }
+      finally { if(active) setLoading(false); }
     };
+    void load(); return ()=>{active=false;};
+  },[adminAccess,id]);
 
-    void fetchPhotos();
-    return () => {
-      active = false;
-    };
-  }, [adminAccess, id]);
-
-  const handleSelect = async (item: string) => {
+  const handleSelect=async(item:string)=>{
     setMenuVisible(false);
-    if (item === "logout") {
-      await signOut(auth);
-      router.push("/login");
-    } else if (item === "myrun") router.push("/myruns");
-    else if (item === "teams") router.push("/teams");
-    else if (item === "settings") router.push("/settings");
-    else if (item === "statistics") router.push("/statistics");
-    else if (item === "progress") router.push("/progress");
-    else if (item === "weather") router.push("/weather");
-    else if (item === "admin") router.push("/admin");
-    else router.push("/");
+    if(item==="logout"){await signOut(auth);router.push("/login");return;}
+    if(item==="myrun"){router.push("/myruns");return;}
+    if(item==="home"){router.push("/");return;}
+    router.push("/"+item);
   };
 
-  if (adminAccess !== "allowed") {
-    return <div className="container"><p>Ověřuji administrátorská oprávnění…</p></div>;
-  }
+  if(adminAccess!=="allowed") return <div className="container"><div className="tile">Ověřuji administrátorská oprávnění…</div></div>;
 
-  return (
-    <>
-      <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
-
-      <div className="container">
-        <h1 className="centered-title">Galerie uživatele</h1>
-        {loading && <p>Načítám galerii…</p>}
-        {error && <p role="alert">{error}</p>}
-        {!loading && !error && photos.length === 0 && (
-          <p>Uživatel zatím nemá žádné fotografie.</p>
-        )}
-        {photos.map((photo) => (
-          <div key={photo.id} style={{ marginBottom: "1rem" }}>
-            <p style={{ fontWeight: "bold" }}>{photo.date}</p>
-            <img
-              src={photo.photoUrl}
-              alt="Fotografie běžeckého záznamu"
-              loading="lazy"
-              style={{
-                width: "100%",
-                maxWidth: "400px",
-                borderRadius: "12px",
-                boxShadow: "0 0 10px rgba(0,0,0,0.4)",
-              }}
-            />
-          </div>
-        ))}
+  return <>
+    <Navbar title="Galerie uživatele" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")} />
+    <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/>
+    <main className="container admin-gallery-page">
+      <div className="admin-page-intro"><span className="admin-eyebrow">ADMINISTRACE</span><h1>Galerie uživatele</h1><p>{photos.length} fotografií · kliknutím otevřeš náhled.</p></div>
+      {loading && <div className="tile">Načítám galerii…</div>}
+      {error && <div className="tile form-message-error">{error}</div>}
+      {!loading && !error && photos.length===0 && <div className="tile empty-state"><Camera size={28}/><strong>Žádné fotografie</strong><span>Uživatel zatím nemá fotografie u svých aktivit.</span></div>}
+      <div className="admin-gallery-grid">
+        {photos.map((photo,index)=><button type="button" className="admin-gallery-item" key={photo.id} onClick={()=>setLightbox(index)}>
+          <img src={photo.photoUrl} alt="Fotografie aktivity" loading="lazy"/>
+          <span>{photo.date}</span>
+        </button>)}
       </div>
-    </>
-  );
+    </main>
+    {lightbox!==null && <div className="admin-lightbox" role="dialog" aria-modal="true" onClick={()=>setLightbox(null)}>
+      <button className="admin-lightbox-close" onClick={()=>setLightbox(null)} aria-label="Zavřít"><X/></button>
+      <img src={photos[lightbox].photoUrl} alt="Fotografie aktivity" onClick={e=>e.stopPropagation()}/>
+      {photos.length>1 && <>
+        <button className="admin-lightbox-prev" onClick={e=>{e.stopPropagation();setLightbox(i=>(i===null?null:(i-1+photos.length)%photos.length))}} aria-label="Předchozí">‹</button>
+        <button className="admin-lightbox-next" onClick={e=>{e.stopPropagation();setLightbox(i=>(i===null?null:(i+1)%photos.length))}} aria-label="Další">›</button>
+        <span className="admin-lightbox-count">{lightbox+1} / {photos.length}</span>
+      </>}
+    </div>}
+  </>;
 }

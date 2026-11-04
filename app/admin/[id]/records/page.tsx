@@ -8,194 +8,88 @@ import { signOut } from "firebase/auth";
 import useAdminGuard from "../../../lib/useAdminGuard";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/Sidebar";
+import ActivityCard from "../../../components/ActivityCard";
+import { Footprints } from "lucide-react";
 
 type Run = {
-  id: string;
-  uid?: string;
-  km?: number;
-  minuty?: number;        // celkový čas v minutách
-  tempo?: number;         // min/km
-  type?: string;          // "běh" | "chůze"
-  timestamp?: { seconds: number };
-  imageUrls?: string[];
-  imageUrl?: string;      // starší single fotka
+  id:string; uid?:string; km?:number|string; minuty?:number|string; tempo?:number|string; type?:string;
+  timestamp?:any; imageUrls?:string[]; imageUrl?:string; nickname?:string; email?:string; teamId?:string;
 };
 
 export default function RecordsPage() {
   const adminAccess = useAdminGuard();
-  const { id } = useParams() as { id: string };   // id uživatele
+  const { id } = useParams() as { id:string };
   const router = useRouter();
+  const [menuVisible,setMenuVisible] = useState(false);
+  const [runs,setRuns] = useState<Run[]>([]);
+  const [selectedType,setSelectedType] = useState<"běh"|"chůze">("běh");
+  const [lightbox,setLightbox] = useState<{urls:string[];index:number}|null>(null);
 
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState<Run[]>([]);
-  const [selectedType, setSelectedType] = useState<"běh" | "chůze">("běh");
-  const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(null);
-
-  // načtení záznamů uživatele
   useEffect(() => {
     if (adminAccess !== "allowed" || !id) return;
-    const qRef = query(collection(db, "runs"), where("uid", "==", id));
-    const unsub = onSnapshot(qRef, (snap) => {
-      const items: Run[] = snap.docs
-        .map(d => ({ id: d.id, ...(d.data() as any) }))
-        .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+    const unsub = onSnapshot(query(collection(db,"runs"),where("uid","==",id)), snap => {
+      const items = snap.docs.map(d => ({id:d.id,...d.data()} as Run));
+      items.sort((a,b) => (b.timestamp?.seconds||0)-(a.timestamp?.seconds||0));
       setRuns(items);
     });
     return () => unsub();
-  }, [adminAccess, id]);
+  }, [adminAccess,id]);
 
-  const formatMinutes = (minutes?: number) => {
-    const totalSeconds = Math.round((minutes || 0) * 60);
-    const m = Math.floor(totalSeconds / 60);
-    const s = totalSeconds % 60;
-    return `${m}′${s.toString().padStart(2, "0")}″`;
+  const handleDelete = async (runId:string) => {
+    if (!window.confirm("Opravdu smazat tento záznam?")) return;
+    try { await deleteDoc(doc(db,"runs",runId)); }
+    catch(error) { console.error(error); window.alert("Smazání se nepodařilo."); }
   };
 
-  const handleDelete = async (runId: string) => {
-    const ok = confirm("Opravdu smazat tento záznam?");
-    if (!ok) return;
-    try {
-      await deleteDoc(doc(db, "runs", runId));
-      // (Pokud bys chtěl mazat i fotky z Cloudinary, je potřeba serverová funkce — zatím mažeme jen dokument.)
-    } catch (e) {
-      alert("Smazání se nepodařilo. Zkus to prosím znovu.");
-      console.error(e);
-    }
-  };
-
-  const handleSelect = async (item: string) => {
+  const handleSelect = async (item:string) => {
     setMenuVisible(false);
-    if (item === "logout") {
-      await signOut(auth);
-      router.push("/login");
-    }
-    else if (item === "myrun") router.push("/myruns");
-    else if (item === "teams") router.push("/teams");
-    else if (item === "settings") router.push("/settings");
-    else if (item === "statistics") router.push("/statistics");
-    else if (item === "progress") router.push("/progress");
-    else if (item === "weather") router.push("/weather");
-    else if (item === "admin") router.push("/admin");
-    else router.push("/");
+    if (item==="logout") { await signOut(auth); router.push("/login"); return; }
+    if (item==="myrun") { router.push("/myruns"); return; }
+    if (item==="home") { router.push("/"); return; }
+    router.push("/"+item);
   };
 
-  if (adminAccess !== "allowed") {
-    return <div className="container"><p>Ověřuji administrátorská oprávnění…</p></div>;
-  }
+  if (adminAccess !== "allowed") return <div className="container"><div className="tile">Ověřuji administrátorská oprávnění…</div></div>;
 
-  return (
-    <>
-      <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
-
-      <div className="container">
-        <h1 className="centered-title">Záznamy uživatele</h1>
-
-        <div className="tile-group">
-          <button
-            className={`tile-button ${selectedType === "běh" ? "active" : ""}`}
-            onClick={() => setSelectedType("běh")}
-          >
-            🏃 Běh
-          </button>
-          <button
-            className={`tile-button ${selectedType === "chůze" ? "active" : ""}`}
-            onClick={() => setSelectedType("chůze")}
-          >
-            🚶 Chůze
-          </button>
-        </div>
-
-        <div className="list-container" style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          {runs
-            .filter(r => (r.type || "běh") === selectedType)
-            .map(run => {
-              const dateStr = new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ", {
-                year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit"
-              });
-              const imgs = (run.imageUrls && run.imageUrls.length > 0)
-                ? run.imageUrls
-                : (run.imageUrl ? [run.imageUrl] : []);
-
-              return (
-                <div key={run.id} className="tile list-tile" style={{ position: "relative", padding: "var(--list-card-padding)", margin: "var(--list-card-margin)" }}>
-                  <div style={{ fontWeight: 700, marginBottom: 4 }}>{dateStr}</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                    <div>{run.km} km</div>
-                    <div>čas {formatMinutes(run.minuty)}</div>
-                    <div>tempo {formatMinutes(run.tempo)}</div>
-                  </div>
-
-                  <div style={{ position: "absolute", right: 8, top: 8, display: "flex", gap: 10 }}>
-                    {imgs.length > 0 && (
-                      <button
-                        onClick={() => setLightbox({ urls: imgs, index: 0 })}
-                        title="Zobrazit fotky"
-                        style={{ background: "transparent", border: "none", cursor: "pointer" }}
-                      >
-                        {/* ikona fotky */}
-                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                          <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
-                          <circle cx="8.5" cy="8.5" r="1.5" />
-                          <path d="M21 15l-5-5L5 21" />
-                        </svg>
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleDelete(run.id)}
-                      title="Smazat záznam"
-                      style={{ background: "transparent", border: "none", cursor: "pointer" }}
-                    >
-                      {/* koš */}
-                      <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        <line x1="10" y1="11" x2="10" y2="17" />
-                        <line x1="14" y1="11" x2="14" y2="17" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-        </div>
+  return <>
+    <Navbar title="Záznamy uživatele" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")} />
+    <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect} />
+    <main className="container admin-records-page">
+      <div className="admin-page-intro">
+        <span className="admin-eyebrow">ADMINISTRACE</span>
+        <h1>Záznamy uživatele</h1>
+        <p>Aktivity, fotografie a možnost moderace.</p>
       </div>
 
-      {/* Lightbox */}
-      {lightbox && (
-        <div
-          onClick={() => setLightbox(null)}
-          style={{
-            position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 2000,
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "1rem"
-          }}
-        >
-          <img
-            src={lightbox.urls[lightbox.index]}
-            alt="photo"
-            style={{ maxWidth: "92vw", maxHeight: "76vh", objectFit: "contain", borderRadius: 8 }}
-            onClick={(e) => e.stopPropagation()}
-          />
-          {lightbox.urls.length > 1 && (
-            <div style={{ display: "flex", gap: 16, marginTop: 12 }}>
-              <button
-                onClick={(e) => { e.stopPropagation(); setLightbox(s => s && ({ ...s, index: (s.index - 1 + s.urls.length) % s.urls.length })); }}
-                style={{ background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer" }}
-              >❮</button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setLightbox(s => s && ({ ...s, index: (s.index + 1) % s.urls.length })); }}
-                style={{ background: "transparent", color: "white", fontSize: "2rem", border: "none", cursor: "pointer" }}
-              >❯</button>
-            </div>
-          )}
-          <button
-            onClick={() => setLightbox(null)}
-            style={{ marginTop: 12, background: "white", color: "#000", border: "none", borderRadius: 8, padding: "0.5rem 1rem", fontWeight: 700 }}
-          >
-            Zavřít
-          </button>
-        </div>
-      )}
-    </>
-  );
+      <div className="tile-group">
+        <button className={`tile-button ${selectedType==="běh"?"active":""}`} onClick={()=>setSelectedType("běh")}><img className="run-profile-icon" src="/run-icon-white.png" alt="" /> Běh</button>
+        <button className={`tile-button ${selectedType==="chůze"?"active":""}`} onClick={()=>setSelectedType("chůze")}><Footprints size={24}/> Chůze</button>
+      </div>
+
+      <div className="list-container">
+        {runs.filter(r => (r.type||"běh")===selectedType).map(run => {
+          const images = Array.isArray(run.imageUrls) && run.imageUrls.length ? run.imageUrls : run.imageUrl ? [run.imageUrl] : [];
+          return <ActivityCard key={run.id}
+            run={{...run, km:run.km??0,minuty:run.minuty??0,tempo:run.tempo??0}}
+            nickname={run.nickname || run.email?.split("@")[0] || "Uživatel"}
+            activityType={selectedType}
+            teamName={null}
+            onPhotosClick={(urls)=>setLightbox({urls,index:0})}
+            onDelete={()=>void handleDelete(run.id)}
+          />;
+        })}
+        {runs.filter(r => (r.type||"běh")===selectedType).length===0 && <div className="tile empty-state"><strong>Žádné záznamy</strong><span>Uživatel zatím nemá žádnou aktivitu tohoto typu.</span></div>}
+      </div>
+    </main>
+
+    {lightbox && <div className="admin-lightbox" role="dialog" aria-modal="true" onClick={()=>setLightbox(null)}>
+      <button className="admin-lightbox-close" onClick={()=>setLightbox(null)} aria-label="Zavřít">×</button>
+      <img src={lightbox.urls[lightbox.index]} alt="Fotografie aktivity" onClick={e=>e.stopPropagation()} />
+      {lightbox.urls.length>1 && <>
+        <button className="admin-lightbox-prev" onClick={e=>{e.stopPropagation();setLightbox(s=>s&&({...s,index:(s.index-1+s.urls.length)%s.urls.length}))}} aria-label="Předchozí">‹</button>
+        <button className="admin-lightbox-next" onClick={e=>{e.stopPropagation();setLightbox(s=>s&&({...s,index:(s.index+1)%s.urls.length}))}} aria-label="Další">›</button>
+        <span className="admin-lightbox-count">{lightbox.index+1} / {lightbox.urls.length}</span>
+      </>}
+    </div>}
+  </>;
 }
