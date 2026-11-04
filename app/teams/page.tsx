@@ -129,7 +129,7 @@ export default function TeamsPage() {
         )}
 
         <section className="tile teams-create">
-          <div className="teams-section-heading"><div className="teams-create-icon"><Plus size={22} /></div><div><h2>Vytvořit nový tým</h2><p>Založ tým a pozvi ostatní běžce.</p></div></div>
+          <div className="teams-section-heading"><div><h2>Vytvořit nový tým</h2><p>Založ tým a pozvi ostatní běžce.</p></div></div>
           <div className="teams-create-form">
             <input type="text" placeholder="Zadej název týmu" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
             <button onClick={createTeam} className="tile-button teams-primary-button" disabled={!teamName.trim()}><Plus size={18} /> Vytvořit tým</button>

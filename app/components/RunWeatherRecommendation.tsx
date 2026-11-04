@@ -1,15 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { CloudSun, CloudRain, CloudSnow, Sun, Wind, Footprints, AlertTriangle, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { CloudSun, CloudRain, CloudSnow, Wind, Footprints, AlertTriangle, CheckCircle2 } from "lucide-react";
 
-type WeatherData = {
-  current?: any;
-  hourly?: any[];
-  error?: string;
-};
+type WeatherData = { current?: any; hourly?: any[]; error?: string };
 
-export default function RunWeatherRecommendation() {
+export default function RunWeatherRecommendation({ linkToWeather = true }: { linkToWeather?: boolean }) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -18,6 +15,7 @@ export default function RunWeatherRecommendation() {
     const load = async () => {
       try {
         const response = await fetch("/api/weather", { cache: "no-store" });
+        if (!response.ok) throw new Error("Počasí se nepodařilo načíst.");
         const data = await response.json();
         if (active) setWeather(data);
       } catch {
@@ -26,7 +24,7 @@ export default function RunWeatherRecommendation() {
         if (active) setLoading(false);
       }
     };
-    load();
+    void load();
     const timer = window.setInterval(load, 30 * 60 * 1000);
     return () => { active = false; window.clearInterval(timer); };
   }, []);
@@ -51,33 +49,28 @@ export default function RunWeatherRecommendation() {
   if (loading && !current) {
     title = "Zjišťuji podmínky pro běh";
     advice = "Načítám aktuální počasí pro Dolní Lhotu.";
-    tone = "neutral";
-    Icon = CloudSun;
+    tone = "neutral"; Icon = CloudSun;
   } else if (weather?.error || !current || !Number.isFinite(temperature)) {
     title = "Doporučení není dostupné";
     advice = weather?.error || "Aktuální počasí se nepodařilo načíst.";
-    tone = "neutral";
-    Icon = CloudSun;
+    tone = "neutral"; Icon = CloudSun;
   } else if (icy || heavyRain || strongWind || hot) {
-    title = "Běh raději zvaž";
-    tone = "warning";
-    Icon = AlertTriangle;
+    title = "Běh raději zvaž"; tone = "warning"; Icon = AlertTriangle;
     advice = icy ? "Mrzne a sněží – povrch může klouzat. Zvol opatrnou trasu a vhodnou obuv."
       : heavyRain ? "Déšť může zhoršit viditelnost i povrch cest. Zvaž kratší trasu nebo běh odlož."
       : strongWind ? "Silný vítr může běh výrazně znepříjemnit. Vyhni se otevřeným úsekům."
       : "Je poměrně horko. Zvol volnější tempo, kratší trasu a doplň tekutiny.";
   } else if (snow || rain || rainChance >= 40 || temperature < 3 || temperature > 24 || wind >= 25) {
-    title = "Běhat se dá, ale s opatrností";
+    title = "Běhat se dá, ale s opatrností"; tone = "caution";
+    Icon = snow ? CloudSnow : rain ? CloudRain : Wind;
     advice = snow ? "Sníh může klouzat – obuj boty s dobrou podrážkou a přizpůsob tempo."
       : rain || rainChance >= 40 ? "Počítej s možností deště. Vezmi si vhodnou vrstvu a dávej pozor na kluzký povrch."
       : temperature < 3 ? "Je chladno. Vezmi si rukavice a vrstvy, které odvádějí pot."
       : temperature > 24 ? "Je tepleji. Zvol lehčí tempo a nezapomeň na pití."
       : "Může foukat nebo být chladněji. Přizpůsob oblečení a tempo.";
-    tone = "caution";
-    Icon = snow ? CloudSnow : rain ? CloudRain : Wind;
   }
 
-  return (
+  const content = (
     <section className={`run-weather-recommendation run-weather-${tone}`} aria-live="polite">
       <div className="run-weather-icon"><Icon size={27} /></div>
       <div className="run-weather-copy">
@@ -85,7 +78,9 @@ export default function RunWeatherRecommendation() {
         <strong>{title}</strong>
         <p>{advice}</p>
         {current && <small>{Math.round(temperature)} °C · <span className="run-weather-wind"><Wind size={14} className="wind-icon-animated" /> vítr {Math.round(wind)} km/h</span>{rainChance > 0 ? ` · srážky ${Math.round(rainChance)} %` : ""}</small>}
+        {linkToWeather && <span className="run-weather-more">Podrobná předpověď <span aria-hidden="true">→</span></span>}
       </div>
     </section>
   );
+  return linkToWeather ? <Link href="/weather" className="run-weather-link" aria-label="Otevřít počasí a doporučení pro běh">{content}</Link> : content;
 }

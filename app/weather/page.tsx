@@ -7,6 +7,7 @@ import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import WeatherCard from "../components/WeatherCard";
+import RunWeatherRecommendation from "../components/RunWeatherRecommendation";
 import useThemeLoader from "../lib/useThemeLoader";
 
 export default function WeatherPage() {
@@ -42,6 +43,7 @@ export default function WeatherPage() {
       <main className="container">
         
         <WeatherCard />
+        <RunWeatherRecommendation linkToWeather={false} />
         <p style={{ textAlign: "center", opacity: 0.75, fontSize: "0.85rem" }}>
           Předpověď pro Dolní Lhotu u Ostravy. Data se obnovují automaticky.
         </p>

@@ -1,9 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { db, auth, storage } from "../lib/firebase";
+import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader, { applyTheme } from "../lib/useThemeLoader";
@@ -23,6 +22,8 @@ export default function SettingsPage() {
   const [customColor, setCustomColor] = useState("#36D1DC");
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const [animationsEnabled, setAnimationsEnabled] = useState(true);
+  const [nicknameSaving, setNicknameSaving] = useState(false);
 
   const router = useRouter();
 
@@ -39,7 +40,8 @@ export default function SettingsPage() {
           setAvatarUrl(data.avatarUrl || "");
           setTheme(data.theme || "default");
           setCustomColor(data.customColor || "#36D1DC");
-          applyTheme(data.theme || "default", data.customColor || "#36D1DC");
+          setAnimationsEnabled(data.animationsEnabled !== false);
+          applyTheme(data.theme || "default", data.customColor || "#36D1DC", data.animationsEnabled !== false);
         } else {
           const initialData = {
             id: user.uid,
@@ -47,7 +49,8 @@ export default function SettingsPage() {
             nickname: "",
             avatarUrl: "",
             theme: "default",
-            customColor: "#36D1DC"
+            customColor: "#36D1DC",
+            animationsEnabled: true
           };
           await setDoc(userRef, initialData);
         }
@@ -65,27 +68,48 @@ export default function SettingsPage() {
       avatarUrl,
       theme,
       customColor,
+      animationsEnabled,
       ...newData
     }, { merge: true });
   };
 
   const handleThemeChange = (selectedTheme: string) => {
     setTheme(selectedTheme);
-    applyTheme(selectedTheme, customColor);
+    applyTheme(selectedTheme, customColor, animationsEnabled);
     saveSettings({ theme: selectedTheme });
   };
 
   const handleCustomColorLiveChange = (color: string) => {
     setCustomColor(color);
     setTheme("custom");
-    applyTheme("custom", color);
+    applyTheme("custom", color, animationsEnabled);
   };
 
   const handleCustomColorFinalSave = () => {
-    saveSettings({ theme: "custom", customColor });
+    saveSettings({ theme: "custom", customColor, animationsEnabled });
     setShowColorPicker(false);
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 2000);
+  };
+
+  const handleNicknameSave = async () => {
+    if (!userId) return;
+    setNicknameSaving(true);
+    try {
+      await saveSettings({ nickname: nickname.trim() });
+      setNickname(nickname.trim());
+      setShowNotification(true);
+      window.setTimeout(() => setShowNotification(false), 2000);
+    } catch (error) {
+      console.error("Nepodařilo se uložit přezdívku", error);
+      alert("Přezdívku se nepodařilo uložit. Zkus to prosím znovu.");
+    } finally { setNicknameSaving(false); }
+  };
+
+  const handleAnimationsChange = async (enabled: boolean) => {
+    setAnimationsEnabled(enabled);
+    await applyTheme(theme, customColor, enabled);
+    await saveSettings({ animationsEnabled: enabled });
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,10 +135,13 @@ export default function SettingsPage() {
 
     setAvatarUploading(true);
     try {
-      const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const avatarRef = ref(storage, `avatars/${userId}/${Date.now()}-${safeFileName}`);
-      await uploadBytes(avatarRef, file);
-      const downloadUrl = await getDownloadURL(avatarRef);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "lhota_unsigned");
+      const response = await fetch("https://api.cloudinary.com/v1_1/dvb4jm8cw/image/upload", { method: "POST", body: formData });
+      const result = await response.json();
+      if (!response.ok || !result.secure_url) throw new Error(result.error?.message || "Nahrání obrázku selhalo.");
+      const downloadUrl = result.secure_url;
       setAvatarUrl(downloadUrl);
       await saveSettings({ avatarUrl: downloadUrl });
     } catch (err) {
@@ -157,12 +184,12 @@ export default function SettingsPage() {
             value={nickname}
             placeholder="Uživatelské jméno"
             onChange={(e) => setNickname(e.target.value)}
-            onBlur={() => saveSettings()}
             style={{
               width: "100%", padding: "0.5rem", borderRadius: "10px",
               border: "none", marginTop: "0.2rem"
             }}
           />
+          <button type="button" className="tile-button settings-save-button" onClick={handleNicknameSave} disabled={nicknameSaving}>{nicknameSaving ? "Ukládám…" : "Uložit přezdívku"}</button>
         </div>
 
         <section className="tile settings-avatar">
@@ -183,6 +210,7 @@ export default function SettingsPage() {
         <div className="tile">
           <h3>Nastavení vzhledu</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            <label className="settings-animation-toggle"><span><strong>Animace počasí</strong><small>Efekty deště, sněžení a větru i při vlastním barevném vzhledu.</small></span><input type="checkbox" checked={animationsEnabled} onChange={(e) => handleAnimationsChange(e.target.checked)} /></label>
             <ThemeItem color="linear-gradient(180deg, #36D1DC, #5B86E5)" active={theme === "default"} onClick={() => handleThemeChange("default")} text="Výchozí vzhled" />
             <ThemeItem color="linear-gradient(180deg, #2980b9, #2c3e50)" active={theme === "man"} onClick={() => handleThemeChange("man")} text="Muž" />
             <ThemeItem color="linear-gradient(180deg, #ff7eb3, #ff758c)" active={theme === "woman"} onClick={() => handleThemeChange("woman")} text="Žena" />
@@ -195,7 +223,7 @@ export default function SettingsPage() {
               borderRadius: "10px",
               padding: "0.5rem"
             }}>
-              <div onClick={() => { setShowColorPicker(!showColorPicker); setTheme("custom"); }} style={{
+              <div onClick={() => { setShowColorPicker(!showColorPicker); setTheme("custom"); applyTheme("custom", customColor, animationsEnabled); }} style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
