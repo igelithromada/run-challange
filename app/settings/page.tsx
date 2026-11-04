@@ -218,6 +218,7 @@ export default function SettingsPage() {
             <ThemeItem color="linear-gradient(180deg, #ff7eb3, #ff758c)" active={theme === "woman"} onClick={() => handleThemeChange("woman")} text="Žena" />
             <ThemeItem color="linear-gradient(180deg, #36D1DC, #5B86E5)" active={theme === "auto"} onClick={() => handleThemeChange("auto")} text="Automaticky podle času" />
             <ThemeItem color="linear-gradient(160deg, #263849, #6bc6dc, #f5b94c)" active={theme === "weather"} onClick={() => handleThemeChange("weather")} text="Google Počasí (záloha Open-Meteo)" />
+            <small style={{ opacity: 0.72, lineHeight: 1.4 }}>Google Weather se použije, pokud je na serveru nastavený API klíč. Jinak aplikace automaticky využije Open-Meteo.</small>
 
             <div style={{
               marginTop: "0.7rem",
