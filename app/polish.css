@@ -129,3 +129,14 @@ button { touch-action:manipulation; }
 .custom-picker .react-colorful { width:100% !important; height:180px !important; }
 .custom-picker .tile-button { width:100%; }
 .settings-notice { margin-top:.75rem; padding:.65rem .8rem; border-radius:12px; background:rgba(100,220,150,.14); border:1px solid rgba(120,230,165,.2); font-weight:700; font-size:.85rem; }
+
+.results-section, .results-other { margin-top:1.25rem; }
+.results-section-heading { display:flex; align-items:flex-start; gap:.7rem; margin-bottom:.75rem; }
+.results-section-heading svg { flex:0 0 auto; margin-top:.1rem; }
+.results-section-heading h2 { margin:0; font-size:1.15rem; }
+.results-section-heading p { margin:.2rem 0 0; font-size:.78rem; opacity:.68; }
+.result-my-position { display:grid; gap:.25rem; margin-top:1rem; }
+.results-position-row { display:flex; justify-content:space-between; align-items:center; gap:.8rem; min-height:44px; border-bottom:1px solid rgba(255,255,255,.08); }
+.results-position-row:last-child { border-bottom:0; }
+.results-position-row span { display:flex; align-items:center; gap:.5rem; font-size:.85rem; opacity:.85; }
+.results-position-row strong { text-align:right; }
