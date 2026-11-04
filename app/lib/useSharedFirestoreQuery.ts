@@ -9,6 +9,7 @@ export type SharedQueryState<T> = {
   error: Error | null;
   fromCache: boolean;
   hasPendingWrites: boolean;
+  lastDocument: QueryDocumentSnapshot | null;
 };
 
 type CacheEntry = {
@@ -21,7 +22,8 @@ type CacheEntry = {
 
 const cache = new Map<string, CacheEntry>();
 const emptyState = <T,>(): SharedQueryState<T> => ({
-  data: [], loading: true, error: null, fromCache: true, hasPendingWrites: false, lastDocument: null
+  data: [], loading: true, error: null, fromCache: true,
+  hasPendingWrites: false, lastDocument: null
 });
 
 function trimCache() {
@@ -55,8 +57,9 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
     const current = entry;
     current.refs += 1;
     current.touched = Date.now();
-    current.listeners.add(setState);
-    setState(current.state as SharedQueryState<T>);
+    const notify = (next: SharedQueryState<any>) => setLocal({ key: cacheKey, state: next as SharedQueryState<T> });
+    current.listeners.add(notify);
+    setLocal({ key: cacheKey, state: current.state as SharedQueryState<T> });
 
     if (!current.unsubscribe) {
       current.unsubscribe = onSnapshot(
@@ -68,7 +71,8 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
             loading: false,
             error: null,
             fromCache: snapshot.metadata.fromCache,
-            hasPendingWrites: snapshot.metadata.hasPendingWrites
+            hasPendingWrites: snapshot.metadata.hasPendingWrites,
+            lastDocument: snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null
           };
           current.state = next;
           current.touched = Date.now();
