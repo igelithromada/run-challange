@@ -822,3 +822,21 @@ html[data-animations="false"] .wind-icon-animated { animation: none !important; 
  .activity-metrics > div { padding: .5rem .3rem; }
  .activity-metrics strong { font-size: .78rem; }
 }
+
+
+/* Animace počasí jsou řízené výslovným přepínačem uživatele. */
+html[data-animations="true"][data-weather="rain"] body::before,
+html[data-animations="true"][data-weather="rain-wind"] body::before {
+  animation: weather-rain 1.1s linear infinite !important;
+}
+html[data-animations="true"][data-weather="snow"] body::before,
+html[data-animations="true"][data-weather="snow-wind"] body::before {
+  animation: weather-snow 10s linear infinite !important;
+}
+html[data-animations="false"] body::before { display: none !important; }
+.avatar-upload-error { color: #ffd0d0; overflow-wrap: anywhere; }
+.team-goal-editor { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .45rem; align-items: end; padding: .65rem; border-radius: 12px; background: rgba(255,255,255,.08); }
+.team-goal-editor label { display: flex; flex-direction: column; gap: .3rem; font-size: .75rem; opacity: .9; }
+.team-goal-editor input { width: 100%; min-width: 0; padding: .55rem; border: 1px solid rgba(255,255,255,.18); border-radius: 9px; background: rgba(0,0,0,.2); color: white; font: inherit; }
+.team-goal-save { min-height: 38px; max-width: none; padding: .45rem .6rem; font-size: .78rem; }
+@media(max-width:420px) { .team-goal-editor { grid-template-columns: 1fr; } .team-goal-save { width: 100%; } }
