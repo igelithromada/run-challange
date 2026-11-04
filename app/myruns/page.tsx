@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { collection, query, where, doc, getDoc, deleteDoc, updateDoc, Timestamp } from "firebase/firestore";
+import { collection, query, where, doc, getDoc, deleteDoc, updateDoc, Timestamp, limit, startAfter, getDocs } from "firebase/firestore";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -43,7 +43,7 @@ const formatTime = (minutes: number) => {
 
 export default function MyRunsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
-  const [uid, setUid] = useState("");
+  const [uid, setUid] = useState("");\n  const [olderRuns, setOlderRuns] = useState<RunData[]>([]);\n  const [olderCursor, setOlderCursor] = useState<any>(null);\n  const [loadingOlder, setLoadingOlder] = useState(false);\n  const [hasMore, setHasMore] = useState(true);
   const [profile, setProfile] = useState({ nickname: "", avatarUrl: "" });
 
   const [error, setError] = useState("");
@@ -76,12 +76,26 @@ export default function MyRunsPage() {
     return () => unsubAuth();
   }, [router]);
 
-  const runsQuery = useMemo(() => query(collection(db, "runs"), where("uid", "==", uid || "__no_user__")), [uid]);
+  const runsQuery = useMemo(() => query(collection(db, "runs"), where("uid", "==", uid || "__no_user__"), limit(30)), [uid]);
   const runsState = useSharedFirestoreQuery<RunData>("runs:user:" + (uid || "none"), runsQuery);
-  const runs = useMemo(() => runsState.data.map(run => ({
+  const runs = useMemo(() => Array.from(new Map([...runsState.data, ...olderRuns].map(run => [run.id, run])).values()).map(run => ({
     ...run, km: Number(run.km) || 0, minuty: Number(run.minuty) || 0, tempo: Number(run.tempo) || 0
-  })).sort((a,b) => dateOf(b.timestamp).getTime() - dateOf(a.timestamp).getTime()), [runsState.data]);
+  })).sort((a,b) => dateOf(b.timestamp).getTime() - dateOf(a.timestamp).getTime()), [runsState.data, olderRuns]);
   const loading = runsState.loading;
+  useEffect(() => { if (!runsState.loading && runsState.data.length < 30) setHasMore(false); }, [runsState.loading, runsState.data.length]);
+  const loadOlderRuns = async () => {
+    const cursor = olderCursor || runsState.lastDocument;
+    if (!cursor || loadingOlder || !hasMore || !uid) return;
+    setLoadingOlder(true);
+    try {
+      const next = await getDocs(query(collection(db, "runs"), where("uid", "==", uid), startAfter(cursor), limit(30)));
+      const items = next.docs.map(item => ({ id: item.id, ...item.data() } as RunData));
+      setOlderRuns(previous => [...previous, ...items.filter(item => !previous.some(old => old.id === item.id) && !runsState.data.some(current => current.id === item.id))]);
+      setOlderCursor(next.docs.length ? next.docs[next.docs.length - 1] : cursor);
+      setHasMore(next.docs.length === 30);
+    } catch (err) { console.error("Nepodařilo se načíst starší aktivity", err); setActionError("Starší záznamy se nepodařilo načíst."); }
+    finally { setLoadingOlder(false); }
+  };
   useEffect(() => {
     if (runsState.error) setError("Chyba při načítání dat.");
   }, [runsState.error]);
@@ -206,6 +220,7 @@ export default function MyRunsPage() {
         {showImageUrls.length > 1 && <p>{currentImageIndex + 1} / {showImageUrls.length}</p>}
       </div>}
       {loading && runs.length === 0 && <LoadingSkeleton count={3} />}
+      {hasMore && runs.length >= 30 && <button className="activity-load-more" onClick={loadOlderRuns} disabled={loadingOlder}>{loadingOlder ? "Načítám starší záznamy…" : "Načíst starší záznamy"}</button>}
       {error && <p style={{ color:"red" }}>{error}</p>}
       {!loading && filteredRuns.length === 0 && <div className="tile activity-empty-state"><strong>Zatím tu nic není.</strong><p>Pro zvolené období nemáš žádné záznamy. Zkus jiný filtr nebo přidej novou aktivitu.</p></div>}
     </div>
