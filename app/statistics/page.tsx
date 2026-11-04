@@ -7,7 +7,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
-import { Footprints, Medal, Trophy, Users, UserRound } from "lucide-react";
+import { Footprints, Medal, Trophy, Users, User } from "lucide-react";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import Sidebar from "../components/Sidebar";
 
@@ -135,7 +135,7 @@ export default function StatisticsPage() {
 
         <div className="control-caption">Zobrazit výsledky</div>
         <div className="tile-group">
-          <button className={`tile-button ${view === "já" ? "active" : ""}`} onClick={() => setView("já")}><UserRound size={20}/> Já</button>
+          <button className={`tile-button ${view === "já" ? "active" : ""}`} onClick={() => setView("já")}><User size={20}/> Já</button>
           <button className={`tile-button ${view === "jednotlivci" ? "active" : ""}`} onClick={() => setView("jednotlivci")}><Users size={20}/> Jednotlivci</button>
           <button className={`tile-button ${view === "týmy" ? "active" : ""}`} onClick={() => setView("týmy")}><Users size={20}/> Týmy</button>
         </div>
