@@ -1,75 +1,46 @@
 "use client";
 import React from "react";
+import { Camera, Clock3, Gauge, MapPin } from "lucide-react";
 
 export type ActivityCardRun = {
-  id: string;
-  uid?: string;
-  nickname?: string;
-  email?: string;
-  km: number | string;
-  minuty: number | string;
-  tempo: number | string;
-  timestamp?: { seconds: number };
-  imageUrl?: string;
-  imageUrls?: string[];
-  teamId?: string;
+  id: string; uid?: string; nickname?: string; email?: string;
+  km: number | string; minuty: number | string; tempo: number | string;
+  timestamp?: { seconds: number }; imageUrl?: string; imageUrls?: string[]; teamId?: string;
 };
-
 type Props = {
-  run: ActivityCardRun;
-  nickname: string;
-  avatarUrl?: string;
-  teamName?: string | null;
-  activityType: string;
-  onUserClick?: () => void;
-  onPhotosClick: (images: string[], fallback: string) => void;
+  run: ActivityCardRun; nickname: string; avatarUrl?: string; teamName?: string | null;
+  activityType: string; onUserClick?: () => void; onPhotosClick: (images: string[], fallback: string) => void;
 };
-
 const formatTime = (value: number | string) => {
   const totalSeconds = Math.round(Number(value) * 60);
-  const min = Math.floor(totalSeconds / 60);
-  const sec = totalSeconds % 60;
-  return `${min}′${sec.toString().padStart(2, "0")}″`;
+  return `${Math.floor(totalSeconds / 60)}′${(totalSeconds % 60).toString().padStart(2, "0")}″`;
 };
-
 export default function ActivityCard({ run, nickname, avatarUrl, teamName, activityType, onUserClick, onPhotosClick }: Props) {
   const tempo = Number(run.tempo) || 0;
   const range = activityType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
   const pos = Math.min(100, Math.max(0, ((range.max - tempo) / (range.max - range.min)) * 100));
   const date = run.timestamp?.seconds ? new Date(run.timestamp.seconds * 1000) : null;
   const images = Array.isArray(run.imageUrls) && run.imageUrls.length ? run.imageUrls : run.imageUrl ? [run.imageUrl] : [];
-
   return (
-    <article className="tile list-tile activity-card">
-      <div className="avatar">
-        {avatarUrl ? <img src={avatarUrl} alt={`Avatar uživatele ${nickname}`} /> : nickname.charAt(0).toUpperCase()}
-      </div>
-      <div className="run-meta">
-        {date && <small>{date.toLocaleString("cs-CZ", { hour: "2-digit", minute: "2-digit", year: "numeric", month: "numeric", day: "numeric" })}</small>}
-        {images.length > 0 && (
-          <button type="button" className="run-photo-icon" onClick={() => onPhotosClick(images, run.imageUrl || "")} aria-label="Zobrazit fotografie">
-            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-              <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <path d="M21 15l-5-5L5 21" />
-            </svg>
-          </button>
-        )}
-      </div>
-      <div className="run-info">
-        <div className="run-heading">
-          <span onClick={onUserClick} onKeyDown={(e) => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined} style={{ fontWeight: "bold", color: "white", cursor: onUserClick ? "pointer" : "default" }}>{nickname}</span>
-          {teamName && <span className="activity-team-name">({teamName})</span>}
-        </div>
-        <div className="run-stats">
-          <div className="run-distance">{run.km} km, {formatTime(run.minuty)}</div>
-          <div className="run-pace">
-            <div className="run-pace-label">{formatTime(run.tempo)} /km</div>
-            <div className="activity-pace-bar">
-              <div className="activity-pace-marker" style={{ left: `${pos}%` }} />
-            </div>
+    <article className="tile list-tile activity-card activity-card-modern">
+      <button type="button" className="activity-avatar" onClick={onUserClick} disabled={!onUserClick} aria-label={`Profil uživatele ${nickname}`}>
+        {avatarUrl ? <img src={avatarUrl} alt="" /> : nickname.charAt(0).toUpperCase()}
+      </button>
+      <div className="activity-main">
+        <div className="activity-card-heading">
+          <div className="activity-person">
+            <span onClick={onUserClick} onKeyDown={(e) => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{nickname}</span>
+            {teamName && <small>{teamName}</small>}
           </div>
+          {date && <time dateTime={date.toISOString()}>{date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}
         </div>
+        <div className="activity-metrics">
+          <div><MapPin size={16} /><strong>{run.km} km</strong><small>Vzdálenost</small></div>
+          <div><Clock3 size={16} /><strong>{formatTime(run.minuty)}</strong><small>Čas</small></div>
+          <div><Gauge size={16} /><strong>{formatTime(run.tempo)} /km</strong><small>Tempo</small></div>
+        </div>
+        <div className="activity-pace-track"><span style={{ width: `${pos}%` }} /></div>
+        {images.length > 0 && <button type="button" className="activity-photos-button" onClick={() => onPhotosClick(images, run.imageUrl || "")}><Camera size={16} /> Fotografie ({images.length})</button>}
       </div>
     </article>
   );
