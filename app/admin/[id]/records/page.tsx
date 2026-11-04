@@ -73,6 +73,8 @@ export default function RecordsPage() {
     else if (item === "teams") router.push("/teams");
     else if (item === "settings") router.push("/settings");
     else if (item === "statistics") router.push("/statistics");
+    else if (item === "progress") router.push("/progress");
+    else if (item === "weather") router.push("/weather");
     else if (item === "admin") router.push("/admin");
     else router.push("/");
   };

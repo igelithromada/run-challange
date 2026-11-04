@@ -39,9 +39,8 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
         <div className="activity-metrics">
           <div><MapPin size={16} /><strong>{run.km} km</strong><small>Vzdálenost</small></div>
           <div><Clock3 size={16} /><strong>{formatTime(run.minuty)}</strong><small>Čas</small></div>
-          <div><Gauge size={16} /><strong>{formatTime(run.tempo)} /km</strong><small>Tempo</small></div>
+          <div><Gauge size={16} /><strong>{formatTime(run.tempo)} /km</strong><small>Tempo</small><div className="activity-pace-bar" aria-label="Orientační škála tempa"><span style={{ left: `${pos}%` }} /></div></div>
         </div>
-        <div className="activity-pace-track"><span style={{ width: `${pos}%` }} /></div>
         <div className="activity-card-actions">
           {images.length > 0 && <button type="button" className="activity-photos-button" onClick={() => onPhotosClick(images, run.imageUrl || "")}><Camera size={16} /> Fotografie ({images.length})</button>}
           {onEdit && <button type="button" className="activity-manage-button" onClick={onEdit}><Pencil size={15} /> Upravit</button>}

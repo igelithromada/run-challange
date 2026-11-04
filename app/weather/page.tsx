@@ -32,6 +32,7 @@ export default function WeatherPage() {
     else if (item === "settings") router.push("/settings");
     else if (item === "admin") router.push("/admin");
     else if (item === "weather") router.push("/weather");
+    else if (item === "progress") router.push("/progress");
   };
 
   return (
