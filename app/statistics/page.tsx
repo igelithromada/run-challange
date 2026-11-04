@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import type { User } from "firebase/auth";
-import { collection, query, orderBy, getDocs, where, documentId } from "firebase/firestore";
+import { collection, query, orderBy, getDocs, where, documentId, Timestamp } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
@@ -31,9 +31,9 @@ export default function StatisticsPage() {
     return () => unsubAuth();
   }, [router]);
 
-  const runsQuery = useMemo(() => query(collection(db, "runs"), orderBy("timestamp", "desc")), []);
+  const runsQuery = useMemo(() => {\n    const constraints: any[] = [orderBy("timestamp", "desc")];\n    if (startDate) constraints.unshift(where("timestamp", ">=", Timestamp.fromDate(new Date(startDate + "T00:00:00"))));\n    if (endDate) constraints.unshift(where("timestamp", "<=", Timestamp.fromDate(new Date(endDate + "T23:59:59.999"))));\n    return query(collection(db, "runs"), ...constraints);\n  }, [startDate, endDate]);
   const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
-  const runsState = useSharedFirestoreQuery<any>("runs:statistics:all", runsQuery);
+  const runsState = useSharedFirestoreQuery<any>("runs:statistics:" + (startDate || "all") + ":" + (endDate || "all"), runsQuery);
   const teamsState = useSharedFirestoreQuery<any>("teams:all", teamsQuery);
   const runs = runsState.data;
   const teams = teamsState.data;
