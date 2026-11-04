@@ -409,3 +409,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .admin-muted { color:var(--ui-muted); font-size:.84rem; line-height:1.5; }
 .admin-note { margin:1rem 0 0; padding:.75rem; border-radius:12px; background:rgba(255,255,255,.05); }
 @media(max-width:600px) { .admin-actions { grid-template-columns:1fr; } .admin-action-button { justify-content:flex-start; padding:.7rem .8rem; } }
+
+.app-fallback-page { min-height:100dvh; display:grid; place-items:center; padding:1.25rem; box-sizing:border-box; background:var(--main-gradient,linear-gradient(180deg,#36D1DC,#5B86E5)); color:white; }
+.app-fallback-card { width:min(100%,520px); padding:2rem; text-align:center; border:1px solid var(--ui-border); border-radius:24px; background:rgba(8,20,30,.5); box-shadow:var(--ui-shadow-strong); -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px); }
+.app-fallback-icon { display:block; font-size:2.4rem; margin-bottom:.8rem; }
+.app-fallback-card h1 { margin:.3rem 0; font-size:clamp(1.7rem,7vw,2.25rem); }
+.app-fallback-card p { color:var(--ui-muted); line-height:1.55; }
+.app-fallback-actions { display:flex; justify-content:center; flex-wrap:wrap; gap:.55rem; margin-top:1.1rem; }
+.app-fallback-actions a { text-decoration:none; }
