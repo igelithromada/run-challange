@@ -8,6 +8,7 @@ import {
   doc,
   setDoc,
   getDoc,
+  updateDoc,
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -22,6 +23,7 @@ export default function TeamsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [joinedTeam, setJoinedTeam] = useState<string | null>(null);
   const [teamName, setTeamName] = useState("");
+  const [goalDraft, setGoalDraft] = useState<Record<string,string>>({});
   const [user, setUser] = useState<any>(null);
 
   const router = useRouter();
@@ -75,6 +77,21 @@ export default function TeamsPage() {
     setJoinedTeam(null);
     if (user) {
       await setDoc(doc(db, "users", user.uid), { teamId: null, joinedTeam: null }, { merge: true });
+    }
+  };
+
+  const saveTeamGoal = async (teamId: string, currentGoal: number) => {
+    const value = Number(goalDraft[teamId] ?? currentGoal ?? 500);
+    if (!Number.isFinite(value) || value < 1 || value > 100000) {
+      alert("Zadej měsíční cíl od 1 do 100 000 km.");
+      return;
+    }
+    try {
+      await updateDoc(doc(db, "teams", teamId), { monthlyGoalKm: value });
+      setGoalDraft(previous => ({ ...previous, [teamId]: String(value) }));
+    } catch (error) {
+      console.error("Nepodařilo se uložit týmovou výzvu", error);
+      alert("Cíl týmové výzvy se nepodařilo uložit.");
     }
   };
 
@@ -138,6 +155,10 @@ export default function TeamsPage() {
                   {joinedTeam === team.id && <span className="team-member-label">Tvůj tým</span>}
                 </div>
                 <h3>{team.name}</h3>
+                {user?.uid === team.createdBy && <div className="team-goal-editor">
+                  <label>Měsíční výzva týmu (km)<input type="number" min="1" max="100000" value={goalDraft[team.id] ?? String(team.monthlyGoalKm || 500)} onChange={e => setGoalDraft(previous => ({ ...previous, [team.id]: e.target.value }))} /></label>
+                  <button type="button" className="tile-button team-goal-save" onClick={() => saveTeamGoal(team.id, Number(team.monthlyGoalKm) || 500)}>Uložit výzvu</button>
+                </div>}
                 <div className="team-card-actions">
                   {joinedTeam === team.id ? (
                     <button onClick={leaveTeam} className="tile-button team-action-button"><DoorOpen size={18} /> Odejít z týmu</button>
