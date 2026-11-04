@@ -15,11 +15,9 @@ import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import useThemeLoader from "../lib/useThemeLoader";
 import { Plus, DoorOpen, Trash2 } from "lucide-react";
 
 export default function TeamsPage() {
-  useThemeLoader();
 
   const [menuVisible, setMenuVisible] = useState(false);
   const [teams, setTeams] = useState<any[]>([]);
