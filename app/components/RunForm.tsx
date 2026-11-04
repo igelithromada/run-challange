@@ -88,7 +88,7 @@ export default function RunForm({ type }: { type: string }) {
 
   return (
     <div style={{ textAlign: "center", fontFamily: "'Poppins', sans-serif", marginTop: "0rem" }}>
-      {!showForm && <button onClick={() => { reset(); setShowForm(true); }} style={buttonStyle}>➕ Přidat nový záznam</button>}
+      {!showForm && <button onClick={() => { reset(); setShowForm(true); }} style={buttonStyle}>➕ Přidat {type}</button>}
       {showForm && (
         <div className="run-form-panel">
           <label className="run-form-field">Vzdálenost (km)
@@ -118,7 +118,7 @@ export default function RunForm({ type }: { type: string }) {
           {uploadStatus && <p className="run-form-status">{uploadStatus}</p>}
           <div className="run-form-actions">
             <button onClick={() => { setShowForm(false); reset(); }} style={buttonStyle} disabled={saving}>Zavřít</button>
-            <button onClick={handleSubmit} style={{ ...buttonStyle, background: "#eee", color: "#333", opacity: saving ? .6 : 1 }} disabled={saving}>{saving ? "Ukládám…" : "Uložit záznam"}</button>
+            <button onClick={handleSubmit} style={{ ...buttonStyle, background: "#eee", color: "#333", opacity: saving ? .6 : 1 }} disabled={saving}>{saving ? "Ukládám…" : "Uložit " + type}</button>
           </div>
         </div>
       )}

@@ -37,10 +37,10 @@ export default function SettingsPage() {
           const data = userDoc.data();
           setNickname(data.nickname || "");
           setAvatarUrl(data.avatarUrl || "");
-          setTheme(data.theme || "default");
+          setTheme(data.theme === "weather" ? "default" : (data.theme || "default"));
           setCustomColor(data.customColor || "#36D1DC");
           setAnimationsEnabled(data.animationsEnabled !== false);
-          applyTheme(data.theme || "default", data.customColor || "#36D1DC", data.animationsEnabled !== false);
+          applyTheme(data.theme === "weather" ? "default" : (data.theme || "default"), data.customColor || "#36D1DC", data.animationsEnabled !== false);
         } else {
           const initialData = {
             id: user.uid,
@@ -141,11 +141,11 @@ export default function SettingsPage() {
       const result = await response.json();
       if (!response.ok || !result.secure_url) throw new Error(result.error?.message || "Nahrání obrázku selhalo.");
       const downloadUrl = result.secure_url;
+      await setDoc(doc(db, "users", userId), { avatarUrl: downloadUrl }, { merge: true });
       setAvatarUrl(downloadUrl);
-      await saveSettings({ avatarUrl: downloadUrl });
     } catch (err) {
       console.error("Chyba při nahrávání avataru:", err);
-      alert("Avatar se nepodařilo uložit. Zkus to prosím znovu.");
+      alert(err instanceof Error ? "Avatar se nepodařilo uložit: " + err.message : "Avatar se nepodařilo uložit. Zkus to prosím znovu.");
     } finally {
       setAvatarUploading(false);
       input.value = "";
@@ -216,9 +216,6 @@ export default function SettingsPage() {
             <ThemeItem color="linear-gradient(180deg, #36D1DC, #5B86E5)" active={theme === "default"} onClick={() => handleThemeChange("default")} text="Výchozí vzhled" />
             <ThemeItem color="linear-gradient(180deg, #2980b9, #2c3e50)" active={theme === "man"} onClick={() => handleThemeChange("man")} text="Muž" />
             <ThemeItem color="linear-gradient(180deg, #ff7eb3, #ff758c)" active={theme === "woman"} onClick={() => handleThemeChange("woman")} text="Žena" />
-            <ThemeItem color="linear-gradient(180deg, #36D1DC, #5B86E5)" active={theme === "auto"} onClick={() => handleThemeChange("auto")} text="Automaticky podle času" />
-            <ThemeItem color="linear-gradient(160deg, #263849, #6bc6dc, #f5b94c)" active={theme === "weather"} onClick={() => handleThemeChange("weather")} text="Google Počasí (záloha Open-Meteo)" />
-            <small style={{ opacity: 0.72, lineHeight: 1.4 }}>Google Weather se použije, pokud je na serveru nastavený API klíč. Jinak aplikace automaticky využije Open-Meteo.</small>
 
             <div style={{
               marginTop: "0.7rem",

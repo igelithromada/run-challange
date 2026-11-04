@@ -29,7 +29,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
         {avatarUrl ? <img src={cloudinaryImageUrl(avatarUrl, 128)} alt="" loading="lazy" decoding="async" /> : nickname.charAt(0).toUpperCase()}
       </button>
       <div className="activity-main">
-        <div className="activity-card-heading">
+        <div className="activity-card-heading activity-card-meta">
           <div className="activity-person">
             <span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{nickname}</span>
             {teamName && <small>{teamName}</small>}
