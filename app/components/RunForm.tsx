@@ -1,247 +1,118 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { collection, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore";
 import { db, auth } from "../lib/firebase";
+
+const uploadToCloudinary = async (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "lhota_unsigned");
+  const res = await fetch("https://api.cloudinary.com/v1_1/dvb4jm8cw/image/upload", { method: "POST", body: formData });
+  if (!res.ok) throw new Error("Chyba při nahrávání fotografie.");
+  const data = await res.json();
+  return data.secure_url as string;
+};
+const localDateTime = () => {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+const formatDuration = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
 export default function RunForm({ type }: { type: string }) {
   const [showForm, setShowForm] = useState(false);
   const [km, setKm] = useState("");
-  const [minuty, setMinuty] = useState("");
-  const [sekundy, setSekundy] = useState("");
+  const [duration, setDuration] = useState("");
+  const [activityDate, setActivityDate] = useState(localDateTime);
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
 
-  const uploadToCloudinary = async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "lhota_unsigned");
+  const previews = useMemo(() => files.map(file => ({ file, url: URL.createObjectURL(file) })), [files]);
+  useEffect(() => () => previews.forEach(item => URL.revokeObjectURL(item.url)), [previews]);
 
-    const res = await fetch("https://api.cloudinary.com/v1_1/dvb4jm8cw/image/upload", {
-      method: "POST",
-      body: formData
-    });
+  const parsedDuration = (() => {
+    const match = duration.trim().match(/^(\d{1,4}):([0-5]?\d)$/);
+    return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+  })();
+  const pace = Number(km) > 0 && parsedDuration !== null ? parsedDuration / Number(km) : null;
 
-    if (!res.ok) throw new Error("Chyba při nahrávání na Cloudinary");
-    const data = await res.json();
-    return data.secure_url;
+  const reset = () => {
+    setKm(""); setDuration(""); setFiles([]); setActivityDate(localDateTime()); setError(""); setUploadStatus("");
   };
 
   const handleSubmit = async () => {
+    if (saving) return;
     const kmVal = Number(km);
-    const minVal = Number(minuty);
-    const secVal = Number(sekundy);
-
-    if (!km || !minuty || sekundy === "") {
-      setError("Vyplňte prosím všechny údaje.");
+    if (!km.trim() || !Number.isFinite(kmVal) || kmVal <= 0 || parsedDuration === null || parsedDuration <= 0) {
+      setError("Zadej platnou vzdálenost a čas ve formátu minuty:sekundy (např. 32:45).");
       return;
     }
-
-    if (
-      !Number.isFinite(kmVal) ||
-      !Number.isInteger(minVal) ||
-      !Number.isInteger(secVal) ||
-      kmVal <= 0 ||
-      minVal < 0 ||
-      secVal < 0 ||
-      secVal >= 60
-    ) {
-      setError("Zadejte platné hodnoty. Sekundy 0–59, celé minuty 0+, km > 0.");
-      return;
+    if (!activityDate || Number.isNaN(new Date(activityDate).getTime())) {
+      setError("Zkontroluj datum a čas aktivity."); return;
     }
-
-    const uid = auth.currentUser?.uid;
-    if (!uid) {
-      setError("Pro uložení záznamu se nejprve přihlas.");
-      return;
+    if (files.length > 6 || files.some(file => !file.type.startsWith("image/") || file.size > 10 * 1024 * 1024)) {
+      setError("Vyber maximálně 6 obrázků, každý do 10 MB."); return;
     }
+    const user = auth.currentUser;
+    if (!user) { setError("Pro uložení záznamu se nejprve přihlas."); return; }
 
+    setSaving(true); setError(""); setSuccess("");
     try {
-      let imageUrls: string[] = [];
-
-      if (files.length > 0) {
-        for (let file of files) {
-          const url = await uploadToCloudinary(file);
-          imageUrls.push(url);
-        }
+      const imageUrls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        setUploadStatus(`Nahrávám fotografie ${i + 1}/${files.length}…`);
+        imageUrls.push(await uploadToCloudinary(files[i]));
       }
-
-      let avatarUrl = "";
-      let teamId = null;
-
-      const userDoc = await getDoc(doc(db, "users", uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        avatarUrl = userData.avatarUrl || "";
-        teamId = userData.teamId || userData.joinedTeam || null;
-      }
-
-      const totalMinutes = minVal + secVal / 60;
-
+      setUploadStatus("Ukládám aktivitu…");
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      const userData = userDoc.exists() ? userDoc.data() : {};
       await addDoc(collection(db, "runs"), {
-        uid: uid,
-        email: auth.currentUser?.email,
-        avatarUrl,
-        km: kmVal,
-        minuty: totalMinutes,
-        tempo: (totalMinutes / kmVal).toFixed(2),
-        type,
-        timestamp: serverTimestamp(),
-        imageUrls,
-        teamId
+        uid: user.uid, email: user.email, avatarUrl: userData.avatarUrl || "",
+        km: kmVal, minuty: parsedDuration / 60, tempo: (parsedDuration / 60 / kmVal).toFixed(2),
+        type, timestamp: new Date(activityDate), imageUrls,
+        teamId: userData.teamId || userData.joinedTeam || null
       });
-
-      setKm(""); setMinuty(""); setSekundy(""); setFiles([]);
-      setError("");
+      reset(); setShowForm(false);
       setSuccess(`${type[0].toUpperCase() + type.slice(1)} byl úspěšně uložen.`);
-      setTimeout(() => setSuccess(""), 3000);
-      setShowForm(false);
-
     } catch (err) {
-      console.error(err);
-      setError("Chyba při ukládání záznamu.");
-    }
+      console.error(err); setError(err instanceof Error ? err.message : "Chyba při ukládání záznamu.");
+    } finally { setSaving(false); setUploadStatus(""); }
   };
 
   return (
     <div style={{ textAlign: "center", fontFamily: "'Poppins', sans-serif", marginTop: "0rem" }}>
-      {!showForm && (
-        <button
-          onClick={() => setShowForm(true)}
-          style={buttonStyle}
-          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
-          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-        >
-          ➕ Přidat nový záznam
-        </button>
-      )}
-
+      {!showForm && <button onClick={() => { reset(); setShowForm(true); }} style={buttonStyle}>➕ Přidat nový záznam</button>}
       {showForm && (
-        <div style={{
-          maxWidth: "400px",
-          margin: "0 auto",
-          width: "100%",
-          padding: "0 1rem",
-          boxSizing: "border-box",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center"
-        }}>
-          <input
-            type="number"
-            min="0.1"
-            placeholder="Kilometry"
-            value={km}
-            onChange={(e) => setKm(e.target.value)}
-            style={inputStyle}
-          />
-          <input
-            type="number"
-            min="1"
-            placeholder="Minuty"
-            value={minuty}
-            onChange={(e) => setMinuty(e.target.value)}
-            style={inputStyle}
-          />
-          <input
-            type="number"
-            min="0"
-            max="59"
-            placeholder="Sekundy"
-            value={sekundy}
-            onChange={(e) => setSekundy(e.target.value)}
-            style={inputStyle}
-          />
-
-          <label style={{
-            ...inputStyle,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "10px",
-            cursor: "pointer",
-            marginTop: "10px"
-          }}>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => setFiles(Array.from(e.target.files || []))}
-              style={{ display: "none" }}
-            />
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#333" strokeWidth="1.5"
-              strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-              <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <path d="M21 15l-5-5L5 21" />
-            </svg>
-            <span style={{ fontSize: "1rem", color: "#333" }}>
-              {files.length > 0 ? `${files.length} souborů` : "Přidat soubory"}
-            </span>
+        <div className="run-form-panel">
+          <label className="run-form-field">Vzdálenost (km)
+            <input type="number" min="0.1" step="0.01" inputMode="decimal" placeholder="Např. 5,2" value={km} onChange={e => setKm(e.target.value)} style={inputStyle} />
           </label>
-
-          <div style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: "12px",
-            marginTop: "20px",
-            width: "100%"
-          }}>
-            <button
-              onClick={() => setShowForm(false)}
-              style={{ ...buttonStyle, flex: 1 }}
-              onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
-              onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-            >
-              Zavřít
-            </button>
-
-            <button
-              onClick={handleSubmit}
-              style={{
-                ...buttonStyle,
-                background: "#eee",
-                color: "#333",
-                flex: 2
-              }}
-            >
-              Uložit záznam
-            </button>
+          <label className="run-form-field">Celkový čas (minuty:sekundy)
+            <input type="text" inputMode="numeric" placeholder="Např. 32:45" value={duration} onChange={e => setDuration(e.target.value.replace(/[^0-9:]/g, "").slice(0, 7))} style={inputStyle} />
+          </label>
+          {pace !== null && pace > 0 && <div className="run-form-pace">Vypočítané tempo <strong>{formatDuration(Math.round(pace))} /km</strong></div>}
+          <label className="run-form-field">Datum a čas aktivity
+            <input type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} style={inputStyle} />
+          </label>
+          <label className="run-form-upload">
+            <span>📷 {files.length ? `Vybráno fotografií: ${files.length}` : "Přidat fotografie (max. 6)"}</span>
+            <input type="file" accept="image/*" multiple onChange={e => setFiles(Array.from(e.target.files || []).slice(0, 6))} />
+          </label>
+          {previews.length > 0 && <div className="run-form-previews">{previews.map((item, index) => <div key={item.url}><img src={item.url} alt={`Náhled ${index + 1}`} /><button type="button" onClick={() => setFiles(current => current.filter(file => file !== item.file))} aria-label="Odebrat fotografii">×</button></div>)}</div>}
+          {uploadStatus && <p className="run-form-status">{uploadStatus}</p>}
+          <div className="run-form-actions">
+            <button onClick={() => { setShowForm(false); reset(); }} style={buttonStyle} disabled={saving}>Zavřít</button>
+            <button onClick={handleSubmit} style={{ ...buttonStyle, background: "#eee", color: "#333", opacity: saving ? .6 : 1 }} disabled={saving}>{saving ? "Ukládám…" : "Uložit záznam"}</button>
           </div>
         </div>
       )}
-
-      {error && <div style={{ color: "red", marginTop: "10px" }}>{error}</div>}
+      {error && <div style={{ color: "#ffb4b4", marginTop: "10px" }}>{error}</div>}
       {success && <div style={{ color: "lightgreen", marginTop: "10px" }}>{success}</div>}
     </div>
   );
 }
 
-const inputStyle: React.CSSProperties = {
-  margin: "10px 0",
-  padding: "10px 16px",
-  width: "100%",
-  border: "1px solid #ddd",
-  borderRadius: "10px",
-  fontSize: "1rem",
-  color: "#333",
-  backgroundColor: "white",
-  boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-  outline: "none",
-  transition: "all 0.3s",
-  boxSizing: "border-box"
-};
-
-const buttonStyle: React.CSSProperties = {
-  padding: "12px 20px",
-  background: "rgba(255,255,255,0.34)",
-  color: "white",
-  fontWeight: 600,
-  border: "none",
-  borderRadius: "12px",
-  cursor: "pointer",
-  fontSize: "1rem",
-  boxShadow: "0 4px 12px rgba(0,0,0,0.22)",
-  transition: "all 0.3s"
-};
+const inputStyle: React.CSSProperties = { margin: "6px 0 12px", padding: "11px 14px", width: "100%", border: "1px solid #ddd", borderRadius: "10px", fontSize: "1rem", color: "#333", backgroundColor: "white", boxShadow: "0 2px 5px rgba(0,0,0,0.1)", outline: "none", boxSizing: "border-box" };
+const buttonStyle: React.CSSProperties = { padding: "12px 20px", background: "rgba(255,255,255,0.34)", color: "white", fontWeight: 600, border: "none", borderRadius: "12px", cursor: "pointer", fontSize: "1rem", boxShadow: "0 4px 12px rgba(0,0,0,0.22)", transition: "all 0.3s" };
