@@ -1,9 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { db, auth, storage } from "../lib/firebase";
+import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import useThemeLoader, { applyTheme } from "../lib/useThemeLoader";
