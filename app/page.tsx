@@ -15,7 +15,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "./lib/firebase";
 import Navbar from "./components/Navbar";
-import { Footprints, PersonStanding } from "lucide-react";
+import { Footprints } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import RunForm from "./components/RunForm";
 import ActivityCard from "./components/ActivityCard";
