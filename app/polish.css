@@ -1,0 +1,106 @@
+/* Final visual polish – Dolní Lhota v pohybu */
+:root { --ui-gap: .65rem; --ui-radius: 16px; }
+
+/* One consistent stat tile */
+.activity-summary-grid, .stat-summary-grid {
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:.75rem !important;
+  width:100%;
+}
+.activity-summary-grid > .tile, .stat-summary-grid > .tile {
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:flex-start !important;
+  justify-content:center !important;
+  gap:.3rem !important;
+  min-height:112px !important;
+  margin:0 !important;
+  padding:1rem !important;
+  text-align:left !important;
+}
+.activity-summary-grid > .tile::first-line, .stat-summary-grid > .tile::first-line { font-weight:600; }
+.activity-summary-grid > .tile br, .stat-summary-grid > .tile br { display:none; }
+.activity-summary-grid > .tile br + *, .stat-summary-grid > .tile br + * { margin-top:.15rem; }
+.activity-summary-grid > .tile, .stat-summary-grid > .tile { font-size:.9rem; }
+.activity-summary-grid > .tile > :not(br), .stat-summary-grid > .tile > :not(br) { font-size:1.35rem; font-weight:800; }
+
+/* Hide duplicated page heading where the navbar already carries the page title. */
+.progress-header h1 { position:absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0,0,0,0) !important; white-space:nowrap !important; border:0 !important; }
+.admin-header h1 { position:absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0,0,0,0) !important; white-space:nowrap !important; border:0 !important; }
+
+/* Calendar legend must match the actual light -> dark scale. */
+.progress-calendar-legend i:nth-of-type(1) { background:rgba(140,220,155,.35) !important; }
+.progress-calendar-legend i:nth-of-type(2) { background:rgba(140,220,155,.55) !important; }
+.progress-calendar-legend i:nth-of-type(3) { background:rgba(140,220,155,.75) !important; }
+.progress-calendar-legend i:nth-of-type(4) { background:#8cdb9b !important; }
+
+/* Modern record icons */
+.progress-record-grid > div > span {
+  display:grid !important; place-items:center !important;
+  width:42px !important; height:42px !important;
+  border-radius:13px !important;
+  background:rgba(255,255,255,.1) !important;
+  font-size:0 !important;
+}
+.progress-record-grid > div > span::before { font-family:"LucideIcons"; }
+.progress-record-grid > div:nth-child(1) > span::before { content:"⌁"; font-size:1.35rem; }
+.progress-record-grid > div:nth-child(2) > span::before { content:"ϟ"; font-size:1.35rem; }
+
+/* Results podium */
+.results-podium { display:grid; gap:.7rem; list-style:none; padding:0; margin:0; }
+.results-podium-item {
+  display:grid !important;
+  grid-template-columns:42px 44px minmax(0,1fr) auto !important;
+  align-items:center !important;
+  gap:.7rem !important;
+  min-width:0 !important;
+  padding:.8rem .9rem !important;
+  margin:0 !important;
+  border:1px solid rgba(255,255,255,.13) !important;
+  border-radius:16px !important;
+  background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(0,0,0,.18)) !important;
+}
+.results-podium-item.rank-1 { border-color:rgba(255,215,90,.55) !important; }
+.results-podium-item.rank-2 { border-color:rgba(210,220,230,.4) !important; }
+.results-podium-item.rank-3 { border-color:rgba(205,127,50,.45) !important; }
+.results-rank-icon { width:38px; height:38px; border-radius:12px; display:grid; place-items:center; background:rgba(255,255,255,.1); }
+.results-rank-icon svg { width:21px; height:21px; }
+.results-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700; }
+.results-value { font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.results-other { margin-top:1.5rem !important; }
+
+/* Weather: recommendation after forecast, not before it. */
+.weather-page .run-weather-recommendation { margin-top:1.25rem; }
+
+/* Admin */
+.admin-user-avatar img, .admin-detail-avatar img { width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+.admin-status-badge { padding:.25rem .5rem; border-radius:999px; font-size:.68rem; font-weight:800; background:rgba(255,255,255,.1); }
+.admin-status-badge.blocked { color:#ffd0d0; background:rgba(190,65,65,.2); border:1px solid rgba(255,130,130,.25); }
+.admin-action-danger { color:#ffd4d4 !important; background:rgba(180,55,55,.15) !important; border-color:rgba(255,130,130,.25) !important; }
+.admin-action-warning { color:#ffe5a8 !important; background:rgba(180,130,45,.14) !important; border-color:rgba(255,210,100,.25) !important; }
+
+/* Consistent controls */
+button, input, select { -webkit-tap-highlight-color:transparent; }
+button { touch-action:manipulation; }
+.tile-button, .admin-action-button, .date-clear { min-height:44px; }
+.centered-title { text-wrap:balance; }
+
+/* Mobile overflow */
+.container, .tile, .list-container { min-width:0; max-width:100%; }
+@media (max-width:520px) {
+  .activity-summary-grid, .stat-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  .activity-summary-grid > .tile, .stat-summary-grid > .tile { min-height:98px !important; padding:.8rem !important; }
+  .activity-summary-grid > .tile > :not(br), .stat-summary-grid > .tile > :not(br) { font-size:1.12rem; }
+  .results-podium-item { grid-template-columns:34px 40px minmax(0,1fr) auto !important; gap:.5rem !important; padding:.7rem !important; }
+  .results-value { font-size:.86rem; }
+}
+@media (max-width:360px) {
+  .activity-summary-grid, .stat-summary-grid { grid-template-columns:1fr !important; }
+}
+
+/* Accessible focus */
+:where(button,a,input,select):focus-visible {
+  outline:2px solid rgba(255,255,255,.9);
+  outline-offset:2px;
+}
