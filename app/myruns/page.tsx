@@ -6,7 +6,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
-import { Footprints, PersonStanding } from "lucide-react";
+import { Footprints } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import ActivityCard from "../components/ActivityCard";
 import LoadingSkeleton from "../components/LoadingSkeleton";
@@ -178,7 +178,7 @@ export default function MyRunsPage() {
     <div className="container">
       <div className="control-caption">Typ aktivity</div>
       <div className="tile-group">
-        <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}><PersonStanding size={26} strokeWidth={2.5} aria-hidden="true" /> Běh</button>
+        <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}><img className="run-profile-icon" src="/run-icon-white.png" alt="" aria-hidden="true" /> Běh</button>
         <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}><Footprints size={25} strokeWidth={2.8} /> Chůze</button>
       </div>
       <div className="control-caption">Rychlý filtr období</div>
