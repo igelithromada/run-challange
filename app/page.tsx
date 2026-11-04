@@ -122,7 +122,7 @@ export default function Page() {
 
   const handleSelect = (item: string) => {
     setMenuVisible(false);
-    if (item === "logout") signOut(auth).then(() => router.push("/login"));
+    if (item === "logout" && window.confirm("Opravdu se chceš odhlásit?")) signOut(auth).then(() => router.push("/login"));
     else if (item === "myrun") router.push("/myruns");
     else if (item === "teams") router.push("/teams");
     else if (item === "settings") router.push("/settings");
