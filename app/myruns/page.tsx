@@ -43,7 +43,11 @@ const formatTime = (minutes: number) => {
 
 export default function MyRunsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
-  const [uid, setUid] = useState("");\n  const [olderRuns, setOlderRuns] = useState<RunData[]>([]);\n  const [olderCursor, setOlderCursor] = useState<any>(null);\n  const [loadingOlder, setLoadingOlder] = useState(false);\n  const [hasMore, setHasMore] = useState(true);
+  const [uid, setUid] = useState("");
+  const [olderRuns, setOlderRuns] = useState<RunData[]>([]);
+  const [olderCursor, setOlderCursor] = useState<any>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [profile, setProfile] = useState({ nickname: "", avatarUrl: "" });
 
   const [error, setError] = useState("");
