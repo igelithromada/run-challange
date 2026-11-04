@@ -22,6 +22,9 @@ export default function TeamsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [joinedTeam, setJoinedTeam] = useState<string | null>(null);
   const [teamName, setTeamName] = useState("");
+  const [challengeGoal, setChallengeGoal] = useState("500");
+  const [challengeSaving, setChallengeSaving] = useState(false);
+  const [challengeMessage, setChallengeMessage] = useState("");
   const [user, setUser] = useState<any>(null);
 
   const router = useRouter();
@@ -46,12 +49,19 @@ export default function TeamsPage() {
   const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
   const teamsState = useSharedFirestoreQuery<any>("teams:all", teamsQuery);
   const teams = teamsState.data;
+  const currentTeam = teams.find((team: any) => team.id === joinedTeam);
+  const isTeamOwner = !!currentTeam && currentTeam.createdBy === user?.uid;
+
+  useEffect(() => {
+    if (currentTeam) setChallengeGoal(String(Number(currentTeam.challengeGoalKm) || 500));
+  }, [joinedTeam, currentTeam?.challengeGoalKm]);
 
   const createTeam = async () => {
     if (!teamName.trim() || !user) return;
     const newTeam = await addDoc(collection(db, "teams"), {
       name: teamName.trim(),
       createdBy: user.uid,
+      challengeGoalKm: Number(challengeGoal) > 0 ? Number(challengeGoal) : 500,
     });
     await setDoc(doc(db, "users", user.uid), {
       teamId: newTeam.id,
@@ -59,6 +69,24 @@ export default function TeamsPage() {
     }, { merge: true });
     setJoinedTeam(newTeam.id);
     setTeamName("");
+  };
+
+  const saveChallengeGoal = async () => {
+    const value = Number(challengeGoal.replace(",", "."));
+    if (!joinedTeam || !isTeamOwner || !Number.isFinite(value) || value <= 0 || value > 100000) {
+      setChallengeMessage("Zadej platný cíl od 0,1 do 100 000 km.");
+      return;
+    }
+    setChallengeSaving(true);
+    setChallengeMessage("");
+    try {
+      await setDoc(doc(db, "teams", joinedTeam), { challengeGoalKm: value }, { merge: true });
+      setChallengeGoal(String(value));
+      setChallengeMessage("Cíl týmové výzvy byl uložen.");
+    } catch (error) {
+      console.error("Nepodařilo se uložit cíl týmové výzvy", error);
+      setChallengeMessage("Cíl se nepodařilo uložit. Zkus to znovu.");
+    } finally { setChallengeSaving(false); }
   };
 
   const joinTeam = async (teamId: string) => {
@@ -130,6 +158,19 @@ export default function TeamsPage() {
             <button onClick={createTeam} className="tile-button teams-primary-button" disabled={!teamName.trim()}><Plus size={18} /> Vytvořit tým</button>
           </div>
         </section>
+
+        {joinedTeam && currentTeam && (
+          <section className="tile teams-challenge-settings">
+            <div><h2>Měsíční týmová výzva</h2><p>Nastavte si společný cíl v kilometrech. Výsledek se zobrazí v Mém progresu.</p></div>
+            {isTeamOwner ? (
+              <div className="teams-challenge-form">
+                <label>Cílová vzdálenost (km)<input type="number" min="0.1" max="100000" step="1" value={challengeGoal} onChange={e => setChallengeGoal(e.target.value)} /></label>
+                <button className="tile-button teams-primary-button" onClick={saveChallengeGoal} disabled={challengeSaving}>{challengeSaving ? "Ukládám…" : "Uložit cíl"}</button>
+              </div>
+            ) : <p className="teams-challenge-current">Aktuální cíl: <strong>{Number(currentTeam.challengeGoalKm) || 500} km</strong>. Měnit ho může zakladatel týmu.</p>}
+            {challengeMessage && <small className="teams-challenge-message" role="status">{challengeMessage}</small>}
+          </section>
+        )}
 
         <section className="teams-list-section">
           <div className="teams-list-heading"><h2>Dostupné týmy</h2><span className="teams-count">{teams.length}</span></div>
