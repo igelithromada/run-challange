@@ -34,7 +34,7 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
             <Icon size={22} strokeWidth={2} /><span>{label}</span>
           </button>
         ))}
-        <button type="button" className="site-sidebar-item site-sidebar-logout" onClick={() => onSelect("logout")}>
+        <button type="button" className="site-sidebar-item site-sidebar-logout" onClick={() => { if (window.confirm("Opravdu se chceš odhlásit?")) onSelect("logout"); }}>
           <LogOut size={22} /><span>Odhlásit</span>
         </button>
         <button type="button" className="site-sidebar-item sidebar-close" onClick={onClose}>
