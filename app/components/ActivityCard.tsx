@@ -31,7 +31,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
         </button>
         <div className="activity-person">
           <span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{nickname}</span>
-          {teamName && <small>{teamName}</small>}
+          {teamName && <small><b>Tým</b> · {teamName}</small>}
         </div>
         {date && <time className="activity-date" dateTime={date.toISOString()}>{date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}
       </header>
