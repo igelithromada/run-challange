@@ -5,7 +5,6 @@ import {
   query,
   orderBy,
   limit,
-  onSnapshot,
   doc,
   getDocs,
   documentId,
@@ -27,7 +26,6 @@ import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
 
 export default function Page() {
   const [menuVisible, setMenuVisible] = useState(false);\n  const [olderRuns, setOlderRuns] = useState<RunData[]>([]);\n  const [olderCursor, setOlderCursor] = useState<any>(null);\n  const [loadingOlder, setLoadingOlder] = useState(false);\n  const [hasMore, setHasMore] = useState(true);
-  const [runs, setRuns] = useState<RunData[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [selectedType, setSelectedType] = useState("běh");
   const [showImages, setShowImages] = useState<string[] | null>(null);
