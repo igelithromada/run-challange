@@ -14,7 +14,7 @@ function readThemeCache(): ThemeCache {
     if (!raw) return defaults;
     const value = JSON.parse(raw);
     return {
-      theme: typeof value.theme === "string" ? value.theme : defaults.theme,
+      theme: typeof value.theme === "string" ? (value.theme === "weather" ? "default" : value.theme) : defaults.theme,
       customColor: typeof value.customColor === "string" ? value.customColor : defaults.customColor,
       animationsEnabled: value.animationsEnabled !== false
     };
@@ -37,90 +37,10 @@ export default function useThemeLoader() {
         if (!active || !userDoc.exists()) return;
         const data = userDoc.data();
         userData = {
-          theme: data.theme || "default",
+          theme: data.theme === "weather" ? "default" : (data.theme || "default"),
           customColor: data.customColor || "#36D1DC",
           animationsEnabled: data.animationsEnabled !== false
         };
         writeThemeCache(userData);
         await applyTheme(userData.theme, userData.customColor, userData.animationsEnabled);
-      } catch (error) { console.error("Nepodařilo se načíst vzhled", error); }
-    });
-    const interval = window.setInterval(() => {
-      if (userData.theme === "auto" || userData.theme === "weather" || userData.animationsEnabled) {
-        void applyTheme(userData.theme, userData.customColor, userData.animationsEnabled);
-      }
-    }, 30 * 60 * 1000);
-    return () => { active = false; unsub(); window.clearInterval(interval); };
-  }, []);
-}
-
-export async function applyTheme(selectedTheme: string, color: string, animationsEnabled = true, persist = true) {
-  let gradient = "linear-gradient(180deg, #36D1DC, #5B86E5)";
-  const root = document.documentElement;
-  root.removeAttribute("data-weather");
-  root.removeAttribute("data-windy");
-  root.setAttribute("data-animations", animationsEnabled ? "true" : "false");
-
-  if (selectedTheme === "man") gradient = "linear-gradient(180deg, #2980b9, #2c3e50)";
-  else if (selectedTheme === "woman") gradient = "linear-gradient(180deg, #ff7eb3, #ff758c)";
-  else if (selectedTheme === "auto") gradient = `linear-gradient(180deg, ${getColorByHour(new Date().getHours())}, #000000)`;
-  else if (selectedTheme === "custom") gradient = `linear-gradient(180deg, ${color}, #000000)`;
-  else if (selectedTheme === "weather") gradient = `linear-gradient(180deg, ${getColorByHour(new Date().getHours())}, #000000)`;
-
-  // Zapiš základní nastavení před síťovým požadavkem, aby další start neproblikl.
-  if (persist) writeThemeCache({ theme: selectedTheme, customColor: color, animationsEnabled });
-  root.style.setProperty("--main-gradient", gradient);
-
-  if (animationsEnabled || selectedTheme === "weather") {
-    try {
-      const response = await fetch("/api/weather", { cache: "no-store" });
-      if (!response.ok) throw new Error("Počasí není dostupné");
-      const data = await response.json();
-      const current = data.current;
-      if (!current) throw new Error("Chybí aktuální počasí");
-      const condition = String(current.weatherCondition?.type || "").toUpperCase();
-      const wind = Number(current.wind?.speed?.value || 0);
-      const temperature = Number(current.temperature?.degrees ?? 10);
-      const hour = new Date().getHours();
-      const night = hour < 6 || hour >= 20;
-      const isSnow = condition.includes("SNOW") || condition.includes("SLEET") || condition.includes("HAIL");
-      const isRain = condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER");
-      const isWindy = wind >= 8;
-      root.style.setProperty("--wind-strength", String(Math.min(1, Math.max(0.15, wind / 45))));
-      if (animationsEnabled && isWindy) root.setAttribute("data-windy", "true");
-
-      let weather = "clear";
-      if (isSnow) weather = isWindy ? "snow-wind" : "snow";
-      else if (isRain) weather = isWindy ? "rain-wind" : "rain";
-      else if (condition.includes("FOG")) weather = "fog";
-      else if (isWindy) weather = "wind";
-      else if (condition.includes("CLOUD")) weather = "cloudy";
-      else if (night) weather = "night";
-      if (animationsEnabled) root.setAttribute("data-weather", weather);
-
-      if (selectedTheme === "weather") {
-        if (weather === "rain" || weather === "rain-wind") gradient = "linear-gradient(160deg, #263849 0%, #526b82 52%, #172633 100%)";
-        else if (weather === "snow" || weather === "snow-wind") gradient = "linear-gradient(160deg, #607d91 0%, #a9c4d5 52%, #344b60 100%)";
-        else if (weather === "fog" || weather === "cloudy") gradient = "linear-gradient(160deg, #71818d 0%, #aeb9c0 52%, #465763 100%)";
-        else if (weather === "wind") gradient = "linear-gradient(160deg, #537b91 0%, #9ab6c1 52%, #304c60 100%)";
-        else if (weather === "night") gradient = "linear-gradient(160deg, #101b3a 0%, #283d67 55%, #111827 100%)";
-        else gradient = temperature >= 25
-          ? "linear-gradient(160deg, #e7a34b 0%, #e98b68 52%, #397ca8 100%)"
-          : "linear-gradient(160deg, #f5b94c 0%, #6bc6dc 52%, #397ca8 100%)";
-      }
-    } catch (error) {
-      console.warn("Vzhled podle počasí se nepodařilo aktualizovat.", error);
-    }
-  }
-  root.style.setProperty("--main-gradient", gradient);
-}
-
-const getColorByHour = (hour: number): string => {
-  let lightness = 90;
-  if (hour < 6) lightness = 20;
-  else if (hour < 10) lightness = 70;
-  else if (hour < 16) lightness = 90;
-  else if (hour < 20) lightness = 60;
-  else lightness = 30;
-  return `hsl(200, 70%, ${lightness}%)`;
-};
+      } catch (error) { console.error("Nepodařilo se ...[truncated]
