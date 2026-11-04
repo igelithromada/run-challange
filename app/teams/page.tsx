@@ -1,9 +1,8 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   collection,
   query,
-  onSnapshot,
   addDoc,
   deleteDoc,
   doc,
@@ -16,11 +15,11 @@ import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { Plus, DoorOpen, Trash2 } from "lucide-react";
+import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 
 export default function TeamsPage() {
 
   const [menuVisible, setMenuVisible] = useState(false);
-  const [teams, setTeams] = useState<any[]>([]);
   const [joinedTeam, setJoinedTeam] = useState<string | null>(null);
   const [teamName, setTeamName] = useState("");
   const [user, setUser] = useState<any>(null);
@@ -28,7 +27,7 @@ export default function TeamsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, async (u) => {
+    const unsubAuth = onAuthStateChanged(auth, async u => {
       if (!u) {
         router.push("/login");
       } else {
@@ -41,17 +40,12 @@ export default function TeamsPage() {
         }
       }
     });
-
-    const q = query(collection(db, "teams"));
-    const unsubTeams = onSnapshot(q, (snap) => {
-      setTeams(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-    });
-
-    return () => {
-      unsubAuth();
-      unsubTeams();
-    };
+    return () => unsubAuth();
   }, [router]);
+
+  const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
+  const teamsState = useSharedFirestoreQuery<any>("teams:all", teamsQuery);
+  const teams = teamsState.data;
 
   const createTeam = async () => {
     if (!teamName.trim() || !user) return;
