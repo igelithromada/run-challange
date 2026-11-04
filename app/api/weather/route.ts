@@ -63,7 +63,7 @@ async function openMeteoFallback() {
       feelsLikeTemperature: { degrees: c.apparent_temperature },
       weatherCondition: { type: conditionType(c.weather_code), description: { text: description(c.weather_code) } },
       wind: { speed: { value: c.wind_speed_10m, unit: "KILOMETERS_PER_HOUR" } },
-      precipitation: { probability: { percent: h.precipitation_probability[start] ?? 0 } },
+      precipitation: { probability: { percent: h.precipitation_probability[start] ?? null } },
       relativeHumidity: c.relative_humidity_2m
     },
     hourly: h.time.slice(start, start + 12).map((time: string, offset: number) => {
