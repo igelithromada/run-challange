@@ -7,7 +7,6 @@ import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import { Footprints } from "lucide-react";
 import Sidebar from "../components/Sidebar";
-import useThemeLoader from "../lib/useThemeLoader";
 import ActivityCard from "../components/ActivityCard";
 
 type RunData = {
@@ -40,7 +39,6 @@ const formatTime = (minutes: number) => {
 };
 
 export default function MyRunsPage() {
-  useThemeLoader();
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<RunData[]>([]);
   const [profile, setProfile] = useState({ nickname: "", avatarUrl: "" });
