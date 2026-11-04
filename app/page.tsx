@@ -101,6 +101,7 @@ export default function Page() {
     else if (item === "settings") router.push("/settings");
     else if (item === "weather") router.push("/weather");
     else if (item === "statistics") router.push("/statistics");
+    else if (item === "progress") router.push("/progress");
     else if (item === "admin") router.push("/admin");
     else router.push("/");
   };
