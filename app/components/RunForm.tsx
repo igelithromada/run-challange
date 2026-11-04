@@ -36,7 +36,8 @@ export default function RunForm({ type }: { type: string }) {
     const match = duration.trim().match(/^(\d{1,4}):([0-5]?\d)$/);
     return match ? Number(match[1]) * 60 + Number(match[2]) : null;
   })();
-  const pace = Number(km) > 0 && parsedDuration !== null ? parsedDuration / Number(km) : null;
+  const distanceValue = Number(km.replace(",", "."));
+  const pace = distanceValue > 0 && parsedDuration !== null ? parsedDuration / distanceValue : null;
 
   const reset = () => {
     setKm(""); setDuration(""); setFiles([]); setActivityDate(localDateTime()); setError(""); setUploadStatus("");
@@ -44,7 +45,7 @@ export default function RunForm({ type }: { type: string }) {
 
   const handleSubmit = async () => {
     if (saving) return;
-    const kmVal = Number(km);
+    const kmVal = Number(km.replace(",", "."));
     if (!km.trim() || !Number.isFinite(kmVal) || kmVal <= 0 || parsedDuration === null || parsedDuration <= 0) {
       setError("Zadej platnou vzdálenost a čas ve formátu minuty:sekundy (např. 32:45).");
       return;
@@ -87,7 +88,7 @@ export default function RunForm({ type }: { type: string }) {
       {showForm && (
         <div className="run-form-panel">
           <label className="run-form-field">Vzdálenost (km)
-            <input type="number" min="0.1" step="0.01" inputMode="decimal" placeholder="Např. 5,2" value={km} onChange={e => setKm(e.target.value)} style={inputStyle} />
+            <input type="number" min="0.1" step="0.01" inputMode="decimal" placeholder="Např. 5.2" value={km} onChange={e => setKm(e.target.value)} style={inputStyle} />
           </label>
           <label className="run-form-field">Celkový čas (minuty:sekundy)
             <input type="text" inputMode="numeric" placeholder="Např. 32:45" value={duration} onChange={e => setDuration(e.target.value.replace(/[^0-9:]/g, "").slice(0, 7))} style={inputStyle} />
