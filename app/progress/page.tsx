@@ -1,0 +1,221 @@
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import { collection, doc, getDoc, onSnapshot, query, setDoc } from "firebase/firestore";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
+import { Award, CalendarDays, Footprints, Medal, Target, Trophy, Users, TrendingUp, Save, CheckCircle2, LockKeyhole } from "lucide-react";
+import { db, auth } from "../lib/firebase";
+import Navbar from "../components/Navbar";
+import Sidebar from "../components/Sidebar";
+import useThemeLoader from "../lib/useThemeLoader";
+
+type Activity = {
+  id: string; uid?: string; km?: number | string; minuty?: number | string; tempo?: number | string;
+  type?: string; teamId?: string; timestamp?: any;
+};
+type Team = { id: string; name?: string };
+
+const asNumber = (value: unknown) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+};
+const activityDate = (run: Activity) => {
+  const value = run.timestamp?.seconds ? run.timestamp.seconds * 1000 : run.timestamp?.toDate ? run.timestamp.toDate().getTime() : Number(run.timestamp) || 0;
+  return new Date(value);
+};
+const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+const formatPace = (pace: number) => {
+  if (!Number.isFinite(pace) || pace <= 0) return "—";
+  const seconds = Math.round(pace * 60);
+  return `${Math.floor(seconds/60)}′${String(seconds%60).padStart(2,"0")}″ /km`;
+};
+const mondayOf = (date: Date) => {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  d.setDate(d.getDate() - ((d.getDay()+6)%7));
+  return d;
+};
+
+export default function ProgressPage() {
+  useThemeLoader();
+  const router = useRouter();
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [uid, setUid] = useState("");
+  const [runs, setRuns] = useState<Activity[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [goalWeekly, setGoalWeekly] = useState("25");
+  const [goalMonthly, setGoalMonthly] = useState("100");
+  const [goalType, setGoalType] = useState("běh");
+  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let stopRuns: (() => void) | undefined;
+    let stopTeams: (() => void) | undefined;
+    const stopAuth = onAuthStateChanged(auth, async user => {
+      if (!user) { router.push("/login"); return; }
+      setUid(user.uid);
+      try {
+        const profile = await getDoc(doc(db, "users", user.uid));
+        if (profile.exists()) {
+          const data = profile.data();
+          if (data.progressGoals?.weekly != null) setGoalWeekly(String(data.progressGoals.weekly));
+          if (data.progressGoals?.monthly != null) setGoalMonthly(String(data.progressGoals.monthly));
+          if (data.progressGoals?.type) setGoalType(data.progressGoals.type);
+        }
+      } catch (error) { console.error("Nepodařilo se načíst cíle", error); }
+      stopRuns = onSnapshot(query(collection(db, "runs")), snap => {
+        setRuns(snap.docs.map(item => ({ id: item.id, ...item.data() } as Activity)));
+        setLoading(false);
+      }, error => { console.error(error); setLoading(false); });
+      stopTeams = onSnapshot(collection(db, "teams"), snap => setTeams(snap.docs.map(item => ({ id: item.id, ...item.data() } as Team))));
+    });
+    return () => { stopAuth(); stopRuns?.(); stopTeams?.(); };
+  }, [router]);
+
+  const mine = useMemo(() => runs.filter(run => run.uid === uid), [runs, uid]);
+  const selected = useMemo(() => mine.filter(run => (run.type || "běh") === goalType), [mine, goalType]);
+  const now = new Date();
+  const weekStart = mondayOf(now);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const weekRuns = selected.filter(run => activityDate(run) >= weekStart && activityDate(run) <= now);
+  const monthRuns = selected.filter(run => activityDate(run) >= monthStart && activityDate(run) <= now);
+  const weekKm = weekRuns.reduce((sum, run) => sum + asNumber(run.km), 0);
+  const monthKm = monthRuns.reduce((sum, run) => sum + asNumber(run.km), 0);
+  const allKm = mine.reduce((sum, run) => sum + asNumber(run.km), 0);
+  const allActivities = mine.length;
+  const progressWeekly = Math.min(100, goalWeekly && asNumber(goalWeekly)>0 ? weekKm/asNumber(goalWeekly)*100 : 0);
+  const progressMonthly = Math.min(100, goalMonthly && asNumber(goalMonthly)>0 ? monthKm/asNumber(goalMonthly)*100 : 0);
+
+  const sorted = [...selected].sort((a,b) => activityDate(a).getTime()-activityDate(b).getTime());
+  const longest = sorted.reduce<Activity | null>((best, run) => !best || asNumber(run.km)>asNumber(best.km) ? run : best, null);
+  const fastest = sorted.filter(run => asNumber(run.tempo)>0).reduce<Activity | null>((best, run) => !best || asNumber(run.tempo)<asNumber(best.tempo) ? run : best, null);
+  const dailyTotals = new Map<string, number>();
+  mine.forEach(run => { const d=activityDate(run); if (!Number.isNaN(d.getTime())) dailyTotals.set(dateKey(d),(dailyTotals.get(dateKey(d))||0)+asNumber(run.km)); });
+  const maxDay = Math.max(0, ...Array.from(dailyTotals.values()));
+  const monthlyTotals = new Map<string, number>();
+  mine.forEach(run => { const d=activityDate(run); if (!Number.isNaN(d.getTime())) { const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; monthlyTotals.set(key,(monthlyTotals.get(key)||0)+asNumber(run.km)); } });
+  const bestMonth = Math.max(0, ...Array.from(monthlyTotals.values()));
+  const activityDays = new Set(mine.map(run => dateKey(activityDate(run)))).size;
+  const streak = (() => {
+    let count=0; const cursor=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    if (!dailyTotals.has(dateKey(cursor))) cursor.setDate(cursor.getDate()-1);
+    while (dailyTotals.has(dateKey(cursor))) { count++; cursor.setDate(cursor.getDate()-1); }
+    return count;
+  })();
+
+  const levels = [
+    { name:"Začátečník", min:0, next:25, icon:"🌱" },
+    { name:"Pravidelný běžec", min:25, next:100, icon:"👟" },
+    { name:"Pokročilý", min:100, next:250, icon:"🔥" },
+    { name:"Zkušený běžec", min:250, next:500, icon:"🏅" },
+    { name:"Běžecký matador", min:500, next:1000, icon:"🏆" },
+    { name:"Legenda", min:1000, next:2000, icon:"👑" },
+    { name:"Legenda 2.0", min:2000, next:5000, icon:"💎" }
+  ];
+  const level = [...levels].reverse().find(item => allKm >= item.min) || levels[0];
+  const levelProgress = Math.min(100, Math.max(0, (allKm-level.min)/(level.next-level.min)*100));
+
+  const badges = [
+    { title:"První krok", detail:"Zaznamenal/a první aktivitu", icon:"👟", done:allActivities>=1 },
+    { title:"Desítka", detail:"Celkem 10 km", icon:"🔟", done:allKm>=10 },
+    { title:"Padesátka", detail:"Celkem 50 km", icon:"🥉", done:allKm>=50 },
+    { title:"Stovka", detail:"Celkem 100 km", icon:"🥈", done:allKm>=100 },
+    { title:"Čtvrt tisíce", detail:"Celkem 250 km", icon:"🥇", done:allKm>=250 },
+    { title:"Půlmaratonský měsíc", detail:"100 km za jeden měsíc", icon:"🌙", done:bestMonth>=100 },
+    { title:"Pravidelnost", detail:"Aktivita alespoň 7 dní v řadě", icon:"🔥", done:streak>=7 },
+    { title:"Deset aktivit", detail:"Zaznamenáno 10 aktivit", icon:"📅", done:allActivities>=10 },
+    { title:"Padesát aktivit", detail:"Zaznamenáno 50 aktivit", icon:"💪", done:allActivities>=50 }
+  ];
+  const calendarDays = useMemo(() => {
+    const end = new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    const start = mondayOf(new Date(end.getTime()-83*86400000));
+    const days: Date[]=[];
+    for (let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) days.push(new Date(d));
+    return days;
+  }, [runs.length]);
+
+  const teamProgress = teams.map(team => {
+    const km = runs.filter(run => run.teamId===team.id && activityDate(run).getFullYear()===now.getFullYear() && activityDate(run).getMonth()===now.getMonth())
+      .reduce((sum,run)=>sum+asNumber(run.km),0);
+    return { ...team, km, percent:Math.min(100,km/500*100) };
+  }).sort((a,b)=>b.km-a.km);
+
+  const saveGoals = async () => {
+    if (!uid || asNumber(goalWeekly)<=0 || asNumber(goalMonthly)<=0) return;
+    await setDoc(doc(db,"users",uid), { progressGoals:{ weekly:asNumber(goalWeekly), monthly:asNumber(goalMonthly), type:goalType } }, { merge:true });
+    setSaved(true); window.setTimeout(()=>setSaved(false),2500);
+  };
+  const handleSelect = async (item: string) => {
+    setMenuVisible(false);
+    if (item==="logout") { await signOut(auth); router.push("/login"); }
+    else if (item==="home") router.push("/");
+    else if (item==="myrun") router.push("/myruns");
+    else router.push("/"+item);
+  };
+
+  return <>
+    <Navbar title="Můj progres" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
+    <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/>
+    <main className="container progress-page">
+      <header className="progress-header">
+        <span className="progress-eyebrow">TVŮJ POHYB. TVŮJ POSUN.</span>
+        <h1>Můj progres</h1>
+        <p>Každý kilometr se počítá. Sleduj cíle, úspěchy a svůj posun.</p>
+      </header>
+
+      <section className="progress-goal-settings tile">
+        <div className="progress-section-title"><Target/><div><h2>Moje cíle</h2><p>Nastav si vlastní vzdálenost, které chceš dosáhnout.</p></div></div>
+        <div className="progress-type-switch">
+          <button className={goalType==="běh"?"active":""} onClick={()=>setGoalType("běh")}><TrendingUp size={17}/> Běh</button>
+          <button className={goalType==="chůze"?"active":""} onClick={()=>setGoalType("chůze")}><Footprints size={17}/> Chůze</button>
+        </div>
+        <div className="progress-goal-inputs">
+          <label>Týdenní cíl (km)<input type="number" min="0.1" step="0.5" value={goalWeekly} onChange={e=>setGoalWeekly(e.target.value)}/></label>
+          <label>Měsíční cíl (km)<input type="number" min="0.1" step="1" value={goalMonthly} onChange={e=>setGoalMonthly(e.target.value)}/></label>
+          <button className="progress-save" onClick={saveGoals}><Save size={17}/>{saved?"Uloženo":"Uložit cíle"}</button>
+        </div>
+        <div className="progress-goal-bars">
+          <div><div className="progress-bar-heading"><strong>Tento týden</strong><span>{weekKm.toFixed(1)} / {asNumber(goalWeekly)} km</span></div><div className="progress-track"><i style={{width:`${progressWeekly}%`}}/></div></div>
+          <div><div className="progress-bar-heading"><strong>Tento měsíc</strong><span>{monthKm.toFixed(1)} / {asNumber(goalMonthly)} km</span></div><div className="progress-track"><i style={{width:`${progressMonthly}%`}}/></div></div>
+        </div>
+      </section>
+
+      <section className="progress-level tile">
+        <div className="progress-section-title"><Medal/><div><h2>Úrovně a zkušenosti</h2><p>Postupuješ podle celkové vzdálenosti všech svých aktivit.</p></div></div>
+        <div className="progress-level-main"><span className="progress-level-emoji">{level.icon}</span><div><span className="progress-level-caption">AKTUÁLNÍ ÚROVEŇ</span><h3>{level.name}</h3><p>{allKm.toFixed(1)} km celkem · další úroveň od {level.next} km</p></div></div>
+        <div className="progress-track level-track"><i style={{width:`${levelProgress}%`}}/></div>
+        <div className="progress-level-foot"><span>{levelProgress.toFixed(0)} % k další úrovni</span><strong>Zbývá {Math.max(0,level.next-allKm).toFixed(1)} km</strong></div>
+      </section>
+
+      <section className="progress-section">
+        <div className="progress-section-title"><Award/><div><h2>Odznaky a úspěchy</h2><p>{badges.filter(b=>b.done).length} z {badges.length} získaných odznaků</p></div></div>
+        <div className="progress-badges-grid">{badges.map(badge=><article key={badge.title} className={badge.done?"progress-badge earned":"progress-badge locked"}><span>{badge.done?badge.icon:"🔒"}</span><div><strong>{badge.title}</strong><p>{badge.detail}</p></div>{badge.done?<CheckCircle2 size={18}/>:<LockKeyhole size={17}/>}</article>)}</div>
+      </section>
+
+      <section className="tile progress-calendar">
+        <div className="progress-section-title"><CalendarDays/><div><h2>Kalendář aktivit</h2><p>Posledních 12 týdnů – čím tmavší políčko, tím větší vzdálenost.</p></div></div>
+        <div className="progress-calendar-grid">{calendarDays.map(day=>{const km=dailyTotals.get(dateKey(day))||0;return <div key={dateKey(day)} className={`progress-day ${km===0?"":km<3?"level-1":km<7?"level-2":km<12?"level-3":"level-4"}`} title={`${day.toLocaleDateString("cs-CZ")}: ${km.toFixed(1)} km`}/>})}</div>
+        <div className="progress-calendar-legend"><span>Méně</span><i/><i/><i/><i/><span>Více</span></div>
+        <p className="progress-calendar-summary">{activityDays} aktivních dní · {maxDay.toFixed(1)} km nejvíce za jeden den</p>
+      </section>
+
+      <section className="tile progress-records">
+        <div className="progress-section-title"><Trophy/><div><h2>Osobní rekordy</h2><p>Nejlepší výkony v kategorii {goalType}.</p></div></div>
+        <div className="progress-record-grid">
+          <div><span>🏃</span><small>Nejdelší aktivita</small><strong>{longest?asNumber(longest.km).toFixed(2)+" km":"—"}</strong></div>
+          <div><span>⚡</span><small>Nejrychlejší tempo</small><strong>{fastest?formatPace(asNumber(fastest.tempo)):"—"}</strong></div>
+          <div><span>📆</span><small>Nejvíce za měsíc</small><strong>{bestMonth.toFixed(1)} km</strong></div>
+          <div><span>🔥</span><small>Aktuální série</small><strong>{streak} {streak===1?"den":"dní"}</strong></div>
+        </div>
+      </section>
+
+      <section className="tile progress-challenges">
+        <div className="progress-section-title"><Users/><div><h2>Týmové výzvy</h2><p>Výzva měsíce: společně nasbírat 500 km. Každý kilometr týmu se počítá.</p></div></div>
+        {teamProgress.length===0?<p className="progress-empty">Zatím nejsi členem týmu. Přidej se k některému v sekci Týmy a zapoj se do výzvy.</p>:<div className="progress-team-list">{teamProgress.map(team=><div className="progress-team" key={team.id}><div className="progress-team-heading"><strong>{team.name||"Tým"}</strong><span>{team.km.toFixed(1)} / 500 km</span></div><div className="progress-track"><i style={{width:`${team.percent}%`}}/></div><small>{team.percent.toFixed(0)} % splněno</small></div>)}</div>}
+        <button className="progress-link-button" onClick={()=>router.push("/teams")}><Users size={17}/> Zobrazit týmy</button>
+      </section>
+      {loading&&<p className="progress-loading">Načítám tvoje aktivity…</p>}
+    </main>
+  </>;
+}

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X, CloudSun, Home } from "lucide-react";
+import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X, CloudSun, Home, TrendingUp } from "lucide-react";
 
 type SidebarProps = {
   visible: boolean;
@@ -53,6 +53,9 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
         </HoverTile>
         <HoverTile onClick={() => onSelect("teams")}>
           <Users size={21} strokeWidth={2} /> Týmy
+        </HoverTile>
+        <HoverTile onClick={() => onSelect("progress")}>
+          <TrendingUp size={21} strokeWidth={2} /> Můj progres
         </HoverTile>
         <HoverTile onClick={() => onSelect("statistics")}>
           <Trophy size={21} strokeWidth={2} /> Výsledky
