@@ -9,6 +9,8 @@ import Navbar from "../components/Navbar";
 import { Footprints } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import ActivityCard from "../components/ActivityCard";
+import LoadingSkeleton from "../components/LoadingSkeleton";
+import { cloudinaryImageUrl } from "../lib/imageUrl";
 
 type RunData = {
   id: string; uid?: string; email?: string; nickname?: string;
@@ -195,7 +197,7 @@ export default function MyRunsPage() {
         </div> : <ActivityCard key={run.id} run={run} nickname={profile.nickname || run.nickname || run.email?.split("@")[0] || "Anonym"} avatarUrl={profile.avatarUrl} activityType={selectedType} onEdit={() => handleEdit(run)} onDelete={() => handleDelete(run.id)} onPhotosClick={images => { setCurrentImageIndex(0); setShowImageUrls(images); }} />)}
       </div>
       {showImageUrls && showImageUrls.length > 0 && <div className="activity-lightbox" onClick={() => setShowImageUrls(null)}>
-        <img src={showImageUrls[currentImageIndex]} alt={`Fotografie ${currentImageIndex + 1}`} onClick={e => e.stopPropagation()} />
+        <img loading="lazy" decoding="async" src={cloudinaryImageUrl(showImageUrls[currentImageIndex], 1600)} alt={`Fotografie ${currentImageIndex + 1}`} onClick={e => e.stopPropagation()} />
         <div className="activity-lightbox-actions" onClick={e => e.stopPropagation()}>
           {showImageUrls.length > 1 && <button onClick={() => setCurrentImageIndex(i => (i - 1 + showImageUrls.length) % showImageUrls.length)} aria-label="Předchozí fotografie">❮</button>}
           <button onClick={() => { setShowImageUrls(null); setCurrentImageIndex(0); }}>Zavřít</button>
@@ -203,7 +205,7 @@ export default function MyRunsPage() {
         </div>
         {showImageUrls.length > 1 && <p>{currentImageIndex + 1} / {showImageUrls.length}</p>}
       </div>}
-      {loading && <p>Načítám…</p>}
+      {loading && runs.length === 0 && <LoadingSkeleton count={3} />}
       {error && <p style={{ color:"red" }}>{error}</p>}
       {!loading && filteredRuns.length === 0 && <div className="tile activity-empty-state"><strong>Zatím tu nic není.</strong><p>Pro zvolené období nemáš žádné záznamy. Zkus jiný filtr nebo přidej novou aktivitu.</p></div>}
     </div>
