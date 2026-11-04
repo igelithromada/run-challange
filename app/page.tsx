@@ -20,7 +20,6 @@ import Sidebar from "./components/Sidebar";
 import RunForm from "./components/RunForm";
 import ActivityCard from "./components/ActivityCard";
 import LoadingSkeleton from "./components/LoadingSkeleton";
-import { cloudinaryImageUrl } from "./lib/imageUrl";
 import RunWeatherRecommendation from "./components/RunWeatherRecommendation";
 import { RunData } from "./types";
 import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
@@ -113,13 +112,6 @@ export default function Page() {
     return () => { cancelled = true; };
   }, [runs]);
 
-  const formatTime = (minutes: string) => {
-    const totalSeconds = Math.round(parseFloat(minutes) * 60);
-    const min = Math.floor(totalSeconds / 60);
-    const sec = totalSeconds % 60;
-    return `${min}′${sec.toString().padStart(2, "0")}″`;
-  };
-
   const handleSelect = (item: string) => {
     setMenuVisible(false);
     if (item === "logout") signOut(auth).then(() => router.push("/login"));
@@ -131,12 +123,6 @@ export default function Page() {
     else if (item === "progress") router.push("/progress");
     else if (item === "admin") router.push("/admin");
     else router.push("/");
-  };
-
-  const showPhotoIcon = (run: RunData) => {
-    const hasSingle = typeof run.imageUrl === "string" && run.imageUrl !== "";
-    const hasMultiple = Array.isArray(run.imageUrls) && run.imageUrls.length > 0;
-    return hasSingle || hasMultiple;
   };
 
   const handleShowImages = (images: string[], fallback: string) => {
@@ -172,7 +158,7 @@ export default function Page() {
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
       <div className="container">
-        <h1 className="centered-title"></h1>
+        <h1 className="sr-only">Dolní Lhota v pohybu</h1>
 
         <RunWeatherRecommendation />
 
@@ -186,25 +172,12 @@ export default function Page() {
         </div>
 
         <h2 className="centered-title">Poslední záznamy</h2>
-        <div className="list-container" style={{ gap: "0", display: "flex", flexDirection: "column" }}>
+        <div className="list-container">
           {allRuns.filter((run) => (run.type || "běh") === selectedType).map(run => {
             const teamName = run.teamId ? teams.find(t => t.id === run.teamId)?.name || "?" : null;
 
             const user = userAvatars[run.uid] || {};
             const nickname = user.nickname || run.nickname || run.email?.split("@")[0] || "Anonym";
-            const avatarLetter = nickname.charAt(0).toUpperCase();
-
-            const avatar = user.avatarUrl
-              ? <img src={user.avatarUrl} alt="avatar" style={{ width: "40px", height: "40px", borderRadius: "50%" }} />
-              : avatarLetter;
-
-            const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
-            let pos = Math.min(100, Math.max(0, ((range.max - parseFloat(run.tempo)) / (range.max - range.min)) * 100));
-
-            const dateStr = new Date(run.timestamp?.seconds * 1000).toLocaleString("cs-CZ", {
-              hour: "2-digit", minute: "2-digit", year: "numeric", month: "numeric", day: "numeric"
-            });
-
             return (
               <ActivityCard
                 key={run.id}

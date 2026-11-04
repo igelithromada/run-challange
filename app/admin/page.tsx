@@ -1,172 +1,115 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
-import { signOut } from "firebase/auth";
+import { collection, doc, getDocs, updateDoc } from "firebase/firestore";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { ArrowLeft, Camera, ShieldCheck, User, Footprints } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import useAdminGuard from "../lib/useAdminGuard";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import { useRouter } from "next/navigation";
 
-type User = {
-  id: string;
-  nickname: string;
-  email: string;
-  role?: string;
-};
+type User = { id: string; nickname: string; email: string; role?: string };
 
 export default function AdminPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
   const adminAccess = useAdminGuard();
 
   useEffect(() => {
     if (adminAccess !== "allowed") return;
-
-    const fetchUsers = async () => {
-      const snapshot = await getDocs(collection(db, "users"));
-      const list: User[] = [];
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        list.push({
-          id: docSnap.id,
-          nickname: data.nickname || "",
-          email: data.email || "",
-          role: data.role,
+    let active = true;
+    setLoading(true);
+    getDocs(collection(db, "users"))
+      .then(snapshot => {
+        if (!active) return;
+        const list: User[] = snapshot.docs.map(docSnap => {
+          const data = docSnap.data();
+          return { id: docSnap.id, nickname: data.nickname || "", email: data.email || "", role: data.role };
         });
-      });
-      setUsers(list);
-    };
-    void fetchUsers();
+        list.sort((a, b) => (a.nickname || a.email).localeCompare(b.nickname || b.email, "cs"));
+        setUsers(list);
+      })
+      .catch(() => active && setError("Seznam uživatelů se nepodařilo načíst."))
+      .finally(() => active && setLoading(false));
+    return () => { active = false; };
   }, [adminAccess]);
 
   const handleToggleAdmin = async (user: User) => {
+    setBusy(true);
+    setError("");
     const newRole = user.role === "admin" ? "" : "admin";
-    await updateDoc(doc(db, "users", user.id), { role: newRole });
-    setUsers((prev) =>
-      prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
-    );
-    if (selectedUser) setSelectedUser({ ...selectedUser, role: newRole });
+    try {
+      await updateDoc(doc(db, "users", user.id), { role: newRole });
+      setUsers(prev => prev.map(item => item.id === user.id ? { ...item, role: newRole } : item));
+      setSelectedUser(current => current?.id === user.id ? { ...current, role: newRole } : current);
+    } catch {
+      setError("Roli se nepodařilo změnit.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
-    if (item === "logout") {
-      await signOut(auth);
-      router.push("/login");
-    }
-    else if (item === "home") router.push("/");
-    else if (item === "myrun") router.push("/myruns");
-    else if (item === "teams") router.push("/teams");
-    else if (item === "settings") router.push("/settings");
-    else if (item === "statistics") router.push("/statistics");
-    else if (item === "progress") router.push("/progress");
-    else if (item === "weather") router.push("/weather");
-    else if (item === "admin") router.push("/admin");
+    if (item === "logout") { await signOut(auth); router.push("/login"); return; }
+    if (item === "myrun") { router.push("/myruns"); return; }
+    if (item === "home") { router.push("/"); return; }
+    router.push("/" + item);
   };
 
-  if (adminAccess !== "allowed") {
-    return <div className="container"><p>Ověřuji administrátorská oprávnění…</p></div>;
-  }
+  if (adminAccess !== "allowed") return <div className="container"><div className="tile admin-loading">Ověřuji administrátorská oprávnění…</div></div>;
 
   return (
     <>
       <Navbar title="Administrace" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+      <main className="container admin-page">
+        <header className="admin-header">
+          <span className="admin-eyebrow">SPRÁVA APLIKACE</span>
+          <h1>Administrace</h1>
+          <p>Uživatelé, role a jejich aktivity na jednom místě.</p>
+        </header>
 
-      <div className="container">
-        
+        {error && <p className="form-message form-message-error" role="alert">{error}</p>}
 
         {!selectedUser ? (
-          <div className="tile">
-            <h3>Seznam uživatelů</h3>
-            {users.map((user) => (
-              <div
-                key={user.id}
-                onClick={() => setSelectedUser(user)}
-                style={{
-                  padding: "0.5rem",
-                  marginBottom: "0.3rem",
-                  borderRadius: "8px",
-                  background: "rgba(255,255,255,0.1)",
-                  cursor: "pointer",
-                }}
-              >
-                <strong>{user.nickname || "Beze jména"}</strong> – {user.email} {user.role === "admin" && "🛡️"}
+          <section className="tile admin-users">
+            <div className="admin-section-heading"><ShieldCheck size={21} /><div><h2>Uživatelé</h2><span>{users.length} účtů</span></div></div>
+            {loading ? <p className="admin-muted">Načítám uživatele…</p> : users.length === 0 ? <p className="admin-muted">Žádní uživatelé nebyli nalezeni.</p> : (
+              <div className="admin-user-list">
+                {users.map(user => (
+                  <button type="button" className="admin-user-row" key={user.id} onClick={() => setSelectedUser(user)}>
+                    <span className="admin-user-avatar"><User size={19} /></span>
+                    <span className="admin-user-copy"><strong>{user.nickname || "Beze jména"}</strong><small>{user.email}</small></span>
+                    {user.role === "admin" && <span className="admin-role">ADMIN</span>}
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </section>
         ) : (
-          <div className="tile">
-            <h3>{selectedUser.nickname || "Beze jména"}</h3>
-            <p>{selectedUser.email}</p>
-
-            <button
-              onClick={() => handleToggleAdmin(selectedUser)}
-              style={buttonStyle}
-            >
-              {selectedUser.role === "admin" ? "Odebrat roli admin" : "Přidat jako admin"}
-            </button>
-
-            <button
-              onClick={() => router.push(`/admin/${selectedUser.id}/records`)}
-              style={buttonStyle}
-            >
-              Zobrazit záznamy
-            </button>
-
-            <button
-              onClick={() => router.push(`/admin/${selectedUser.id}/gallery`)}
-              style={buttonStyle}
-            >
-              Zobrazit galerii
-            </button>
-
-            <button
-              onClick={() => alert("Tady bude blokování účtu")}
-              style={buttonStyle}
-            >
-              Zablokovat účet
-            </button>
-
-            <button
-              onClick={() => alert("Tady bude smazání účtu")}
-              style={buttonStyle}
-            >
-              Smazat účet
-            </button>
-
-            <button
-              onClick={() => alert("Tady bude reset hesla")}
-              style={buttonStyle}
-            >
-              Reset hesla
-            </button>
-
-            <button
-              onClick={() => setSelectedUser(null)}
-              style={{ ...buttonStyle, background: "rgba(255,255,255,0.2)", color: "white" }}
-            >
-              Zpět
-            </button>
-          </div>
+          <section className="tile admin-detail">
+            <button type="button" className="admin-back-button" onClick={() => setSelectedUser(null)}><ArrowLeft size={17} /> Zpět na seznam</button>
+            <div className="admin-detail-heading">
+              <span className="admin-user-avatar large"><User size={25} /></span>
+              <div><h2>{selectedUser.nickname || "Beze jména"}</h2><p>{selectedUser.email}</p></div>
+            </div>
+            <div className="admin-actions">
+              <button type="button" className="admin-action-button" onClick={() => handleToggleAdmin(selectedUser)} disabled={busy}><ShieldCheck size={18} /> {selectedUser.role === "admin" ? "Odebrat roli admin" : "Přidat jako admin"}</button>
+              <button type="button" className="admin-action-button" onClick={() => router.push(`/admin/${selectedUser.id}/records`)}><Footprints size={18} /> Zobrazit záznamy</button>
+              <button type="button" className="admin-action-button" onClick={() => router.push(`/admin/${selectedUser.id}/gallery`)}><Camera size={18} /> Zobrazit galerii</button>
+            </div>
+            <p className="admin-muted admin-note">Akce jako blokování nebo mazání účtu nejsou v této verzi napojeny na Firebase Authentication, proto nejsou zobrazené jako falešná tlačítka.</p>
+          </section>
         )}
-      </div>
+      </main>
     </>
   );
 }
-
-const buttonStyle = {
-  width: "100%",
-  padding: "0.5rem",
-  marginTop: "0.4rem",
-  borderRadius: "8px",
-  border: "none",
-  fontWeight: "bold" as const,
-  cursor: "pointer",
-  background: "white",
-  color: "black",
-};

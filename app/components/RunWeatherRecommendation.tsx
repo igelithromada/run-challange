@@ -14,7 +14,7 @@ export default function RunWeatherRecommendation({ linkToWeather = true }: { lin
     let active = true;
     const load = async () => {
       try {
-        const response = await fetch("/api/weather", { cache: "no-store" });
+        const response = await fetch("/api/weather");
         if (!response.ok) throw new Error("Počasí se nepodařilo načíst.");
         const data = await response.json();
         if (active) setWeather(data);

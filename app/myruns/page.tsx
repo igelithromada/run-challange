@@ -1,12 +1,12 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { collection, query, where, doc, getDoc, deleteDoc, updateDoc, Timestamp, limit, startAfter, getDocs } from "firebase/firestore";
+import { collection, query, where, orderBy, doc, getDoc, deleteDoc, updateDoc, Timestamp, limit, startAfter, getDocs } from "firebase/firestore";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
-import { Footprints, PersonStanding } from "lucide-react";
+import { Footprints } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import ActivityCard from "../components/ActivityCard";
 import LoadingSkeleton from "../components/LoadingSkeleton";
@@ -80,7 +80,7 @@ export default function MyRunsPage() {
     return () => unsubAuth();
   }, [router]);
 
-  const runsQuery = useMemo(() => query(collection(db, "runs"), where("uid", "==", uid || "__no_user__"), limit(30)), [uid]);
+  const runsQuery = useMemo(() => query(collection(db, "runs"), where("uid", "==", uid || "__no_user__"), orderBy("timestamp", "desc"), limit(30)), [uid]);
   const runsState = useSharedFirestoreQuery<RunData>("runs:user:" + (uid || "none"), runsQuery);
   const runs = useMemo(() => Array.from(new Map<string, RunData>([...runsState.data, ...olderRuns].map(run => [run.id, run] as const)).values()).map(run => ({
     ...run, km: Number(run.km) || 0, minuty: Number(run.minuty) || 0, tempo: Number(run.tempo) || 0
@@ -92,7 +92,7 @@ export default function MyRunsPage() {
     if (!cursor || loadingOlder || !hasMore || !uid) return;
     setLoadingOlder(true);
     try {
-      const next = await getDocs(query(collection(db, "runs"), where("uid", "==", uid), startAfter(cursor), limit(30)));
+      const next = await getDocs(query(collection(db, "runs"), where("uid", "==", uid), orderBy("timestamp", "desc"), startAfter(cursor), limit(30)));
       const items = next.docs.map(item => ({ id: item.id, ...item.data() } as RunData));
       setOlderRuns(previous => [...previous, ...items.filter(item => !previous.some(old => old.id === item.id) && !runsState.data.some(current => current.id === item.id))]);
       setOlderCursor(next.docs.length ? next.docs[next.docs.length - 1] : cursor);
@@ -122,7 +122,7 @@ export default function MyRunsPage() {
   const totalMin = filteredRuns.reduce((sum, run) => sum + run.minuty, 0);
   const avgTempo = totalKm ? totalMin / totalKm : 0;
   const longestRun = filteredRuns.reduce<RunData | null>((best, run) => !best || run.km > best.km ? run : best, null);
-  const fastestRun = filteredRuns.reduce<RunData | null>((best, run) => !best || (run.tempo > 0 && run.tempo < best.tempo) ? run : best, null);
+  const fastestRun = filteredRuns.filter(run => run.tempo > 0).reduce<RunData | null>((best, run) => !best || run.tempo < best.tempo ? run : best, null);
 
   const handleEdit = (run: RunData) => {
     setEditingId(run.id); setKm(String(run.km)); setDuration(durationString(run.minuty));
@@ -178,7 +178,7 @@ export default function MyRunsPage() {
     <div className="container">
       <div className="control-caption">Typ aktivity</div>
       <div className="tile-group">
-        <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}><PersonStanding size={26} strokeWidth={2.5} aria-hidden="true" /> Běh</button>
+        <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}><img className="run-profile-icon" src="/run-icon-white.png" alt="" aria-hidden="true" /> Běh</button>
         <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}><Footprints size={25} strokeWidth={2.8} /> Chůze</button>
       </div>
       <div className="control-caption">Rychlý filtr období</div>

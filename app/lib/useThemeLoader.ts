@@ -73,7 +73,7 @@ export async function applyTheme(selectedTheme: string, color: string, animation
 
   if (animationsEnabled) {
     try {
-      const response = await fetch("/api/weather", { cache: "no-store" });
+      const response = await fetch("/api/weather");
       if (!response.ok) throw new Error("Počasí není dostupné");
       const data = await response.json();
       const current = data.current;
