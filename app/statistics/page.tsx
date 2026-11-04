@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { User } from "firebase/auth";
 import { collection, query, orderBy, onSnapshot, getDocs, where, documentId } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import { Footprints } from "lucide-react";
+import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import Sidebar from "../components/Sidebar";
 
 export default function StatisticsPage() {
@@ -24,21 +25,19 @@ export default function StatisticsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, (u) => {
+    const unsubAuth = onAuthStateChanged(auth, u => {
       if (!u) router.push("/login");
       else setUser(u);
     });
-
-    const unsubRuns = onSnapshot(query(collection(db, "runs"), orderBy("timestamp", "desc")),
-      (snap) => setRuns(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
-    );
-
-    const unsubTeams = onSnapshot(collection(db, "teams"),
-      (snap) => setTeams(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
-    );
-
-    return () => { unsubAuth(); unsubRuns(); unsubTeams(); }
+    return () => unsubAuth();
   }, [router]);
+
+  const runsQuery = useMemo(() => query(collection(db, "runs"), orderBy("timestamp", "desc")), []);
+  const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
+  const runsState = useSharedFirestoreQuery<any>("runs:statistics:all", runsQuery);
+  const teamsState = useSharedFirestoreQuery<any>("teams:all", teamsQuery);
+  const runs = runsState.data;
+  const teams = teamsState.data;
 
   useEffect(() => {
     const ids = Array.from(new Set(runs.map((run) => run.uid).filter((id): id is string => typeof id === "string" && !!id)));
