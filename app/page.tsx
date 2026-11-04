@@ -26,7 +26,7 @@ import { RunData } from "./types";
 import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
 
 export default function Page() {
-  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);\n  const [olderRuns, setOlderRuns] = useState<RunData[]>([]);\n  const [olderCursor, setOlderCursor] = useState<any>(null);\n  const [loadingOlder, setLoadingOlder] = useState(false);\n  const [hasMore, setHasMore] = useState(true);
   const [runs, setRuns] = useState<RunData[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [selectedType, setSelectedType] = useState("běh");
@@ -153,7 +153,7 @@ export default function Page() {
 
         <h2 className="centered-title">Poslední záznamy</h2>
         <div className="list-container" style={{ gap: "0", display: "flex", flexDirection: "column" }}>
-          {runs.filter((run) => (run.type || "běh") === selectedType).map(run => {
+          {allRuns.filter((run) => (run.type || "běh") === selectedType).map(run => {
             const teamName = run.teamId ? teams.find(t => t.id === run.teamId)?.name || "?" : null;
 
             const user = userAvatars[run.uid] || {};
@@ -184,6 +184,11 @@ export default function Page() {
               />
             );          })}
         </div>
+        {hasMore && allRuns.length >= 30 && (
+          <button className="activity-load-more" onClick={loadOlderRuns} disabled={loadingOlder}>
+            {loadingOlder ? "Načítám starší záznamy…" : "Načíst starší záznamy"}
+          </button>
+        )}
       </div>
 
       {showImages && (
