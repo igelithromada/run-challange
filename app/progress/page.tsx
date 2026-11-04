@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { collection, doc, getDoc, onSnapshot, query, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, query, setDoc, where } from "firebase/firestore";
+import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { Award, CalendarDays, Footprints, Medal, Target, Trophy, Users, TrendingUp, Save, CheckCircle2, LockKeyhole } from "lucide-react";
@@ -48,8 +49,6 @@ export default function ProgressPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let stopRuns: (() => void) | undefined;
-    let stopTeams: (() => void) | undefined;
     const stopAuth = onAuthStateChanged(auth, async user => {
       if (!user) { router.push("/login"); return; }
       setUid(user.uid);
@@ -60,18 +59,28 @@ export default function ProgressPage() {
           if (data.progressGoals?.weekly != null) setGoalWeekly(String(data.progressGoals.weekly));
           if (data.progressGoals?.monthly != null) setGoalMonthly(String(data.progressGoals.monthly));
           if (data.progressGoals?.type) setGoalType(data.progressGoals.type);
+          setJoinedTeamId(data.teamId || data.joinedTeam || "");
         }
-      } catch (error) { console.error("Nepodařilo se načíst cíle", error); }
-      stopRuns = onSnapshot(query(collection(db, "runs")), snap => {
-        setRuns(snap.docs.map(item => ({ id: item.id, ...item.data() } as Activity)));
-        setLoading(false);
-      }, error => { console.error(error); setLoading(false); });
-      stopTeams = onSnapshot(collection(db, "teams"), snap => setTeams(snap.docs.map(item => ({ id: item.id, ...item.data() } as Team))));
+      } catch (error) { console.error("Nepodařilo se načíst profil a cíle", error); }
     });
-    return () => { stopAuth(); stopRuns?.(); stopTeams?.(); };
+    return () => stopAuth();
   }, [router]);
 
-  const mine = useMemo(() => runs.filter(run => run.uid === uid), [runs, uid]);
+  const personalQuery = useMemo(() => query(collection(db, "runs"), where("uid", "==", uid || "__no_user__")), [uid]);
+  const teamRunsQuery = useMemo(() => query(collection(db, "runs"), where("teamId", "==", joinedTeamId || "__no_team__")), [joinedTeamId]);
+  const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
+  const personalState = useSharedFirestoreQuery<Activity>("progress:personal:" + (uid || "none"), personalQuery);
+  const teamRunsState = useSharedFirestoreQuery<Activity>("progress:team:" + (joinedTeamId || "none"), teamRunsQuery);
+  const teamsState = useSharedFirestoreQuery<Team>("teams:all", teamsQuery);
+  const runs = useMemo(() => {
+    const merged = new Map<string, Activity>();
+    [...personalState.data, ...teamRunsState.data].forEach(run => merged.set(run.id, run));
+    return Array.from(merged.values());
+  }, [personalState.data, teamRunsState.data]);
+  const teams = teamsState.data;
+  useEffect(() => { setLoading(personalState.loading || (!!joinedTeamId && teamRunsState.loading)); }, [personalState.loading, teamRunsState.loading, joinedTeamId]);
+
+  const mine = useMemo(() => personalState.data, [personalState.data]);
   const selected = useMemo(() => mine.filter(run => (run.type || "běh") === goalType), [mine, goalType]);
   const now = new Date();
   const weekStart = mondayOf(now);
@@ -133,7 +142,7 @@ export default function ProgressPage() {
     return days;
   }, [runs.length]);
 
-  const teamProgress = teams.map(team => {
+  const teamProgress = teams.filter(team => team.id === joinedTeamId).map(team => {
     const km = runs.filter(run => run.teamId===team.id && activityDate(run).getFullYear()===now.getFullYear() && activityDate(run).getMonth()===now.getMonth())
       .reduce((sum,run)=>sum+asNumber(run.km),0);
     return { ...team, km, percent:Math.min(100,km/500*100) };
