@@ -37,9 +37,13 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
   cacheKey: string,
   source: Query
 ): SharedQueryState<T> {
-  const [state, setState] = useState<SharedQueryState<T>>(
-    () => (cache.get(cacheKey)?.state as SharedQueryState<T>) || emptyState<T>()
-  );
+  const [local, setLocal] = useState<{ key: string; state: SharedQueryState<T> }>(() => ({
+    key: cacheKey,
+    state: (cache.get(cacheKey)?.state as SharedQueryState<T>) || emptyState<T>()
+  }));
+  const state = local.key === cacheKey
+    ? local.state
+    : (cache.get(cacheKey)?.state as SharedQueryState<T>) || emptyState<T>();
 
   useEffect(() => {
     let entry = cache.get(cacheKey);
@@ -79,7 +83,7 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
     }
 
     return () => {
-      current.listeners.delete(setState);
+      current.listeners.delete(notify);
       current.refs = Math.max(0, current.refs - 1);
       if (current.refs === 0) {
         current.unsubscribe?.();
