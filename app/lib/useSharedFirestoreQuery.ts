@@ -28,7 +28,7 @@ const emptyState = <T,>(): SharedQueryState<T> => ({
 
 function trimCache() {
   if (cache.size <= 24) return;
-  for (const [key, entry] of cache) {
+  for (const [key, entry] of Array.from(cache.entries())) {
     if (entry.refs === 0 && !entry.unsubscribe) cache.delete(key);
     if (cache.size <= 24) break;
   }
