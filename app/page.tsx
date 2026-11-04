@@ -25,7 +25,11 @@ import { RunData } from "./types";
 import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
 
 export default function Page() {
-  const [menuVisible, setMenuVisible] = useState(false);\n  const [olderRuns, setOlderRuns] = useState<RunData[]>([]);\n  const [olderCursor, setOlderCursor] = useState<any>(null);\n  const [loadingOlder, setLoadingOlder] = useState(false);\n  const [hasMore, setHasMore] = useState(true);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [olderRuns, setOlderRuns] = useState<RunData[]>([]);
+  const [olderCursor, setOlderCursor] = useState<any>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [selectedType, setSelectedType] = useState("běh");
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
