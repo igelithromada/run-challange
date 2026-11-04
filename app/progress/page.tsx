@@ -56,9 +56,12 @@ export default function ProgressPage() {
         const profile = await getDoc(doc(db, "users", user.uid));
         if (profile.exists()) {
           const data = profile.data();
-          if (data.progressGoals?.weekly != null) setGoalWeekly(String(data.progressGoals.weekly));
-          if (data.progressGoals?.monthly != null) setGoalMonthly(String(data.progressGoals.monthly));
-          if (data.progressGoals?.type) setGoalType(data.progressGoals.type);
+          const goals = data.progressGoals || {};
+          const initialType = goals.type || "běh";
+          setGoalType(initialType);
+          const initialGoals = goals[initialType] || goals;
+          if (initialGoals.weekly != null) setGoalWeekly(String(initialGoals.weekly));
+          if (initialGoals.monthly != null) setGoalMonthly(String(initialGoals.monthly));
           setJoinedTeamId(data.teamId || data.joinedTeam || "");
         }
       } catch (error) { console.error("Nepodařilo se načíst profil a cíle", error); }
@@ -145,12 +148,16 @@ export default function ProgressPage() {
   const teamProgress = teams.filter(team => team.id === joinedTeamId).map(team => {
     const km = runs.filter(run => run.teamId===team.id && activityDate(run).getFullYear()===now.getFullYear() && activityDate(run).getMonth()===now.getMonth())
       .reduce((sum,run)=>sum+asNumber(run.km),0);
-    return { ...team, km, percent:Math.min(100,km/500*100) };
+    const target = Math.max(1, asNumber((team as any).monthlyGoalKm) || 500);
+    return { ...team, km, target, percent:Math.min(100,km/target*100) };
   }).sort((a,b)=>b.km-a.km);
 
   const saveGoals = async () => {
     if (!uid || asNumber(goalWeekly)<=0 || asNumber(goalMonthly)<=0) return;
-    await setDoc(doc(db,"users",uid), { progressGoals:{ weekly:asNumber(goalWeekly), monthly:asNumber(goalMonthly), type:goalType } }, { merge:true });
+    const userRef = doc(db,"users",uid);
+    const current = await getDoc(userRef);
+    const existing = current.exists() ? (current.data().progressGoals || {}) : {};
+    await setDoc(userRef, { progressGoals:{ ...existing, [goalType]:{ weekly:asNumber(goalWeekly), monthly:asNumber(goalMonthly) }, type:goalType } }, { merge:true });
     setSaved(true); window.setTimeout(()=>setSaved(false),2500);
   };
   const handleSelect = async (item: string) => {
@@ -218,8 +225,8 @@ export default function ProgressPage() {
       </section>
 
       <section className="tile progress-challenges">
-        <div className="progress-section-title"><Users/><div><h2>Týmové výzvy</h2><p>Výzva měsíce: společně nasbírat 500 km. Každý kilometr týmu se počítá.</p></div></div>
-        {teamProgress.length===0?<p className="progress-empty">Zatím nejsi členem týmu. Přidej se k některému v sekci Týmy a zapoj se do výzvy.</p>:<div className="progress-team-list">{teamProgress.map(team=><div className="progress-team" key={team.id}><div className="progress-team-heading"><strong>{team.name||"Tým"}</strong><span>{team.km.toFixed(1)} / 500 km</span></div><div className="progress-track"><i style={{width:`${team.percent}%`}}/></div><small>{team.percent.toFixed(0)} % splněno</small></div>)}</div>}
+        <div className="progress-section-title"><Users/><div><h2>Týmové výzvy</h2><p>Výzva měsíce nastavená správcem týmu. Každý kilometr týmu se počítá.</p></div></div>
+        {teamProgress.length===0?<p className="progress-empty">Zatím nejsi členem týmu. Přidej se k některému v sekci Týmy a zapoj se do výzvy.</p>:<div className="progress-team-list">{teamProgress.map(team=><div className="progress-team" key={team.id}><div className="progress-team-heading"><strong>{team.name||"Tým"}</strong><span>{team.km.toFixed(1)} / {team.target} km</span></div><div className="progress-track"><i style={{width:`${team.percent}%`}}/></div><small>{team.percent.toFixed(0)} % splněno</small></div>)}</div>}
         <button className="progress-link-button" onClick={()=>router.push("/teams")}><Users size={17}/> Zobrazit týmy</button>
       </section>
       {loading&&<LoadingSkeleton count={2} />}
