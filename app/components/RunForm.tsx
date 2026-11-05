@@ -13,7 +13,7 @@ const uploadToCloudinary = async (file: File) => {
   if (!res.ok) throw new Error("Fotografii se nepodařilo nahrát.");
   const data = await res.json();
   if (!data.secure_url) throw new Error("Server fotografii nevrátil platnou adresu.");
-  return data.secure_url as string;
+  return { secureUrl: data.secure_url as string, publicId: typeof data.public_id === "string" ? data.public_id : "" };
 };
 
 const localDateTime = () => {
@@ -93,9 +93,12 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
 
     try {
       const imageUrls: string[] = [];
+      const imagePublicIds: string[] = [];
       for (let i = 0; i < files.length; i++) {
         setUploadStatus(`Nahrávám fotografie ${i + 1}/${files.length}…`);
-        imageUrls.push(await uploadToCloudinary(files[i]));
+        const uploaded = await uploadToCloudinary(files[i]);
+        imageUrls.push(uploaded.secureUrl);
+        if (uploaded.publicId) imagePublicIds.push(uploaded.publicId);
       }
 
       setUploadStatus(navigator.onLine ? "Ukládám aktivitu…" : "Ukládám aktivitu offline…");
@@ -126,6 +129,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
         type,
         timestamp: new Date(activityDate),
         imageUrls,
+        imagePublicIds,
         teamId: selectedTeamId,
         activityType: type
       });

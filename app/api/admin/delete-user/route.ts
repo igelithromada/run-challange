@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
+import { collectCloudinaryPublicIds, deleteCloudinaryImages } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,18 +21,51 @@ async function verifyAdmin(request: Request) {
   return null;
 }
 
-async function deleteUserRuns(uid: string) {
+async function deleteUserData(uid: string) {
   const { adminDb } = getAdminServices();
-  const snapshot = await adminDb.collection("runs").where("uid", "==", uid).get();
-  const refs = snapshot.docs.map((item) => item.ref);
+  const [runsSnapshot, userSnapshot] = await Promise.all([
+    adminDb.collection("runs").where("uid", "==", uid).get(),
+    adminDb.collection("users").doc(uid).get(),
+  ]);
 
+  const imageUrls: string[] = [];
+  const publicIds: string[] = [];
+  const userData = userSnapshot.exists ? userSnapshot.data() : undefined;
+
+  if (typeof userData?.avatarUrl === "string") imageUrls.push(userData.avatarUrl);
+  if (typeof userData?.avatarPublicId === "string" && userData.avatarPublicId) publicIds.push(userData.avatarPublicId);
+
+  for (const run of runsSnapshot.docs) {
+    const data = run.data();
+    if (Array.isArray(data.imageUrls)) {
+      imageUrls.push(...data.imageUrls.filter((value: unknown): value is string => typeof value === "string"));
+    }
+    if (typeof data.imageUrl === "string") imageUrls.push(data.imageUrl);
+    if (Array.isArray(data.imagePublicIds)) {
+      publicIds.push(...data.imagePublicIds.filter((value: unknown): value is string => typeof value === "string"));
+    }
+  }
+
+  publicIds.push(...collectCloudinaryPublicIds(imageUrls));
+  const cloudinaryResult = await deleteCloudinaryImages(publicIds);
+
+  if (cloudinaryResult.failed.length) {
+    throw new Error(`CLOUDINARY_DELETE_FAILED:${cloudinaryResult.failed.length}`);
+  }
+
+  const refs = runsSnapshot.docs.map((item) => item.ref);
   for (let i = 0; i < refs.length; i += 450) {
     const batch = adminDb.batch();
     refs.slice(i, i + 450).forEach((ref) => batch.delete(ref));
-    if (refs.length) await batch.commit();
+    await batch.commit();
   }
 
-  return refs.length;
+  await adminDb.collection("users").doc(uid).delete();
+
+  return {
+    deletedRuns: refs.length,
+    deletedImages: cloudinaryResult.deleted,
+  };
 }
 
 export async function POST(request: Request) {
@@ -50,21 +84,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Vlastní administrátorský účet zde nelze smazat." }, { status: 400 });
     }
 
-    const { adminAuth, adminDb } = getAdminServices();
+    const { adminAuth } = getAdminServices();
     const target = await adminAuth.getUser(uid);
-    const deletedRuns = await deleteUserRuns(uid);
-
-    await adminDb.collection("users").doc(uid).delete();
+    const deleted = await deleteUserData(uid);
     await adminAuth.deleteUser(uid);
 
     return NextResponse.json({
       ok: true,
       uid,
       email: target.email || "",
-      deletedRuns,
+      ...deleted,
     });
   } catch (error: any) {
     console.error("Admin delete user failed:", error);
+    const message = error instanceof Error ? error.message : "";
+
+    if (message.startsWith("CLOUDINARY_DELETE_FAILED:")) {
+      return NextResponse.json(
+        { error: "Účet nebyl smazán, protože se nepodařilo bezpečně odstranit všechny fotografie z Cloudinary. Zkontroluj Cloudinary API klíč a oprávnění." },
+        { status: 502 }
+      );
+    }
+
     const status =
       error?.code === "auth/id-token-expired" ||
       error?.code === "auth/id-token-revoked" ||

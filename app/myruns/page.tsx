@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { collection, query, where, orderBy, doc, getDoc, deleteDoc, updateDoc, Timestamp, limit, startAfter, getDocs } from "firebase/firestore";
+import { collection, query, where, orderBy, doc, getDoc, updateDoc, Timestamp, limit, startAfter, getDocs } from "firebase/firestore";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -16,7 +16,7 @@ import ActivityTypeSelector from "../components/ActivityTypeSelector";
 type RunData = {
   id: string; uid?: string; email?: string; nickname?: string;
   km: number; minuty: number; tempo: number; type?: string;
-  imageUrl?: string; imageUrls?: string[];
+  imageUrl?: string; imageUrls?: string[]; imagePublicIds?: string[];
   timestamp?: Timestamp | { seconds: number } | Date;
 };
 const uploadToCloudinary = async (file: File) => {
@@ -24,7 +24,9 @@ const uploadToCloudinary = async (file: File) => {
   data.append("file", file); data.append("upload_preset", "lhota_unsigned");
   const response = await fetch("https://api.cloudinary.com/v1_1/dvb4jm8cw/image/upload", { method: "POST", body: data });
   if (!response.ok) throw new Error("Fotografii se nepodařilo nahrát.");
-  return (await response.json()).secure_url as string;
+  const result = await response.json();
+  if (!result.secure_url) throw new Error("Server fotografii nevrátil platnou adresu.");
+  return { secureUrl: result.secure_url as string, publicId: typeof result.public_id === "string" ? result.public_id : "" };
 };
 const dateOf = (value: RunData["timestamp"]) => {
   if (value instanceof Date) return value;
@@ -149,11 +151,12 @@ export default function MyRunsPage() {
         timestamp: Timestamp.fromDate(new Date(activityDate))
       };
       if (file) {
-        const imageUrl = await uploadToCloudinary(file);
+        const uploaded = await uploadToCloudinary(file);
         const current = runs.find(run => run.id === id);
         const images = current?.imageUrls?.length ? current.imageUrls : current?.imageUrl ? [current.imageUrl] : [];
-        updates.imageUrls = [...images, imageUrl];
-        updates.imageUrl = imageUrl;
+        updates.imageUrls = [...images, uploaded.secureUrl];
+        updates.imageUrl = uploaded.secureUrl;
+        if (uploaded.publicId) updates.imagePublicIds = [...(current?.imagePublicIds || []), uploaded.publicId];
       }
       await updateDoc(doc(db, "runs", id), updates);
       setEditingId(null); setFile(null);
@@ -162,10 +165,26 @@ export default function MyRunsPage() {
     } finally { setBusy(false); }
   };
   const handleDelete = async (id: string) => {
-    if (confirmDelete && !window.confirm("Opravdu chceš tento záznam trvale smazat?")) return;
+    if (confirmDelete && !window.confirm("Opravdu chceš tento záznam trvale smazat? Fotografie se odstraní také.")) return;
     setActionError("");
-    try { await deleteDoc(doc(db, "runs", id)); }
-    catch (err) { console.error(err); setActionError("Záznam se nepodařilo smazat."); }
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const idToken = await currentUser.getIdToken(true);
+      const response = await fetch("/api/runs/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ runId: id }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Záznam se nepodařilo smazat.");
+    } catch (err) {
+      console.error(err);
+      setActionError(err instanceof Error ? err.message : "Záznam se nepodařilo smazat.");
+    }
   };
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
