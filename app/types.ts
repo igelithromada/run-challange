@@ -17,6 +17,9 @@ export interface RunData {
   };
   imageUrl?: string;
   imageUrls?: string[];
+  likedBy?: string[];
+  likeCount?: number;
+  commentCount?: number;
 }
 
 export interface UserData {
