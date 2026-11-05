@@ -84,7 +84,7 @@ export default function ParticipantsPage() {
     return Object.values(map).sort((a, b) => sortMode === "alpha" ? a.name.localeCompare(b.name, "cs", { sensitivity: "base" }) : b.km - a.km);
   }, [runs, selectedType, avatars, sortMode]);
 
-  const alphabet = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)).concat(["Č", "Š", "Ž"]);
+  const alphabet = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
   const availableLetters = useMemo(() => new Set(participants.map(p => p.name.trim().charAt(0).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase())), [participants]);
   const jumpToLetter = (letter: string) => {
     if (sortMode !== "alpha" || !availableLetters.has(letter)) return;
