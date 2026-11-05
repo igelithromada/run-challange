@@ -10,6 +10,7 @@ import Navbar from "../components/Navbar";
 import { Footprints, Medal, Trophy, Users, User } from "lucide-react";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import Sidebar from "../components/Sidebar";
+import ActivityTypeSelector from "../components/ActivityTypeSelector";
 
 export default function StatisticsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -128,10 +129,7 @@ export default function StatisticsPage() {
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
       <main className="container statistics-page">
         <div className="control-caption">Typ aktivity</div>
-        <div className="tile-group">
-          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}><img className="run-profile-icon" src="/run-icon-white.png" alt="" aria-hidden="true" /> Běh</button>
-          <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}><Footprints size={25} /> Chůze</button>
-        </div>
+        <ActivityTypeSelector value={selectedType as "běh" | "chůze"} onChange={setSelectedType} />
 
         <div className="control-caption">Zobrazit výsledky</div>
         <div className="tile-group">
