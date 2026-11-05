@@ -98,13 +98,13 @@ export default function TeamsPage() {
     } finally { setChallengeSaving(false); }
   };
 
-  const joinTeam = async (teamId: string) => {
-    const next = { ...teamIdsByType, [selectedType]: teamId };
+  const joinTeam = async (teamId: string, teamType: ActivityType) => {
+    const next = { ...teamIdsByType, [teamType]: teamId };
     setTeamIdsByType(next);
     if (user) {
       await setDoc(doc(db, "users", user.uid), {
         teamIdsByType: next,
-        ...(selectedType === "běh" ? { teamId, joinedTeam: teamId } : {}),
+        ...(teamType === "běh" ? { teamId, joinedTeam: teamId } : {}),
       }, { merge: true });
     }
   };
@@ -210,7 +210,7 @@ export default function TeamsPage() {
                   {isJoined ? (
                     <button onClick={leaveTeam} className="tile-button team-action-button"><DoorOpen size={18} /> Odejít z týmu</button>
                   ) : (
-                    <button onClick={() => joinTeam(team.id)} className="tile-button team-action-button"><Plus size={18} /> Přidat se</button>
+                    <button onClick={() => joinTeam(team.id, teamType)} className="tile-button team-action-button"><Plus size={18} /> Přidat se</button>
                   )}
                   {user?.uid === team.createdBy && <button onClick={() => deleteTeam(team.id)} className="tile-button team-delete-button" title="Smazat tým" aria-label="Smazat tým"><Trash2 size={18} /></button>}
                 </div>
