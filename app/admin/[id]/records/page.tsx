@@ -9,7 +9,7 @@ import useAdminGuard from "../../../lib/useAdminGuard";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/Sidebar";
 import ActivityCard from "../../../components/ActivityCard";
-import { Footprints } from "lucide-react";
+import ActivityTypeSelector from "../../../../components/ActivityTypeSelector";
 
 type Run = {
   id:string; uid?:string; km?:number|string; minuty?:number|string; tempo?:number|string; type?:string;
@@ -61,10 +61,7 @@ export default function RecordsPage() {
         <p>Aktivity, fotografie a možnost moderace.</p>
       </div>
 
-      <div className="tile-group">
-        <button className={`tile-button ${selectedType==="běh"?"active":""}`} onClick={()=>setSelectedType("běh")}><img className="run-profile-icon" src="/run-icon-white.png" alt="" /> Běh</button>
-        <button className={`tile-button ${selectedType==="chůze"?"active":""}`} onClick={()=>setSelectedType("chůze")}><Footprints size={24}/> Chůze</button>
-      </div>
+      <ActivityTypeSelector value={selectedType} onChange={setSelectedType} />
 
       <div className="list-container">
         {runs.filter(r => (r.type||"běh")===selectedType).map(run => {
