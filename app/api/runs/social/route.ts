@@ -87,6 +87,14 @@ export async function POST(request: Request) {
     const runSnapshot = await runRef.get();
     if (!runSnapshot.exists) return NextResponse.json({ error: "Záznam neexistuje." }, { status: 404 });
 
+    const runData = runSnapshot.data() || {};
+    if (runData.uid === decoded.uid) {
+      return NextResponse.json(
+        { error: action === "like" ? "Vlastní záznam nelze lajknout." : "Vlastní záznam nelze komentovat." },
+        { status: 403 }
+      );
+    }
+
     if (action === "like") {
       const result = await adminDb.runTransaction(async transaction => {
         const snapshot = await transaction.get(runRef);
