@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fix/run-app-issues
+      - fix/next16-admin-ui
   pull_request:
     branches:
       - main
@@ -24,14 +25,14 @@ jobs:
       - name: Nastavení Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Synchronizace zámku závislostí
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
       - name: Uložení opraveného zámku závislostí
-        if: github.event_name == 'push' && github.ref == 'refs/heads/fix/run-app-issues'
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/fix/run-app-issues' || github.ref == 'refs/heads/fix/next16-admin-ui')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
