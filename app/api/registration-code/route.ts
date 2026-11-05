@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { getAdminServices } from "../../../lib/firebaseAdmin";
+import { getAdminServices } from "@/lib/firebaseAdmin";
 
 function safeEqual(a: string, b: string) {
   const aa = Buffer.from(a, "utf8");
