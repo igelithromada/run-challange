@@ -58,6 +58,8 @@ export default function MyRunsPage() {
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
   const [showImageUrls, setShowImageUrls] = useState<string[] | null>(null);
+  const [showImageRunId, setShowImageRunId] = useState<string | null>(null);
+  const [deletingPhoto, setDeletingPhoto] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedType, setSelectedType] = useState("běh");
   const [dateFrom, setDateFrom] = useState("");
@@ -164,6 +166,24 @@ export default function MyRunsPage() {
       console.error(err); setActionError(err instanceof Error ? err.message : "Záznam se nepodařilo upravit.");
     } finally { setBusy(false); }
   };
+  const handleDeletePhoto = async () => {
+    if (!showImageUrls || !showImageRunId || deletingPhoto) return;
+    const index = currentImageIndex;
+    if (!window.confirm("Opravdu chceš tuto fotografii trvale smazat?")) return;
+    setDeletingPhoto(true); setActionError("");
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const token = await currentUser.getIdToken(true);
+      const response = await fetch("/api/runs/photo", { method:"DELETE", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({runId:showImageRunId,index}) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Fotografii se nepodařilo smazat.");
+      const next = Array.isArray(result.imageUrls) ? result.imageUrls : showImageUrls.filter((_,i)=>i!==index);
+      if (next.length) { setShowImageUrls(next); setCurrentImageIndex(Math.min(index,next.length-1)); }
+      else { setShowImageUrls(null); setShowImageRunId(null); setCurrentImageIndex(0); }
+    } catch (err) { setActionError(err instanceof Error ? err.message : "Fotografii se nepodařilo smazat."); }
+    finally { setDeletingPhoto(false); }
+  };
   const handleDelete = async (id: string) => {
     if (confirmDelete && !window.confirm("Opravdu chceš tento záznam trvale smazat? Fotografie se odstraní také.")) return;
     setActionError("");
@@ -253,13 +273,14 @@ export default function MyRunsPage() {
             <button disabled={busy} onClick={() => { setEditingId(null); setFile(null); setActionError(""); }}>Zrušit</button>
             <button disabled={busy} onClick={() => handleUpdate(run.id)}>{busy ? "Ukládám…" : "Uložit změny"}</button>
           </div>
-        </div> : <ActivityCard key={run.id} run={run} nickname={profile.nickname || run.nickname || run.email?.split("@")[0] || "Anonym"} avatarUrl={profile.avatarUrl} activityType={selectedType} onEdit={() => handleEdit(run)} onDelete={() => handleDelete(run.id)} onPhotosClick={images => { setCurrentImageIndex(0); setShowImageUrls(images); }} />)}
+        </div> : <ActivityCard key={run.id} run={run} nickname={profile.nickname || run.nickname || run.email?.split("@")[0] || "Anonym"} avatarUrl={profile.avatarUrl} activityType={selectedType} onEdit={() => handleEdit(run)} onDelete={() => handleDelete(run.id)} onPhotosClick={(images) => { setCurrentImageIndex(0); setShowImageUrls(images); setShowImageRunId(run.id); }} />)}
       </div>
       {showImageUrls && showImageUrls.length > 0 && <div className="activity-lightbox" onClick={() => setShowImageUrls(null)}>
         <img loading="lazy" decoding="async" src={cloudinaryImageUrl(showImageUrls[currentImageIndex], 1600)} alt={`Fotografie ${currentImageIndex + 1}`} onClick={e => e.stopPropagation()} />
         <div className="activity-lightbox-actions" onClick={e => e.stopPropagation()}>
           {showImageUrls.length > 1 && <button onClick={() => setCurrentImageIndex(i => (i - 1 + showImageUrls.length) % showImageUrls.length)} aria-label="Předchozí fotografie">❮</button>}
-          <button onClick={() => { setShowImageUrls(null); setCurrentImageIndex(0); }}>Zavřít</button>
+          <button onClick={() => void handleDeletePhoto()} disabled={deletingPhoto} aria-label="Smazat fotografii">{deletingPhoto ? "Mažu…" : "Smazat"}</button>
+          <button onClick={() => { setShowImageUrls(null); setShowImageRunId(null); setCurrentImageIndex(0); }}>Zavřít</button>
           {showImageUrls.length > 1 && <button onClick={() => setCurrentImageIndex(i => (i + 1) % showImageUrls.length)} aria-label="Další fotografie">❯</button>}
         </div>
         {showImageUrls.length > 1 && <p>{currentImageIndex + 1} / {showImageUrls.length}</p>}
