@@ -217,7 +217,7 @@ export default function ProgressPage() {
       </section>
 
       <section className="tile progress-calendar">
-        <div className="progress-section-title"><CalendarDays/><div><h2>Kalendář aktivit</h2><p>Posledních 12 týdnů – čím tmavší políčko, tím větší vzdálenost.</p></div></div>
+        <div className="progress-section-title"><CalendarDays/><div><h2>Kalendář aktivit</h2><p>Posledních 12 týdnů – čím sytější zelená, tím větší vzdálenost.</p></div></div>
         <div className="progress-calendar-grid">{calendarDays.map(day=>{const km=dailyTotals.get(dateKey(day))||0;return <div key={dateKey(day)} className={`progress-day ${km===0?"":km<3?"level-1":km<7?"level-2":km<12?"level-3":"level-4"}`} title={`${day.toLocaleDateString("cs-CZ")}: ${km.toFixed(1)} km`}/>})}</div>
         <div className="progress-calendar-legend"><span>Méně</span><i/><i/><i/><i/><span>Více</span></div>
         <p className="progress-calendar-summary">{activityDays} aktivních dní · {maxDay.toFixed(1)} km nejvíce za jeden den</p>
