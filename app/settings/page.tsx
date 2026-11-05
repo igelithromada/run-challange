@@ -52,9 +52,19 @@ export default function SettingsPage() {
         const snap = await getDoc(ref);
         if (snap.exists()) {
           const data = snap.data();
-          const storedTheme = data.theme || "default";
-          const storedColor = data.customColor || DEFAULT_COLOR;
-          const storedAnimations = data.animationsEnabled !== false;
+          const remoteTheme = data.theme || "default";
+          const remoteColor = data.customColor || DEFAULT_COLOR;
+          const remoteAnimations = data.animationsEnabled !== false;
+          let cachedTheme: { theme?: string; customColor?: string; animationsEnabled?: boolean; savedAt?: number } | null = null;
+          try {
+            cachedTheme = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
+          } catch {}
+          const cachedSavedAt = typeof cachedTheme?.savedAt === "number" ? cachedTheme.savedAt : 0;
+          const remoteSavedAt = typeof data.themeUpdatedAt?.toMillis === "function" ? data.themeUpdatedAt.toMillis() : Number(data.themeUpdatedAt || 0);
+          const useRemoteTheme = cachedSavedAt === 0 || remoteSavedAt >= cachedSavedAt;
+          const storedTheme = useRemoteTheme ? remoteTheme : (cachedTheme?.theme || remoteTheme);
+          const storedColor = useRemoteTheme ? remoteColor : (cachedTheme?.customColor || remoteColor);
+          const storedAnimations = useRemoteTheme ? remoteAnimations : (cachedTheme?.animationsEnabled !== false);
           setNickname(data.nickname || "");
           setAvatarUrl(data.avatarUrl || "");
           setTheme(storedTheme);
