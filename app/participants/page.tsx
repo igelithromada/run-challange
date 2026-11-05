@@ -44,7 +44,7 @@ export default function ParticipantsPage() {
       setLoading(true);
       try {
         const snapshot = await getDocs(query(collection(db, "runs"), orderBy("timestamp", "desc")));
-        const items = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        const items = snapshot.docs.map(item => ({ id: item.id, ...(item.data() as Record<string, any>) }));
         setRuns(items);
 
         const ids = Array.from(new Set(items.map(item => item.uid).filter((uid): uid is string => typeof uid === "string" && !!uid)));
