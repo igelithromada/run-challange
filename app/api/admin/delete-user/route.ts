@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { adminAuth, adminDb } from "../../../lib/firebaseAdmin";
+import { getAdminServices } from "../../../lib/firebaseAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 async function verifyAdmin(request: Request) {
+  const { adminAuth, adminDb } = getAdminServices();
   const header = request.headers.get("authorization") || "";
   if (!header.startsWith("Bearer ")) return null;
 
@@ -20,6 +21,7 @@ async function verifyAdmin(request: Request) {
 }
 
 async function deleteUserRuns(uid: string) {
+  const { adminDb } = getAdminServices();
   const snapshot = await adminDb.collection("runs").where("uid", "==", uid).get();
   const refs = snapshot.docs.map((item) => item.ref);
 
@@ -48,6 +50,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Vlastní administrátorský účet zde nelze smazat." }, { status: 400 });
     }
 
+    const { adminAuth, adminDb } = getAdminServices();
     const target = await adminAuth.getUser(uid);
     const deletedRuns = await deleteUserRuns(uid);
 
