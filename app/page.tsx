@@ -32,7 +32,7 @@ export default function Page() {
   const [olderCursor, setOlderCursor] = useState<any>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [selectedType, setSelectedType] = useState("běh");
+  const [selectedType, setSelectedType] = useState<"běh" | "chůze">("běh");
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [userAvatars, setUserAvatars] = useState<{ [key: string]: { avatarUrl: string; nickname: string } }>({});
@@ -42,8 +42,14 @@ export default function Page() {
     const unsubAuth = onAuthStateChanged(auth, async user => {
       if (!user) { router.push("/login"); return; }
       try {
+        const cachedActivity = localStorage.getItem("dolni-lhota-default-activity-v1");
+        if (cachedActivity === "běh" || cachedActivity === "chůze") setSelectedType(cachedActivity);
         const profile = await getDoc(doc(db, "users", user.uid));
-        if (profile.exists() && profile.data().defaultActivity === "chůze") setSelectedType("chůze");
+        if (profile.exists()) {
+          const remoteActivity = profile.data().defaultActivity === "chůze" ? "chůze" : "běh";
+          setSelectedType(remoteActivity);
+          try { localStorage.setItem("dolni-lhota-default-activity-v1", remoteActivity); } catch {}
+        }
       } catch {}
     });
     return () => unsubAuth();
@@ -168,7 +174,7 @@ export default function Page() {
 
         <RunWeatherRecommendation />
 
-        <ActivityTypeSelector value={selectedType as "běh" | "chůze"} onChange={setSelectedType} />
+        <ActivityTypeSelector value={selectedType} onChange={(value) => { setSelectedType(value); try { localStorage.setItem("dolni-lhota-default-activity-v1", value); } catch {} }} />
 
         <div className="run-form-wrap">
           <RunForm type={selectedType} />
