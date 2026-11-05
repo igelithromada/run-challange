@@ -1,0 +1,9 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // The application currently stores activity/profile images in Cloudinary.
+    // Keep Firebase Storage closed until a dedicated Firebase upload flow is added.
+    allow read, write: if false;
+  }
+}
