@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { CloudSun, CloudRain, CloudSnow, Wind, AlertTriangle, CheckCircle2 } from "lucide-react";
-import ActivityTypeSelector, { ActivityType, ActivityTypeIcon } from "./ActivityTypeSelector";
+import { ActivityType, ActivityTypeIcon } from "./ActivityTypeSelector";
 
 type WeatherData = { current?: any; hourly?: any[]; error?: string };
 

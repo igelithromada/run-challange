@@ -15,7 +15,7 @@ import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { Plus, DoorOpen, Trash2 } from "lucide-react";
-import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
+import ActivityTypeSelector, { ActivityType, ActivityTypeIcon } from "../components/ActivityTypeSelector";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 
 export default function TeamsPage() {
@@ -172,7 +172,7 @@ export default function TeamsPage() {
         <section className="tile teams-create">
           <div className="control-caption">Tým pro aktivitu</div>
           <ActivityTypeSelector value={selectedType} onChange={setSelectedType} ariaLabel="Aktivita týmu" />
-          <div className="teams-section-heading"><div><h2>Vytvořit nový tým</h2><p>Založ tým a pozvi ostatní běžce.</p></div></div>
+          <div className="teams-section-heading"><div><h2>Vytvořit nový tým</h2><p>Založ tým a pozvi ostatní členy.</p></div></div>
           <div className="teams-create-form">
             <input type="text" placeholder="Zadej název týmu" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
             <button onClick={createTeam} className="tile-button teams-primary-button" disabled={!teamName.trim()}><Plus size={18} /> Vytvořit tým</button>
