@@ -43,6 +43,7 @@ export default function ProgressPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [uid, setUid] = useState("");
   const [joinedTeamId, setJoinedTeamId] = useState("");
+  const [teamIdsByType, setTeamIdsByType] = useState<Record<ActivityType, string | null>>({ běh: null, chůze: null });
   const [goalWeekly, setGoalWeekly] = useState("25");
   const [goalMonthly, setGoalMonthly] = useState("100");
   const [goalType, setGoalType] = useState("běh");
@@ -69,7 +70,13 @@ export default function ProgressPage() {
           setGoalType(initialType);
           setGoalWeekly(String(nextGoals[initialType].weekly));
           setGoalMonthly(String(nextGoals[initialType].monthly));
-          setJoinedTeamId(data.teamId || data.joinedTeam || "");
+          const storedTeams = data.teamIdsByType || {};
+          const nextTeamIds: Record<ActivityType, string | null> = {
+            běh: typeof storedTeams.běh === "string" ? storedTeams.běh : (typeof data.teamId === "string" ? data.teamId : null),
+            chůze: typeof storedTeams.chůze === "string" ? storedTeams.chůze : null,
+          };
+          setTeamIdsByType(nextTeamIds);
+          setJoinedTeamId(nextTeamIds[initialType] || "");
         }
       } catch (error) { console.error("Nepodařilo se načíst profil a cíle", error); }
     });
