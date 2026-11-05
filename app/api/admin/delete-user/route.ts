@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import type { DocumentReference } from "firebase-admin/firestore";
+import type { DocumentReference, Firestore, QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
 import { collectCloudinaryPublicIds, deleteCloudinaryImages } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-async function deleteCommentsByUser(adminDb: FirebaseFirestore.Firestore, uid: string) {
+async function deleteCommentsByUser(adminDb: Firestore, uid: string) {
   const snapshot = await adminDb.collectionGroup("comments").where("uid", "==", uid).get();
-  const grouped = new Map<string, { runRef: DocumentReference; comments: FirebaseFirestore.QueryDocumentSnapshot[] }>();
+  const grouped = new Map<string, { runRef: DocumentReference; comments: QueryDocumentSnapshot[] }>();
 
   for (const comment of snapshot.docs) {
     const runRef = comment.ref.parent.parent;
