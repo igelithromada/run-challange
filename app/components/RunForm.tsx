@@ -131,7 +131,10 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
         imageUrls,
         imagePublicIds,
         teamId: selectedTeamId,
-        activityType: type
+        activityType: type,
+        likedBy: [],
+        likeCount: 0,
+        commentCount: 0
       });
 
       reset();
