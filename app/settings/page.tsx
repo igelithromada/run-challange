@@ -13,6 +13,7 @@ import { Check, Palette, Sparkles, Clock3, SlidersHorizontal, ShieldCheck } from
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 
 const DEFAULT_COLOR = "#36D1DC";
+const DEFAULT_ACTIVITY_KEY = "dolni-lhota-default-activity-v1";
 
 export default function SettingsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -33,6 +34,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     try {
+      const cachedActivity = localStorage.getItem(DEFAULT_ACTIVITY_KEY);
+      if (cachedActivity === "běh" || cachedActivity === "chůze") setDefaultActivity(cachedActivity);
       const cached = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
       if (cached) {
         setTheme(cached.theme || "default");
@@ -70,7 +73,9 @@ export default function SettingsPage() {
           setTheme(storedTheme);
           setCustomColor(storedColor);
           setAnimationsEnabled(storedAnimations);
-          setDefaultActivity(data.defaultActivity === "chůze" ? "chůze" : "běh");
+          const remoteDefaultActivity = data.defaultActivity === "chůze" ? "chůze" : "běh";
+          setDefaultActivity(remoteDefaultActivity);
+          try { localStorage.setItem(DEFAULT_ACTIVITY_KEY, remoteDefaultActivity); } catch {}
           await applyTheme(storedTheme, storedColor, storedAnimations, false);
         }
       } catch (error) {
@@ -135,8 +140,14 @@ export default function SettingsPage() {
 
   const handleDefaultActivityChange = async (value: "běh" | "chůze") => {
     setDefaultActivity(value);
-    await saveSettings({ defaultActivity: value });
-    flash("Výchozí aktivita uložena");
+    try { localStorage.setItem(DEFAULT_ACTIVITY_KEY, value); } catch {}
+    try {
+      await saveSettings({ defaultActivity: value });
+      flash(value === "běh" ? "Výchozí aktivita: běh" : "Výchozí aktivita: chůze");
+    } catch (error) {
+      console.error("Nepodařilo se uložit výchozí aktivitu", error);
+      flash("Výchozí aktivitu se nepodařilo uložit");
+    }
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
