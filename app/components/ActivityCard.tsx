@@ -105,11 +105,6 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
     } finally { setSocialBusy(false); }
   };
 
-  const openLikes = async () => {
-    if (likeLongPressTriggered.current) return;
-    await loadSocial("likes");
-  };
-
   const startLikeLongPress = () => {
     likeLongPressTriggered.current = false;
     if (likeLongPressTimer.current) clearTimeout(likeLongPressTimer.current);
