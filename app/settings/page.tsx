@@ -168,7 +168,7 @@ export default function SettingsPage() {
       const response = await fetch("https://api.cloudinary.com/v1_1/dvb4jm8cw/image/upload", { method: "POST", body: formData });
       const result = await response.json();
       if (!response.ok || !result.secure_url) throw new Error(result.error?.message || "Nahrání selhalo.");
-      await setDoc(doc(db, "users", userId), { avatarUrl: result.secure_url }, { merge: true });
+      await setDoc(doc(db, "users", userId), { avatarUrl: result.secure_url, avatarPublicId: result.public_id || "" }, { merge: true });
       setAvatarUrl(result.secure_url);
       flash("Profilová fotografie uložena");
     } catch (error) {
