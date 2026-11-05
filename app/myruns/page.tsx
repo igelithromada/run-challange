@@ -6,7 +6,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
-import { Footprints } from "lucide-react";
+import { Footprints, Zap } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import ActivityCard from "../components/ActivityCard";
 import LoadingSkeleton from "../components/LoadingSkeleton";
@@ -196,8 +196,30 @@ export default function MyRunsPage() {
         <div className="tile"><span>Čas</span><strong>{(totalMin / 60).toFixed(2)} h</strong></div>
         <div className="tile"><span>Prům. tempo</span><strong>{formatTime(avgTempo)} /km</strong></div>
       </div>
-      {longestRun && <div className="tile">🏆 Nejdelší {selectedType}: {longestRun.km} km za {formatTime(longestRun.minuty)} ({formatTime(longestRun.tempo)} /km)</div>}
-      {fastestRun && <div className="tile">⚡ Nejrychlejší {selectedType}: {fastestRun.km} km za {formatTime(fastestRun.minuty)} ({formatTime(fastestRun.tempo)} /km)</div>}
+      {(longestRun || fastestRun) && (
+        <div className="my-records-grid" aria-label="Osobní rekordy">
+          {longestRun && (
+            <div className="my-record-tile">
+              <span className="my-record-icon"><Footprints size={20}/></span>
+              <span className="my-record-copy">
+                <small>Nejdelší {selectedType}</small>
+                <strong>{longestRun.km} km</strong>
+                <span>{formatTime(longestRun.minuty)} · {formatTime(longestRun.tempo)} /km</span>
+              </span>
+            </div>
+          )}
+          {fastestRun && (
+            <div className="my-record-tile">
+              <span className="my-record-icon"><Zap size={20}/></span>
+              <span className="my-record-copy">
+                <small>Nejrychlejší tempo</small>
+                <strong>{formatTime(fastestRun.tempo)} /km</strong>
+                <span>{fastestRun.km} km · {formatTime(fastestRun.minuty)}</span>
+              </span>
+            </div>
+          )}
+        </div>
+      )}
       <h2 className="centered-title">Moje záznamy</h2>
       {actionError && <p className="activity-action-error">{actionError}</p>}
       <div className="list-container" style={{ display:"flex", flexDirection:"column", gap:0 }}>
