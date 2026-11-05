@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldPath } from "firebase-admin/firestore";
-import { adminAuth, adminDb } from "../../../lib/firebaseAdmin";
+import { getAdminServices } from "../../../lib/firebaseAdmin";
 
 export const runtime = "nodejs";
 
 async function requireAdmin(request: NextRequest) {
+  const { adminAuth, adminDb } = getAdminServices();
   const authorization = request.headers.get("authorization");
   if (!authorization?.startsWith("Bearer ")) throw new Error("UNAUTHORIZED");
 
@@ -16,12 +17,12 @@ async function requireAdmin(request: NextRequest) {
     throw new Error("FORBIDDEN");
   }
 
-  return decoded.uid;
+  return { uid: decoded.uid, adminAuth, adminDb };
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    const requestingUid = await requireAdmin(request);
+    const { uid: requestingUid, adminAuth, adminDb } = await requireAdmin(request);
     const body = await request.json().catch(() => ({}));
     const targetUid = typeof body?.uid === "string" ? body.uid.trim() : "";
 
