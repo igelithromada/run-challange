@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { collection, query, where, onSnapshot, deleteDoc, doc } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db, auth } from "../../../lib/firebase";
 import { signOut } from "firebase/auth";
 import useAdminGuard from "../../../lib/useAdminGuard";
@@ -13,7 +13,7 @@ import ActivityTypeSelector from "../../../components/ActivityTypeSelector";
 
 type Run = {
   id:string; uid?:string; km?:number|string; minuty?:number|string; tempo?:number|string; type?:string;
-  timestamp?:any; imageUrls?:string[]; imageUrl?:string; nickname?:string; email?:string; teamId?:string;
+  timestamp?:any; imageUrls?:string[]; imageUrl?:string; imagePublicIds?:string[]; nickname?:string; email?:string; teamId?:string;
 };
 
 export default function RecordsPage() {
@@ -36,9 +36,25 @@ export default function RecordsPage() {
   }, [adminAccess,id]);
 
   const handleDelete = async (runId:string) => {
-    if (!window.confirm("Opravdu smazat tento záznam?")) return;
-    try { await deleteDoc(doc(db,"runs",runId)); }
-    catch(error) { console.error(error); window.alert("Smazání se nepodařilo."); }
+    if (!window.confirm("Opravdu smazat tento záznam? Fotografie se odstraní také.")) return;
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const idToken = await currentUser.getIdToken(true);
+      const response = await fetch("/api/runs/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ runId }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Smazání se nepodařilo.");
+    } catch(error) {
+      console.error(error);
+      window.alert(error instanceof Error ? error.message : "Smazání se nepodařilo.");
+    }
   };
 
   const handleSelect = async (item:string) => {
