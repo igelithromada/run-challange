@@ -4,6 +4,18 @@ import { collectCloudinaryPublicIds, deleteCloudinaryImages } from "../../../lib
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+async function deleteRunComments(runRef: FirebaseFirestore.DocumentReference) {
+  const collections = await runRef.listCollections();
+  for (const subcollection of collections) {
+    const snapshot = await subcollection.get();
+    for (let i = 0; i < snapshot.docs.length; i += 450) {
+      const batch = runRef.firestore.batch();
+      snapshot.docs.slice(i, i + 450).forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
+  }
+}
+
 
 async function verifyAdmin(request: Request) {
   const { adminAuth, adminDb } = getAdminServices();
