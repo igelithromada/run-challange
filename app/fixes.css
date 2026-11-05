@@ -463,3 +463,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .activity-card-modern .activity-social-button:hover { background:rgba(255,255,255,.16); }
 .activity-card-modern .activity-social-button.is-liked { color:#ff8b9b; border-color:rgba(255,139,155,.35); background:rgba(255,100,125,.12); }
 .activity-card-modern .activity-social-button:disabled { opacity:.55; }
+
+.activity-lightbox-actions button:first-child {
+  background:rgba(160,55,65,.78);
+  color:#fff;
+  font-size:.9rem;
+}
+.activity-lightbox-actions button:nth-child(2) {
+  background:rgba(255,255,255,.92);
+  color:#111;
+  font-size:inherit;
+}
