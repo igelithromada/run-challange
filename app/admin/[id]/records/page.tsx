@@ -9,7 +9,7 @@ import useAdminGuard from "../../../lib/useAdminGuard";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/Sidebar";
 import ActivityCard from "../../../components/ActivityCard";
-import ActivityTypeSelector from "../../../../components/ActivityTypeSelector";
+import ActivityTypeSelector from "../../../components/ActivityTypeSelector";
 
 type Run = {
   id:string; uid?:string; km?:number|string; minuty?:number|string; tempo?:number|string; type?:string;
