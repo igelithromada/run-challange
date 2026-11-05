@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { auth } from "../lib/firebase";
-import { Camera, Clock3, Gauge, Heart, MapPin, MessageCircle, Pencil, Trash2, X, Send, Users } from "lucide-react";
+import { Camera, Clock3, Gauge, Heart, MapPin, MessageCircle, Pencil, Trash2, X, Send } from "lucide-react";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 
 export type ActivityCardRun = {
@@ -56,6 +56,8 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
   const [commentText, setCommentText] = useState("");
   const [socialLoading, setSocialLoading] = useState(false);
   const [socialBusy, setSocialBusy] = useState(false);
+  const likeLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const likeLongPressTriggered = useRef(false);
   const [socialError, setSocialError] = useState("");
 
   useEffect(() => {
@@ -103,6 +105,27 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
     } finally { setSocialBusy(false); }
   };
 
+  const openLikes = async () => {
+    if (likeLongPressTriggered.current) return;
+    await loadSocial("likes");
+  };
+
+  const startLikeLongPress = () => {
+    likeLongPressTriggered.current = false;
+    if (likeLongPressTimer.current) clearTimeout(likeLongPressTimer.current);
+    likeLongPressTimer.current = setTimeout(() => {
+      likeLongPressTriggered.current = true;
+      void loadSocial("likes");
+    }, 600);
+  };
+
+  const cancelLikeLongPress = () => {
+    if (likeLongPressTimer.current) {
+      clearTimeout(likeLongPressTimer.current);
+      likeLongPressTimer.current = null;
+    }
+  };
+
   const submitComment = async () => {
     const text = commentText.trim();
     if (!text || socialBusy) return;
@@ -148,17 +171,27 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
         </div>
 
         <footer className="activity-card-actions activity-social-actions">
-          <button type="button" className={`activity-social-button ${liked ? "is-liked" : ""}`} onClick={() => void toggleLike()} disabled={socialBusy} aria-label={liked ? "Zrušit To se mi líbí" : "To se mi líbí"}>
-            <Heart size={17} fill={liked ? "currentColor" : "none"} /> <span>{likeCount}</span>
+          <button
+            type="button"
+            className={`activity-social-button ${liked ? "is-liked" : ""}`}
+            onClick={() => { if (!likeLongPressTriggered.current) void toggleLike(); likeLongPressTriggered.current = false; }}
+            onPointerDown={startLikeLongPress}
+            onPointerUp={cancelLikeLongPress}
+            onPointerLeave={cancelLikeLongPress}
+            onPointerCancel={cancelLikeLongPress}
+            disabled={socialBusy}
+            aria-label={liked ? `Zrušit To se mi líbí · ${likeCount}` : `To se mi líbí · ${likeCount}`}
+            title="Dlouze podrž pro zobrazení, kdo lajknul"
+          >
+            <Heart size={17} fill={liked ? "currentColor" : "none"} /><span>{likeCount}</span>
           </button>
-          <button type="button" className="activity-social-button" onClick={() => void loadSocial("likes")} aria-label="Zobrazit, kdo dal To se mi líbí">
-            <Users size={16} /> Kdo lajkuje
+          <button type="button" className="activity-social-button" onClick={() => void loadSocial("comments")} aria-label={`Komentáře · ${commentCount}`}>
+            <MessageCircle size={17} /><span>{commentCount}</span>
           </button>
-          <button type="button" className="activity-social-button" onClick={() => void loadSocial("comments")} aria-label="Zobrazit komentáře">
-            <MessageCircle size={17} /> <span>{commentCount}</span> komentáře
-          </button>
+          {images.length > 0 && <button type="button" className="activity-social-button" onClick={() => onPhotosClick(images, run.imageUrl || "")} aria-label={`Fotografie · ${images.length}`}>
+            <Camera size={17} /><span>{images.length}</span>
+          </button>}
           <span className="activity-actions-spacer" />
-          {images.length > 0 && <button type="button" className="activity-photos-button" onClick={() => onPhotosClick(images, run.imageUrl || "")}><Camera size={16} /> Fotografie ({images.length})</button>}
           {onEdit && <button type="button" className="activity-manage-button" onClick={onEdit}><Pencil size={15} /> Upravit</button>}
           {onDelete && <button type="button" className="activity-manage-button activity-delete-button" onClick={onDelete}><Trash2 size={15} /> Smazat</button>}
         </footer>
