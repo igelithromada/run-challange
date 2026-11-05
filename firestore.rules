@@ -37,6 +37,7 @@ service cloud.firestore {
               "confirmDelete",
               "teamId",
               "joinedTeam",
+              "teamIdsByType",
               "progressGoals",
               "progressGoalsByType"
             ]));

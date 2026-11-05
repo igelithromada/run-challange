@@ -15,16 +15,18 @@ import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { Plus, DoorOpen, Trash2 } from "lucide-react";
+import ActivityTypeSelector, { ActivityType, ActivityTypeIcon } from "../components/ActivityTypeSelector";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 
 export default function TeamsPage() {
 
   const [menuVisible, setMenuVisible] = useState(false);
-  const [joinedTeam, setJoinedTeam] = useState<string | null>(null);
   const [teamName, setTeamName] = useState("");
   const [challengeGoal, setChallengeGoal] = useState("500");
   const [challengeSaving, setChallengeSaving] = useState(false);
   const [challengeMessage, setChallengeMessage] = useState("");
+  const [selectedType, setSelectedType] = useState<ActivityType>("běh");
+  const [teamIdsByType, setTeamIdsByType] = useState<Record<ActivityType, string | null>>({ běh: null, chůze: null });
   const [user, setUser] = useState<any>(null);
 
   const router = useRouter();
@@ -38,8 +40,12 @@ export default function TeamsPage() {
         const userDoc = await getDoc(doc(db, "users", u.uid));
         if (userDoc.exists()) {
           const data = userDoc.data();
-          const activeTeamId = data.teamId || data.joinedTeam;
-          if (activeTeamId) setJoinedTeam(activeTeamId);
+          const stored = data.teamIdsByType;
+          const next: Record<ActivityType, string | null> = {
+            běh: typeof stored?.běh === "string" ? stored.běh : (typeof data.teamId === "string" ? data.teamId : null),
+            chůze: typeof stored?.chůze === "string" ? stored.chůze : null,
+          };
+          setTeamIdsByType(next);
         }
       }
     });
@@ -49,6 +55,7 @@ export default function TeamsPage() {
   const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
   const teamsState = useSharedFirestoreQuery<any>("teams:all", teamsQuery);
   const teams = teamsState.data;
+  const joinedTeam = teamIdsByType[selectedType];
   const currentTeam = teams.find((team: any) => team.id === joinedTeam);
   const isTeamOwner = !!currentTeam && currentTeam.createdBy === user?.uid;
 
@@ -60,14 +67,16 @@ export default function TeamsPage() {
     if (!teamName.trim() || !user) return;
     const newTeam = await addDoc(collection(db, "teams"), {
       name: teamName.trim(),
+      type: selectedType,
       createdBy: user.uid,
       challengeGoalKm: Number(challengeGoal) > 0 ? Number(challengeGoal) : 500,
     });
+    const next = { ...teamIdsByType, [selectedType]: newTeam.id };
     await setDoc(doc(db, "users", user.uid), {
-      teamId: newTeam.id,
-      joinedTeam: newTeam.id,
+      teamIdsByType: next,
+      ...(selectedType === "běh" ? { teamId: newTeam.id, joinedTeam: newTeam.id } : {}),
     }, { merge: true });
-    setJoinedTeam(newTeam.id);
+    setTeamIdsByType(next);
     setTeamName("");
   };
 
@@ -90,19 +99,24 @@ export default function TeamsPage() {
   };
 
   const joinTeam = async (teamId: string) => {
-    setJoinedTeam(teamId);
+    const next = { ...teamIdsByType, [selectedType]: teamId };
+    setTeamIdsByType(next);
     if (user) {
       await setDoc(doc(db, "users", user.uid), {
-        teamId,
-        joinedTeam: teamId,
+        teamIdsByType: next,
+        ...(selectedType === "běh" ? { teamId, joinedTeam: teamId } : {}),
       }, { merge: true });
     }
   };
 
   const leaveTeam = async () => {
-    setJoinedTeam(null);
+    const next = { ...teamIdsByType, [selectedType]: null };
+    setTeamIdsByType(next);
     if (user) {
-      await setDoc(doc(db, "users", user.uid), { teamId: null, joinedTeam: null }, { merge: true });
+      await setDoc(doc(db, "users", user.uid), {
+        teamIdsByType: next,
+        ...(selectedType === "běh" ? { teamId: null, joinedTeam: null } : {}),
+      }, { merge: true });
     }
   };
 
@@ -110,9 +124,13 @@ export default function TeamsPage() {
     if (!window.confirm("Opravdu chceš tento tým smazat?")) return;
     await deleteDoc(doc(db, "teams", teamId));
     if (joinedTeam === teamId) {
-      setJoinedTeam(null);
+      const next = { ...teamIdsByType, [selectedType]: null };
+      setTeamIdsByType(next);
       if (user) {
-        await setDoc(doc(db, "users", user.uid), { teamId: null, joinedTeam: null }, { merge: true });
+        await setDoc(doc(db, "users", user.uid), {
+          teamIdsByType: next,
+          ...(selectedType === "běh" ? { teamId: null, joinedTeam: null } : {}),
+        }, { merge: true });
       }
     }
   };
@@ -152,7 +170,9 @@ export default function TeamsPage() {
         )}
 
         <section className="tile teams-create">
-          <div className="teams-section-heading"><div><h2>Vytvořit nový tým</h2><p>Založ tým a pozvi ostatní běžce.</p></div></div>
+          <div className="control-caption">Tým pro aktivitu</div>
+          <ActivityTypeSelector value={selectedType} onChange={setSelectedType} ariaLabel="Aktivita týmu" />
+          <div className="teams-section-heading"><div><h2>Vytvořit nový tým</h2><p>Založ tým a pozvi ostatní členy.</p></div></div>
           <div className="teams-create-form">
             <input type="text" placeholder="Zadej název týmu" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
             <button onClick={createTeam} className="tile-button teams-primary-button" disabled={!teamName.trim()}><Plus size={18} /> Vytvořit tým</button>
@@ -175,15 +195,19 @@ export default function TeamsPage() {
         <section className="teams-list-section">
           <div className="teams-list-heading"><h2>Dostupné týmy</h2><span className="teams-count">{teams.length}</span></div>
           <div className="teams-grid">
-            {teams.map((team) => (
-              <article key={team.id} className={joinedTeam === team.id ? "tile team-card team-card-joined" : "tile team-card"}>
+            {teams.map((team) => {
+              const teamType: ActivityType = team.type === "chůze" ? "chůze" : "běh";
+              const isJoined = joinedTeam === team.id;
+              return (
+              <article key={team.id} className={isJoined ? "tile team-card team-card-joined" : "tile team-card"}>
                 <div className="team-card-top">
                   <div className="team-avatar">{(team.name || "T").charAt(0).toUpperCase()}</div>
-                  {joinedTeam === team.id && <span className="team-member-label">Tvůj tým</span>}
+                  <span className="team-type-badge"><ActivityTypeIcon type={teamType} size={16} /> {teamType === "chůze" ? "Chůze" : "Běh"}</span>
+                  {isJoined && <span className="team-member-label">Tvůj tým</span>}
                 </div>
                 <h3>{team.name}</h3>
                 <div className="team-card-actions">
-                  {joinedTeam === team.id ? (
+                  {isJoined ? (
                     <button onClick={leaveTeam} className="tile-button team-action-button"><DoorOpen size={18} /> Odejít z týmu</button>
                   ) : (
                     <button onClick={() => joinTeam(team.id)} className="tile-button team-action-button"><Plus size={18} /> Přidat se</button>
@@ -191,7 +215,8 @@ export default function TeamsPage() {
                   {user?.uid === team.createdBy && <button onClick={() => deleteTeam(team.id)} className="tile-button team-delete-button" title="Smazat tým" aria-label="Smazat tým"><Trash2 size={18} /></button>}
                 </div>
               </article>
-            ))}
+              );
+            })}
             {teams.length === 0 && <div className="tile teams-empty"><div className="teams-empty-icon">👟</div><strong>Zatím tu nejsou žádné týmy</strong><p>Buď první a založ vlastní tým.</p></div>}
           </div>
         </section>

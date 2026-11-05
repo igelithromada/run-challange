@@ -6,6 +6,7 @@ export interface RunData {
   email?: string;
   nickname?: string;
   teamId?: string;
+  activityType?: "běh" | "chůze";
   km: number;
   minuty: string;
   tempo: string;
@@ -30,4 +31,7 @@ export interface UserData {
 export interface TeamData {
   id: string;
   name: string;
+  type?: "běh" | "chůze";
+  challengeGoalKm?: number;
+  createdBy?: string;
 }
