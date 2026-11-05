@@ -41,12 +41,16 @@ export async function DELETE(request: Request) {
     }
 
     const imageUrls: string[] = [];
+    const publicIds: string[] = [];
     if (Array.isArray(data.imageUrls)) {
       imageUrls.push(...data.imageUrls.filter((value: unknown): value is string => typeof value === "string"));
     }
     if (typeof data.imageUrl === "string") imageUrls.push(data.imageUrl);
+    if (Array.isArray(data.imagePublicIds)) {
+      publicIds.push(...data.imagePublicIds.filter((value: unknown): value is string => typeof value === "string"));
+    }
 
-    const publicIds = collectCloudinaryPublicIds(imageUrls);
+    publicIds.push(...collectCloudinaryPublicIds(imageUrls));
     const cloudinaryResult = await deleteCloudinaryImages(publicIds);
     if (cloudinaryResult.failed.length) {
       return NextResponse.json(
