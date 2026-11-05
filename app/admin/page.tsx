@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { collection, doc, getDocs, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { ArrowLeft, Camera, ShieldCheck, User, Footprints, Ban, UserCheck, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, ShieldCheck, User, Footprints, Ban, UserCheck, Trash2, KeyRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import useAdminGuard from "../lib/useAdminGuard";
@@ -19,6 +19,9 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [registrationCode, setRegistrationCode] = useState("");
+  const [registrationCodeBusy, setRegistrationCodeBusy] = useState(false);
+  const [registrationCodeMessage, setRegistrationCodeMessage] = useState("");
   const router = useRouter();
   const adminAccess = useAdminGuard();
 
@@ -38,6 +41,50 @@ export default function AdminPage() {
   };
 
   useEffect(() => { if (adminAccess === "allowed") void loadUsers(); }, [adminAccess]);
+
+  useEffect(() => {
+    if (adminAccess !== "allowed") return;
+    const loadRegistrationCode = async () => {
+      try {
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
+        const token = await currentUser.getIdToken();
+        const response = await fetch("/api/admin/registration-code", { headers: { Authorization: `Bearer ${token}` } });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Kód se nepodařilo načíst.");
+        setRegistrationCode(result.code || "");
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Registrační kód se nepodařilo načíst.");
+      }
+    };
+    void loadRegistrationCode();
+  }, [adminAccess]);
+
+  const saveRegistrationCode = async () => {
+    const code = registrationCode.trim();
+    if (code.length < 4 || code.length > 128) {
+      setRegistrationCodeMessage("Kód musí mít 4 až 128 znaků.");
+      return;
+    }
+    setRegistrationCodeBusy(true);
+    setRegistrationCodeMessage("");
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const token = await currentUser.getIdToken(true);
+      const response = await fetch("/api/admin/registration-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ code }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Kód se nepodařilo uložit.");
+      setRegistrationCode(code);
+      setRegistrationCodeMessage("Registrační kód byl uložen.");
+    } catch (e) {
+      setRegistrationCodeMessage(e instanceof Error ? e.message : "Kód se nepodařilo uložit.");
+    } finally { setRegistrationCodeBusy(false); }
+  };
 
   const updateUser = async (id: string, patch: Partial<AdminUser>) => {
     setBusy(true); setError("");
@@ -145,6 +192,15 @@ export default function AdminPage() {
         </header>
 
         {error && <p className="form-message form-message-error" role="alert">{error}</p>}
+
+        <section className="tile admin-registration-code">
+          <div className="admin-section-heading"><KeyRound size={21}/><div><h2>Registrační kód</h2><span>Spravuješ kód, který je potřeba pro vytvoření nového účtu.</span></div></div>
+          <div className="admin-registration-form">
+            <input type="text" value={registrationCode} onChange={e => setRegistrationCode(e.target.value)} maxLength={128} autoComplete="off" aria-label="Registrační kód" />
+            <button type="button" className="admin-action-button" onClick={() => void saveRegistrationCode()} disabled={registrationCodeBusy}>{registrationCodeBusy ? "Ukládám…" : "Uložit kód"}</button>
+          </div>
+          {registrationCodeMessage && <p className="admin-muted" role="status">{registrationCodeMessage}</p>}
+        </section>
 
         {!selectedUser ? (
           <section className="tile admin-users">

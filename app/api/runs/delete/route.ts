@@ -1,9 +1,22 @@
 import { NextResponse } from "next/server";
+import type { DocumentReference } from "firebase-admin/firestore";
 import { getAdminServices } from "../../lib/firebaseAdmin";
 import { collectCloudinaryPublicIds, deleteCloudinaryImages } from "../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+async function deleteRunComments(runRef: DocumentReference) {
+  const collections = await runRef.listCollections();
+  for (const subcollection of collections) {
+    const snapshot = await subcollection.get();
+    for (let i = 0; i < snapshot.docs.length; i += 450) {
+      const batch = runRef.firestore.batch();
+      snapshot.docs.slice(i, i + 450).forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
+  }
+}
+
 
 async function getAuthorizedUser(request: Request) {
   const { adminAuth, adminDb } = getAdminServices();
@@ -59,6 +72,7 @@ export async function DELETE(request: Request) {
       );
     }
 
+    await deleteRunComments(runRef);
     await runRef.delete();
 
     return NextResponse.json({

@@ -1,9 +1,51 @@
 import { NextResponse } from "next/server";
+import type { DocumentReference, Firestore, QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
 import { collectCloudinaryPublicIds, deleteCloudinaryImages } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+async function deleteCommentsByUser(adminDb: Firestore, uid: string) {
+  const snapshot = await adminDb.collectionGroup("comments").where("uid", "==", uid).get();
+  const grouped = new Map<string, { runRef: DocumentReference; comments: QueryDocumentSnapshot[] }>();
+
+  for (const comment of snapshot.docs) {
+    const runRef = comment.ref.parent.parent;
+    if (!runRef) continue;
+    const key = runRef.path;
+    const group = grouped.get(key);
+    if (group) group.comments.push(comment);
+    else grouped.set(key, { runRef, comments: [comment] });
+  }
+
+  for (const { runRef, comments } of grouped.values()) {
+    const runSnapshot = await runRef.get();
+    for (let i = 0; i < comments.length; i += 400) {
+      const batch = adminDb.batch();
+      comments.slice(i, i + 400).forEach(comment => batch.delete(comment.ref));
+      if (runSnapshot.exists && i === 0) {
+        const currentCount = Number(runSnapshot.data()?.commentCount) || 0;
+        batch.update(runRef, { commentCount: Math.max(0, currentCount - comments.length) });
+      }
+      await batch.commit();
+    }
+  }
+
+  return snapshot.size;
+}
+
+async function deleteRunComments(runRef: DocumentReference) {
+  const collections = await runRef.listCollections();
+  for (const subcollection of collections) {
+    const snapshot = await subcollection.get();
+    for (let i = 0; i < snapshot.docs.length; i += 450) {
+      const batch = runRef.firestore.batch();
+      snapshot.docs.slice(i, i + 450).forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
+  }
+}
+
 
 async function verifyAdmin(request: Request) {
   const { adminAuth, adminDb } = getAdminServices();
@@ -60,6 +102,7 @@ async function deleteUserData(uid: string) {
     await batch.commit();
   }
 
+  await deleteCommentsByUser(adminDb, uid);
   await adminDb.collection("users").doc(uid).delete();
 
   return {

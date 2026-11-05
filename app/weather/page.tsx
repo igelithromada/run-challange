@@ -29,6 +29,7 @@ export default function WeatherPage() {
     else if (item === "myrun") router.push("/myruns");
     else if (item === "teams") router.push("/teams");
     else if (item === "statistics") router.push("/statistics");
+    else if (item === "participants") router.push("/participants");
     else if (item === "settings") router.push("/settings");
     else if (item === "admin") router.push("/admin");
     else if (item === "weather") router.push("/weather");
