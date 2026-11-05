@@ -20,10 +20,12 @@ type Participant = {
   activities: number;
 };
 
+type RunRecord = Record<string, any> & { id: string };
+
 export default function ParticipantsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedType, setSelectedType] = useState<ActivityType>("běh");
-  const [runs, setRuns] = useState<any[]>([]);
+  const [runs, setRuns] = useState<RunRecord[]>([]);
   const [avatars, setAvatars] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [sortMode, setSortMode] = useState<"km" | "alpha">("km");
@@ -44,7 +46,10 @@ export default function ParticipantsPage() {
       setLoading(true);
       try {
         const snapshot = await getDocs(query(collection(db, "runs"), orderBy("timestamp", "desc")));
-        const items = snapshot.docs.map(item => ({ id: item.id, ...(item.data() as Record<string, any>) }));
+        const items: RunRecord[] = snapshot.docs.map(item => ({
+          id: item.id,
+          ...(item.data() as Record<string, any>),
+        }));
         setRuns(items);
 
         const ids = Array.from(new Set(items.map(item => item.uid).filter((uid): uid is string => typeof uid === "string" && !!uid)));
@@ -80,7 +85,7 @@ export default function ParticipantsPage() {
   }, [runs, selectedType, avatars, sortMode]);
 
   const alphabet = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)).concat(["Č", "Š", "Ž"]);
-  const availableLetters = useMemo(() => new Set(participants.map(p => p.name.trim().charAt(0).normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toUpperCase())), [participants]);
+  const availableLetters = useMemo(() => new Set(participants.map(p => p.name.trim().charAt(0).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase())), [participants]);
   const jumpToLetter = (letter: string) => {
     if (sortMode !== "alpha" || !availableLetters.has(letter)) return;
     const target = document.querySelector(`[data-letter="${letter}"]`);
@@ -142,7 +147,7 @@ export default function ParticipantsPage() {
               {participants.map((participant, index) => {
                 const averagePace = participant.km > 0 ? participant.minutes / participant.km : 0;
                 return (
-                  <button type="button" className="participant-row" key={participant.uid} data-letter={sortMode === "alpha" ? participant.name.trim().charAt(0).normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toUpperCase() : undefined} onClick={() => router.push("/user/" + participant.uid)}>
+                  <button type="button" className="participant-row" key={participant.uid} data-letter={sortMode === "alpha" ? participant.name.trim().charAt(0).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase() : undefined} onClick={() => router.push("/user/" + participant.uid)}>
                     <span className="participant-rank">{index < 3 ? <Medal size={19}/> : index + 1}</span>
                     <span className="activity-avatar participant-avatar">
                       {participant.avatarUrl ? <img src={cloudinaryImageUrl(participant.avatarUrl, 96)} alt="" /> : participant.name.charAt(0).toUpperCase()}
