@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { collection, doc, getDocs, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { ArrowLeft, Camera, ShieldCheck, User, Footprints, Ban, UserCheck, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, ShieldCheck, User, Footprints, Ban, UserCheck, Trash2, UserX } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import useAdminGuard from "../lib/useAdminGuard";
@@ -78,6 +78,53 @@ export default function AdminPage() {
     } finally { setBusy(false); }
   };
 
+  const handleDeleteAccount = async (u: AdminUser) => {
+    if (u.id === auth.currentUser?.uid) {
+      setError("Vlastní administrátorský účet zde nelze smazat.");
+      return;
+    }
+
+    const label = u.nickname || u.email || "uživatele";
+    if (!window.confirm(
+      `Opravdu smazat účet ${label}? Účet z Firebase Authentication, profil a všechny jeho aktivity budou trvale odstraněny. Tuto akci nelze vrátit.`
+    )) return;
+
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setError("Administrátorské přihlášení už není aktivní.");
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+
+    try {
+      const idToken = await currentUser.getIdToken();
+      const response = await fetch("/api/admin/users", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ uid: u.id }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Účet se nepodařilo smazat.");
+      }
+
+      setUsers(prev => prev.filter(user => user.id !== u.id));
+      setSelectedUser(null);
+    } catch (e) {
+      console.error(e);
+      setError(e instanceof Error ? e.message : "Účet se nepodařilo smazat.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
     if (item === "logout") { await signOut(auth); router.push("/login"); return; }
@@ -131,9 +178,10 @@ export default function AdminPage() {
               <button type="button" className="admin-action-button" onClick={() => router.push(`/admin/${selectedUser.id}/records`)}><Footprints size={18}/> Zobrazit záznamy</button>
               <button type="button" className="admin-action-button" onClick={() => router.push(`/admin/${selectedUser.id}/gallery`)}><Camera size={18}/> Zobrazit galerii</button>
               <button type="button" className="admin-action-button admin-action-danger" onClick={() => void handleDeleteData(selectedUser)} disabled={busy}><Trash2 size={18}/> Smazat data aktivit</button>
+              <button type="button" className="admin-action-button admin-action-danger" onClick={() => void handleDeleteAccount(selectedUser)} disabled={busy}><UserX size={18}/> Smazat účet</button>
             </div>
 
-            <p className="admin-muted admin-note">Blokování se ukládá do profilu uživatele a aplikace ho při dalším ověření odhlásí. Úplné odstranění účtu z Firebase Authentication vyžaduje serverovou Firebase Admin vrstvu; tlačítko výše proto nemaže přihlašovací účet, pouze data aktivit.</p>
+            <p className="admin-muted admin-note">Smazání účtu probíhá serverově přes Firebase Admin. Odstraní přihlašovací účet, profil a všechny aktivity uživatele; vlastní administrátorský účet zde nelze smazat.</p>
           </section>
         )}
       </main>
