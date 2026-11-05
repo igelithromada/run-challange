@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
@@ -10,6 +10,7 @@ import { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
 import { Check, Palette, Sparkles, Clock3, SlidersHorizontal, ShieldCheck } from "lucide-react";
+import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 
 const DEFAULT_COLOR = "#36D1DC";
 
@@ -25,7 +26,6 @@ export default function SettingsPage() {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [defaultActivity, setDefaultActivity] = useState<"běh" | "chůze">("běh");
-  const [confirmDelete, setConfirmDelete] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
 
@@ -52,16 +52,25 @@ export default function SettingsPage() {
         const snap = await getDoc(ref);
         if (snap.exists()) {
           const data = snap.data();
-          const storedTheme = data.theme || "default";
-          const storedColor = data.customColor || DEFAULT_COLOR;
-          const storedAnimations = data.animationsEnabled !== false;
+          const remoteTheme = data.theme || "default";
+          const remoteColor = data.customColor || DEFAULT_COLOR;
+          const remoteAnimations = data.animationsEnabled !== false;
+          let cachedTheme: { theme?: string; customColor?: string; animationsEnabled?: boolean; savedAt?: number } | null = null;
+          try {
+            cachedTheme = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
+          } catch {}
+          const cachedSavedAt = typeof cachedTheme?.savedAt === "number" ? cachedTheme.savedAt : 0;
+          const remoteSavedAt = typeof data.themeUpdatedAt?.toMillis === "function" ? data.themeUpdatedAt.toMillis() : Number(data.themeUpdatedAt || 0);
+          const useRemoteTheme = cachedSavedAt === 0 || remoteSavedAt >= cachedSavedAt;
+          const storedTheme = useRemoteTheme ? remoteTheme : (cachedTheme?.theme || remoteTheme);
+          const storedColor = useRemoteTheme ? remoteColor : (cachedTheme?.customColor || remoteColor);
+          const storedAnimations = useRemoteTheme ? remoteAnimations : (cachedTheme?.animationsEnabled !== false);
           setNickname(data.nickname || "");
           setAvatarUrl(data.avatarUrl || "");
           setTheme(storedTheme);
           setCustomColor(storedColor);
           setAnimationsEnabled(storedAnimations);
           setDefaultActivity(data.defaultActivity === "chůze" ? "chůze" : "běh");
-          setConfirmDelete(data.confirmDelete !== false);
           await applyTheme(storedTheme, storedColor, storedAnimations, false);
         }
       } catch (error) {
@@ -80,8 +89,10 @@ export default function SettingsPage() {
     if (!userId) return;
     setSaving(true);
     try {
+      const themeChanged = "theme" in patch || "customColor" in patch || "animationsEnabled" in patch;
       await setDoc(doc(db, "users", userId), {
-        nickname, avatarUrl, theme, customColor, animationsEnabled, ...patch
+        nickname, avatarUrl, theme, customColor, animationsEnabled, ...patch,
+        ...(themeChanged ? { themeUpdatedAt: serverTimestamp() } : {})
       }, { merge: true });
     } finally {
       setSaving(false);
@@ -126,12 +137,6 @@ export default function SettingsPage() {
     setDefaultActivity(value);
     await saveSettings({ defaultActivity: value });
     flash("Výchozí aktivita uložena");
-  };
-
-  const handleConfirmDeleteChange = async (enabled: boolean) => {
-    setConfirmDelete(enabled);
-    await saveSettings({ confirmDelete: enabled });
-    flash(enabled ? "Potvrzení mazání zapnuto" : "Potvrzení mazání vypnuto");
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,21 +238,8 @@ export default function SettingsPage() {
         </section>
 
         <section className="tile">
-          <div className="settings-section-heading"><SlidersHorizontal size={21}/><div><h2>Chování aplikace</h2><p>Malé volby, které ovlivní každodenní používání.</p></div></div>
-
-          <div className="settings-choice-copy"><strong>Výchozí aktivita</strong><small>Typ aktivity, který se po otevření hlavní obrazovky předvolí.</small></div>
-          <div className="settings-segmented" role="group" aria-label="Výchozí aktivita">
-            <button type="button" className={defaultActivity === "běh" ? "active" : ""} onClick={() => void handleDefaultActivityChange("běh")}>🏃 Běh</button>
-            <button type="button" className={defaultActivity === "chůze" ? "active" : ""} onClick={() => void handleDefaultActivityChange("chůze")}>👣 Chůze</button>
-          </div>
-
-          <div className="settings-extra-list">
-            <label className="settings-choice">
-              <input type="checkbox" checked={confirmDelete} onChange={e => void handleConfirmDeleteChange(e.target.checked)} />
-              <span className="settings-choice-copy"><strong>Potvrzovat mazání záznamů</strong><small>Chrání před náhodným smazáním aktivity.</small></span>
-              <ShieldCheck size={18} aria-hidden="true"/>
-            </label>
-          </div>
+          <div className="settings-section-heading"><SlidersHorizontal size={21}/><div><h2>Chování aplikace</h2><p>Výchozí typ aktivity pro rychlé přidávání záznamů.</p></div></div>
+          <ActivityTypeSelector value={defaultActivity as ActivityType} onChange={(value) => void handleDefaultActivityChange(value)} ariaLabel="Výchozí aktivita" />
         </section>
 
         <section className="tile">

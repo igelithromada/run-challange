@@ -5,8 +5,8 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
 const CACHE_KEY = "dolni-lhota-theme-v1";
-type ThemeCache = { theme: string; customColor: string; animationsEnabled: boolean };
-const defaults: ThemeCache = { theme: "default", customColor: "#36D1DC", animationsEnabled: true };
+type ThemeCache = { theme: string; customColor: string; animationsEnabled: boolean; savedAt: number };
+const defaults: ThemeCache = { theme: "default", customColor: "#36D1DC", animationsEnabled: true, savedAt: 0 };
 
 function readThemeCache(): ThemeCache {
   try {
@@ -16,7 +16,8 @@ function readThemeCache(): ThemeCache {
     return {
       theme: typeof value.theme === "string" ? (value.theme === "weather" ? "default" : value.theme) : defaults.theme,
       customColor: typeof value.customColor === "string" ? value.customColor : defaults.customColor,
-      animationsEnabled: value.animationsEnabled !== false
+      animationsEnabled: value.animationsEnabled !== false,
+      savedAt: typeof value.savedAt === "number" ? value.savedAt : 0
     };
   } catch { return defaults; }
 }
@@ -39,10 +40,18 @@ export default function useThemeLoader() {
         userData = {
           theme: data.theme === "weather" ? "default" : (data.theme || "default"),
           customColor: data.customColor || "#36D1DC",
-          animationsEnabled: data.animationsEnabled !== false
+          animationsEnabled: data.animationsEnabled !== false,
+          savedAt: typeof data.themeUpdatedAt?.toMillis === "function" ? data.themeUpdatedAt.toMillis() : Number(data.themeUpdatedAt || 0)
         };
-        writeThemeCache(userData);
-        await applyTheme(userData.theme, userData.customColor, userData.animationsEnabled);
+        const cached = readThemeCache();
+        const remoteIsNewer = userData.savedAt > cached.savedAt;
+        if (remoteIsNewer || cached.savedAt === 0) {
+          writeThemeCache(userData);
+          await applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, false);
+        } else {
+          userData = cached;
+          await applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, false);
+        }
       } catch (error) { console.error("Nepodařilo se načíst vzhled", error); }
     });
     const interval = window.setInterval(() => {
@@ -68,7 +77,7 @@ export async function applyTheme(selectedTheme: string, color: string, animation
 
 
   // Zapiš základní nastavení před síťovým požadavkem, aby další start neproblikl.
-  if (persist) writeThemeCache({ theme: selectedTheme, customColor: color, animationsEnabled });
+  if (persist) writeThemeCache({ theme: selectedTheme, customColor: color, animationsEnabled, savedAt: Date.now() });
   root.style.setProperty("--main-gradient", gradient);
 
   if (animationsEnabled) {
