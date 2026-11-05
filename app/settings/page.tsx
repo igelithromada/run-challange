@@ -9,7 +9,7 @@ import Sidebar from "../components/Sidebar";
 import { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
-import { Check, Palette, Sparkles, Clock3 } from "lucide-react";
+import { Check, Palette, Sparkles, Clock3, SlidersHorizontal, ShieldCheck } from "lucide-react";
 
 const DEFAULT_COLOR = "#36D1DC";
 
@@ -24,10 +24,23 @@ export default function SettingsPage() {
   const [customColor, setCustomColor] = useState(DEFAULT_COLOR);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
+  const [defaultActivity, setDefaultActivity] = useState<"běh" | "chůze">("běh");
+  const [confirmDelete, setConfirmDelete] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
 
   const router = useRouter();
+
+  useEffect(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
+      if (cached) {
+        setTheme(cached.theme || "default");
+        setCustomColor(cached.customColor || DEFAULT_COLOR);
+        setAnimationsEnabled(cached.animationsEnabled !== false);
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async user => {
@@ -47,7 +60,9 @@ export default function SettingsPage() {
           setTheme(storedTheme);
           setCustomColor(storedColor);
           setAnimationsEnabled(storedAnimations);
-          await applyTheme(storedTheme, storedColor, storedAnimations);
+          setDefaultActivity(data.defaultActivity === "chůze" ? "chůze" : "běh");
+          setConfirmDelete(data.confirmDelete !== false);
+          await applyTheme(storedTheme, storedColor, storedAnimations, false);
         }
       } catch (error) {
         console.error("Nepodařilo se načíst nastavení:", error);
@@ -105,6 +120,18 @@ export default function SettingsPage() {
     await applyTheme(theme, customColor, enabled);
     await saveSettings({ animationsEnabled: enabled });
     flash(enabled ? "Animace zapnuty" : "Animace vypnuty");
+  };
+
+  const handleDefaultActivityChange = async (value: "běh" | "chůze") => {
+    setDefaultActivity(value);
+    await saveSettings({ defaultActivity: value });
+    flash("Výchozí aktivita uložena");
+  };
+
+  const handleConfirmDeleteChange = async (enabled: boolean) => {
+    setConfirmDelete(enabled);
+    await saveSettings({ confirmDelete: enabled });
+    flash(enabled ? "Potvrzení mazání zapnuto" : "Potvrzení mazání vypnuto");
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -203,6 +230,32 @@ export default function SettingsPage() {
           </div>
 
           {notice && <div className="settings-notice" role="status">{notice}</div>}
+        </section>
+
+        <section className="tile">
+          <div className="settings-section-heading"><SlidersHorizontal size={21}/><div><h2>Chování aplikace</h2><p>Malé volby, které ovlivní každodenní používání.</p></div></div>
+
+          <div className="settings-choice-copy"><strong>Výchozí aktivita</strong><small>Typ aktivity, který se po otevření hlavní obrazovky předvolí.</small></div>
+          <div className="settings-segmented" role="group" aria-label="Výchozí aktivita">
+            <button type="button" className={defaultActivity === "běh" ? "active" : ""} onClick={() => void handleDefaultActivityChange("běh")}>🏃 Běh</button>
+            <button type="button" className={defaultActivity === "chůze" ? "active" : ""} onClick={() => void handleDefaultActivityChange("chůze")}>👣 Chůze</button>
+          </div>
+
+          <div className="settings-extra-list">
+            <label className="settings-choice">
+              <input type="checkbox" checked={confirmDelete} onChange={e => void handleConfirmDeleteChange(e.target.checked)} />
+              <span className="settings-choice-copy"><strong>Potvrzovat mazání záznamů</strong><small>Chrání před náhodným smazáním aktivity.</small></span>
+              <ShieldCheck size={18} aria-hidden="true"/>
+            </label>
+          </div>
+        </section>
+
+        <section className="tile">
+          <div className="settings-section-heading"><ShieldCheck size={21}/><div><h2>Účet a data</h2><p>Přihlášení zůstává oddělené od vzhledu a preferencí.</p></div></div>
+          <div className="settings-account-row">
+            <div className="settings-avatar-preview">{(nickname || email).charAt(0).toUpperCase() || "?"}</div>
+            <div><strong>{nickname || "Uživatel"}</strong><small>{email}</small></div>
+          </div>
         </section>
       </main>
     </>
