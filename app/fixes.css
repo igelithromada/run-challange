@@ -417,3 +417,21 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .app-fallback-card p { color:var(--ui-muted); line-height:1.55; }
 .app-fallback-actions { display:flex; justify-content:center; flex-wrap:wrap; gap:.55rem; margin-top:1.1rem; }
 .app-fallback-actions a { text-decoration:none; }
+
+
+/* Rozlišení týmů podle typu aktivity */
+.team-type-badge {
+  display:inline-flex;
+  align-items:center;
+  gap:.3rem;
+  width:max-content;
+  padding:.28rem .5rem;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  color:var(--ui-muted);
+  font-size:.68rem;
+  font-weight:750;
+}
+.team-type-badge .activity-type-icon { width:16px; height:16px; flex:0 0 16px; }
+.teams-create > .activity-type-selector { margin:.65rem 0 1rem; }

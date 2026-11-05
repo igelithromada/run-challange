@@ -172,7 +172,7 @@ export default function Page() {
       <div className="container">
         <h1 className="sr-only">Dolní Lhota v pohybu</h1>
 
-        <RunWeatherRecommendation />
+        <RunWeatherRecommendation type={selectedType} />
 
         <ActivityTypeSelector value={selectedType} onChange={(value) => { setSelectedType(value); try { localStorage.setItem("dolni-lhota-default-activity-v1", value); } catch {} }} />
 

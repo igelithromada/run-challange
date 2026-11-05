@@ -22,7 +22,7 @@ const localDateTime = () => {
 };
 const formatDuration = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
-export default function RunForm({ type }: { type: string }) {
+export default function RunForm({ type }: { type: "běh" | "chůze" }) {
   const [showForm, setShowForm] = useState(false);
   const [km, setKm] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
@@ -33,6 +33,8 @@ export default function RunForm({ type }: { type: string }) {
   const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
+  const activityLabel = type === "chůze" ? "chůzi" : "běh";
+  const activityPast = type === "chůze" ? "Chůze byla" : "Běh byl";
 
   const previews = useMemo(() => files.map(file => ({ file, url: URL.createObjectURL(file) })), [files]);
   useEffect(() => () => previews.forEach(item => URL.revokeObjectURL(item.url)), [previews]);
@@ -107,6 +109,13 @@ export default function RunForm({ type }: { type: string }) {
         // Samotný zápis lze i tak zařadit do lokální fronty Firestore.
       }
 
+      const teamIdsByType = (typeof userData.teamIdsByType === "object" && userData.teamIdsByType !== null)
+        ? userData.teamIdsByType as Record<string, unknown>
+        : {};
+      const selectedTeamId = typeof teamIdsByType[type] === "string"
+        ? teamIdsByType[type] as string
+        : (type === "běh" && typeof userData.teamId === "string" ? userData.teamId : null);
+
       await addDoc(collection(db, "runs"), {
         uid: user.uid,
         email: user.email,
@@ -117,15 +126,16 @@ export default function RunForm({ type }: { type: string }) {
         type,
         timestamp: new Date(activityDate),
         imageUrls,
-        teamId: typeof userData.teamId === "string" ? userData.teamId : (typeof userData.joinedTeam === "string" ? userData.joinedTeam : null)
+        teamId: selectedTeamId,
+        activityType: type
       });
 
       reset();
       setShowForm(false);
       setSuccess(
         navigator.onLine
-          ? `${type[0].toUpperCase() + type.slice(1)} byl úspěšně uložen.`
-          : `${type[0].toUpperCase() + type.slice(1)} je uložen offline a po připojení se synchronizuje.`
+          ? `${activityPast} úspěšně uložena.`
+          : `${activityPast} uložena offline a po připojení se synchronizuje.`
       );
     } catch (err) {
       console.error(err);
@@ -140,7 +150,7 @@ export default function RunForm({ type }: { type: string }) {
     <div className="run-form-shell">
       {!showForm && (
         <button type="button" className="run-primary-button" onClick={() => { reset(); setShowForm(true); }}>
-          <Plus size={19} aria-hidden="true" /> Přidat {type}
+          <Plus size={19} aria-hidden="true" /> Přidat {activityLabel}
         </button>
       )}
 
@@ -149,7 +159,7 @@ export default function RunForm({ type }: { type: string }) {
           <div className="run-form-heading">
             <div>
               <span className="run-form-eyebrow">NOVÁ AKTIVITA</span>
-              <h3>Přidat {type}</h3>
+              <h3>Přidat {activityLabel}</h3>
             </div>
             <button type="button" className="run-form-close" onClick={() => { setShowForm(false); reset(); }} disabled={saving} aria-label="Zavřít formulář">
               <X size={19} aria-hidden="true" />
