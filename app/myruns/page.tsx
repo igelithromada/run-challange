@@ -49,6 +49,7 @@ export default function MyRunsPage() {
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [profile, setProfile] = useState({ nickname: "", avatarUrl: "" });
+  const [confirmDelete, setConfirmDelete] = useState(true);
 
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
@@ -74,6 +75,7 @@ export default function MyRunsPage() {
         if (profileDoc.exists()) {
           const data = profileDoc.data();
           setProfile({ nickname: data.nickname || "", avatarUrl: data.avatarUrl || "" });
+          setConfirmDelete(data.confirmDelete !== false);
         }
       }).catch(err => console.error("Nepodařilo se načíst profil", err));
     });
@@ -159,7 +161,7 @@ export default function MyRunsPage() {
     } finally { setBusy(false); }
   };
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Opravdu chceš tento záznam trvale smazat?")) return;
+    if (confirmDelete && !window.confirm("Opravdu chceš tento záznam trvale smazat?")) return;
     setActionError("");
     try { await deleteDoc(doc(db, "runs", id)); }
     catch (err) { console.error(err); setActionError("Záznam se nepodařilo smazat."); }
