@@ -62,6 +62,37 @@ export default function AdminPage() {
     await updateUser(u.id, { blocked: next });
   };
 
+  const handleDeleteAccount = async (u: AdminUser) => {
+    if (u.id === auth.currentUser?.uid) { setError("Vlastní administrátorský účet zde nemaž."); return; }
+    const label = u.nickname || u.email || "uživatele";
+    if (!window.confirm(`Opravdu trvale smazat účet ${label}? Smaže se přihlášení, profil i všechny aktivity. Tuto akci nelze vrátit.`)) return;
+
+    setBusy(true); setError("");
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const idToken = await currentUser.getIdToken(true);
+      const response = await fetch("/api/admin/delete-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ uid: u.id }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Účet se nepodařilo odstranit.");
+
+      setUsers(prev => prev.filter(item => item.id !== u.id));
+      setSelectedUser(null);
+    } catch (e) {
+      console.error(e);
+      setError(e instanceof Error ? e.message : "Účet se nepodařilo odstranit.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleDeleteData = async (u: AdminUser) => {
     if (u.id === auth.currentUser?.uid) { setError("Vlastní účet zde nemaž."); return; }
     if (!window.confirm(`Smazat všechny aktivity uživatele ${u.nickname || u.email}? Tato akce je nevratná.`)) return;
@@ -131,9 +162,10 @@ export default function AdminPage() {
               <button type="button" className="admin-action-button" onClick={() => router.push(`/admin/${selectedUser.id}/records`)}><Footprints size={18}/> Zobrazit záznamy</button>
               <button type="button" className="admin-action-button" onClick={() => router.push(`/admin/${selectedUser.id}/gallery`)}><Camera size={18}/> Zobrazit galerii</button>
               <button type="button" className="admin-action-button admin-action-danger" onClick={() => void handleDeleteData(selectedUser)} disabled={busy}><Trash2 size={18}/> Smazat data aktivit</button>
+              <button type="button" className="admin-action-button admin-action-danger admin-delete-account-button" onClick={() => void handleDeleteAccount(selectedUser)} disabled={busy}><Trash2 size={18}/> Smazat účet a všechna data</button>
             </div>
 
-            <p className="admin-muted admin-note">Blokování se ukládá do profilu uživatele a aplikace ho při dalším ověření odhlásí. Úplné odstranění účtu z Firebase Authentication vyžaduje serverovou Firebase Admin vrstvu; tlačítko výše proto nemaže přihlašovací účet, pouze data aktivit.</p>
+            <p className="admin-muted admin-note">Úplné smazání používá serverovou Firebase Admin vrstvu. Po nastavení serverových proměnných ve Vercelu odstraní přihlášení, profil i aktivity uživatele. Fotografie uložené mimo Firebase (Cloudinary) se touto operací zatím nemažou.</p>
           </section>
         )}
       </main>
