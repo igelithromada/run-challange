@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import type { DocumentReference } from "firebase-admin/firestore";
-import { getAdminServices } from "../../lib/firebaseAdmin";
-import { collectCloudinaryPublicIds, deleteCloudinaryImages } from "../../lib/cloudinaryAdmin";
+import { getAdminServices } from "../../../lib/firebaseAdmin";
+import { collectCloudinaryPublicIds, deleteCloudinaryImages } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
 async function deleteRunComments(runRef: DocumentReference) {
   const collections = await runRef.listCollections();
   for (const subcollection of collections) {
@@ -16,7 +17,6 @@ async function deleteRunComments(runRef: DocumentReference) {
     }
   }
 }
-
 
 async function getAuthorizedUser(request: Request) {
   const { adminAuth, adminDb } = getAdminServices();
