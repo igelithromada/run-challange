@@ -175,7 +175,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
             {socialLoading ? <p className="social-modal-empty">Načítám…</p> : socialError ? <p className="form-message form-message-error">{socialError}</p> : socialOpen === "likes" ? (
               likeUsers.length ? (
                 <div className="social-user-list">
-                  {likeUsers.map(user => <button key={user.uid} type="button" className="social-user-row" onClick={() => routerSafeUser(user.uid, onUserClick)}><span className="activity-avatar">{user.avatarUrl ? <img src={cloudinaryImageUrl(user.avatarUrl, 64)} alt="" /> : user.nickname.charAt(0).toUpperCase()}</span><strong>{user.nickname}</strong></button>)}
+                  {likeUsers.map(user => <button key={user.uid} type="button" className="social-user-row" onClick={() => routerSafeUser(user.uid)}><span className="activity-avatar">{user.avatarUrl ? <img src={cloudinaryImageUrl(user.avatarUrl, 64)} alt="" /> : user.nickname.charAt(0).toUpperCase()}</span><strong>{user.nickname}</strong></button>)}
                 </div>
               ) : <p className="social-modal-empty">Zatím nikdo nelajknul tento záznam.</p>
             ) : (
@@ -201,10 +201,6 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
   );
 }
 
-function routerSafeUser(uid: string, onUserClick?: () => void) {
-  if (uid === auth.currentUser?.uid) {
-    onUserClick?.();
-    return;
-  }
+function routerSafeUser(uid: string) {
   window.location.href = "/user/" + uid;
 }
