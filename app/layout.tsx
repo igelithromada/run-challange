@@ -1,6 +1,7 @@
 import "./globals.css";
 import "./fixes.css";
 import "./polish.css";
+import "./final-polish.css";
 import type { Metadata } from "next";
 import { ReactNode } from "react";
 import ClientLayout from "./ClientLayout";
