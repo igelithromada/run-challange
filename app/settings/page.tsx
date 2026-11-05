@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
@@ -79,8 +79,10 @@ export default function SettingsPage() {
     if (!userId) return;
     setSaving(true);
     try {
+      const themeChanged = "theme" in patch || "customColor" in patch || "animationsEnabled" in patch;
       await setDoc(doc(db, "users", userId), {
-        nickname, avatarUrl, theme, customColor, animationsEnabled, ...patch
+        nickname, avatarUrl, theme, customColor, animationsEnabled, ...patch,
+        ...(themeChanged ? { themeUpdatedAt: serverTimestamp() } : {})
       }, { merge: true });
     } finally {
       setSaving(false);
