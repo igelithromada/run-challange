@@ -22,7 +22,7 @@ async function deleteCommentsByUser(adminDb: Firestore, uid: string) {
     const runSnapshot = await runRef.get();
     for (let i = 0; i < comments.length; i += 400) {
       const batch = adminDb.batch();
-      comments.slice(i, i + 400).forEach(comment => batch.delete(comment.ref));
+      comments.slice(i, i + 400).forEach((comment: QueryDocumentSnapshot) => batch.delete(comment.ref));
       if (runSnapshot.exists && i === 0) {
         const currentCount = Number(runSnapshot.data()?.commentCount) || 0;
         batch.update(runRef, { commentCount: Math.max(0, currentCount - comments.length) });
