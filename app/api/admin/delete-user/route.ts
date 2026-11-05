@@ -5,6 +5,35 @@ import { collectCloudinaryPublicIds, deleteCloudinaryImages } from "../../../lib
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+async function deleteCommentsByUser(adminDb: FirebaseFirestore.Firestore, uid: string) {
+  const snapshot = await adminDb.collectionGroup("comments").where("uid", "==", uid).get();
+  const grouped = new Map<string, { runRef: DocumentReference; comments: FirebaseFirestore.QueryDocumentSnapshot[] }>();
+
+  for (const comment of snapshot.docs) {
+    const runRef = comment.ref.parent.parent;
+    if (!runRef) continue;
+    const key = runRef.path;
+    const group = grouped.get(key);
+    if (group) group.comments.push(comment);
+    else grouped.set(key, { runRef, comments: [comment] });
+  }
+
+  for (const { runRef, comments } of grouped.values()) {
+    const runSnapshot = await runRef.get();
+    for (let i = 0; i < comments.length; i += 400) {
+      const batch = adminDb.batch();
+      comments.slice(i, i + 400).forEach(comment => batch.delete(comment.ref));
+      if (runSnapshot.exists && i === 0) {
+        const currentCount = Number(runSnapshot.data()?.commentCount) || 0;
+        batch.update(runRef, { commentCount: Math.max(0, currentCount - comments.length) });
+      }
+      await batch.commit();
+    }
+  }
+
+  return snapshot.size;
+}
+
 async function deleteRunComments(runRef: DocumentReference) {
   const collections = await runRef.listCollections();
   for (const subcollection of collections) {
@@ -73,6 +102,7 @@ async function deleteUserData(uid: string) {
     await batch.commit();
   }
 
+  await deleteCommentsByUser(adminDb, uid);
   await adminDb.collection("users").doc(uid).delete();
 
   return {
