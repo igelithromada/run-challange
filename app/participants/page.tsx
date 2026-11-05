@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { collection, query, orderBy, getDocs, where, documentId } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -26,6 +26,10 @@ export default function ParticipantsPage() {
   const [runs, setRuns] = useState<any[]>([]);
   const [avatars, setAvatars] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [sortMode, setSortMode] = useState<"km" | "alpha">("km");
+  const [activeLetter, setActiveLetter] = useState("");
+  const [letterPop, setLetterPop] = useState("");
+  const letterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -72,8 +76,20 @@ export default function ParticipantsPage() {
       map[uid].minutes += Number(run.minuty) || 0;
       map[uid].activities += 1;
     });
-    return Object.values(map).sort((a, b) => b.km - a.km);
-  }, [runs, selectedType, avatars]);
+    return Object.values(map).sort((a, b) => sortMode === "alpha" ? a.name.localeCompare(b.name, "cs", { sensitivity: "base" }) : b.km - a.km);
+  }, [runs, selectedType, avatars, sortMode]);
+
+  const alphabet = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)).concat(["Č", "Š", "Ž"]);
+  const availableLetters = useMemo(() => new Set(participants.map(p => p.name.trim().charAt(0).normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toUpperCase())), [participants]);
+  const jumpToLetter = (letter: string) => {
+    if (sortMode !== "alpha" || !availableLetters.has(letter)) return;
+    const target = document.querySelector(`[data-letter="${letter}"]`);
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    setActiveLetter(letter);
+    setLetterPop(letter);
+    if (letterTimer.current) clearTimeout(letterTimer.current);
+    letterTimer.current = setTimeout(() => setLetterPop(""), 500);
+  };
 
   const totalKm = participants.reduce((sum, item) => sum + item.km, 0);
   const totalMinutes = participants.reduce((sum, item) => sum + item.minutes, 0);
@@ -99,6 +115,14 @@ export default function ParticipantsPage() {
 
         <ActivityTypeSelector value={selectedType} onChange={setSelectedType} ariaLabel="Typ aktivity" />
 
+        <div className="participants-toolbar">
+          <span className="control-caption">Řazení</span>
+          <div className="participant-sort" role="group" aria-label="Řazení účastníků">
+            <button type="button" className={sortMode === "km" ? "active" : ""} onClick={() => setSortMode("km")}>🏆 Kilometry</button>
+            <button type="button" className={sortMode === "alpha" ? "active" : ""} onClick={() => setSortMode("alpha")}>🔤 Abeceda</button>
+          </div>
+        </div>
+
         <section className="participants-summary">
           <div className="tile participant-summary-card"><Users size={21}/><span>Účastníci</span><strong>{participants.length}</strong></div>
           <div className="tile participant-summary-card"><Footprints size={21}/><span>Celkem km</span><strong>{totalKm.toFixed(1)} km</strong></div>
@@ -111,11 +135,14 @@ export default function ParticipantsPage() {
           {loading ? <p className="admin-muted">Načítám výsledky…</p> : participants.length === 0 ? (
             <div className="participants-empty">Zatím nejsou pro {selectedType === "běh" ? "běh" : "chůzi"} žádné záznamy.</div>
           ) : (
-            <div className="participants-list">
+            <div className="participants-scroll-area">
+              {sortMode === "alpha" && <nav className="participants-alpha" aria-label="Abecední navigace">{alphabet.map(letter => <button key={letter} type="button" className={`${activeLetter === letter ? "active " : ""}${availableLetters.has(letter) ? "" : "disabled"}`} onClick={() => jumpToLetter(letter)}>{letter}</button>)}</nav>}
+              {letterPop && <div className="participants-letter-pop" aria-hidden="true">{letterPop}</div>}
+              <div className="participants-list">
               {participants.map((participant, index) => {
                 const averagePace = participant.km > 0 ? participant.minutes / participant.km : 0;
                 return (
-                  <button type="button" className="participant-row" key={participant.uid} onClick={() => router.push("/user/" + participant.uid)}>
+                  <button type="button" className="participant-row" key={participant.uid} data-letter={sortMode === "alpha" ? participant.name.trim().charAt(0).normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toUpperCase() : undefined} onClick={() => router.push("/user/" + participant.uid)}>
                     <span className="participant-rank">{index < 3 ? <Medal size={19}/> : index + 1}</span>
                     <span className="activity-avatar participant-avatar">
                       {participant.avatarUrl ? <img src={cloudinaryImageUrl(participant.avatarUrl, 96)} alt="" /> : participant.name.charAt(0).toUpperCase()}
@@ -125,6 +152,7 @@ export default function ParticipantsPage() {
                   </button>
                 );
               })}
+              </div>
             </div>
           )}
         </section>
