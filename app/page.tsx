@@ -203,123 +203,32 @@ export default function Page() {
       </div>
 
       {showImages && (
-  <div
-    style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      width: "100vw",
-      height: "100vh",
-      background: "rgba(0,0,0,0.9)",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: 2000,
-      padding: "1rem",
-      boxSizing: "border-box",
-    }}
-  >
-    <div style={{ marginBottom: "0.5rem", textAlign: "center" }}>
-      {showImages.map((_, idx) => (
-        <span
-          key={idx}
-          style={{
-            height: "10px",
-            width: "10px",
-            margin: "0 5px",
-            backgroundColor: currentImgIndex === idx ? "white" : "gray",
-            borderRadius: "50%",
-            display: "inline-block",
-          }}
-        />
-      ))}
-    </div>
-
-    <div
-      style={{
-        maxWidth: "90vw",
-        maxHeight: "70vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <img
-        src={showImages[currentImgIndex]}
-        alt="náhled"
-        style={{
-          width: "100%",
-          height: "auto",
-          maxHeight: "70vh",
-          objectFit: "contain",
-          borderRadius: "10px",
-        }}
-      />
-    </div>
-
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: "1.5rem",
-        width: "100%",
-        maxWidth: "300px",
-      }}
-    >
-      {showImages.length > 1 ? (
-        <button
-          onClick={handlePrev}
-          style={{
-            background: "transparent",
-            color: "white",
-            fontSize: "2rem",
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          ❮
-        </button>
-      ) : (
-        <div style={{ width: "2rem" }} />
+        <div className="activity-lightbox" role="dialog" aria-modal="true" aria-label="Galerie fotografií" onClick={() => setShowImages(null)}>
+          <div className="activity-lightbox-top" onClick={e => e.stopPropagation()}>
+            <span>{currentImgIndex + 1} / {showImages.length}</span>
+            <button type="button" onClick={() => setShowImages(null)} aria-label="Zavřít galerii">×</button>
+          </div>
+          <img src={showImages[currentImgIndex]} alt={`Fotografie aktivity ${currentImgIndex + 1}`} onClick={e => e.stopPropagation()} />
+          <div className="activity-lightbox-actions" onClick={e => e.stopPropagation()}>
+            {showImages.length > 1 ? (
+              <button type="button" onClick={handlePrev} aria-label="Předchozí fotografie">‹</button>
+            ) : <span />}
+            <button type="button" onClick={() => setShowImages(null)}>Zavřít</button>
+            {showImages.length > 1 ? (
+              <button type="button" onClick={handleNext} aria-label="Další fotografie">›</button>
+            ) : <span />}
+          </div>
+          {showImages.length > 1 && (
+            <div className="activity-lightbox-thumbs" onClick={e => e.stopPropagation()}>
+              {showImages.map((url, index) => (
+                <button key={url + index} type="button" className={index === currentImgIndex ? "active" : ""} onClick={() => setCurrentImgIndex(index)} aria-label={`Fotografie ${index + 1}`}>
+                  <img src={url} alt="" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
-
-      <button
-        onClick={() => setShowImages(null)}
-        style={{
-          background: "white",
-          color: "black",
-          border: "none",
-          borderRadius: "12px",
-          padding: "0.6rem 1.4rem",
-          fontWeight: "bold",
-          fontSize: "16px",
-          cursor: "pointer",
-        }}
-      >
-        Zavřít
-      </button>
-
-      {showImages.length > 1 ? (
-        <button
-          onClick={handleNext}
-          style={{
-            background: "transparent",
-            color: "white",
-            fontSize: "2rem",
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          ❯
-        </button>
-      ) : (
-        <div style={{ width: "2rem" }} />
-      )}
-    </div>
-  </div>
-)}
     </>
   );
 }
