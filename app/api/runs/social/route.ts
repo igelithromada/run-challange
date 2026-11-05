@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldPath, FieldValue } from "firebase-admin/firestore";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
 
 export const runtime = "nodejs";
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
     for (let i = 0; i < uniqueLikeIds.length; i += 30) {
       const chunk = uniqueLikeIds.slice(i, i + 30);
       if (!chunk.length) continue;
-      const snapshots = await adminDb.collection("users").where(FieldValue.documentId(), "in", chunk).get();
+      const snapshots = await adminDb.collection("users").where(FieldPath.documentId(), "in", chunk).get();
       snapshots.docs.forEach(profile => {
         const item = profile.data();
         likeUsers.push({
