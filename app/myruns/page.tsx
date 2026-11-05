@@ -11,6 +11,7 @@ import Sidebar from "../components/Sidebar";
 import ActivityCard from "../components/ActivityCard";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
+import ActivityTypeSelector from "../components/ActivityTypeSelector";
 
 type RunData = {
   id: string; uid?: string; email?: string; nickname?: string;
@@ -179,10 +180,7 @@ export default function MyRunsPage() {
     <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
     <div className="container">
       <div className="control-caption">Typ aktivity</div>
-      <div className="tile-group">
-        <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}><img className="run-profile-icon" src="/run-icon-white.png" alt="" aria-hidden="true" /> Běh</button>
-        <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}><Footprints size={25} strokeWidth={2.8} /> Chůze</button>
-      </div>
+      <ActivityTypeSelector value={selectedType as "běh" | "chůze"} onChange={setSelectedType} />
       <div className="control-caption">Rychlý filtr období</div>
       <div className="activity-quick-filters">
         {[["all","Vše"],["week","Tento týden"],["month","Tento měsíc"]].map(([value,label]) => <button key={value} className={quickFilter === value ? "active" : ""} onClick={() => setQuickFilter(value)}>{label}</button>)}

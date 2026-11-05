@@ -22,6 +22,7 @@ import RunForm from "./components/RunForm";
 import ActivityCard from "./components/ActivityCard";
 import LoadingSkeleton from "./components/LoadingSkeleton";
 import RunWeatherRecommendation from "./components/RunWeatherRecommendation";
+import ActivityTypeSelector from "./components/ActivityTypeSelector";
 import { RunData } from "./types";
 import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
 
@@ -167,10 +168,7 @@ export default function Page() {
 
         <RunWeatherRecommendation />
 
-        <div className="tile-group" role="group" aria-label="Typ aktivity">
-          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}><img className="run-profile-icon" src="/run-icon-white.png" alt="" aria-hidden="true" /> Běh</button>
-          <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}><Footprints size={25} strokeWidth={2.8} /> Chůze</button>
-        </div>
+        <ActivityTypeSelector value={selectedType as "běh" | "chůze"} onChange={setSelectedType} />
 
         <div className="run-form-wrap">
           <RunForm type={selectedType} />

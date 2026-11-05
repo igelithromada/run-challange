@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fix/run-app-issues
+      - fix/next16-admin-ui
   pull_request:
     branches:
       - main
@@ -24,31 +25,11 @@ jobs:
       - name: Nastavení Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
-      - name: Synchronizace zámku závislostí
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-
-      - name: Uložení opraveného zámku závislostí
-        if: github.event_name == 'push' && github.ref == 'refs/heads/fix/run-app-issues'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if git diff --quiet -- package-lock.json; then
-            echo "package-lock.json je aktuální."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
-          git commit -m "chore: synchronize npm lockfile"
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-          git push origin "HEAD:${BRANCH}"
-
-      - name: Čistá instalace závislostí
-        run: npm ci
+      - name: Instalace a synchronizace závislostí
+        run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Kontrola TypeScriptu
         run: npx tsc --noEmit

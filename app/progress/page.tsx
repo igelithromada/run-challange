@@ -10,6 +10,7 @@ import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
+import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 
 type Activity = {
   id: string; uid?: string; km?: number | string; minuty?: number | string; tempo?: number | string;
@@ -130,7 +131,7 @@ export default function ProgressPage() {
     { name:"Legenda 2.0", min:2000, next:5000, icon:"💎" }
   ];
   const level = [...levels].reverse().find(item => allKm >= item.min) || levels[0];
-  const levelProgress = Math.min(100, Math.max(0, (allKm-level.min)/(level.next-level.min)*100));
+  const levelProgress = Math.min(100, Math.max(0, allKm / level.next * 100));
 
   const badges = [
     { title:"První krok", detail:"Zaznamenal/a první aktivitu", icon:"👟", done:allActivities>=1 },
@@ -191,10 +192,7 @@ export default function ProgressPage() {
 
       <section className="progress-goal-settings tile">
         <div className="progress-section-title"><Target/><div><h2>Moje cíle</h2><p>Nastav si vlastní vzdálenost, které chceš dosáhnout.</p></div></div>
-        <div className="progress-type-switch">
-          <button className={goalType==="běh"?"active":""} onClick={()=>switchGoalType("běh")}><TrendingUp size={17}/> Běh</button>
-          <button className={goalType==="chůze"?"active":""} onClick={()=>switchGoalType("chůze")}><Footprints size={17}/> Chůze</button>
-        </div>
+        <ActivityTypeSelector value={goalType as ActivityType} onChange={switchGoalType as (value: ActivityType) => void} ariaLabel="Typ cíle" />
         <div className="progress-goal-inputs">
           <label>Týdenní cíl (km)<input type="number" min="0.1" step="0.5" value={goalWeekly} onChange={e=>setGoalWeekly(e.target.value)}/></label>
           <label>Měsíční cíl (km)<input type="number" min="0.1" step="1" value={goalMonthly} onChange={e=>setGoalMonthly(e.target.value)}/></label>
