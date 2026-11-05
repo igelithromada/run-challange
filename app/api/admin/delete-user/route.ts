@@ -29,9 +29,11 @@ async function deleteUserData(uid: string) {
   ]);
 
   const imageUrls: string[] = [];
+  const publicIds: string[] = [];
   const userData = userSnapshot.exists ? userSnapshot.data() : undefined;
 
   if (typeof userData?.avatarUrl === "string") imageUrls.push(userData.avatarUrl);
+  if (typeof userData?.avatarPublicId === "string" && userData.avatarPublicId) publicIds.push(userData.avatarPublicId);
 
   for (const run of runsSnapshot.docs) {
     const data = run.data();
@@ -39,9 +41,12 @@ async function deleteUserData(uid: string) {
       imageUrls.push(...data.imageUrls.filter((value: unknown): value is string => typeof value === "string"));
     }
     if (typeof data.imageUrl === "string") imageUrls.push(data.imageUrl);
+    if (Array.isArray(data.imagePublicIds)) {
+      publicIds.push(...data.imagePublicIds.filter((value: unknown): value is string => typeof value === "string"));
+    }
   }
 
-  const publicIds = collectCloudinaryPublicIds(imageUrls);
+  publicIds.push(...collectCloudinaryPublicIds(imageUrls));
   const cloudinaryResult = await deleteCloudinaryImages(publicIds);
 
   if (cloudinaryResult.failed.length) {
