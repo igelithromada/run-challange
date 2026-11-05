@@ -65,7 +65,7 @@ export default function AdminPage() {
   const handleDeleteAccount = async (u: AdminUser) => {
     if (u.id === auth.currentUser?.uid) { setError("Vlastní administrátorský účet zde nemaž."); return; }
     const label = u.nickname || u.email || "uživatele";
-    if (!window.confirm(`Opravdu trvale smazat účet ${label}? Smaže se přihlášení, profil i všechny aktivity. Tuto akci nelze vrátit.`)) return;
+    if (!window.confirm(`Opravdu trvale smazat účet ${label}? Smaže se přihlášení, profil, všechny aktivity a fotografie. Tuto akci nelze vrátit.`)) return;
 
     setBusy(true); setError("");
     try {
@@ -95,18 +95,32 @@ export default function AdminPage() {
 
   const handleDeleteData = async (u: AdminUser) => {
     if (u.id === auth.currentUser?.uid) { setError("Vlastní účet zde nemaž."); return; }
-    if (!window.confirm(`Smazat všechny aktivity uživatele ${u.nickname || u.email}? Tato akce je nevratná.`)) return;
+    if (!window.confirm(`Smazat všechny aktivity a jejich fotografie uživatele ${u.nickname || u.email}? Tato akce je nevratná.`)) return;
+
     setBusy(true); setError("");
     try {
-      const snapshot = await getDocs(collection(db, "runs"));
-      const ownRuns = snapshot.docs.filter(d => d.data().uid === u.id);
-      await Promise.all(ownRuns.map(d => import("firebase/firestore").then(({ deleteDoc }) => deleteDoc(d.ref))));
-      await updateDoc(doc(db, "users", u.id), { deletedDataAt: new Date().toISOString(), blocked: true });
-      setUsers(prev => prev.map(x => x.id === u.id ? { ...x, blocked:true } : x));
-      setSelectedUser(prev => prev ? { ...prev, blocked:true } : prev);
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const idToken = await currentUser.getIdToken(true);
+      const response = await fetch("/api/admin/delete-user-data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ uid: u.id }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Data se nepodařilo kompletně smazat.");
+
+      setUsers(prev => prev.map(x => x.id === u.id ? { ...x, blocked: true } : x));
+      setSelectedUser(prev => prev ? { ...prev, blocked: true } : prev);
     } catch (e) {
-      console.error(e); setError("Data se nepodařilo kompletně smazat.");
-    } finally { setBusy(false); }
+      console.error(e);
+      setError(e instanceof Error ? e.message : "Data se nepodařilo kompletně smazat.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleSelect = async (item: string) => {
@@ -165,7 +179,7 @@ export default function AdminPage() {
               <button type="button" className="admin-action-button admin-action-danger admin-delete-account-button" onClick={() => void handleDeleteAccount(selectedUser)} disabled={busy}><Trash2 size={18}/> Smazat účet a všechna data</button>
             </div>
 
-            <p className="admin-muted admin-note">Úplné smazání používá serverovou Firebase Admin vrstvu. Po nastavení serverových proměnných ve Vercelu odstraní přihlášení, profil i aktivity uživatele. Fotografie uložené mimo Firebase (Cloudinary) se touto operací zatím nemažou.</p>
+            <p className="admin-muted admin-note">Úplné smazání používá Firebase Admin a Cloudinary API. Odstraní přihlášení, profil, aktivity i fotografie uživatele. Pokud Cloudinary odmítne mazání, účet se z bezpečnostních důvodů nesmaže.</p>
           </section>
         )}
       </main>
