@@ -1,0 +1,76 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == userId;
+
+      // Users may edit their own profile/preferences, but never elevate themselves
+      // or change moderation/account-control fields.
+      allow update: if isAdmin()
+        || (signedIn()
+          && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              "nickname",
+              "avatarUrl",
+              "theme",
+              "customColor",
+              "animationsEnabled",
+              "defaultActivity",
+              "confirmDelete",
+              "teamId",
+              "joinedTeam",
+              "progressGoals",
+              "progressGoalsByType"
+            ]));
+
+      allow delete: if isAdmin();
+    }
+
+    match /runs/{runId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid;
+
+      allow update: if isAdmin()
+        || (signedIn()
+          && resource.data.uid == request.auth.uid
+          && request.resource.data.uid == request.auth.uid);
+
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid);
+    }
+
+    match /teams/{teamId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid;
+
+      allow update: if isAdmin()
+        || (signedIn()
+          && resource.data.createdBy == request.auth.uid
+          && request.resource.data.createdBy == resource.data.createdBy);
+
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.createdBy == request.auth.uid);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
