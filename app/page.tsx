@@ -7,6 +7,7 @@ import {
   limit,
   doc,
   getDocs,
+  getDoc,
   startAfter,
   documentId,
   where,
