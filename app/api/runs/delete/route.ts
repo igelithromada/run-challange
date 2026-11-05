@@ -67,7 +67,7 @@ export async function DELETE(request: Request) {
     const cloudinaryResult = await deleteCloudinaryImages(publicIds);
     if (cloudinaryResult.failed.length) {
       return NextResponse.json(
-        { error: "Záznam nebyl smazán, protože se nepodařilo bezpečně odstranit všechny fotografie z Cloudinary." },
+        { error: `Záznam nebyl smazán, protože se nepodařilo odstranit ${cloudinaryResult.failed.length} fotografii z úložiště. Záznam zůstal zachován.` },
         { status: 502 }
       );
     }
@@ -81,6 +81,16 @@ export async function DELETE(request: Request) {
     });
   } catch (error) {
     console.error("Delete run failed:", error);
-    return NextResponse.json({ error: "Záznam se nepodařilo smazat." }, { status: 500 });
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("CLOUDINARY")) {
+      return NextResponse.json({ error: "Záznam nelze smazat, protože na serveru chybí nastavení Cloudinary." }, { status: 500 });
+    }
+    if (message.includes("FIREBASE_")) {
+      return NextResponse.json({ error: "Záznam nelze smazat, protože na serveru chybí nastavení Firebase Admin." }, { status: 500 });
+    }
+    if (message.includes("auth/id-token") || message.includes("ID token")) {
+      return NextResponse.json({ error: "Přihlášení vypršelo. Přihlas se prosím znovu a zkus smazání znovu." }, { status: 401 });
+    }
+    return NextResponse.json({ error: "Záznam se nepodařilo smazat. Zkus to prosím znovu." }, { status: 500 });
   }
 }
