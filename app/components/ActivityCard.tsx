@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
-import { auth, db } from "../lib/firebase";
+import { auth } from "../lib/firebase";
 import { Camera, Clock3, Gauge, Heart, MapPin, MessageCircle, Pencil, Trash2, X, Send, Users } from "lucide-react";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 
