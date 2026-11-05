@@ -37,8 +37,12 @@ export default function Page() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, user => {
-      if (!user) router.push("/login");
+    const unsubAuth = onAuthStateChanged(auth, async user => {
+      if (!user) { router.push("/login"); return; }
+      try {
+        const profile = await getDoc(doc(db, "users", user.uid));
+        if (profile.exists() && profile.data().defaultActivity === "chůze") setSelectedType("chůze");
+      } catch {}
     });
     return () => unsubAuth();
   }, [router]);
