@@ -3,7 +3,7 @@
 import React, { FormEvent, useState } from "react";
 import { ArrowLeft, KeyRound, LogIn, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
+import { sendPasswordResetEmail, signInWithCustomToken, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../lib/firebase";
 
 type View = "login" | "reset" | "code" | "register";
@@ -94,10 +94,18 @@ export default function LoginPage() {
     setBusy(true);
     setError("");
     try {
-      await createUserWithEmailAndPassword(auth, email.trim(), heslo);
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password: heslo, code: kod.trim() }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Registrace se nepodařila.");
+      if (!result.customToken) throw new Error("Registrace se nepodařila dokončit.");
+      await signInWithCustomToken(auth, result.customToken);
       router.push("/");
-    } catch {
-      setError("Registrace se nepodařila. Email už může být použitý nebo není platný.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Registrace se nepodařila. Zkus to prosím znovu.");
     } finally {
       setBusy(false);
     }
