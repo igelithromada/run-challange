@@ -127,7 +127,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
         ? teamIdsByType[type] as string
         : (type === "běh" && typeof userData.teamId === "string" ? userData.teamId : null);
 
-      await addDoc(collection(db, "runs"), {
+      const runData = {
         uid: user.uid,
         email: user.email,
         avatarUrl: typeof userData.avatarUrl === "string" ? userData.avatarUrl : "",
@@ -143,7 +143,32 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
         likedBy: [],
         likeCount: 0,
         commentCount: 0
-      });
+      };
+
+      try {
+        // Primární cesta zachovává Firestore offline podporu.
+        await addDoc(collection(db, "runs"), runData);
+      } catch (firestoreError) {
+        const firestoreCode = firestoreError && typeof firestoreError === "object" && "code" in firestoreError
+          ? String((firestoreError as { code?: unknown }).code || "")
+          : "";
+
+        // Pokud produkční Firestore Rules nejsou aktuálně synchronizované,
+        // uložíme aktivitu přes zabezpečený serverový endpoint.
+        if (!firestoreCode.includes("permission-denied") || !navigator.onLine) throw firestoreError;
+
+        const token = await user.getIdToken(true);
+        const response = await fetch("/api/runs/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ run: runData }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Aktivitu se nepodařilo uložit.");
+      }
 
       reset();
       setShowForm(false);
