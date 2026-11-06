@@ -13,6 +13,7 @@ const items = [
   { id: "myrun", label: "Moje aktivity", Icon: Footprints },
   { id: "teams", label: "Týmy", Icon: Users },
   { id: "progress", label: "Můj progres", Icon: TrendingUp },
+  { id: "trainer", label: "Osobní trenér", Icon: Footprints },
   { id: "statistics", label: "Výsledky", Icon: Trophy },
   { id: "participants", label: "Účastníci", Icon: ListOrdered },
   { id: "weather", label: "Počasí pro běh", Icon: CloudSun },
