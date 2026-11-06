@@ -6,7 +6,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
-import { Footprints, Zap } from "lucide-react";
+
 import Sidebar from "../components/Sidebar";
 import ActivityCard from "../components/ActivityCard";
 import LoadingSkeleton from "../components/LoadingSkeleton";
@@ -128,8 +128,7 @@ export default function MyRunsPage() {
   const totalKm = filteredRuns.reduce((sum, run) => sum + run.km, 0);
   const totalMin = filteredRuns.reduce((sum, run) => sum + run.minuty, 0);
   const avgTempo = totalKm ? totalMin / totalKm : 0;
-  const longestRun = filteredRuns.reduce<RunData | null>((best, run) => !best || run.km > best.km ? run : best, null);
-  const fastestRun = filteredRuns.filter(run => run.tempo > 0).reduce<RunData | null>((best, run) => !best || run.tempo < best.tempo ? run : best, null);
+
 
   const handleEdit = (run: RunData) => {
     setEditingId(run.id); setKm(String(run.km)); setDuration(durationString(run.minuty));
@@ -235,30 +234,6 @@ export default function MyRunsPage() {
         <div className="tile"><span>Čas</span><strong>{(totalMin / 60).toFixed(2)} h</strong></div>
         <div className="tile"><span>Prům. tempo</span><strong>{formatTime(avgTempo)} /km</strong></div>
       </div>
-      {(longestRun || fastestRun) && (
-        <div className="my-records-grid" aria-label="Osobní rekordy">
-          {longestRun && (
-            <div className="my-record-tile">
-              <span className="my-record-icon"><Footprints size={20}/></span>
-              <span className="my-record-copy">
-                <small>Nejdelší {selectedType}</small>
-                <strong>{longestRun.km} km</strong>
-                <span>{formatTime(longestRun.minuty)} · {formatTime(longestRun.tempo)} /km</span>
-              </span>
-            </div>
-          )}
-          {fastestRun && (
-            <div className="my-record-tile">
-              <span className="my-record-icon"><Zap size={20}/></span>
-              <span className="my-record-copy">
-                <small>Nejrychlejší tempo</small>
-                <strong>{formatTime(fastestRun.tempo)} /km</strong>
-                <span>{fastestRun.km} km · {formatTime(fastestRun.minuty)}</span>
-              </span>
-            </div>
-          )}
-        </div>
-      )}
       <h2 className="centered-title">Moje záznamy</h2>
       {actionError && <p className="activity-action-error">{actionError}</p>}
       <div className="list-container" style={{ display:"flex", flexDirection:"column", gap:0 }}>
