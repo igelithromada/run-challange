@@ -190,6 +190,7 @@ export default function ProgressPage() {
     if (item==="logout") { await signOut(auth); router.push("/login"); }
     else if (item==="home") router.push("/");
     else if (item==="myrun") router.push("/myruns");
+    else if (item==="trainer") router.push("/trainer");
     else router.push("/"+item);
   };
 
