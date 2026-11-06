@@ -159,6 +159,7 @@ export default function TeamsPage() {
     else if (item === "statistics") router.push("/statistics");
     else if (item === "participants") router.push("/participants");
     else if (item === "progress") router.push("/progress");
+    else if (item === "trainer") router.push("/trainer");
     else if (item === "weather") router.push("/weather");
     else if (item === "admin") router.push("/admin");
   };
