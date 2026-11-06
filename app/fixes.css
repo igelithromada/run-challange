@@ -553,3 +553,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .activity-card-modern .activity-social-button { width:50px; min-width:50px; height:42px; }
   .user-page-header { padding:.85rem; }
 }
+
+
+/* Lightbox: navigation is neutral, deletion is the destructive action. */
+.activity-lightbox-actions > button[aria-label="Předchozí fotografie"],
+.activity-lightbox-actions > button[aria-label="Další fotografie"] {
+  background:rgba(10,20,30,.58) !important;
+  color:white !important;
+}
+.activity-lightbox-actions > button[aria-label="Smazat fotografii"] {
+  background:rgba(160,55,65,.9) !important;
+  color:white !important;
+}
