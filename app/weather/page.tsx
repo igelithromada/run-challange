@@ -38,7 +38,7 @@ export default function WeatherPage() {
 
   return (
     <>
-      <Navbar title="Počasí pro běh" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
+      <Navbar title="Počasí pro pohyb" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
       <main className="container">
         
