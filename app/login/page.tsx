@@ -46,6 +46,7 @@ export default function LoginPage() {
     if (!email.trim()) { setError("Zadej email, na který chceš poslat odkaz."); return; }
     setBusy(true);
     try {
+      auth.languageCode = "cs";
       await sendPasswordResetEmail(auth, email.trim());
       setMessage("Pokud účet s tímto emailem existuje, Firebase poslal odkaz pro obnovení hesla. Zkontroluj i Spam.");
     } catch (error) {
