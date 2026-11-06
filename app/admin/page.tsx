@@ -175,6 +175,7 @@ export default function AdminPage() {
     if (item === "logout") { await signOut(auth); router.push("/login"); return; }
     if (item === "myrun") { router.push("/myruns"); return; }
     if (item === "home") { router.push("/"); return; }
+    if (item === "trainer") { router.push("/trainer"); return; }
     router.push("/" + item);
   };
 
