@@ -134,6 +134,7 @@ export default function Page() {
     else if (item === "statistics") router.push("/statistics");
     else if (item === "participants") router.push("/participants");
     else if (item === "progress") router.push("/progress");
+    else if (item === "trainer") router.push("/trainer");
     else if (item === "admin") router.push("/admin");
     else router.push("/");
   };
