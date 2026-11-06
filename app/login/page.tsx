@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../lib/firebase";
 
-type View = "login" | "code" | "register";
+type View = "login" | "reset" | "code" | "register";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -39,22 +39,19 @@ export default function LoginPage() {
     }
   };
 
-  const handleForgotPassword = async () => {
+  const handleForgotPassword = async (event: FormEvent) => {
+    event.preventDefault();
     setError("");
     setMessage("");
-    if (!email.trim()) {
-      setError("Nejprve zadej email, na který chceš poslat odkaz.");
-      return;
-    }
+    if (!email.trim()) { setError("Zadej email, na který chceš poslat odkaz."); return; }
     setBusy(true);
     try {
       await sendPasswordResetEmail(auth, email.trim());
-      setMessage("Na zadaný email jsme poslali odkaz pro obnovení hesla.");
-    } catch {
-      setError("Odkaz pro obnovení se nepodařilo odeslat. Zkontroluj email a zkus to znovu.");
-    } finally {
-      setBusy(false);
-    }
+      setMessage("Pokud účet s tímto emailem existuje, Firebase poslal odkaz pro obnovení hesla. Zkontroluj i Spam.");
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error ? String((error as {code?: unknown}).code || "") : "";
+      setError(code.includes("invalid-email") ? "Email nemá platný formát." : "Odkaz pro obnovení se nepodařilo odeslat. Zkus to znovu.");
+    } finally { setBusy(false); }
   };
 
   const handleCheckCode = async (event: FormEvent) => {
@@ -118,11 +115,13 @@ export default function LoginPage() {
 
         <div className="auth-heading">
           <h1 id="auth-title">
-            {view === "login" ? "Vítej zpět" : view === "code" ? "Registrace" : "Vytvořit účet"}
+            {view === "login" ? "Vítej zpět" : view === "reset" ? "Obnovení hesla" : view === "code" ? "Registrace" : "Vytvořit účet"}
           </h1>
           <p>
             {view === "login"
               ? "Přihlas se a pokračuj ve svém progresu."
+              : view === "reset"
+                ? "Zadej email a pošleme ti odkaz pro nastavení nového hesla."
               : view === "code"
                 ? "Pro registraci potřebuješ platný registrační kód."
                 : "Nastav si účet a začni zaznamenávat své aktivity."}
@@ -134,8 +133,16 @@ export default function LoginPage() {
             <label><span>Email</span><input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required /></label>
             <label><span>Heslo</span><input type="password" autoComplete="current-password" value={heslo} onChange={e => setHeslo(e.target.value)} required /></label>
             <button type="submit" className="auth-primary" disabled={busy}><LogIn size={18} /> {busy ? "Přihlašuji…" : "Přihlásit"}</button>
-            <button type="button" className="auth-secondary" onClick={handleForgotPassword} disabled={busy}>Zapomněl jsem heslo</button>
+            <button type="button" className="auth-secondary" onClick={() => switchView("reset")} disabled={busy}>Zapomněl jsem heslo</button>
             <button type="button" className="auth-link-button" onClick={() => switchView("code")}>Nemáš účet? <strong>Registrovat</strong></button>
+          </form>
+        )}
+
+        {view === "reset" && (
+          <form className="auth-form" onSubmit={handleForgotPassword}>
+            <label><span>Email</span><input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required /></label>
+            <button type="submit" className="auth-primary" disabled={busy}><KeyRound size={18} /> {busy ? "Odesílám…" : "Poslat odkaz pro obnovení"}</button>
+            <button type="button" className="auth-link-button" onClick={() => switchView("login")}><ArrowLeft size={16} /> Zpět na přihlášení</button>
           </form>
         )}
 
