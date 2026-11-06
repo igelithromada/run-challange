@@ -62,7 +62,7 @@ export default function GalleryPage() {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Fotografii se nepodařilo smazat.");
-      const next = photos.filter((_, index) => index !== lightbox);
+      const next = photos.filter((_, index) => index !== lightbox).map(item => item.runId === photo.runId && item.photoIndex > photo.photoIndex ? { ...item, photoIndex: item.photoIndex - 1 } : item);
       setPhotos(next);
       if (!next.length) setLightbox(null);
       else setLightbox(Math.min(lightbox, next.length - 1));
