@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../lib/firebase";
 import Link from "next/link";
 import { CloudSun, CloudRain, CloudSnow, Wind, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { ActivityType, ActivityTypeIcon } from "./ActivityTypeSelector";
@@ -9,16 +11,31 @@ type WeatherData = { current?: any; hourly?: any[]; error?: string };
 
 export default function RunWeatherRecommendation({
   linkToWeather = true,
-  type = "běh",
+  type,
 }: {
   linkToWeather?: boolean;
   type?: ActivityType;
 }) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [resolvedType, setResolvedType] = useState<ActivityType>(type || "běh");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
+    const resolveType = async () => {
+      if (type) { setResolvedType(type); return; }
+      try {
+        const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
+        if (cached === "běh" || cached === "chůze") setResolvedType(cached);
+        const user = auth.currentUser;
+        if (user) {
+          const profile = await getDoc(doc(db, "users", user.uid));
+          if (profile.exists() && profile.data().defaultActivity === "chůze") setResolvedType("chůze");
+          else if (profile.exists()) setResolvedType("běh");
+        }
+      } catch {}
+    };
+    void resolveType();
     const load = async () => {
       try {
         const response = await fetch("/api/weather");
@@ -34,7 +51,7 @@ export default function RunWeatherRecommendation({
     void load();
     const timer = window.setInterval(load, 30 * 60 * 1000);
     return () => { active = false; window.clearInterval(timer); };
-  }, []);
+  }, [type]);
 
   const current = weather?.current;
   const condition = String(current?.weatherCondition?.type || "").toUpperCase();
@@ -44,11 +61,12 @@ export default function RunWeatherRecommendation({
   const snow = condition.includes("SNOW") || condition.includes("SLEET");
   const rain = condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER");
   const icy = temperature <= 0 && (snow || condition.includes("FREEZ"));
-  const hot = type === "chůze" ? temperature >= 30 : temperature >= 28;
-  const strongWind = type === "chůze" ? wind >= 45 : wind >= 40;
+  const activityType = resolvedType;
+  const hot = activityType === "chůze" ? temperature >= 30 : temperature >= 28;
+  const strongWind = activityType === "chůze" ? wind >= 45 : wind >= 40;
   const heavyRain = rain && rainChance >= 60;
-  const activityName = type === "chůze" ? "chůzi" : "běh";
-  const ActivityIcon = () => <ActivityTypeIcon type={type} size={18} />;
+  const activityName = activityType === "chůze" ? "chůzi" : "běh";
+  const ActivityIcon = () => <ActivityTypeIcon type={activityType} size={18} />;
 
   let title = "Podmínky vypadají dobře";
   let advice = type === "chůze" ? "Ideální čas vyrazit na chůzi." : "Ideální čas vyrazit si zaběhat.";
@@ -64,15 +82,15 @@ export default function RunWeatherRecommendation({
     advice = weather?.error || "Aktuální počasí se nepodařilo načíst.";
     tone = "neutral"; Icon = CloudSun;
   } else if (icy || heavyRain || strongWind || hot) {
-    title = type === "chůze" ? "Chůzi raději zvaž" : "Běh raději zvaž";
+    title = activityType === "chůze" ? "Chůzi raději zvaž" : "Běh raději zvaž";
     tone = "warning"; Icon = AlertTriangle;
     advice = icy ? "Mrzne a sněží – povrch může klouzat. Zvol opatrnou trasu a vhodnou obuv."
       : heavyRain ? "Déšť může zhoršit viditelnost i povrch cest. Zvaž kratší trasu nebo aktivitu odlož."
       : strongWind ? "Silný vítr může aktivitu výrazně znepříjemnit. Vyhni se otevřeným úsekům."
-      : type === "chůze" ? "Je poměrně horko. Vyraz raději v chladnější části dne a vezmi si vodu."
+      : activityType === "chůze" ? "Je poměrně horko. Vyraz raději v chladnější části dne a vezmi si vodu."
       : "Je poměrně horko. Zvol volnější tempo, kratší trasu a doplň tekutiny.";
   } else if (snow || rain || rainChance >= 40 || temperature < 3 || temperature > 24 || wind >= 25) {
-    title = type === "chůze" ? "Chůze je možná, ale s opatrností" : "Běhat se dá, ale s opatrností";
+    title = activityType === "chůze" ? "Chůze je možná, ale s opatrností" : "Běhat se dá, ale s opatrností";
     tone = "caution";
     Icon = snow ? CloudSnow : rain ? CloudRain : Wind;
     advice = snow ? "Sníh může klouzat – obuj boty s dobrou podrážkou a přizpůsob tempo."
@@ -86,7 +104,7 @@ export default function RunWeatherRecommendation({
     <section className={`run-weather-recommendation run-weather-${tone}`} aria-live="polite">
       <div className="run-weather-icon"><Icon size={27} /></div>
       <div className="run-weather-copy">
-        <span className="run-weather-eyebrow"><ActivityIcon /> Doporučení pro {type === "chůze" ? "chůzi" : "běh"} · Dolní Lhota</span>
+        <span className="run-weather-eyebrow"><ActivityIcon /> Doporučení pro {activityType === "chůze" ? "chůzi" : "běh"} · Dolní Lhota</span>
         <strong>{title}</strong>
         <p>{advice}</p>
         {current && <small>{Math.round(temperature)} °C · <span className="run-weather-wind"><Wind size={14} className="wind-icon-animated" /> vítr {Math.round(wind)} km/h</span>{rainChance > 0 ? ` · srážky ${Math.round(rainChance)} %` : ""}</small>}
