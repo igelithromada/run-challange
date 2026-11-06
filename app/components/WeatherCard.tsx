@@ -71,10 +71,10 @@ export default function WeatherCard() {
   const rainChance = current?.precipitation?.probability?.percent;
 
   return (
-    <section className="tile" style={{ marginBottom: "1.25rem", overflow: "hidden" }} aria-label="Předpověď počasí">
+    <section className="tile weather-card" style={{ marginBottom: "1.25rem", overflow: "hidden" }} aria-label="Předpověď počasí">
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Počasí pro běh</h2>
+          <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Počasí pro pohyb</h2>
           <p style={{ margin: "0.2rem 0 0", opacity: 0.78, fontSize: "0.85rem" }}>Dolní Lhota u Ostravy</p>
         </div>
         <button type="button" onClick={() => void loadWeather(true)} aria-label="Obnovit počasí" title="Obnovit počasí" style={{ background: "rgba(255,255,255,0.16)", border: 0, borderRadius: 999, color: "inherit", padding: "0.55rem", cursor: "pointer" }}>
