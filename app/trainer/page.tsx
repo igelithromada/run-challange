@@ -57,6 +57,7 @@ export default function TrainerPage(){
      const goals=data.progressGoalsByType||{};
      const selected=data.progressGoals?.type==="chůze"?"chůze":type;
      setMonthlyGoal(num(goals[selected]?.monthly??data.progressGoals?.monthly??100)||100);
+     const runSnap=await getDocs(query(collection(db,"runs"),where("uid","==",user.uid)));
      const loadedRuns=runSnap.docs.map(d=>({id:d.id,...d.data()} as Activity));
      setRuns(loadedRuns);
      if(stored?.weekKey && stored.weekKey!==currentWeek){
