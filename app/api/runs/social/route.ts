@@ -88,9 +88,12 @@ export async function POST(request: Request) {
     if (!runSnapshot.exists) return NextResponse.json({ error: "Záznam neexistuje." }, { status: 404 });
 
     const runData = runSnapshot.data() || {};
-    if (runData.uid === decoded.uid) {
+
+    // Vlastní záznam lze komentovat (např. doplnění informací nebo reakce na diskusi).
+    // Lajknutí vlastního záznamu zůstává zablokované.
+    if (action === "like" && runData.uid === decoded.uid) {
       return NextResponse.json(
-        { error: action === "like" ? "Vlastní záznam nelze lajknout." : "Vlastní záznam nelze komentovat." },
+        { error: "Vlastní záznam nelze lajknout." },
         { status: 403 }
       );
     }
