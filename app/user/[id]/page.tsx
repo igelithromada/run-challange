@@ -71,6 +71,7 @@ export default function UserPage() {
     setMenuVisible(false);
     if (item === "logout") { await signOut(auth); router.push("/login"); return; }
     if (item === "home") { router.push("/"); return; }
+    if (item === "trainer") { router.push("/trainer"); return; }
     router.push("/" + (item === "myrun" ? "myruns" : item));
   };
 
