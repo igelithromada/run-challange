@@ -10,7 +10,7 @@ import Sidebar from "../../../components/Sidebar";
 import useAdminGuard from "../../../lib/useAdminGuard";
 import { Camera, X } from "lucide-react";
 
-type GalleryPhoto = { id:string; photoUrl:string; date:string; runId:string };
+type GalleryPhoto = { id:string; photoUrl:string; date:string; runId:string; photoIndex:number };
 
 export default function GalleryPage() {
   const { id } = useParams() as {id:string};
@@ -21,6 +21,7 @@ export default function GalleryPage() {
   const [loading,setLoading] = useState(true);
   const [error,setError] = useState("");
   const [lightbox,setLightbox] = useState<number|null>(null);
+  const [deleting,setDeleting] = useState(false);
 
   useEffect(() => {
     if (adminAccess !== "allowed" || !id) return;
@@ -35,7 +36,7 @@ export default function GalleryPage() {
           const urls:string[] = Array.isArray(data.imageUrls) ? data.imageUrls.filter((u:unknown):u is string=>typeof u==="string"&&u.length>0) : [];
           if (!urls.length && typeof data.imageUrl==="string" && data.imageUrl) urls.push(data.imageUrl);
           const date = data.timestamp?.seconds ? new Date(data.timestamp.seconds*1000).toLocaleString("cs-CZ",{day:"numeric",month:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "Neznámé datum";
-          urls.forEach((photoUrl,index)=>result.push({id:`${d.id}-${index}`,photoUrl,date,runId:d.id}));
+          urls.forEach((photoUrl,index)=>result.push({id:`${d.id}-${index}`,photoUrl,date,runId:d.id,photoIndex:index}));
         });
         result.sort((a,b)=>a.date<b.date?1:-1);
         if(active) setPhotos(result);
@@ -44,6 +45,31 @@ export default function GalleryPage() {
     };
     void load(); return ()=>{active=false;};
   },[adminAccess,id]);
+
+  const deleteCurrentPhoto = async () => {
+    if (lightbox === null || deleting) return;
+    const photo = photos[lightbox];
+    if (!photo || !window.confirm("Opravdu chceš tuto fotografii trvale smazat?")) return;
+    setDeleting(true); setError("");
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error("Nejsi přihlášen.");
+      const token = await user.getIdToken(true);
+      const response = await fetch("/api/runs/photo", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ runId: photo.runId, index: photo.photoIndex })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Fotografii se nepodařilo smazat.");
+      const next = photos.filter((_, index) => index !== lightbox);
+      setPhotos(next);
+      if (!next.length) setLightbox(null);
+      else setLightbox(Math.min(lightbox, next.length - 1));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fotografii se nepodařilo smazat.");
+    } finally { setDeleting(false); }
+  };
 
   const handleSelect=async(item:string)=>{
     setMenuVisible(false);
@@ -73,6 +99,7 @@ export default function GalleryPage() {
     {lightbox!==null && <div className="admin-lightbox" role="dialog" aria-modal="true" onClick={()=>setLightbox(null)}>
       <button className="admin-lightbox-close" onClick={()=>setLightbox(null)} aria-label="Zavřít"><X/></button>
       <img src={photos[lightbox].photoUrl} alt="Fotografie aktivity" onClick={e=>e.stopPropagation()}/>
+      <div className="admin-lightbox-actions" onClick={e=>e.stopPropagation()}><button type="button" className="admin-lightbox-delete" onClick={() => void deleteCurrentPhoto()} disabled={deleting}>{deleting ? "Mažu…" : "Smazat"}</button><button type="button" onClick={() => setLightbox(null)}>Zavřít</button></div>
       {photos.length>1 && <>
         <button className="admin-lightbox-prev" onClick={e=>{e.stopPropagation();setLightbox(i=>(i===null?null:(i-1+photos.length)%photos.length))}} aria-label="Předchozí">‹</button>
         <button className="admin-lightbox-next" onClick={e=>{e.stopPropagation();setLightbox(i=>(i===null?null:(i+1)%photos.length))}} aria-label="Další">›</button>
