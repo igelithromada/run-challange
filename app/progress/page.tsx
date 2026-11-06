@@ -50,6 +50,9 @@ export default function ProgressPage() {
   const [goalsByType, setGoalsByType] = useState<Record<string, { weekly: number; monthly: number }>>({ běh: { weekly: 25, monthly: 100 }, chůze: { weekly: 25, monthly: 100 } });
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [trainerDays, setTrainerDays] = useState<number[]>([1,3,5]);
+  const [trainerKm, setTrainerKm] = useState("20");
+  const [trainerSaved, setTrainerSaved] = useState(false);
 
   useEffect(() => {
     const stopAuth = onAuthStateChanged(auth, async user => {
@@ -59,6 +62,9 @@ export default function ProgressPage() {
         const profile = await getDoc(doc(db, "users", user.uid));
         if (profile.exists()) {
           const data = profile.data();
+          const trainer = data.personalTrainerPlan || {};
+          if (Array.isArray(trainer.days)) setTrainerDays(trainer.days.filter((day: unknown) => typeof day === "number" && day >= 0 && day <= 6));
+          if (Number(trainer.weeklyKm) > 0) setTrainerKm(String(trainer.weeklyKm));
           const storedGoals = data.progressGoalsByType || {};
           const legacy = data.progressGoals || {};
           const nextGoals = {
@@ -166,6 +172,25 @@ export default function ProgressPage() {
     return { ...team, km, goalKm, percent:Math.min(100,km/goalKm*100) };
   }).sort((a,b)=>b.km-a.km);
 
+  const trainerTarget = Math.max(0.1, asNumber(trainerKm));
+  const trainerCompleted = weekKm;
+  const trainerPercent = Math.min(100, trainerCompleted / trainerTarget * 100);
+  const trainerPlannedSessions = trainerDays.length;
+  const trainerWeekDates = trainerDays.map(day => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + day);
+    return d;
+  });
+  const trainerCompletedSessions = trainerWeekDates.filter(date => dailyTotals.has(dateKey(date))).length;
+  const trainerRating = trainerPercent >= 100 ? "Výborně" : trainerPercent >= 75 ? "Skvěle" : trainerPercent >= 50 ? "Dobré tempo" : trainerPercent >= 25 ? "Držíš směr" : "Ještě můžeš zabrat";
+  const trainerMotivation = trainerPercent >= 100 ? "Týdenní plán máš splněný. Teď je čas držet pravidelnost a nepřepálit další týden." : trainerPercent >= 75 ? "Jsi blízko cíle. Jedna dobrá aktivita a může být hotovo." : trainerPercent >= 50 ? "Jdeš správným směrem. Drž se plánu a dokonči další naplánovaný den." : trainerPercent > 0 ? "Už máš první kilometry. Důležitější než rychlost je pravidelnost." : "Začni první naplánovanou aktivitou. I kratší pohyb se počítá.";
+  const saveTrainerPlan = async () => {
+    if (!uid || trainerDays.length === 0 || trainerTarget <= 0) return;
+    await setDoc(doc(db, "users", uid), { personalTrainerPlan: { days: trainerDays, weeklyKm: trainerTarget, type: goalType } }, { merge: true });
+    setTrainerSaved(true);
+    window.setTimeout(() => setTrainerSaved(false), 2200);
+  };
+
   const switchGoalType = (nextType: string) => {
     setGoalType(nextType);
     const values = goalsByType[nextType] || { weekly: 25, monthly: 100 };
@@ -208,6 +233,24 @@ export default function ProgressPage() {
         <div className="progress-goal-bars">
           <div><div className="progress-bar-heading"><strong>Tento týden</strong><span>{weekKm.toFixed(1)} / {asNumber(goalWeekly)} km</span></div><div className="progress-track"><i style={{width:`${progressWeekly}%`}}/></div></div>
           <div><div className="progress-bar-heading"><strong>Tento měsíc</strong><span>{monthKm.toFixed(1)} / {asNumber(goalMonthly)} km</span></div><div className="progress-track"><i style={{width:`${progressMonthly}%`}}/></div></div>
+        </div>
+      </section>
+
+      <section className="tile personal-trainer-card">
+        <div className="progress-section-title"><TrendingUp/><div><h2>Můj osobní trenér</h2><p>Jednoduchý týdenní plán podle tvého cíle a skutečného plnění.</p></div></div>
+        <div className="trainer-plan-controls">
+          <label>Týdenní cíl (km)<input type="number" min="0.1" step="0.5" value={trainerKm} onChange={e => setTrainerKm(e.target.value)} /></label>
+          <div><span className="trainer-label">Naplánované dny</span><div className="trainer-days">{["Po","Út","St","Čt","Pá","So","Ne"].map((day,index) => <button key={day} type="button" className={trainerDays.includes(index) ? "active" : ""} onClick={() => setTrainerDays(days => days.includes(index) ? days.filter(item => item !== index) : [...days, index].sort((a,b) => a-b))}>{day}</button>)}</div></div>
+          <button type="button" className="progress-save" onClick={() => void saveTrainerPlan()} disabled={!trainerDays.length}>{trainerSaved ? "Uloženo" : "Uložit plán"}</button>
+        </div>
+        <div className="trainer-score">
+          <div><span>Plnění týdne</span><strong>{trainerPercent.toFixed(0)} %</strong></div>
+          <div className="progress-track"><i style={{width: trainerPercent + "%"}}/></div>
+          <p><strong>{trainerRating}.</strong> {trainerMotivation}</p>
+        </div>
+        <div className="trainer-stats">
+          <div><span>Splněno</span><strong>{trainerCompleted.toFixed(1)} / {trainerTarget.toFixed(1)} km</strong></div>
+          <div><span>Aktivity</span><strong>{trainerCompletedSessions} / {trainerPlannedSessions}</strong></div>
         </div>
       </section>
 
