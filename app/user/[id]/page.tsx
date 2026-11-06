@@ -13,7 +13,7 @@ import { cloudinaryImageUrl } from "../../lib/imageUrl";
 
 type RunData = {
   id: string; uid?: string; email?: string; nickname?: string; avatarUrl?: string;
-  km?: number; minuty?: number; tempo?: number | string; type?: string; teamId?: string;
+  km: number; minuty: number; tempo: number | string; type?: string; teamId?: string;
   imageUrls?: string[]; imageUrl?: string; timestamp?: { seconds: number }; likedBy?: string[]; likeCount?: number; commentCount?: number;
 };
 
@@ -32,7 +32,7 @@ export default function UserPage() {
     if (!id) return;
     const q = query(collection(db, "runs"), where("uid", "==", id));
     const unsub = onSnapshot(q, snap => {
-      const items = snap.docs.map(item => ({ id: item.id, ...item.data() } as RunData));
+      const items = snap.docs.map(item => { const data = item.data(); return { id: item.id, ...data, km: Number(data.km) || 0, minuty: Number(data.minuty) || 0, tempo: Number(data.tempo) || 0 } as RunData; });
       items.sort((a, b) => {
         const at = a.timestamp?.seconds || 0;
         const bt = b.timestamp?.seconds || 0;
