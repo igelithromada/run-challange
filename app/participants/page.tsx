@@ -8,7 +8,7 @@ import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
-import { Activity, Clock3, Medal, Users, Footprints } from "lucide-react";
+import { Activity, Clock3, Medal, Users, Footprints, ArrowDownUp, ListFilter } from "lucide-react";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 
 type Participant = {
@@ -123,8 +123,8 @@ export default function ParticipantsPage() {
         <div className="participants-toolbar">
           <span className="control-caption">Řazení</span>
           <div className="participant-sort" role="group" aria-label="Řazení účastníků">
-            <button type="button" className={sortMode === "km" ? "active" : ""} onClick={() => setSortMode("km")}>🏆 Kilometry</button>
-            <button type="button" className={sortMode === "alpha" ? "active" : ""} onClick={() => setSortMode("alpha")}>🔤 Abeceda</button>
+            <button type="button" className={sortMode === "km" ? "active" : ""} onClick={() => setSortMode("km")}><ArrowDownUp size={17} /> Kilometry</button>
+            <button type="button" className={sortMode === "alpha" ? "active" : ""} onClick={() => setSortMode("alpha")}><ListFilter size={17} /> Abeceda</button>
           </div>
         </div>
 
