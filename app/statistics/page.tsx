@@ -11,6 +11,7 @@ import { Footprints, Medal, Trophy, Users, User } from "lucide-react";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
+import { activityMetrics, formatPace } from "../lib/activityMetrics";
 
 export default function StatisticsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -112,7 +113,8 @@ export default function StatisticsPage() {
   } else {
     totalKm = teamList.reduce((a,b) => a+b.km,0); totalMin = teamList.reduce((a,b) => a+(b.tempo*b.km || 0),0);
   }
-  const avgTempo = totalKm ? (totalMin/totalKm).toFixed(2) : "0.00";
+  const overallMetrics = activityMetrics(filtered.filter(r => view === "já" ? r.uid === user?.uid : true));
+  const avgTempo = overallMetrics.pace;
   const podiumData = view === "jednotlivci" ? userList : teamList;
   const count = view === "já" ? filtered.filter(r => r.uid === user?.uid).length : view === "jednotlivci" ? userList.length : teamList.length;
 
@@ -152,7 +154,7 @@ export default function StatisticsPage() {
 
         <div className="tile-group stat-summary-grid">
           <div className="tile stat-card"><span>Celkem km</span><strong>{totalKm.toFixed(2)} km</strong></div>
-          <div className="tile stat-card"><span>Průměrné tempo</span><strong>{avgTempo} min/km</strong></div>
+          <div className="tile stat-card"><span>Průměrné tempo</span><strong>{formatPace(avgTempo)}</strong></div>
           <div className="tile stat-card"><span>Počet</span><strong>{count}</strong></div>
         </div>
 
