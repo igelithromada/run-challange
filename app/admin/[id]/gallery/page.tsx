@@ -99,7 +99,7 @@ export default function GalleryPage() {
     {lightbox!==null && <div className="admin-lightbox" role="dialog" aria-modal="true" onClick={()=>setLightbox(null)}>
       <button className="admin-lightbox-close" onClick={()=>setLightbox(null)} aria-label="Zavřít"><X/></button>
       <img src={photos[lightbox].photoUrl} alt="Fotografie aktivity" onClick={e=>e.stopPropagation()}/>
-      <div className="admin-lightbox-actions" onClick={e=>e.stopPropagation()}><button type="button" className="admin-lightbox-delete" onClick={() => void deleteCurrentPhoto()} disabled={deleting}>{deleting ? "Mažu…" : "Smazat"}</button><button type="button" onClick={() => setLightbox(null)}>Zavřít</button></div>
+      <div className="admin-lightbox-actions" onClick={e=>e.stopPropagation()}><button type="button" className="admin-lightbox-delete" onClick={() => void deleteCurrentPhoto()} disabled={deleting}>{deleting ? "Mažu…" : "Smazat"}</button></div>
       {photos.length>1 && <>
         <button className="admin-lightbox-prev" onClick={e=>{e.stopPropagation();setLightbox(i=>(i===null?null:(i-1+photos.length)%photos.length))}} aria-label="Předchozí">‹</button>
         <button className="admin-lightbox-next" onClick={e=>{e.stopPropagation();setLightbox(i=>(i===null?null:(i+1)%photos.length))}} aria-label="Další">›</button>
