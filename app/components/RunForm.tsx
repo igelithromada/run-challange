@@ -21,6 +21,14 @@ const localDateTime = () => {
   return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 };
 const formatDuration = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+const translateSaveError = (error: unknown) => {
+  const code = error && typeof error === "object" && "code" in error ? String((error as { code?: unknown }).code || "") : "";
+  if (code.includes("permission-denied")) return "Aktivitu se nepodařilo uložit kvůli oprávnění. Zkontroluj přihlášení a zkus to znovu.";
+  if (code.includes("failed-precondition")) return "Aktivitu se nepodařilo uložit. Firebase čeká na dokončení nastavení databáze.";
+  if (code.includes("unavailable")) return "Databáze je momentálně nedostupná. Zkus to za chvíli znovu.";
+  if (error instanceof Error && /network|fetch/i.test(error.message)) return "Nepodařilo se připojit k serveru. Zkontroluj internetové připojení.";
+  return error instanceof Error ? error.message : "Aktivitu se nepodařilo uložit. Zkus to prosím znovu.";
+};
 
 export default function RunForm({ type }: { type: "běh" | "chůze" }) {
   const [showForm, setShowForm] = useState(false);
@@ -146,7 +154,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
       );
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : "Chyba při ukládání záznamu.");
+      setError(translateSaveError(err));
     } finally {
       setSaving(false);
       setUploadStatus("");
@@ -225,10 +233,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
           {error && <p className="form-message form-message-error" role="alert">{error}</p>}
           {success && <p className="form-message form-message-success" role="status">{success}</p>}
 
-          <div className="run-form-actions">
-            <button type="button" className="run-secondary-button" onClick={() => { setShowForm(false); reset(); }} disabled={saving}>
-              Zrušit
-            </button>
+          <div className="run-form-actions run-form-actions-single">
             <button type="button" className="run-primary-button" onClick={handleSubmit} disabled={saving}>
               <Save size={18} aria-hidden="true" /> {saving ? "Ukládám…" : "Uložit aktivitu"}
             </button>
