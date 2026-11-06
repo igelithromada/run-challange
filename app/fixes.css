@@ -474,3 +474,82 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   color:#111;
   font-size:inherit;
 }
+
+
+/* ===== Stabilizace a sjednocení UI ===== */
+.activity-card-modern .activity-social-actions {
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:.55rem;
+  padding-inline:.1rem;
+}
+.activity-card-modern .activity-social-button {
+  width:52px;
+  min-width:52px;
+  height:42px;
+  min-height:42px;
+  padding:.3rem .45rem;
+  gap:.25rem;
+}
+.activity-card-modern .activity-social-button svg { width:20px; height:20px; }
+.activity-card-modern .activity-social-button span { font-size:.78rem; font-weight:750; }
+
+.run-form-actions-single { grid-template-columns:1fr !important; }
+.run-form-actions-single .run-primary-button { width:100%; }
+
+.weather-page .weather-refresh-button { width:42px; height:42px; border-radius:13px; }
+.weather-refresh-button svg { transition:transform .2s ease; }
+.weather-refresh-button:active svg { transform:rotate(180deg); }
+
+.user-page-modern { padding-bottom:2rem; }
+.user-page-header {
+  display:flex; align-items:center; gap:.9rem; margin:.3rem 0 1.1rem;
+  padding:1rem; border:1px solid var(--ui-border); border-radius:20px;
+  background:rgba(10,21,31,.34); box-shadow:var(--ui-shadow);
+}
+.user-page-avatar {
+  width:58px; height:58px; flex:0 0 58px; display:grid; place-items:center;
+  overflow:hidden; border-radius:17px; background:rgba(255,255,255,.12); font-size:1.35rem; font-weight:800;
+}
+.user-page-avatar img { width:100%; height:100%; object-fit:cover; }
+.user-page-header h1 { margin:.1rem 0; font-size:clamp(1.35rem,6vw,1.8rem); }
+.user-page-header p { margin:.2rem 0 0; color:var(--ui-muted); font-size:.8rem; }
+.user-page-eyebrow { font-size:.62rem; letter-spacing:.12em; font-weight:800; color:var(--ui-muted); }
+
+.teams-message { margin:.7rem 0 0; padding:.7rem .8rem; border-radius:12px; background:rgba(80,200,150,.12); border:1px solid rgba(130,240,185,.14); color:#dcffed; font-size:.84rem; }
+.teams-create, .teams-current, .teams-challenge-settings { overflow:hidden; }
+.teams-grid { align-items:stretch; }
+.team-card { min-width:0; }
+.team-card-actions { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.5rem; }
+.team-action-button { width:100%; }
+.team-delete-button { width:46px; min-width:46px; }
+
+.participant-sort button { display:inline-flex; align-items:center; justify-content:center; gap:.4rem; }
+
+.admin-lightbox-actions {
+  position:absolute; left:50%; bottom:1.5rem; transform:translateX(-50%);
+  display:flex; align-items:center; justify-content:center; gap:.55rem; z-index:2;
+}
+.admin-lightbox-actions button {
+  min-height:44px; padding:.65rem .9rem; border:1px solid rgba(255,255,255,.2);
+  border-radius:13px; background:rgba(255,255,255,.92); color:#111; cursor:pointer; font-weight:750;
+}
+.admin-lightbox-actions .admin-lightbox-delete {
+  background:rgba(160,55,65,.92); color:white;
+}
+.admin-lightbox-prev, .admin-lightbox-next {
+  background:rgba(10,20,30,.55) !important; color:white !important; border-radius:50% !important;
+}
+.admin-lightbox-prev:hover, .admin-lightbox-next:hover { background:rgba(10,20,30,.78) !important; }
+
+.settings-password-grid { display:grid; grid-template-columns:1fr 1fr; gap:.65rem; margin-bottom:.7rem; }
+.settings-password-grid label { display:flex; flex-direction:column; gap:.35rem; font-size:.78rem; font-weight:700; }
+.settings-password-grid input { width:100%; box-sizing:border-box; min-height:46px; padding:.7rem .8rem; border:1px solid var(--ui-border); border-radius:13px; color:#10202d; background:rgba(255,255,255,.96); }
+@media(max-width:520px) { .settings-password-grid { grid-template-columns:1fr; } }
+
+@media(max-width:520px) {
+  .activity-card-modern .activity-social-actions { gap:.4rem; }
+  .activity-card-modern .activity-social-button { width:50px; min-width:50px; height:42px; }
+  .user-page-header { padding:.85rem; }
+}
