@@ -57,8 +57,19 @@ export default function TrainerPage(){
      const goals=data.progressGoalsByType||{};
      const selected=data.progressGoals?.type==="chůze"?"chůze":type;
      setMonthlyGoal(num(goals[selected]?.monthly??data.progressGoals?.monthly??100)||100);
-     const runSnap=await getDocs(query(collection(db,"runs"),where("uid","==",user.uid)));
-     setRuns(runSnap.docs.map(d=>({id:d.id,...d.data()} as Activity)));
+     const loadedRuns=runSnap.docs.map(d=>({id:d.id,...d.data()} as Activity));
+     setRuns(loadedRuns);
+     if(stored?.weekKey && stored.weekKey!==currentWeek){
+       const oldRuns=loadedRuns.filter(r=>(r.type||"běh")===stored.type&&sameWeek(activityDate(r),stored.weekKey));
+       const completed=oldRuns.reduce((s,r)=>s+num(r.km),0);
+       const pct=stored.weeklyKm?Math.min(100,completed/stored.weeklyKm*100):0;
+       const sessions=stored.days.filter(d=>oldRuns.some(r=>{const ad=activityDate(r);const monday=new Date(stored.weekKey+"T00:00:00");monday.setDate(monday.getDate()+d);return dateKey(ad)===dateKey(monday)})).length;
+       const item:HistoryItem={...stored,completedKm:completed,percent:pct,status:pct>=100?"done":pct>0?"partial":"missed",completedSessions:sessions,closedAt:new Date().toISOString()};
+       const nextHistory=[item,...(Array.isArray(data.personalTrainerHistory)?data.personalTrainerHistory:[]).filter((h:HistoryItem)=>h.weekKey!==stored.weekKey)].slice(0,52);
+       await setDoc(doc(db,"users",user.uid),{personalTrainerHistory:nextHistory,personalTrainerPlan:null},{merge:true});
+       setHistory(nextHistory);
+       setPlan(null);
+     }
    }catch(e){console.error(e)}finally{setLoading(false)}
  }));
 
