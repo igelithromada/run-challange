@@ -2,14 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut, updatePassword } from "firebase/auth";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
-import { Check, Palette, Sparkles, Clock3, SlidersHorizontal, ShieldCheck } from "lucide-react";
+import { Check, Palette, Sparkles, Clock3, SlidersHorizontal, ShieldCheck, KeyRound } from "lucide-react";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 
 const DEFAULT_COLOR = "#36D1DC";
@@ -29,6 +29,9 @@ export default function SettingsPage() {
   const [defaultActivity, setDefaultActivity] = useState<"běh" | "chůze">("běh");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   const router = useRouter();
 
@@ -180,6 +183,23 @@ export default function SettingsPage() {
     }
   };
 
+  const handlePasswordChange = async () => {
+    setNotice("");
+    if (newPassword.length < 6) { flash("Nové heslo musí mít alespoň 6 znaků."); return; }
+    if (newPassword !== newPasswordConfirm) { flash("Nová hesla se neshodují."); return; }
+    if (!auth.currentUser) { flash("Nejsi přihlášen."); return; }
+    setPasswordSaving(true);
+    try {
+      await updatePassword(auth.currentUser, newPassword);
+      setNewPassword("");
+      setNewPasswordConfirm("");
+      flash("Heslo bylo změněno.");
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error ? String((error as {code?: unknown}).code || "") : "";
+      flash(code.includes("requires-recent-login") ? "Z bezpečnostních důvodů se nejprve odhlaš a znovu přihlas. Potom změnu hesla zopakuj." : "Heslo se nepodařilo změnit. Zkus to prosím znovu.");
+    } finally { setPasswordSaving(false); }
+  };
+
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
     if (item === "logout") { await signOut(auth); router.push("/login"); return; }
@@ -251,6 +271,15 @@ export default function SettingsPage() {
         <section className="tile">
           <div className="settings-section-heading"><SlidersHorizontal size={21}/><div><h2>Chování aplikace</h2><p>Výchozí typ aktivity pro rychlé přidávání záznamů.</p></div></div>
           <ActivityTypeSelector value={defaultActivity as ActivityType} onChange={(value) => void handleDefaultActivityChange(value)} ariaLabel="Výchozí aktivita" />
+        </section>
+
+        <section className="tile settings-password-section">
+          <div className="settings-section-heading"><KeyRound size={21}/><div><h2>Změna hesla</h2><p>Nastav nové heslo minimálně o 6 znacích.</p></div></div>
+          <div className="settings-password-grid">
+            <label>Nové heslo<input type="password" autoComplete="new-password" minLength={6} value={newPassword} onChange={e => setNewPassword(e.target.value)} /></label>
+            <label>Potvrzení nového hesla<input type="password" autoComplete="new-password" minLength={6} value={newPasswordConfirm} onChange={e => setNewPasswordConfirm(e.target.value)} /></label>
+          </div>
+          <button type="button" className="tile-button settings-save-button" onClick={() => void handlePasswordChange()} disabled={passwordSaving}>{passwordSaving ? "Měním heslo…" : "Změnit heslo"}</button>
         </section>
 
         <section className="tile">
