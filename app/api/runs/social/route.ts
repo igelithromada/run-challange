@@ -59,12 +59,15 @@ export async function GET(request: Request) {
       });
     }
 
+    const currentProfile = await adminDb.collection("users").doc(decoded.uid).get();
+    const currentProfileData = currentProfile.exists ? currentProfile.data() || {} : {};
     return NextResponse.json({
       liked: likedBy.includes(decoded.uid),
       likeCount: Number(data.likeCount) || likedBy.length,
       commentCount: Number(data.commentCount) || comments.length,
       likes: likeUsers,
       comments,
+      isAdmin: decoded.admin === true || currentProfileData.role === "admin",
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
@@ -79,11 +82,41 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const runId = typeof body?.runId === "string" ? body.runId.trim() : "";
     const action = typeof body?.action === "string" ? body.action : "";
-    if (!runId || !["like", "comment"].includes(action)) {
+    if (!runId || !["like", "comment", "comment_update", "comment_delete"].includes(action)) {
       return NextResponse.json({ error: "Neplatný požadavek." }, { status: 400 });
     }
 
     const runRef = adminDb.collection("runs").doc(runId);
+
+    if (action === "comment_update" || action === "comment_delete") {
+      const commentId = typeof body?.commentId === "string" ? body.commentId.trim() : "";
+      if (!commentId) return NextResponse.json({ error: "Chybí ID komentáře." }, { status: 400 });
+      const commentRef = runRef.collection("comments").doc(commentId);
+      const commentSnapshot = await commentRef.get();
+      if (!commentSnapshot.exists) return NextResponse.json({ error: "Komentář neexistuje." }, { status: 404 });
+      const commentData = commentSnapshot.data() || {};
+      const profile = await adminDb.collection("users").doc(decoded.uid).get();
+      const profileData = profile.exists ? profile.data() || {} : {};
+      const isAdmin = decoded.admin === true || profileData.role === "admin";
+      if (commentData.uid !== decoded.uid && !isAdmin) {
+        return NextResponse.json({ error: "K tomuto komentáři nemáš oprávnění." }, { status: 403 });
+      }
+
+      if (action === "comment_update") {
+        const text = typeof body?.text === "string" ? body.text.trim() : "";
+        if (!text || text.length > 500) return NextResponse.json({ error: "Komentář musí mít 1 až 500 znaků." }, { status: 400 });
+        await commentRef.update({ text, updatedAt: FieldValue.serverTimestamp() });
+        return NextResponse.json({ ok: true, comment: { id: commentId, text } });
+      }
+
+      await adminDb.runTransaction(async transaction => {
+        const currentRun = await transaction.get(runRef);
+        const currentCount = Number(currentRun.data()?.commentCount) || 0;
+        transaction.delete(commentRef);
+        transaction.update(runRef, { commentCount: Math.max(0, currentCount - 1) });
+      });
+      return NextResponse.json({ ok: true });
+    }
     const runSnapshot = await runRef.get();
     if (!runSnapshot.exists) return NextResponse.json({ error: "Záznam neexistuje." }, { status: 404 });
 
