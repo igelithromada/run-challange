@@ -219,11 +219,6 @@ export default function ProgressPage() {
         <p className="trainer-goal-note">Osobní trenér používá stejné cíle jako tato stránka. Měsíční cíl je hlavní meta; trenér z něj vychází při plánování týdnů a zbytek můžeš doplnit vlastními aktivitami.</p>
       </section>
 
-      <section className="tile trainer-link-card">
-        <div className="progress-section-title"><TrendingUp/><div><h2>Osobní trenér</h2><p>Tvůj konkrétní týdenní plán, rozdělený po dnech. Týdenní objem se počítá automaticky ze zadaných tréninků.</p></div></div>
-        <div className="trainer-link-summary"><div><span>Aktuální cíl</span><strong>{asNumber(goalMonthly).toFixed(0)} km / měsíc</strong></div><div><span>Co řeší trenér</span><strong>Konkrétní dny a km</strong></div><button type="button" className="progress-save" onClick={()=>router.push("/trainer")}><TrendingUp size={17}/>Otevřít trenéra</button></div>
-      </section>
-
       <section className="progress-level tile">
         <div className="progress-section-title"><Medal/><div><h2>Úrovně a zkušenosti</h2><p>Postupuješ podle celkové vzdálenosti všech svých aktivit.</p></div></div>
         <div className="progress-level-main"><span className="progress-level-emoji">{level.icon}</span><div><span className="progress-level-caption">AKTUÁLNÍ ÚROVEŇ</span><h3>{level.name}</h3><p>{allKm.toFixed(1)} km celkem · další úroveň od {level.next} km</p></div></div>
