@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { db, auth } from "../../lib/firebase";
@@ -6,247 +7,133 @@ import { signOut } from "firebase/auth";
 import { collection, query, where, onSnapshot, getDoc, doc } from "firebase/firestore";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
+import ActivityCard from "../../components/ActivityCard";
+import ActivityTypeSelector, { ActivityType } from "../../components/ActivityTypeSelector";
+import { cloudinaryImageUrl } from "../../lib/imageUrl";
 
 type RunData = {
-  id: string;
-  timestamp?: { seconds: number };
-  km?: number;
-  minuty?: number;
-  tempo?: number | string;
-  type?: string;
-  teamId?: string;
-  imageUrls?: string[];
-  imageUrl?: string;
+  id: string; uid?: string; email?: string; nickname?: string; avatarUrl?: string;
+  km?: number; minuty?: number; tempo?: number | string; type?: string; teamId?: string;
+  imageUrls?: string[]; imageUrl?: string; likedBy?: string[]; likeCount?: number; commentCount?: number;
 };
 
 export default function UserPage() {
-  const { id } = useParams();
+  const { id } = useParams() as { id: string };
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<RunData[]>([]);
-  const [selectedType, setSelectedType] = useState("běh");
+  const [selectedType, setSelectedType] = useState<ActivityType>("běh");
   const [userInfo, setUserInfo] = useState({ nickname: "", avatarUrl: "", email: "" });
   const [teams, setTeams] = useState<{ id: string; name?: string }[]>([]);
-  const [showImageUrl, setShowImageUrl] = useState<string[] | null>(null);
+  const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
+    if (!id) return;
     const q = query(collection(db, "runs"), where("uid", "==", id));
-    const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((doc): RunData => ({ id: doc.id, ...doc.data() }));
-      const sorted = items.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-      setRuns(sorted);
+    const unsub = onSnapshot(q, snap => {
+      const items = snap.docs.map(item => ({ id: item.id, ...item.data() } as RunData));
+      items.sort((a, b) => {
+        const at = a.timestamp?.seconds || 0;
+        const bt = b.timestamp?.seconds || 0;
+        return bt - at;
+      });
+      setRuns(items);
     });
     return () => unsub();
   }, [id]);
 
   useEffect(() => {
     const fetchUser = async () => {
-      const snapshot = await getDoc(doc(db, "users", id as string));
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        setUserInfo({
-          nickname: data.nickname || "",
-          avatarUrl: data.avatarUrl || "",
-          email: data.email || "",
-        });
-      }
+      try {
+        const snapshot = await getDoc(doc(db, "users", id));
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          setUserInfo({
+            nickname: data.nickname || "",
+            avatarUrl: data.avatarUrl || "",
+            email: data.email || "",
+          });
+        }
+      } catch (error) { console.error("Nepodařilo se načíst profil uživatele", error); }
     };
-    fetchUser();
+    if (id) void fetchUser();
   }, [id]);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "teams"), (snap) => {
-      setTeams(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    const unsub = onSnapshot(collection(db, "teams"), snap => {
+      setTeams(snap.docs.map(item => ({ id: item.id, name: item.data().name })));
     });
     return () => unsub();
   }, []);
 
-  const formatTime = (minutes?: number | string) => {
-    const totalSeconds = Math.round(parseFloat(minutes as string) * 60);
-    const min = Math.floor(totalSeconds / 60);
-    const sec = totalSeconds % 60;
-    return `${min}′${sec.toString().padStart(2, "0")}″`;
-  };
-
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
-    if (item === "logout") {
-      await signOut(auth);
-      router.push("/login");
-    } else if (item === "myrun") router.push("/myruns");
-    else if (item === "teams") router.push("/teams");
-    else if (item === "settings") router.push("/settings");
-    else if (item === "statistics") router.push("/statistics");
-    else if (item === "participants") router.push("/participants");
-    else if (item === "progress") router.push("/progress");
-    else if (item === "weather") router.push("/weather");
-    else router.push("/");
+    if (item === "logout") { await signOut(auth); router.push("/login"); return; }
+    if (item === "home") { router.push("/"); return; }
+    router.push("/" + (item === "myrun" ? "myruns" : item));
   };
+
+  const profileName = userInfo.nickname || userInfo.email?.split("@")[0] || "Uživatel";
+  const filteredRuns = runs.filter(run => (run.type || "běh") === selectedType);
+
+  const showRunImages = (images: string[], fallback: string) => {
+    const urls = images.length ? images : fallback ? [fallback] : [];
+    if (!urls.length) return;
+    setShowImages(urls);
+    setCurrentImageIndex(0);
+  };
+
   return (
     <>
-      <Navbar onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
+      <Navbar title={profileName} onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+      <main className="container user-page-modern">
+        <header className="user-page-header">
+          <div className="user-page-avatar">
+            {userInfo.avatarUrl ? <img src={cloudinaryImageUrl(userInfo.avatarUrl, 128)} alt="" /> : profileName.charAt(0).toUpperCase()}
+          </div>
+          <div><span className="user-page-eyebrow">AKTIVITY UŽIVATELE</span><h1>{profileName}</h1><p>{filteredRuns.length} {filteredRuns.length === 1 ? "aktivita" : filteredRuns.length < 5 ? "aktivity" : "aktivit"} · {filteredRuns.reduce((sum, run) => sum + (Number(run.km) || 0), 0).toFixed(1)} km</p></div>
+        </header>
 
-      <div className="container">
-        <h1 className="centered-title">
-          {userInfo.nickname || userInfo.email?.split("@")[0] || "Uživatel"}
-        </h1>
+        <ActivityTypeSelector value={selectedType} onChange={setSelectedType} ariaLabel="Typ aktivity" />
 
-        <div className="tile-group">
-          <button className={`tile-button ${selectedType === "běh" ? "active" : ""}`} onClick={() => setSelectedType("běh")}>🏃 Běh</button>
-          <button className={`tile-button ${selectedType === "chůze" ? "active" : ""}`} onClick={() => setSelectedType("chůze")}>🚶 Chůze</button>
+        <div className="list-container user-activity-list">
+          {filteredRuns.map(run => {
+            const teamName = run.teamId ? teams.find(team => team.id === run.teamId)?.name || null : null;
+            const images = Array.isArray(run.imageUrls) && run.imageUrls.length ? run.imageUrls : run.imageUrl ? [run.imageUrl] : [];
+            return (
+              <ActivityCard
+                key={run.id}
+                run={run}
+                nickname={profileName}
+                avatarUrl={userInfo.avatarUrl}
+                teamName={teamName}
+                activityType={selectedType}
+                onPhotosClick={showRunImages}
+              />
+            );
+          })}
         </div>
 
-        <div className="list-container" style={{ gap: "0", display: "flex", flexDirection: "column" }}>
-          {runs
-            .filter(run => (run.type || "běh") === selectedType)
-            .map(run => {
-              const teamName = run.teamId ? teams.find(t => t.id === run.teamId)?.name || "?" : null;
+        {!filteredRuns.length && <div className="tile activity-empty-state"><strong>Žádné záznamy</strong><p>Tento uživatel zatím nemá pro zvolený typ aktivity žádný záznam.</p></div>}
+      </main>
 
-              const avatar = userInfo.avatarUrl ? (
-                <img src={userInfo.avatarUrl} alt="avatar" style={{ width: 40, height: 40, borderRadius: "50%" }} />
-              ) : (
-                <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#ccc", color: "#000", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "1rem" }}>
-                  {(userInfo.nickname?.charAt(0) || userInfo.email?.charAt(0) || "?").toUpperCase()}
-                </div>
-              );
-
-              const tempo = parseFloat(run.tempo as string);
-              const range = selectedType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
-              const pos = Math.min(100, Math.max(0, ((range.max - tempo) / (range.max - range.min)) * 100));
-
-              const dateStr = new Date((run.timestamp?.seconds || 0) * 1000).toLocaleString("cs-CZ", {
-                hour: "2-digit", minute: "2-digit", year: "numeric", month: "numeric", day: "numeric"
-              });
-
-              return (
-                <div key={run.id} className="tile list-tile">
-                  <div className="avatar">{avatar}</div>
-                  <div className="run-meta">
-                    <small>{dateStr}</small>
-                    {(run.imageUrls?.length || run.imageUrl) && (
-                      <div className="run-photo-icon" onClick={() => { setCurrentImageIndex(0); setShowImageUrl(run.imageUrls || [run.imageUrl!]); }} role="button" aria-label="Zobrazit fotografie" style={{ cursor: "pointer", display: "flex" }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                          <path d="M23 19V5a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2z" />
-                          <circle cx="8.5" cy="8.5" r="1.5" />
-                          <path d="M21 15l-5-5L5 21" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <div className="run-info">
-                    <div className="run-heading">
-                      <span style={{ fontWeight: "bold", color: "white" }}>{userInfo.nickname || userInfo.email?.split("@")[0] || "Anonym"}</span>
-                      {teamName && <span style={{ marginLeft: "10px", fontWeight: "bold", color: "white" }}>({teamName})</span>}
-                    </div>
-                    <div className="run-stats">
-                      <div className="run-distance">{run.km} km, {formatTime(run.minuty)}</div>
-                      <div className="run-pace">
-                        <div className="run-pace-label">{formatTime(run.tempo)} /km</div>
-                        <div style={{ height: "5px", width: "70px", background: "linear-gradient(90deg, red, yellow, green)", borderRadius: "3px", position: "relative" }}>
-                          <div style={{ position: "absolute", top: "-4px", left: pos + "%", width: "10px", height: "10px", background: "white", border: "2px solid #333", borderRadius: "50%", transform: "translateX(-50%)" }} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+      {showImages && showImages.length > 0 && (
+        <div className="activity-lightbox" role="dialog" aria-modal="true" aria-label="Galerie fotografií" onClick={() => setShowImages(null)}>
+          <div className="activity-lightbox-top" onClick={e => e.stopPropagation()}>
+            <span>{currentImageIndex + 1} / {showImages.length}</span>
+            <button type="button" onClick={() => setShowImages(null)} aria-label="Zavřít galerii">×</button>
+          </div>
+          <img src={cloudinaryImageUrl(showImages[currentImageIndex], 1600)} alt={`Fotografie ${currentImageIndex + 1}`} onClick={e => e.stopPropagation()} />
+          <div className="activity-lightbox-actions" onClick={e => e.stopPropagation()}>
+            {showImages.length > 1 ? <button type="button" onClick={() => setCurrentImageIndex(i => (i - 1 + showImages.length) % showImages.length)} aria-label="Předchozí fotografie">‹</button> : <span />}
+            <button type="button" onClick={() => setShowImages(null)}>Zavřít</button>
+            {showImages.length > 1 ? <button type="button" onClick={() => setCurrentImageIndex(i => (i + 1) % showImages.length)} aria-label="Další fotografie">›</button> : <span />}
+          </div>
+          {showImages.length > 1 && <div className="activity-lightbox-thumbs" onClick={e => e.stopPropagation()}>{showImages.map((url, index) => <button key={url + index} type="button" className={index === currentImageIndex ? "active" : ""} onClick={() => setCurrentImageIndex(index)} aria-label={`Fotografie ${index + 1}`}><img src={cloudinaryImageUrl(url, 180)} alt="" /></button>)}</div>}
         </div>
-      </div>
-
-      {showImageUrl && (
-  <div
-    style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: "100%",
-      background: "rgba(0,0,0,0.8)",
-      zIndex: 1000,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "1rem"
-    }}
-  >
-    <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
-      {showImageUrl.map((_, i) => (
-        <button
-          key={i}
-          onClick={() => setCurrentImageIndex(i)}
-          style={{
-            background: currentImageIndex === i ? "white" : "#666",
-            border: "none",
-            borderRadius: "50%",
-            width: "10px",
-            height: "10px"
-          }}
-        />
-      ))}
-    </div>
-
-    <img
-      src={showImageUrl[currentImageIndex]}
-      style={{
-        maxWidth: "90vw",
-        maxHeight: "70vh",
-        objectFit: "contain",
-        borderRadius: "8px",
-        marginBottom: "1rem"
-      }}
-    />
-
-    <div style={{ display: "flex", gap: "2rem", alignItems: "center", justifyContent: "center" }}>
-      {showImageUrl.length > 1 && (
-        <button
-          onClick={() =>
-            setCurrentImageIndex((currentImageIndex - 1 + showImageUrl.length) % showImageUrl.length)
-          }
-          style={{
-            background: "transparent",
-            color: "white",
-            fontSize: "2rem",
-            border: "none",
-            cursor: "pointer"
-          }}
-        >
-          ❮
-        </button>
       )}
-      <button
-        onClick={() => setShowImageUrl(null)}
-        style={{
-          background: "white",
-          border: "none",
-          borderRadius: "8px",
-          padding: "0.5rem 1rem",
-          fontWeight: "bold"
-        }}
-      >
-        Zavřít
-      </button>
-      {showImageUrl.length > 1 && (
-        <button
-          onClick={() => setCurrentImageIndex((currentImageIndex + 1) % showImageUrl.length)}
-          style={{
-            background: "transparent",
-            color: "white",
-            fontSize: "2rem",
-            border: "none",
-            cursor: "pointer"
-          }}
-        >
-          ❯
-        </button>
-      )}
-    </div>
-  </div>
-)}
-</>
-);
+    </>
+  );
 }
-
