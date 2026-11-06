@@ -752,3 +752,99 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .trainer-km-input { font-size: .75rem; }
   .trainer-km-input input { width: 50px; padding-inline: .25rem; }
 }
+
+
+/* Osobní trenér – finální tmavý design, sjednocený s hlavním UI */
+.trainer-page {
+  --surface: rgba(5, 18, 28, .38);
+  --surface-soft: rgba(255, 255, 255, .055);
+  --border: rgba(255, 255, 255, .13);
+  --muted: rgba(255, 255, 255, .68);
+  --text: rgba(255, 255, 255, .96);
+}
+.trainer-page > .tile,
+.trainer-page .trainer-plan-card,
+.trainer-page .trainer-summary-card,
+.trainer-page .trainer-history-card {
+  background: rgba(5, 18, 28, .38) !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  color: var(--text) !important;
+  box-shadow: 0 14px 40px rgba(0,0,0,.18) !important;
+}
+.trainer-page .trainer-week-editor .trainer-day-editor,
+.trainer-page .trainer-plan-footer > div,
+.trainer-page .trainer-stats > div,
+.trainer-page .trainer-history-item {
+  background: rgba(255,255,255,.055) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  color: var(--text) !important;
+}
+.trainer-page .trainer-day-editor.selected.done { background: rgba(82,181,104,.11) !important; border-color: rgba(143,201,157,.58) !important; }
+.trainer-page .trainer-day-editor.selected.partial { background: rgba(225,189,85,.11) !important; border-color: rgba(225,189,85,.62) !important; }
+.trainer-page .trainer-day-editor.selected.missed { background: rgba(220,90,90,.10) !important; border-color: rgba(223,154,154,.62) !important; }
+.trainer-page .trainer-day-editor.selected.waiting { background: rgba(90,145,190,.10) !important; border-color: rgba(155,185,213,.62) !important; }
+
+.trainer-page .activity-type-selector {
+  margin: .9rem 0 !important;
+}
+.trainer-page .activity-type-selector button {
+  background: rgba(255,255,255,.055) !important;
+  border-color: rgba(255,255,255,.13) !important;
+  color: #fff !important;
+}
+.trainer-page .activity-type-selector button.active {
+  background: rgba(255,255,255,.17) !important;
+  border-color: rgba(255,255,255,.34) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 8px 22px rgba(0,0,0,.12) !important;
+}
+.trainer-page .trainer-day-toggle {
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+.trainer-page .trainer-km-input input {
+  background: rgba(3, 14, 23, .62) !important;
+  border-color: rgba(255,255,255,.15) !important;
+  color: #fff !important;
+  color-scheme: dark;
+}
+.trainer-page .trainer-km-input input:disabled {
+  background: rgba(255,255,255,.035) !important;
+  color: rgba(255,255,255,.45) !important;
+}
+.trainer-page .progress-save,
+.trainer-page .trainer-secondary-button {
+  min-height: 44px !important;
+  border: 1px solid rgba(255,255,255,.15) !important;
+  border-radius: 13px !important;
+  background: rgba(255,255,255,.10) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.trainer-page .progress-save:hover,
+.trainer-page .trainer-secondary-button:hover {
+  background: rgba(255,255,255,.17) !important;
+  border-color: rgba(255,255,255,.24) !important;
+  transform: translateY(-1px);
+}
+.trainer-page .trainer-score,
+.trainer-page .trainer-stats > div {
+  background: rgba(255,255,255,.045) !important;
+  border: 1px solid rgba(255,255,255,.10);
+}
+.trainer-page .trainer-history-item summary {
+  color: #fff !important;
+}
+.trainer-page .trainer-history-item > div,
+.trainer-page .trainer-goal-note,
+.trainer-page .trainer-day-description span,
+.trainer-page .trainer-plan-footer span,
+.trainer-page .trainer-stats span {
+  color: rgba(255,255,255,.68) !important;
+}
+.trainer-page .progress-track {
+  background: rgba(255,255,255,.12) !important;
+}
+@media (max-width: 700px) {
+  .trainer-page > .tile { border-radius: 18px !important; }
+}
