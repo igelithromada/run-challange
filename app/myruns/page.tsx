@@ -49,6 +49,7 @@ export default function MyRunsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [uid, setUid] = useState("");
   const [olderRuns, setOlderRuns] = useState<RunData[]>([]);
+  const [localUpdates, setLocalUpdates] = useState<Record<string, Partial<RunData>>>({});
   const [olderCursor, setOlderCursor] = useState<any>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -90,9 +91,9 @@ export default function MyRunsPage() {
 
   const runsQuery = useMemo(() => query(collection(db, "runs"), where("uid", "==", uid || "__no_user__"), orderBy("timestamp", "desc"), limit(30)), [uid]);
   const runsState = useSharedFirestoreQuery<RunData>("runs:user:" + (uid || "none"), runsQuery);
-  const runs = useMemo(() => Array.from(new Map<string, RunData>([...runsState.data, ...olderRuns].map(run => [run.id, run] as const)).values()).map(run => ({
+  const runs = useMemo(() => Array.from(new Map<string, RunData>([...runsState.data, ...olderRuns].map(run => [run.id, { ...run, ...(localUpdates[run.id] || {}) }] as const)).values()).map(run => ({
     ...run, km: Number(run.km) || 0, minuty: Number(run.minuty) || 0, tempo: Number(run.tempo) || 0
-  })).sort((a,b) => dateOf(b.timestamp).getTime() - dateOf(a.timestamp).getTime()), [runsState.data, olderRuns]);
+  })).sort((a,b) => dateOf(b.timestamp).getTime() - dateOf(a.timestamp).getTime()), [runsState.data, olderRuns, localUpdates]);
   const loading = runsState.loading;
   useEffect(() => { if (!runsState.loading && runsState.data.length < 30) setHasMore(false); }, [runsState.loading, runsState.data.length]);
   const loadOlderRuns = async () => {
@@ -162,6 +163,7 @@ export default function MyRunsPage() {
         if (uploaded.publicId) updates.imagePublicIds = [...(current?.imagePublicIds || []), uploaded.publicId];
       }
       await updateDoc(doc(db, "runs", id), updates);
+      setLocalUpdates(previous => ({ ...previous, [id]: { ...(previous[id] || {}), ...updates } }));
       setEditingId(null); setFile(null);
     } catch (err) {
       console.error(err); setActionError(err instanceof Error ? err.message : "Záznam se nepodařilo upravit.");
