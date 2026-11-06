@@ -635,3 +635,120 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
  .trainer-history-item summary{grid-template-columns:1fr auto}
  .trainer-history-item summary strong{grid-column:2;grid-row:1}
 }
+
+
+/* Osobní trenér – nový denní editor */
+.trainer-page .trainer-plan-card { overflow: hidden; }
+.trainer-week-editor { display: grid; gap: .55rem; margin-top: 1rem; }
+.trainer-day-editor {
+  display: grid;
+  grid-template-columns: 112px minmax(150px, 1fr) 105px;
+  align-items: center;
+  gap: .8rem;
+  padding: .55rem;
+  border: 1px solid var(--border, #e1e5ea);
+  border-radius: 15px;
+  background: var(--surface-soft, #f7f8fa);
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+.trainer-day-editor.selected.done { border-color: #8fc99d; background: rgba(82, 181, 104, .09); }
+.trainer-day-editor.selected.partial { border-color: #e1bd55; background: rgba(225, 189, 85, .10); }
+.trainer-day-editor.selected.missed { border-color: #df9a9a; background: rgba(220, 90, 90, .08); }
+.trainer-day-editor.selected.waiting { border-color: #9bb9d5; background: rgba(90, 145, 190, .08); }
+.trainer-day-editor.not-selected { opacity: .68; }
+.trainer-day-toggle {
+  width: 100%;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  text-align: left;
+  padding: .65rem .8rem;
+  border: 0;
+  border-radius: 11px;
+  color: #fff;
+  background: #69727c;
+  cursor: pointer;
+}
+.trainer-day-editor.selected .trainer-day-toggle { background: #394b5b; }
+.trainer-day-editor.selected.done .trainer-day-toggle { background: #3d9b5a; }
+.trainer-day-editor.selected.partial .trainer-day-toggle { background: #b28716; }
+.trainer-day-editor.selected.missed .trainer-day-toggle { background: #b64e4e; }
+.trainer-day-editor.selected.waiting .trainer-day-toggle { background: #4f7ea6; }
+.trainer-day-toggle-name { font-size: 1rem; font-weight: 800; }
+.trainer-day-toggle-date { font-size: .72rem; opacity: .82; }
+.trainer-day-toggle svg { grid-column: 2; grid-row: 1 / span 2; }
+.trainer-day-description { min-width: 0; }
+.trainer-day-description strong, .trainer-day-description span { display: block; }
+.trainer-day-description strong { font-size: .95rem; }
+.trainer-day-description span { margin-top: .18rem; color: var(--muted, #737b84); font-size: .82rem; }
+.trainer-km-input {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .4rem;
+  color: var(--muted, #737b84);
+  font-weight: 800;
+}
+.trainer-km-input input {
+  width: 68px;
+  min-height: 44px;
+  padding: .55rem .5rem;
+  border: 1px solid var(--border, #d6dbe1);
+  border-radius: 10px;
+  background: var(--surface, #fff) !important;
+  color: var(--text, #20262d) !important;
+  text-align: center;
+  font-weight: 800;
+}
+.trainer-km-input input:disabled { opacity: .48; cursor: not-allowed; }
+.trainer-plan-footer {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  flex-wrap: wrap;
+  margin-top: .85rem;
+}
+.trainer-plan-footer > div {
+  padding: .7rem .9rem;
+  border: 1px solid var(--border, #e1e5ea);
+  border-radius: 12px;
+  background: var(--surface-soft, #f7f8fa);
+}
+.trainer-plan-footer span, .trainer-plan-footer strong { display: block; }
+.trainer-plan-footer span { color: var(--muted, #737b84); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+.trainer-plan-footer strong { margin-top: .15rem; font-size: .98rem; }
+.trainer-plan-footer .progress-save { margin-left: auto; }
+.trainer-secondary-button {
+  display: inline-flex !important;
+  align-items: center;
+  gap: .45rem;
+  min-height: 44px;
+  margin: 0;
+  padding: .65rem .9rem;
+  border: 1px solid var(--border, #d6dbe1);
+  border-radius: 11px;
+  background: transparent !important;
+  color: inherit !important;
+  font-weight: 700;
+  cursor: pointer;
+}
+.trainer-history-item b { font-weight: 700; }
+@media (max-width: 700px) {
+  .trainer-day-editor { grid-template-columns: 86px minmax(0, 1fr) 88px; gap: .55rem; padding: .45rem; }
+  .trainer-day-toggle { min-height: 54px; padding: .55rem .6rem; }
+  .trainer-day-description strong { font-size: .86rem; }
+  .trainer-day-description span { font-size: .74rem; }
+  .trainer-km-input input { width: 58px; min-height: 42px; }
+  .trainer-plan-footer .progress-save { margin-left: 0; }
+}
+@media (max-width: 480px) {
+  .trainer-day-editor { grid-template-columns: 74px minmax(0, 1fr) 76px; gap: .4rem; }
+  .trainer-day-toggle-name { font-size: .9rem; }
+  .trainer-day-toggle-date { font-size: .65rem; }
+  .trainer-day-description strong { font-size: .78rem; }
+  .trainer-day-description span { font-size: .68rem; }
+  .trainer-km-input { font-size: .75rem; }
+  .trainer-km-input input { width: 50px; padding-inline: .25rem; }
+}
