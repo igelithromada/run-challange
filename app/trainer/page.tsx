@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { collection, doc, getDoc, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { CalendarDays, CheckCircle2, Copy, Save, TrendingUp, Target, ArrowLeft } from "lucide-react";
@@ -57,10 +57,10 @@ export default function TrainerPage(){
      const goals=data.progressGoalsByType||{};
      const selected=data.progressGoals?.type==="chůze"?"chůze":type;
      setMonthlyGoal(num(goals[selected]?.monthly??data.progressGoals?.monthly??100)||100);
-     const runSnap=await import("firebase/firestore").then(({getDocs,query,where})=>getDocs(query(collection(db,"runs"),where("uid","==",user.uid))));
+     const runSnap=await getDocs(query(collection(db,"runs"),where("uid","==",user.uid)));
      setRuns(runSnap.docs.map(d=>({id:d.id,...d.data()} as Activity)));
    }catch(e){console.error(e)}finally{setLoading(false)}
- })).toString();
+ }));
 
  const currentPlanDays=useMemo(()=>days.map(d=>{const date=new Date(mondayOf(new Date()));date.setDate(date.getDate()+d);return date}),[days]);
  const actualFor=(date:Date)=>runs.filter(r=>(r.type||"běh")===type && dateKey(activityDate(r))===dateKey(date)).reduce((s,r)=>s+num(r.km),0);
