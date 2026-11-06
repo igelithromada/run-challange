@@ -14,7 +14,7 @@ import { cloudinaryImageUrl } from "../../lib/imageUrl";
 type RunData = {
   id: string; uid?: string; email?: string; nickname?: string; avatarUrl?: string;
   km?: number; minuty?: number; tempo?: number | string; type?: string; teamId?: string;
-  imageUrls?: string[]; imageUrl?: string; likedBy?: string[]; likeCount?: number; commentCount?: number;
+  imageUrls?: string[]; imageUrl?: string; timestamp?: { seconds: number }; likedBy?: string[]; likeCount?: number; commentCount?: number;
 };
 
 export default function UserPage() {
