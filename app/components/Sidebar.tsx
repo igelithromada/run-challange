@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X, CloudSun, TrendingUp, ListOrdered } from "lucide-react";
+import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X, CloudSun, TrendingUp, ListOrdered, Dumbbell } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
@@ -13,7 +13,7 @@ const items = [
   { id: "myrun", label: "Moje aktivity", Icon: Footprints },
   { id: "teams", label: "Týmy", Icon: Users },
   { id: "progress", label: "Můj progres", Icon: TrendingUp },
-  { id: "trainer", label: "Osobní trenér", Icon: Footprints },
+  { id: "trainer", label: "Osobní trenér", Icon: Dumbbell },
   { id: "statistics", label: "Výsledky", Icon: Trophy },
   { id: "participants", label: "Účastníci", Icon: ListOrdered },
   { id: "weather", label: "Počasí pro běh", Icon: CloudSun },
