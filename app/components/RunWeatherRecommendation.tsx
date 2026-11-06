@@ -69,7 +69,7 @@ export default function RunWeatherRecommendation({
   const ActivityIcon = () => <ActivityTypeIcon type={activityType} size={18} />;
 
   let title = "Podmínky vypadají dobře";
-  let advice = type === "chůze" ? "Ideální čas vyrazit na chůzi." : "Ideální čas vyrazit si zaběhat.";
+  let advice = activityType === "chůze" ? "Ideální čas vyrazit na chůzi." : "Ideální čas vyrazit si zaběhat.";
   let tone = "good";
   let Icon: any = CheckCircle2;
 
@@ -112,5 +112,5 @@ export default function RunWeatherRecommendation({
       </div>
     </section>
   );
-  return linkToWeather ? <Link href="/weather" className="run-weather-link" aria-label={`Otevřít počasí a doporučení pro ${type === "chůze" ? "chůzi" : "běh"}`}>{content}</Link> : content;
+  return linkToWeather ? <Link href="/weather" className="run-weather-link" aria-label={`Otevřít počasí a doporučení pro ${activityType === "chůze" ? "chůzi" : "běh"}`}>{content}</Link> : content;
 }
