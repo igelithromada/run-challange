@@ -59,6 +59,9 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
   const likeLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const likeLongPressTriggered = useRef(false);
   const [socialError, setSocialError] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentText, setEditingCommentText] = useState("");
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -78,6 +81,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
       setCommentCount(Number(result.commentCount) || 0);
       setLikeUsers(Array.isArray(result.likes) ? result.likes : []);
       setComments(Array.isArray(result.comments) ? result.comments : []);
+      setIsAdmin(result.isAdmin === true);
     } catch (error) {
       setSocialError(error instanceof Error ? error.message : "Data se nepodařilo načíst.");
     } finally { setSocialLoading(false); }
@@ -136,6 +140,53 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
       setCommentCount(previous => previous + 1);
     } catch (error) {
       setSocialError(error instanceof Error ? error.message : "Komentář se nepodařilo přidat.");
+    } finally { setSocialBusy(false); }
+  };
+
+  const startEditComment = (comment: SocialComment) => {
+    setEditingCommentId(comment.id);
+    setEditingCommentText(comment.text);
+    setSocialError("");
+  };
+
+  const cancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditingCommentText("");
+  };
+
+  const saveEditComment = async () => {
+    const text = editingCommentText.trim();
+    if (!editingCommentId || !text || socialBusy) return;
+    setSocialBusy(true);
+    setSocialError("");
+    try {
+      const result = await socialRequest(run.id, {
+        method: "POST",
+        body: JSON.stringify({ runId: run.id, action: "comment_update", commentId: editingCommentId, text }),
+      });
+      if (result.comment) setComments(previous => previous.map(comment => comment.id === editingCommentId ? { ...comment, ...result.comment } : comment));
+      cancelEditComment();
+    } catch (error) {
+      setSocialError(error instanceof Error ? error.message : "Komentář se nepodařilo upravit.");
+    } finally { setSocialBusy(false); }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    if (socialBusy || !window.confirm("Opravdu chceš tento komentář smazat?")) return;
+    setSocialBusy(true);
+    setSocialError("");
+    try {
+      const result = await socialRequest(run.id, {
+        method: "POST",
+        body: JSON.stringify({ runId: run.id, action: "comment_delete", commentId }),
+      });
+      if (result.ok) {
+        setComments(previous => previous.filter(comment => comment.id !== commentId));
+        setCommentCount(previous => Math.max(0, previous - 1));
+        if (editingCommentId === commentId) cancelEditComment();
+      }
+    } catch (error) {
+      setSocialError(error instanceof Error ? error.message : "Komentář se nepodařilo smazat.");
     } finally { setSocialBusy(false); }
   };
 
@@ -212,7 +263,19 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
                   {comments.length ? comments.map(comment => (
                     <article className="social-comment" key={comment.id}>
                       <div className="activity-avatar">{comment.avatarUrl ? <img src={cloudinaryImageUrl(comment.avatarUrl, 64)} alt="" /> : comment.nickname.charAt(0).toUpperCase()}</div>
-                      <div><div className="social-comment-meta"><strong>{comment.nickname}</strong><time>{formatCommentDate(comment.createdAt)}</time></div><p>{comment.text}</p></div>
+                      <div className="social-comment-body">
+                        <div className="social-comment-meta"><strong>{comment.nickname}</strong><time>{formatCommentDate(comment.createdAt)}</time></div>
+                        {editingCommentId === comment.id ? (
+                          <div className="social-comment-edit">
+                            <textarea value={editingCommentText} maxLength={500} onChange={e => setEditingCommentText(e.target.value)} />
+                            <div><button type="button" onClick={() => void saveEditComment()} disabled={!editingCommentText.trim() || socialBusy}>Uložit</button><button type="button" onClick={cancelEditComment} disabled={socialBusy}>Zrušit</button></div>
+                          </div>
+                        ) : <p>{comment.text}</p>}
+                        {(comment.mine || isAdmin) && editingCommentId !== comment.id && <div className="social-comment-tools">
+                          {comment.mine && <button type="button" onClick={() => startEditComment(comment)} disabled={socialBusy}>Upravit</button>}
+                          <button type="button" onClick={() => void deleteComment(comment.id)} disabled={socialBusy}>Smazat</button>
+                        </div>}
+                      </div>
                     </article>
                   )) : <p className="social-modal-empty">Zatím tu není žádný komentář.</p>}
                 </div>
