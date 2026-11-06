@@ -565,3 +565,37 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   background:rgba(160,55,65,.9) !important;
   color:white !important;
 }
+
+
+/* Osobní trenér */
+.personal-trainer-card { overflow:hidden; }
+.trainer-plan-controls { display:grid; grid-template-columns:150px minmax(0,1fr) auto; gap:.8rem; align-items:end; }
+.trainer-plan-controls label { display:flex; flex-direction:column; gap:.35rem; font-size:.76rem; font-weight:750; }
+.trainer-plan-controls input { min-height:44px; box-sizing:border-box; width:100%; border:1px solid var(--ui-border); border-radius:12px; padding:.65rem .75rem; background:rgba(255,255,255,.96); color:#12222c; }
+.trainer-label { display:block; margin-bottom:.35rem; font-size:.76rem; font-weight:750; }
+.trainer-days { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.3rem; }
+.trainer-days button { min-height:44px; border:1px solid var(--ui-border); border-radius:11px; background:rgba(255,255,255,.07); color:white; cursor:pointer; font-weight:750; }
+.trainer-days button.active { background:rgba(80,200,150,.22); border-color:rgba(130,240,185,.42); color:#e5fff0; }
+.trainer-score { margin-top:1rem; padding:.85rem; border-radius:15px; background:rgba(255,255,255,.05); }
+.trainer-score > div:first-child { display:flex; justify-content:space-between; align-items:center; }
+.trainer-score strong { font-size:1.1rem; }
+.trainer-score p { margin:.7rem 0 0; color:var(--ui-muted); line-height:1.5; font-size:.84rem; }
+.trainer-stats { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; margin-top:.6rem; }
+.trainer-stats > div { padding:.7rem .8rem; border-radius:13px; background:rgba(255,255,255,.05); }
+.trainer-stats span,.trainer-stats strong { display:block; }
+.trainer-stats span { color:var(--ui-muted); font-size:.72rem; }
+.trainer-stats strong { margin-top:.2rem; }
+@media(max-width:680px) {
+  .trainer-plan-controls { grid-template-columns:1fr; }
+  .trainer-plan-controls .progress-save { width:100%; }
+}
+@media(max-width:420px) { .trainer-days { gap:.2rem; } .trainer-days button { min-height:40px; padding:.2rem; } }
+
+/* Týmy: jasná hierarchie a stabilní mřížka */
+.teams-grid { grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); gap:.75rem; }
+.team-card { display:flex; flex-direction:column; min-height:205px; }
+.team-card h3 { margin:.75rem 0 auto; font-size:1.08rem; }
+.team-card-top { display:flex; align-items:center; flex-wrap:wrap; gap:.45rem; }
+.team-card-actions { margin-top:1rem; }
+.teams-list-heading { display:flex; align-items:center; justify-content:space-between; margin:1.1rem 0 .65rem; }
+.teams-list-heading h2 { margin:0; }
