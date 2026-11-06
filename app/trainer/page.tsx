@@ -128,7 +128,7 @@ export default function TrainerPage(){
      <div className="trainer-day-name"><strong>{["Po","Út","St","Čt","Pá","So","Ne"][day]}</strong><small>{s.date.toLocaleDateString("cs-CZ",{day:"numeric",month:"numeric"})}</small></div>
      <label><input type="number" min="0.1" step="0.5" value={dayKm[day]??""} onChange={e=>{setKm(day,e.target.value);setDirty(true)}}/><span>km</span></label>
      <div className="trainer-day-result">{s.status==="done"?"🟢 Splněno":s.status==="partial"?"🟡 Částečně":s.status==="missed"?"🔴 Nesplněno":"⚪ Čeká"}<small>{s.actual.toFixed(1)} / {s.target.toFixed(1)} km</small></div>
-   </div>)}</div>
+   </div>})}</div>
    <div className="trainer-week-total"><span>Objem plánu</span><strong>{plannedTotal.toFixed(1)} km</strong><small>součet všech naplánovaných dnů</small></div>
    {dirty&&<button type="button" className="progress-save" onClick={()=>void save()}><Save size={17}/>Uložit plán</button>}
    {!plan&&history.length>0&&<button type="button" className="trainer-secondary-button" onClick={()=>void usePrevious()}><Copy size={17}/>Použít minulý plán</button>}
