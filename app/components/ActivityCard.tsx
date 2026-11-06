@@ -28,7 +28,7 @@ async function socialRequest(runId: string, init?: RequestInit) {
   const user = auth.currentUser;
   if (!user) throw new Error("Pro sociální funkce se musíš přihlásit.");
   const token = await user.getIdToken();
-  const response = await fetch("/api/runs/social", {
+  const response = await fetch(`/api/runs/social?runId=${encodeURIComponent(runId)}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -178,13 +178,13 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
             aria-label={liked ? `Zrušit To se mi líbí · ${likeCount}` : `To se mi líbí · ${likeCount}`}
             title="Dlouze podrž pro zobrazení, kdo lajknul"
           >
-            <Heart size={17} fill={liked ? "currentColor" : "none"} /><span>{likeCount}</span>
+            <Heart size={20} fill={liked ? "currentColor" : "none"} /><span>{likeCount}</span>
           </button>
           <button type="button" className="activity-social-button" onClick={() => void loadSocial("comments")} aria-label={`Komentáře · ${commentCount}`}>
-            <MessageCircle size={17} /><span>{commentCount}</span>
+            <MessageCircle size={20} /><span>{commentCount}</span>
           </button>
           {images.length > 0 && <button type="button" className="activity-social-button" onClick={() => onPhotosClick(images, run.imageUrl || "")} aria-label={`Fotografie · ${images.length}`}>
-            <Camera size={17} /><span>{images.length}</span>
+            <Camera size={20} /><span>{images.length}</span>
           </button>}
           <span className="activity-actions-spacer" />
           {onEdit && <button type="button" className="activity-manage-button" onClick={onEdit}><Pencil size={15} /> Upravit</button>}
