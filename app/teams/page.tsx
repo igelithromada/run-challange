@@ -25,6 +25,7 @@ export default function TeamsPage() {
   const [challengeGoal, setChallengeGoal] = useState("500");
   const [challengeSaving, setChallengeSaving] = useState(false);
   const [challengeMessage, setChallengeMessage] = useState("");
+  const [teamMessage, setTeamMessage] = useState("");
   const [selectedType, setSelectedType] = useState<ActivityType>("běh");
   const [teamIdsByType, setTeamIdsByType] = useState<Record<ActivityType, string | null>>({ běh: null, chůze: null });
   const [user, setUser] = useState<any>(null);
@@ -65,6 +66,8 @@ export default function TeamsPage() {
 
   const createTeam = async () => {
     if (!teamName.trim() || !user) return;
+    setTeamMessage("");
+    try {
     const newTeam = await addDoc(collection(db, "teams"), {
       name: teamName.trim(),
       type: selectedType,
@@ -78,6 +81,11 @@ export default function TeamsPage() {
     }, { merge: true });
     setTeamIdsByType(next);
     setTeamName("");
+    setTeamMessage(`Tým pro ${selectedType} byl vytvořen.`);
+    } catch (error) {
+      console.error("Nepodařilo se vytvořit tým", error);
+      setTeamMessage("Tým se nepodařilo vytvořit. Zkontroluj přihlášení a zkus to znovu.");
+    }
   };
 
   const saveChallengeGoal = async () => {
@@ -178,6 +186,7 @@ export default function TeamsPage() {
             <input type="text" placeholder="Zadej název týmu" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
             <button onClick={createTeam} className="tile-button teams-primary-button" disabled={!teamName.trim()}><Plus size={18} /> Vytvořit tým</button>
           </div>
+          {teamMessage && <p className="teams-message" role="status">{teamMessage}</p>}
         </section>
 
         {joinedTeam && currentTeam && (
