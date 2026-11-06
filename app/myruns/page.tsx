@@ -12,6 +12,7 @@ import ActivityCard from "../components/ActivityCard";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
+import { activityMetrics, formatPace } from "../lib/activityMetrics";
 
 type RunData = {
   id: string; uid?: string; email?: string; nickname?: string;
@@ -125,9 +126,10 @@ export default function MyRunsPage() {
     }
     return true;
   });
-  const totalKm = filteredRuns.reduce((sum, run) => sum + run.km, 0);
-  const totalMin = filteredRuns.reduce((sum, run) => sum + run.minuty, 0);
-  const avgTempo = totalKm ? totalMin / totalKm : 0;
+  const metrics = activityMetrics(filteredRuns);
+  const totalKm = metrics.km;
+  const totalMin = metrics.minutes;
+  const avgTempo = metrics.pace;
 
 
   const handleEdit = (run: RunData) => {
