@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const userRef = adminDb.collection("users").doc(decoded.uid);
     const userSnap = await userRef.get();
     const userData = userSnap.exists ? userSnap.data() || {} : {};
-    const existingPlans = (userData.personalTrainerPlans && typeof userData.personalTrainerPlans === "object" ? userData.personalTrainerPlans : {}) as Record<string, Record<string, unknown>>;
+    const existingPlans = (userData.personalTrainerPlans && typeof userData.personalTrainerPlans === "object" ? userData.personalTrainerPlans : {}) as Record<"běh" | "chůze", Record<string, Record<string, unknown>>>;
     const typePlans = existingPlans[type] && typeof existingPlans[type] === "object" ? existingPlans[type] : {};
     await userRef.set(
       { personalTrainerPlans: { ...existingPlans, [type]: { ...typePlans, [monthKey]: safePlan } }, personalTrainerPlan: safePlan },
