@@ -1,0 +1,78 @@
+import { NextResponse } from "next/server";
+import { getAdminServices } from "../../lib/firebaseAdmin";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+async function authUser(request: Request) {
+  const header = request.headers.get("authorization") || "";
+  if (!header.startsWith("Bearer ")) throw new Error("UNAUTHORIZED");
+  const { adminAuth } = getAdminServices();
+  return adminAuth.verifyIdToken(header.slice(7).trim());
+}
+
+export async function POST(request: Request) {
+  try {
+    const decoded = await authUser(request);
+    const body = await request.json().catch(() => ({}));
+    const action = String(body?.action || "");
+    const { adminDb } = getAdminServices();
+    const userRef = adminDb.collection("users").doc(decoded.uid);
+
+    if (action === "create") {
+      const name = String(body?.name || "").trim().slice(0, 60);
+      const type = body?.type === "chůze" ? "chůze" : "běh";
+      if (!name) return NextResponse.json({ error: "Zadej název týmu." }, { status: 400 });
+      const teamRef = adminDb.collection("teams").doc();
+      await teamRef.set({ name, type, createdBy: decoded.uid, challengeGoalKm: 500, avatarUrl: "", avatarPublicId: "" });
+      const userSnap = await userRef.get();
+      const data = userSnap.exists ? userSnap.data() || {} : {};
+      const stored = data.teamIdsByType && typeof data.teamIdsByType === "object" ? data.teamIdsByType : {};
+      const next = { ...stored, [type]: teamRef.id };
+      await userRef.set({ teamIdsByType: next, ...(type === "běh" ? { teamId: teamRef.id, joinedTeam: teamRef.id } : {}) }, { merge: true });
+      return NextResponse.json({ ok: true, team: { id: teamRef.id, name, type, createdBy: decoded.uid, challengeGoalKm: 500 } });
+    }
+
+    const teamId = String(body?.teamId || "");
+    if (!teamId) return NextResponse.json({ error: "Chybí tým." }, { status: 400 });
+    const teamRef = adminDb.collection("teams").doc(teamId);
+    const teamSnap = await teamRef.get();
+    if (!teamSnap.exists) return NextResponse.json({ error: "Tým neexistuje." }, { status: 404 });
+    const team = teamSnap.data() || {};
+    const type = team.type === "chůze" ? "chůze" : "běh";
+
+    if (action === "rename") {
+      if (team.createdBy !== decoded.uid) return NextResponse.json({ error: "Název může měnit jen zakladatel týmu." }, { status: 403 });
+      const name = String(body?.name || "").trim().slice(0, 60);
+      if (!name) return NextResponse.json({ error: "Zadej název týmu." }, { status: 400 });
+      await teamRef.set({ name }, { merge: true });
+      return NextResponse.json({ ok: true, name });
+    }
+
+    if (action === "join" || action === "leave") {
+      const userSnap = await userRef.get();
+      const data = userSnap.exists ? userSnap.data() || {} : {};
+      const stored = data.teamIdsByType && typeof data.teamIdsByType === "object" ? data.teamIdsByType : {};
+      const next = { ...stored, [type]: action === "join" ? teamId : null };
+      await userRef.set({ teamIdsByType: next, ...(type === "běh" ? { teamId: action === "join" ? teamId : null, joinedTeam: action === "join" ? teamId : null } : {}) }, { merge: true });
+      return NextResponse.json({ ok: true, teamIdsByType: next });
+    }
+
+    if (action === "delete") {
+      if (team.createdBy !== decoded.uid) return NextResponse.json({ error: "Tým může smazat jen zakladatel." }, { status: 403 });
+      await teamRef.delete();
+      const userSnap = await userRef.get();
+      const data = userSnap.exists ? userSnap.data() || {} : {};
+      const stored = data.teamIdsByType && typeof data.teamIdsByType === "object" ? data.teamIdsByType : {};
+      const next = { ...stored, [type]: null };
+      await userRef.set({ teamIdsByType: next, ...(type === "běh" ? { teamId: null, joinedTeam: null } : {}) }, { merge: true });
+      return NextResponse.json({ ok: true });
+    }
+
+    return NextResponse.json({ error: "Neznámá operace." }, { status: 400 });
+  } catch (error) {
+    console.error("POST /api/teams/manage:", error);
+    const message = error instanceof Error && error.message === "UNAUTHORIZED" ? "Nejsi přihlášen." : "Operaci týmu se nepodařilo dokončit.";
+    return NextResponse.json({ error: message }, { status: message === "Nejsi přihlášen." ? 401 : 500 });
+  }
+}
