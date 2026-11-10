@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { collection, doc, getDoc, query, setDoc, where } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,7 @@ import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import type { RunData, TeamData } from "../types";
+import { getUserProfile, mergeUserProfile } from "../lib/services/users";
 
 type ProgressActivity = Pick<RunData, "id" | "uid" | "km" | "minuty" | "tempo" | "teamId" | "timestamp" | "type">;
 const asNumber = (value: unknown) => {
@@ -55,9 +56,8 @@ export default function ProgressPage() {
       if (!user) { router.push("/login"); return; }
       setUid(user.uid);
       try {
-        const profile = await getDoc(doc(db, "users", user.uid));
-        if (profile.exists()) {
-          const data = profile.data();
+        const data = await getUserProfile(user.uid);
+        if (data) {
           const trainer = data.personalTrainerPlan || {};
           if (Array.isArray(trainer.days)) setTrainerDays(trainer.days.filter((day: unknown) => typeof day === "number" && day >= 0 && day <= 6));
           if (Number(trainer.weeklyKm) > 0) setTrainerKm(String(trainer.weeklyKm));
@@ -179,7 +179,7 @@ export default function ProgressPage() {
     if (!uid || asNumber(goalWeekly)<=0 || asNumber(goalMonthly)<=0) return;
     const updatedGoals = { ...goalsByType, [goalType]: { weekly: asNumber(goalWeekly), monthly: asNumber(goalMonthly) } };
     setGoalsByType(updatedGoals);
-    await setDoc(doc(db,"users",uid), { progressGoalsByType: updatedGoals, progressGoals:{ weekly:asNumber(goalWeekly), monthly:asNumber(goalMonthly), type:goalType } }, { merge:true });
+    await mergeUserProfile(uid, { progressGoalsByType: updatedGoals, progressGoals:{ weekly:asNumber(goalWeekly), monthly:asNumber(goalMonthly), type:goalType } });
     setSaved(true); window.setTimeout(()=>setSaved(false),2500);
   };
   const handleSelect = async (item: string) => {
