@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X, CloudSun, TrendingUp, ListOrdered, Dumbbell, Map } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../lib/firebase";
+import { auth } from "../lib/firebase";
+import { getUserProfile } from "../lib/services/users";
 import { useRouter } from "next/navigation";
 
 type SidebarProps = { visible: boolean; onClose: () => void; onSelect: (item: string) => void };
@@ -42,8 +42,8 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
         return;
       }
       try {
-        const snapshot = await getDoc(doc(db, "users", user.uid));
-        setIsAdmin(snapshot.exists() && snapshot.data().role === "admin");
+        const profile = await getUserProfile(user.uid);
+        setIsAdmin(profile?.role === "admin");
       } catch {
         setIsAdmin(false);
       }
