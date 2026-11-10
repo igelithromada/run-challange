@@ -98,6 +98,7 @@ export default function Page() {
   useEffect(() => {
     const userIds = Array.from(new Set(runs.map((run) => run.uid).filter((uid): uid is string => !!uid && !userAvatars[uid])));
     if (userIds.length === 0) { setProfilesLoading(false); return; }
+    setProfilesLoading(true);
 
     let cancelled = false;
     const loadUsers = async () => {
