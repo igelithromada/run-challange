@@ -10,6 +10,7 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { getUserProfile } from "../lib/services/users";
+import type { RunData, LegacyTrainerPlan } from "../types";
 import { fetchRuns, userRunsQuery } from "../lib/services/runs";
 
 type Activity = Pick<RunData, "id" | "uid" | "km" | "type" | "timestamp">;
