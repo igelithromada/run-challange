@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { DocumentReference } from "firebase-admin/firestore";
-import { getAdminServices } from "../../../lib/firebaseAdmin";
+import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { collectCloudinaryPublicIds, deleteCloudinaryImages } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
@@ -14,31 +14,22 @@ async function deleteRunComments(runRef: DocumentReference) {
       const batch = runRef.firestore.batch();
       snapshot.docs.slice(i, i + 450).forEach(doc => batch.delete(doc.ref));
       await batch.commit();
-    }
-  }
-}
-
-async function getAuthorizedUser(request: Request) {
-  const { adminAuth, adminDb } = getAdminServices();
-  const header = request.headers.get("authorization") || "";
-  if (!header.startsWith("Bearer ")) return null;
-
-  const token = header.slice("Bearer ".length).trim();
-  if (!token) return null;
-
-  const decoded = await adminAuth.verifyIdToken(token);
+    }async function getAuthorizedUser(request: Request) {
+  const { decoded, adminDb } = await requireUser(request);
   const profile = await adminDb.collection("users").doc(decoded.uid).get();
   return {
     uid: decoded.uid,
-    isAdmin: decoded.admin === true || (profile.exists && profile.data()?.role === "admin"),
+    isAdmin: decoded.admin === true || profile.data()?.role === "admin",
     adminDb,
+  };
+},
   };
 }
 
 export async function DELETE(request: Request) {
   try {
     const user = await getAuthorizedUser(request);
-    if (!user) return NextResponse.json({ error: "Neautorizovaný požadavek." }, { status: 401 });
+
 
     const body = await request.json().catch(() => ({}));
     const runId = typeof body.runId === "string" ? body.runId.trim() : "";
@@ -81,6 +72,8 @@ export async function DELETE(request: Request) {
     });
   } catch (error) {
     console.error("Delete run failed:", error);
+    const authError = authErrorResponse(error);
+    if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
     const message = error instanceof Error ? error.message : "";
     if (message.includes("CLOUDINARY")) {
       return NextResponse.json({ error: "Záznam nelze smazat, protože na serveru chybí nastavení Cloudinary." }, { status: 500 });
