@@ -13,7 +13,7 @@ import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSe
 import { getUserProfile } from "../lib/services/users";
 
 type Activity = Pick<RunData, "id" | "uid" | "km" | "type" | "timestamp">;
-type Plan = TrainerPlan;
+type Plan = { monthKey:string; type:ActivityType; dates:string[]; dayKm:Record<string, number | string>; monthlyKm:number; createdAt?:string };
 type OldPlan = LegacyTrainerPlan;
 
 const monthKeyOf=(d:Date)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
