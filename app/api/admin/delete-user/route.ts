@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import type { DocumentReference, Firestore, QueryDocumentSnapshot } from "firebase-admin/firestore";
+import { requireAdmin, authErrorResponse } from "../../../lib/apiAuth";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
 import { collectCloudinaryPublicIds, deleteCloudinaryImages } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
 async function deleteCommentsByUser(adminDb: Firestore, uid: string) {
   const snapshot = await adminDb.collectionGroup("comments").where("uid", "==", uid).get();
   const grouped = new Map<string, { runRef: DocumentReference; comments: QueryDocumentSnapshot[] }>();
@@ -46,25 +48,7 @@ async function deleteRunComments(runRef: DocumentReference) {
   }
 }
 
-
-async function verifyAdmin(request: Request) {
-  const { adminAuth, adminDb } = getAdminServices();
-  const header = request.headers.get("authorization") || "";
-  if (!header.startsWith("Bearer ")) return null;
-
-  const token = header.slice("Bearer ".length).trim();
-  if (!token) return null;
-
-  const decoded = await adminAuth.verifyIdToken(token);
-  if (decoded.admin === true) return decoded;
-
-  const profile = await adminDb.collection("users").doc(decoded.uid).get();
-  if (profile.exists && profile.data()?.role === "admin") return decoded;
-  return null;
-}
-
-async function deleteUserData(uid: string) {
-  const { adminDb } = getAdminServices();
+async function deleteUserData(adminDb: Firestore, uid: string) {
   const [runsSnapshot, userSnapshot] = await Promise.all([
     adminDb.collection("runs").where("uid", "==", uid).get(),
     adminDb.collection("users").doc(uid).get(),
@@ -104,6 +88,7 @@ async function deleteUserData(uid: string) {
 
   await deleteCommentsByUser(adminDb, uid);
   await adminDb.collection("users").doc(uid).delete();
+  await adminDb.collection("publicProfiles").doc(uid).delete();
 
   return {
     deletedRuns: refs.length,
@@ -113,10 +98,7 @@ async function deleteUserData(uid: string) {
 
 export async function POST(request: Request) {
   try {
-    const admin = await verifyAdmin(request);
-    if (!admin) {
-      return NextResponse.json({ error: "Nemáš oprávnění k této operaci." }, { status: 403 });
-    }
+    const { decoded: admin, adminDb } = await requireAdmin(request);
 
     const body = await request.json().catch(() => ({}));
     const uid = typeof body.uid === "string" ? body.uid.trim() : "";
@@ -129,7 +111,7 @@ export async function POST(request: Request) {
 
     const { adminAuth } = getAdminServices();
     const target = await adminAuth.getUser(uid);
-    const deleted = await deleteUserData(uid);
+    const deleted = await deleteUserData(adminDb, uid);
     await adminAuth.deleteUser(uid);
 
     return NextResponse.json({
@@ -139,6 +121,9 @@ export async function POST(request: Request) {
       ...deleted,
     });
   } catch (error) {
+    const authError = authErrorResponse(error);
+    if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
+
     console.error("Admin delete user failed:", error);
     const message = error instanceof Error ? error.message : "";
 
@@ -149,12 +134,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const code = typeof error === "object" && error !== null && "code" in error
+      ? String((error as { code?: unknown }).code)
+      : "";
+
     const status =
-      error?.code === "auth/id-token-expired" ||
-      error?.code === "auth/id-token-revoked" ||
-      error?.code === "auth/argument-error"
+      code === "auth/id-token-expired" || code === "auth/id-token-revoked" || code === "auth/argument-error"
         ? 401
-        : error?.code === "auth/user-not-found"
+        : code === "auth/user-not-found"
           ? 404
           : 500;
 
