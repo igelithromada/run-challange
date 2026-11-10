@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { FieldPath, FieldValue } from "firebase-admin/firestore";
+import { FieldPath, FieldValue, type Firestore } from "firebase-admin/firestore";
 import { requireUser as requireApiUser, authErrorResponse } from "../../../lib/apiAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+async function isAdminUser(adminDb: Firestore, uid: string, claim: boolean): Promise<boolean> {
+  if (claim) return true;
+  const profile = await adminDb.collection("users").doc(uid).get();
+  return profile.data()?.role === "admin";
+}
 
 
 export async function GET(request: Request) {
@@ -52,13 +57,15 @@ export async function GET(request: Request) {
       });
     }
 
+    const isAdmin = await isAdminUser(adminDb, decoded.uid, decoded.admin === true);
+
     return NextResponse.json({
       liked: likedBy.includes(decoded.uid),
       likeCount: Number(data.likeCount) || likedBy.length,
       commentCount: Number(data.commentCount) || comments.length,
       likes: likeUsers,
       comments,
-      isAdmin: decoded.admin === true || decoded.role === "admin",
+      isAdmin,
     });
   } catch (error) {
     const authError = authErrorResponse(error);
@@ -86,7 +93,7 @@ export async function POST(request: Request) {
       const commentSnapshot = await commentRef.get();
       if (!commentSnapshot.exists) return NextResponse.json({ error: "Komentář neexistuje." }, { status: 404 });
       const commentData = commentSnapshot.data() || {};
-      const isAdmin = decoded.admin === true || decoded.role === "admin";
+      const isAdmin = await isAdminUser(adminDb, decoded.uid, decoded.admin === true);
       if (commentData.uid !== decoded.uid && !isAdmin) {
         return NextResponse.json({ error: "K tomuto komentáři nemáš oprávnění." }, { status: 403 });
       }
