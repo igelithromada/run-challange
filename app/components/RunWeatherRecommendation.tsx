@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import type { WeatherResponse } from "../lib/weather";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
 import Link from "next/link";
 import { CloudSun, CloudRain, CloudSnow, Wind, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { ActivityType, ActivityTypeIcon } from "./ActivityTypeSelector";
-
-type WeatherData = { current?: any; hourly?: any[]; error?: string };
 
 export default function RunWeatherRecommendation({
   linkToWeather = true,
@@ -16,7 +16,7 @@ export default function RunWeatherRecommendation({
   linkToWeather?: boolean;
   type?: ActivityType;
 }) {
-  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [resolvedType, setResolvedType] = useState<ActivityType>(type || "běh");
   const [loading, setLoading] = useState(true);
 
@@ -71,7 +71,7 @@ export default function RunWeatherRecommendation({
   let title = "Podmínky vypadají dobře";
   let advice = activityType === "chůze" ? "Ideální čas vyrazit na chůzi." : "Ideální čas vyrazit si zaběhat.";
   let tone = "good";
-  let Icon: any = CheckCircle2;
+  let Icon: LucideIcon = CheckCircle2;
 
   if (loading && !current) {
     title = `Zjišťuji podmínky pro ${activityName}`;
