@@ -1,15 +1,9 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  collection,
-  query,
-  getDocs,
-  documentId,
-  where,
-} from "firebase/firestore";
+import { getDocs } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { db, auth } from "./lib/firebase";
+import { auth } from "./lib/firebase";
 import Navbar from "./components/Navbar";
 import { Footprints } from "lucide-react";
 import Sidebar from "./components/Sidebar";
