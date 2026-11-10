@@ -206,14 +206,28 @@ export default function SettingsPage() {
     }
   };
 
+  const persistTrainerNotifications = async (next: typeof trainerNotifications) => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) throw new Error("Nejsi přihlášen.");
+    const token = await currentUser.getIdToken(true);
+    const response = await fetch("/api/settings/trainer-notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ trainerNotifications: next })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "Nastavení notifikací se nepodařilo uložit.");
+  };
+
   const updateTrainerNotifications = async (patch: Partial<typeof trainerNotifications>) => {
-    const next = { ...trainerNotifications, ...patch };
+    const previous = trainerNotifications;
+    const next = { ...previous, ...patch };
     setTrainerNotifications(next);
     try {
-      await saveSettings({ trainerNotifications: next });
+      await persistTrainerNotifications(next);
       showAppToast("Nastavení notifikací uloženo.");
     } catch (error) {
-      setTrainerNotifications(trainerNotifications);
+      setTrainerNotifications(previous);
       showAppToast(error instanceof Error ? error.message : "Nastavení notifikací se nepodařilo uložit.", "error");
     }
   };
@@ -225,7 +239,7 @@ export default function SettingsPage() {
       await registerTrainerPush();
       const next = { ...trainerNotifications, enabled: true };
       setTrainerNotifications(next);
-      await saveSettings({ trainerNotifications: next });
+      await persistTrainerNotifications(next);
       showAppToast("Notifikace osobního trenéra jsou zapnuté.");
     } catch (error) {
       showAppToast(error instanceof Error ? error.message : "Notifikace se nepodařilo zapnout.", "error");
