@@ -27,6 +27,7 @@ export default function TrainerPage(){
  const [uid,setUid]=useState("");
  const [month,setMonth]=useState(()=>new Date(new Date().getFullYear(),new Date().getMonth(),1));
  const [plan,setPlan]=useState<Plan|null>(null);
+ const [plansByKey,setPlansByKey]=useState<Record<string,Plan>>({});
  const [dates,setDates]=useState<string[]>([]);
  const [dayKm,setDayKm]=useState<Record<string,string>>({});
  const [selectedDate,setSelectedDate]=useState("");
