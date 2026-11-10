@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { db, auth } from "../../../lib/firebase";
+import { auth } from "../../../lib/firebase";
 import { signOut } from "firebase/auth";
 import useAdminGuard from "../../../lib/useAdminGuard";
 import Navbar from "../../../components/Navbar";
@@ -11,6 +10,8 @@ import Sidebar from "../../../components/Sidebar";
 import ActivityCard from "../../../components/ActivityCard";
 import ActivityTypeSelector from "../../../components/ActivityTypeSelector";
 import type { RunData, ActivityType } from "../../../types";
+import { userRunsQuery } from "../../../lib/services/runs";
+import { useSharedFirestoreQuery } from "../../../lib/useSharedFirestoreQuery";
 
 type Run = RunData;
 
@@ -23,15 +24,13 @@ export default function RecordsPage() {
   const [selectedType,setSelectedType] = useState<"běh"|"chůze">("běh");
   const [lightbox,setLightbox] = useState<{urls:string[];index:number}|null>(null);
 
+  const runsState = useSharedFirestoreQuery<Run>(`admin-records:${id}`, userRunsQuery(id || "__none__"));
+
   useEffect(() => {
-    if (adminAccess !== "allowed" || !id) return;
-    const unsub = onSnapshot(query(collection(db,"runs"),where("uid","==",id)), snap => {
-      const items = snap.docs.map(d => ({id:d.id,...d.data()} as Run));
-      items.sort((a,b) => (b.timestamp?.seconds||0)-(a.timestamp?.seconds||0));
-      setRuns(items);
-    });
-    return () => unsub();
-  }, [adminAccess,id]);
+    if (adminAccess !== "allowed" || runsState.loading) return;
+    const items = [...runsState.data].sort((a,b) => (b.timestamp?.seconds||0)-(a.timestamp?.seconds||0));
+    setRuns(items);
+  }, [adminAccess, runsState.data, runsState.loading]);
 
   const handleDelete = async (runId:string) => {
     if (!window.confirm("Opravdu smazat tento záznam? Fotografie se odstraní také.")) return;
