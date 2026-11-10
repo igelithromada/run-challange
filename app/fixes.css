@@ -992,3 +992,34 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .trainer-day-readonly span{color:var(--ui-muted);text-align:right}
 .trainer-plan-footer .trainer-secondary-button{display:none}
 @media(max-width:520px){.trainer-day-editor-month{align-items:stretch;flex-direction:column}.trainer-day-editor-month .progress-save{width:100%}.trainer-day-readonly{align-items:flex-start;flex-direction:column}.trainer-day-readonly span{text-align:left}}
+
+
+/* Trenér – zadání kilometrů v modálním okně po výběru dne */
+.trainer-day-modal-overlay{
+  position:fixed;inset:0;z-index:2147482500;display:flex;align-items:center;justify-content:center;
+  padding:16px;background:rgba(3,10,16,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+}
+.trainer-day-modal{
+  width:min(100%,420px);box-sizing:border-box;padding:1rem;
+  background:rgba(9,22,33,.97);border:1px solid rgba(255,255,255,.16);
+  border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.55);color:#fff;
+}
+.trainer-day-modal-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+.trainer-day-modal-header>div{min-width:0}
+.trainer-day-modal-header span{display:block;color:rgba(255,255,255,.62);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;font-weight:750}
+.trainer-day-modal-header h3{margin:.2rem 0 0;font-size:1.05rem;text-transform:capitalize}
+.trainer-day-modal-form>label{display:grid;gap:.4rem;color:rgba(255,255,255,.7);font-size:.78rem;font-weight:750}
+.trainer-km-field{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.55rem}
+.trainer-km-field input{
+  width:100%;box-sizing:border-box;min-height:54px;padding:.7rem .85rem;
+  border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(0,0,0,.28);
+  color:#fff;text-align:center;font-size:1.2rem;font-weight:800;color-scheme:dark;
+}
+.trainer-km-field b{font-size:.9rem;color:rgba(255,255,255,.7)}
+.trainer-day-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-top:1rem}
+.trainer-day-modal-actions button{width:100%!important}
+.trainer-day-modal .trainer-day-readonly{margin-top:0}
+@media(max-width:520px){
+  .trainer-day-modal-overlay{padding:12px}
+  .trainer-day-modal{border-radius:18px;padding:.9rem}
+}
