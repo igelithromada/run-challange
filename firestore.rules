@@ -33,6 +33,7 @@ service cloud.firestore {
               "theme",
               "customColor",
               "animationsEnabled",
+              "hapticsEnabled",
               "defaultActivity",
               "confirmDelete",
               "teamId",
@@ -41,7 +42,8 @@ service cloud.firestore {
               "progressGoals",
               "progressGoalsByType",
               "personalTrainerPlan",
-              "personalTrainerHistory"
+              "personalTrainerHistory",
+              "trainerNotifications"
             ]));
 
       allow delete: if isAdmin();
