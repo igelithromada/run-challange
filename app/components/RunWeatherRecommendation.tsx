@@ -61,7 +61,7 @@ export default function RunWeatherRecommendation({
   const snow = condition.includes("SNOW") || condition.includes("SLEET");
   const rain = condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER");
   const icy = temperature <= 0 && (snow || condition.includes("FREEZ"));
-  const activityType = resolvedType;
+  const activityType = type ?? resolvedType;
   const hot = activityType === "chůze" ? temperature >= 30 : temperature >= 28;
   const strongWind = activityType === "chůze" ? wind >= 45 : wind >= 40;
   const heavyRain = rain && rainChance >= 60;
