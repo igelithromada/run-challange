@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { onAuthStateChanged, signOut, updatePassword } from "firebase/auth";
-import { db, auth } from "../lib/firebase";
+import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { applyTheme } from "../lib/useThemeLoader";
@@ -15,6 +14,7 @@ import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { setHapticsEnabled } from "../lib/haptics";
 import { mergePublicProfile } from "../lib/services/publicProfiles";
+import { getUserProfile, saveUserSettings } from "../lib/services/users";
 
 const DEFAULT_COLOR = "#36D1DC";
 const DEFAULT_ACTIVITY_KEY = "dolni-lhota-default-activity-v1";
@@ -63,10 +63,8 @@ export default function SettingsPage() {
       setUserId(user.uid);
       setEmail(user.email || "");
       try {
-        const ref = doc(db, "users", user.uid);
-        const snap = await getDoc(ref);
-        if (snap.exists()) {
-          const data = snap.data();
+        const data = await getUserProfile(user.uid);
+        if (data) {
           const remoteTheme = data.theme || "default";
           const remoteColor = data.customColor || DEFAULT_COLOR;
           const remoteAnimations = data.animationsEnabled !== false;
@@ -124,10 +122,9 @@ export default function SettingsPage() {
     setSaving(true);
     try {
       const themeChanged = "theme" in patch || "customColor" in patch || "animationsEnabled" in patch;
-      await setDoc(doc(db, "users", activeUserId), {
+      await saveUserSettings(activeUserId, {
         nickname, avatarUrl, theme, customColor, animationsEnabled, ...patch,
-        ...(themeChanged ? { themeUpdatedAt: serverTimestamp() } : {})
-      }, { merge: true });
+      }, themeChanged);
       await mergePublicProfile(activeUserId, {
         nickname: typeof patch.nickname === "string" ? patch.nickname : nickname,
         avatarUrl: typeof patch.avatarUrl === "string" ? patch.avatarUrl : avatarUrl,
