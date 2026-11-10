@@ -305,37 +305,36 @@ html[data-weather="snow-wind"] body::before {
 /* Vítr znázorňuje pouze malá ikona u údaje o rychlosti větru.
    Žádná celoplošná animace ani opakující se pozadí – aplikace zůstává plynulá. */
 
-/* Počasí: animace musí být viditelné i skrz karty napříč celou aplikací. */
-html[data-windy="true"] .tile,
-html[data-windy="true"] .list-tile,
+/* Počasí: déšť má zůstat viditelný v pozadí, ale nesmí měnit vzhled vnitřních částí záznamových karet. */
+html[data-windy="true"] .tile:not(.activity-card-modern),
+html[data-windy="true"] .list-tile:not(.activity-card-modern),
 html[data-windy="true"] .run-weather-recommendation,
-html[data-windy="true"] [class*="card"],
-html[data-windy="true"] [class*="Card"],
-html[data-weather="rain"] .tile,
-html[data-weather="rain"] .list-tile,
+html[data-weather="rain"] .tile:not(.activity-card-modern),
+html[data-weather="rain"] .list-tile:not(.activity-card-modern),
 html[data-weather="rain"] .run-weather-recommendation,
-html[data-weather="rain"] [class*="card"],
-html[data-weather="rain"] [class*="Card"],
-html[data-weather="rain-wind"] .tile,
-html[data-weather="rain-wind"] .list-tile,
+html[data-weather="rain-wind"] .tile:not(.activity-card-modern),
+html[data-weather="rain-wind"] .list-tile:not(.activity-card-modern),
 html[data-weather="rain-wind"] .run-weather-recommendation,
-html[data-weather="rain-wind"] [class*="card"],
-html[data-weather="rain-wind"] [class*="Card"],
-html[data-weather="snow"] .tile,
-html[data-weather="snow"] .list-tile,
+html[data-weather="snow"] .tile:not(.activity-card-modern),
+html[data-weather="snow"] .list-tile:not(.activity-card-modern),
 html[data-weather="snow"] .run-weather-recommendation,
-html[data-weather="snow"] [class*="card"],
-html[data-weather="snow"] [class*="Card"],
-html[data-weather="snow-wind"] .tile,
-html[data-weather="snow-wind"] .list-tile,
-html[data-weather="snow-wind"] .run-weather-recommendation,
-html[data-weather="snow-wind"] [class*="card"],
-html[data-weather="snow-wind"] [class*="Card"] {
+html[data-weather="snow-wind"] .tile:not(.activity-card-modern),
+html[data-weather="snow-wind"] .list-tile:not(.activity-card-modern),
+html[data-weather="snow-wind"] .run-weather-recommendation {
   background-color: rgba(0, 0, 0, .20) !important;
   border-color: rgba(255, 255, 255, .13);
 }
 
+/* Záznamy zůstávají přesně ve svém běžném vzhledu i při aktivní animaci počasí. */
+html[data-weather="rain"] .activity-card-modern,
+html[data-weather="rain-wind"] .activity-card-modern,
+html[data-weather="snow"] .activity-card-modern,
+html[data-weather="snow-wind"] .activity-card-modern {
+  background-color: var(--card-background) !important;
+}
+
 /* Vnitřní prvky karet zůstávají nad animovanou vrstvou a plně čitelné. */
+ zůstávají nad animovanou vrstvou a plně čitelné. */
 html[data-windy="true"] .tile > *,
 html[data-windy="true"] .list-tile > *,
 html[data-weather="rain"] .tile > *,
