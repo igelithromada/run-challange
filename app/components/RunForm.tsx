@@ -67,8 +67,15 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
     setDescription("");
     setActivityDate(localDateTime());
     setError("");
+    setSuccess("");
     setUploadStatus("");
   };
+
+  useEffect(() => {
+    if (!success) return;
+    const timer = window.setTimeout(() => setSuccess(""), 3200);
+    return () => window.clearTimeout(timer);
+  }, [success]);
 
   const handleSubmit = async () => {
     if (saving) return;
@@ -265,7 +272,6 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
 
           {uploadStatus && <p className="run-form-status" role="status">{uploadStatus}</p>}
           {error && <p className="form-message form-message-error" role="alert">{error}</p>}
-          {success && <p className="form-message form-message-success" role="status">{success}</p>}
 
           <div className="run-form-actions run-form-actions-single">
             <button type="button" className="run-primary-button" onClick={handleSubmit} disabled={saving}>
@@ -276,7 +282,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
       )}
 
       {!showForm && error && <p className="form-message form-message-error" role="alert">{error}</p>}
-      {!showForm && success && <p className="form-message form-message-success" role="status">{success}</p>}
+      {success && <div className="run-form-toast run-form-toast-success" role="status">{success}</div>}
     </div>
   );
 }
