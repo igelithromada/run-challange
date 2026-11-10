@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { requireUser } from "../../../lib/apiAuth";
+import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const CLOUDINARY_TIMEOUT_MS = 15_000;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 function signUpload(params: Record<string, string>, secret: string) {
@@ -54,10 +55,18 @@ export async function POST(request: Request) {
     upload.append("folder", folder);
     upload.append("signature", signature);
 
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-      { method: "POST", body: upload, cache: "no-store" }
-    );
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), CLOUDINARY_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: "POST", body: upload, cache: "no-store", signal: controller.signal }
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
 
     const result = await response.json().catch(() => ({}));
     if (!response.ok || typeof result.secure_url !== "string") {
@@ -71,6 +80,15 @@ export async function POST(request: Request) {
       publicId: typeof result.public_id === "string" ? result.public_id : "",
     });
   } catch (error) {
+    const authResponse = authErrorResponse(error);
+    if (authResponse) {
+      return NextResponse.json({ error: authResponse.message }, { status: authResponse.status });
+    }
+
+    if (error instanceof Error && error.name === "AbortError") {
+      return NextResponse.json({ error: "Nahrávání obrázku trvalo příliš dlouho." }, { status: 504 });
+    }
+
     console.error("POST /api/media/upload:", error);
     return NextResponse.json({ error: "Obrázek se nepodařilo nahrát." }, { status: 500 });
   }
