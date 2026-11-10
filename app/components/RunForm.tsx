@@ -7,14 +7,28 @@ import { ImagePlus, Plus, Save, X } from "lucide-react";
 import { showAppToast } from "./AppToast";
 
 const uploadToCloudinary = async (file: File) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Nejsi přihlášen.");
+
+  const token = await user.getIdToken();
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("upload_preset", "lhota_unsigned");
-  const res = await fetch("https://api.cloudinary.com/v1_1/dvb4jm8cw/image/upload", { method: "POST", body: formData });
-  if (!res.ok) throw new Error("Fotografii se nepodařilo nahrát.");
-  const data = await res.json();
-  if (!data.secure_url) throw new Error("Server fotografii nevrátil platnou adresu.");
-  return { secureUrl: data.secure_url as string, publicId: typeof data.public_id === "string" ? data.public_id : "" };
+
+  const response = await fetch("/api/media/upload", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok || typeof data.secureUrl !== "string") {
+    throw new Error(data.error || "Fotografii se nepodařilo nahrát.");
+  }
+
+  return {
+    secureUrl: data.secureUrl,
+    publicId: typeof data.publicId === "string" ? data.publicId : "",
+  };
 };
 
 const localDateTime = () => {
