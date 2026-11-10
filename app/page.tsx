@@ -28,7 +28,6 @@ export default function Page() {
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [userAvatars, setUserAvatars] = useState<{ [key: string]: { avatarUrl: string; nickname: string } }>({});
-  const [profilesLoading, setProfilesLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -90,8 +89,7 @@ export default function Page() {
 
   useEffect(() => {
     const userIds = Array.from(new Set(runs.map((run) => run.uid).filter((uid): uid is string => !!uid && !userAvatars[uid])));
-    if (userIds.length === 0) { setProfilesLoading(false); return; }
-    setProfilesLoading(true);
+    if (userIds.length === 0) return;
 
     let cancelled = false;
     const loadUsers = async () => {
@@ -106,9 +104,7 @@ export default function Page() {
           });
           return next;
         });
-        setProfilesLoading(false);
       } catch (error) {
-        setProfilesLoading(false);
         console.error("Nepodařilo se načíst profily uživatelů", error);
       }
     };
