@@ -165,7 +165,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
         timestamp: new Date(activityDate),
         imageUrls,
         imagePublicIds,
-        teamId: selectedTeamId,
+        teamId: selectedTeamId || undefined,
         activityType: type,
         likedBy: [],
         likeCount: 0,
