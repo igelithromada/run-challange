@@ -28,7 +28,7 @@ export default function RecordsPage() {
 
   useEffect(() => {
     if (adminAccess !== "allowed" || runsState.loading) return;
-    const items = [...runsState.data].sort((a,b) => (b.timestamp?.seconds||0)-(a.timestamp?.seconds||0));
+    const items = [...runsState.data].sort((a,b) => { const av=a.timestamp instanceof Date?a.timestamp.getTime():a.timestamp&&"toDate" in a.timestamp&&typeof a.timestamp.toDate==="function"?a.timestamp.toDate().getTime():a.timestamp&&"seconds" in a.timestamp&&typeof a.timestamp.seconds==="number"?a.timestamp.seconds*1000:0; const bv=b.timestamp instanceof Date?b.timestamp.getTime():b.timestamp&&"toDate" in b.timestamp&&typeof b.timestamp.toDate==="function"?b.timestamp.toDate().getTime():b.timestamp&&"seconds" in b.timestamp&&typeof b.timestamp.seconds==="number"?b.timestamp.seconds*1000:0; return bv-av; });
     setRuns(items);
   }, [adminAccess, runsState.data, runsState.loading]);
 
