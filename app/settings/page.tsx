@@ -255,7 +255,7 @@ export default function SettingsPage() {
       await removeTrainerPush();
       const next = { ...trainerNotifications, enabled: false };
       setTrainerNotifications(next);
-      await saveSettings({ trainerNotifications: next });
+      await persistTrainerNotifications(next);
       showAppToast("Notifikace osobního trenéra jsou vypnuté.");
     } catch (error) {
       showAppToast(error instanceof Error ? error.message : "Notifikace se nepodařilo vypnout.", "error");
