@@ -30,12 +30,12 @@ function dateParts(date = new Date()) {
 
 function dateKey(date = new Date()) {
   const parts = dateParts(date);
-  return \`\${parts.year}-\${parts.month}-\${parts.day}\`;
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
 function addLocalDays(date: Date, days: number) {
   const parts = dateParts(date);
-  const local = new Date(\`\${parts.year}-\${parts.month}-\${parts.day}T12:00:00Z\`);
+  const local = new Date(`${parts.year}-${parts.month}-${parts.day}T12:00:00Z`);
   local.setUTCDate(local.getUTCDate() + days);
   return dateKey(local);
 }
@@ -51,14 +51,14 @@ function planFor(data: UserData, type: ActivityType, key: string): TrainerPlan |
 function plannedText(plan: TrainerPlan, key: string) {
   const km = Number(plan.dayKm?.[key] || 0);
   if (!(km > 0)) return "";
-  return \`\${plan.type === "chůze" ? "Chůze" : "Běh"} · \${km.toFixed(1)} km\`;
+  return `${plan.type === "chůze" ? "Chůze" : "Běh"} · ${km.toFixed(1)} km`;
 }
 
 export async function GET(request: Request) {
   try {
     const secret = process.env.CRON_SECRET?.trim();
     const authHeader = request.headers.get("authorization") || "";
-    if (!secret || authHeader !== \`Bearer \${secret}\`) {
+    if (!secret || authHeader !== `Bearer ${secret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -103,7 +103,7 @@ export async function GET(request: Request) {
             JSON.stringify({
               title: isToday ? "Dnešní plán" : "Zítřejší plán",
               body: texts.join("  ·  "),
-              tag: \`trainer-\${isToday ? "today" : "tomorrow"}-\${targetKey}\`,
+              tag: `trainer-${isToday ? "today" : "tomorrow"}-${targetKey}`,
               url: "/trainer",
             })
           );
