@@ -12,6 +12,7 @@ import ActivityCard from "../components/ActivityCard";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
+import { MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
 
 type RunData = {
@@ -238,10 +239,10 @@ export default function MyRunsPage() {
         {(dateFrom || dateTo) && <button className="date-clear" onClick={() => { setDateFrom(""); setDateTo(""); }}>Zrušit filtr</button>}
       </div>
       <div className="tile-group activity-summary-grid">
-        <div className="tile"><span>Počet aktivit</span><strong>{filteredRuns.length}</strong></div>
-        <div className="tile"><span>Celkem km</span><strong>{totalKm.toFixed(2)} km</strong></div>
-        <div className="tile"><span>Čas</span><strong>{(totalMin / 60).toFixed(2)} h</strong></div>
-        <div className="tile"><span>Prům. tempo</span><strong>{formatTime(avgTempo)} /km</strong></div>
+        <div className="tile"><ListChecks/><span>Počet aktivit</span><strong>{filteredRuns.length}</strong></div>
+        <div className="tile"><MapPin/><span>Celkem km</span><strong>{totalKm.toFixed(2)} km</strong></div>
+        <div className="tile"><Clock3/><span>Čas</span><strong>{(totalMin / 60).toFixed(2)} h</strong></div>
+        <div className="tile"><Gauge/><span>Prům. tempo</span><strong>{formatTime(avgTempo)} /km</strong></div>
       </div>
       <h2 className="centered-title">Moje záznamy</h2>
       {actionError && <p className="activity-action-error">{actionError}</p>}
