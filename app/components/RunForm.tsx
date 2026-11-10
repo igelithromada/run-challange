@@ -154,7 +154,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
 
       const runData = {
         uid: user.uid,
-        email: user.email,
+        email: user.email || undefined,
         nickname: typeof userData.nickname === "string" ? userData.nickname : "",
         avatarUrl: typeof userData.avatarUrl === "string" ? userData.avatarUrl : "",
         km: kmVal,
