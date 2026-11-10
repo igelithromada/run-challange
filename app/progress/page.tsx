@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -53,7 +53,13 @@ export default function ProgressPage() {
   const [saved, setSaved] = useState(false);
   const [trainerDays, setTrainerDays] = useState<number[]>([1,3,5]);
   const [trainerKm, setTrainerKm] = useState("20");
-  const [trainerSaved, setTrainerSaved] = useState(false);
+  const savedTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (savedTimerRef.current !== null) window.clearTimeout(savedTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const stopAuth = onAuthStateChanged(auth, async user => {
@@ -157,13 +163,13 @@ export default function ProgressPage() {
     { title:"Deset aktivit", detail:"Zaznamenáno 10 aktivit", icon:"📅", done:allActivities>=10 },
     { title:"Padesát aktivit", detail:"Zaznamenáno 50 aktivit", icon:"💪", done:allActivities>=50 }
   ];
-  const calendarDays = useMemo(() => {
+  const calendarDays = (() => {
     const end = new Date(now.getFullYear(),now.getMonth(),now.getDate());
     const start = mondayOf(new Date(end.getTime()-83*86400000));
     const days: Date[]=[];
     for (let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) days.push(new Date(d));
     return days;
-  }, [runs.length]);
+  })();
 
   const teamProgress = teams.filter(team => team.id === joinedTeamId).map(team => {
     const km = runs.filter(run => (run.type || "běh")===goalType && run.teamId===team.id && activityDate(run).getFullYear()===now.getFullYear() && activityDate(run).getMonth()===now.getMonth())
@@ -183,7 +189,9 @@ export default function ProgressPage() {
     const updatedGoals = { ...goalsByType, [goalType]: { weekly: asNumber(goalWeekly), monthly: asNumber(goalMonthly) } };
     setGoalsByType(updatedGoals);
     await mergeUserProfile(uid, { progressGoalsByType: updatedGoals, progressGoals:{ weekly:asNumber(goalWeekly), monthly:asNumber(goalMonthly), type:goalType } });
-    setSaved(true); window.setTimeout(()=>setSaved(false),2500);
+    setSaved(true);
+    if (savedTimerRef.current !== null) window.clearTimeout(savedTimerRef.current);
+    savedTimerRef.current = window.setTimeout(() => setSaved(false), 2500);
   };
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
