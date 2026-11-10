@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       memberIds.forEach(memberId => {
         const memberRef = adminDb.collection("users").doc(memberId);
         batch.set(memberRef, {
-          teamIdsByType: { [type]: null },
+          [`teamIdsByType.${type}`]: null,
           ...(type === "běh" ? { teamId: null, joinedTeam: null } : {}),
         }, { merge: true });
       });
