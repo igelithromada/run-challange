@@ -64,7 +64,9 @@ export interface UserData {
     type?: ActivityType;
     monthly?: number;
   };
-  progressGoalsByType?: Partial<Record<ActivityType, { monthly?: number }>>;
+  progressGoalsByType?: Partial<Record<ActivityType, { weekly?: number; monthly?: number }>>;
+  personalTrainerPlan?: Record<string, unknown>;
+  personalTrainerPlans?: Record<string, unknown>;
 }
 
 export interface TeamData {
