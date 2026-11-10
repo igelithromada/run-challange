@@ -17,11 +17,6 @@
 .activity-avatar img { display:block; width:100%; height:100%; object-fit:cover; border-radius:50%; }
 .activity-card-heading, .activity-person { background: transparent !important; }
 .activity-card { overflow: hidden; }
-.team-card { display:grid; grid-template-columns: 52px minmax(0,1fr); align-items:center; gap:.4rem .8rem; }
-.team-card-top { grid-column:1; grid-row:1 / span 2; }
-.team-card h3 { grid-column:2; margin:.15rem 0 .35rem; }
-.team-card-actions { grid-column:2; width:100%; }
-.team-card-actions .team-action-button { min-height:44px; }
 .team-card-joined { outline:1px solid rgba(255,255,255,.25); }
 .run-profile-icon { width:26px; height:26px; flex:0 0 auto; }
 .run-profile-icon path { stroke-linecap:round; stroke-linejoin:round; }
@@ -29,9 +24,6 @@
 @media(max-width:520px) {
   .site-sidebar-panel { grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
   .site-sidebar-panel button, .site-sidebar-panel [role="button"] { min-height:64px; padding:.75rem .5rem !important; font-size:.92rem !important; }
-  .team-card { grid-template-columns:44px minmax(0,1fr); padding:.85rem; }
-  .team-card-actions { flex-wrap:wrap; }
-  .team-card-actions .team-action-button { font-size:.82rem; }
 }
 @media(max-width:360px) { .site-sidebar-panel { grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:.4rem !important; padding:.65rem !important; } .site-sidebar-panel .sidebar-close { grid-column:1/-1 !important; } }
 html[data-animations="false"] body::before { display:none !important; animation:none !important; }
