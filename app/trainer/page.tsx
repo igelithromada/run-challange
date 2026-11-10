@@ -104,16 +104,26 @@ export default function TrainerPage(){
      const nextDayKm={...dayKm,[selectedDate]:String(value)};
      const normalizedDayKm=Object.fromEntries(nextDates.map(d=>[d,Math.max(.5,num(nextDayKm[d]))]));
      const next:Plan={monthKey:currentMonth,type,dates:nextDates,dayKm:normalizedDayKm,monthlyKm:nextDates.reduce((s,d)=>s+num(normalizedDayKm[d]),0),createdAt:plan?.createdAt||new Date().toISOString()};
-     await setDoc(doc(db,"users",uid),{personalTrainerPlan:next},{merge:true});
-     setPlan(next);
-     setDates(nextDates);
-     setDayKm(Object.fromEntries(nextDates.map(d=>[d,String(normalizedDayKm[d])])));
+     const user=auth.currentUser;
+     if(!user) throw new Error("UNAUTHORIZED");
+     const token=await user.getIdToken();
+     const response=await fetch("/api/trainer/plan",{
+       method:"POST",
+       headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`},
+       body:JSON.stringify({plan:next}),
+     });
+     const result=await response.json().catch(()=>({}));
+     if(!response.ok) throw new Error(result?.error||"SAVE_FAILED");
+     const savedPlan=(result?.plan||next) as Plan;
+     setPlan(savedPlan);
+     setDates(savedPlan.dates);
+     setDayKm(Object.fromEntries(savedPlan.dates.map(d=>[d,String(savedPlan.dayKm?.[d]??"")])));
      setDirty(false);
      setModalOpen(false);
      return true;
    }catch(error){
      console.error("Nepodařilo se uložit plán trenéra",error);
-     setSaveError("Plán se nepodařilo uložit. Zkus to prosím znovu.");
+     setSaveError(error instanceof Error && error.message ? error.message : "Plán se nepodařilo uložit. Zkus to prosím znovu.");
      return false;
    }finally{
      setSaving(false);
