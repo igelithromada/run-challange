@@ -68,35 +68,45 @@ export default function TrainerPage(){
    };
  },[modalOpen]);
 
- useEffect(()=>onAuthStateChanged(auth,async user=>{
-   if(!user){router.push("/login");return;}
-   setUid(user.uid);
-   try{
-     const data=await getUserProfile(user.uid);
-     if (!data) { setLoading(false); return; }
-     const storedLegacy=(data?.personalTrainerPlan as Plan|OldPlan|undefined);
-     const storedPlans=data?.personalTrainerPlans&&typeof data.personalTrainerPlans==="object"?data.personalTrainerPlans:{};
-     const normalized:Record<string,Plan>={};
-     for(const activityType of ["běh","chůze"] as ActivityType[]){
-       const byMonth=storedPlans[activityType]&&typeof storedPlans[activityType]==="object"?storedPlans[activityType]:{};
-       for(const [key,value] of Object.entries(byMonth)){
-         const p=value as Partial<Plan>;
-         if(p&&typeof p==="object"&&p.monthKey===key&&p.type===activityType) normalized[activityType+"|"+key]=p as Plan;
+ useEffect(()=>{
+   let active=true;
+   const unsubscribe=onAuthStateChanged(auth,async user=>{
+     if(!active)return;
+     if(!user){router.push("/login");return;}
+     setUid(user.uid);
+     try{
+       const data=await getUserProfile(user.uid);
+       if(!active)return;
+       if (!data) { setLoading(false); return; }
+       const storedLegacy=(data?.personalTrainerPlan as Plan|OldPlan|undefined);
+       const storedPlans=data?.personalTrainerPlans&&typeof data.personalTrainerPlans==="object"?data.personalTrainerPlans:{};
+       const normalized:Record<string,Plan>={};
+       for(const activityType of ["běh","chůze"] as ActivityType[]){
+         const byMonth=storedPlans[activityType]&&typeof storedPlans[activityType]==="object"?storedPlans[activityType]:{};
+         for(const [key,value] of Object.entries(byMonth)){
+           const p=value as Partial<Plan>;
+           if(p&&typeof p==="object"&&p.monthKey===key&&p.type===activityType) normalized[activityType+"|"+key]=p as Plan;
+         }
        }
+       if(Object.keys(normalized).length===0&&storedLegacy&&"monthKey" in storedLegacy&&storedLegacy.monthKey){
+         normalized[(storedLegacy.type||"běh")+"|"+storedLegacy.monthKey]=storedLegacy as Plan;
+       }
+       setPlansByKey(normalized);
+       const runItems=await fetchRuns(userRunsQuery(user.uid));
+       if(!active)return;
+       setRuns(runItems as Activity[]);
+       const goals=data?.progressGoalsByType||{};
+       const nextGoals={běh:num(goals.běh?.monthly??(data.progressGoals?.type==="běh"?data.progressGoals?.monthly:100))||100,chůze:num(goals.chůze?.monthly??(data.progressGoals?.type==="chůze"?data.progressGoals?.monthly:100))||100};
+       setGoalsByType(nextGoals);
+       setMonthlyGoal(nextGoals[type]);
+     }catch(e){
+       if(active)console.error("Nepodařilo se načíst osobního trenéra",e);
+     }finally{
+       if(active)setLoading(false);
      }
-     if(Object.keys(normalized).length===0&&storedLegacy&&"monthKey" in storedLegacy&&storedLegacy.monthKey){
-       normalized[(storedLegacy.type||"běh")+"|"+storedLegacy.monthKey]=storedLegacy as Plan;
-     }
-     setPlansByKey(normalized);
-     const runItems=await fetchRuns(userRunsQuery(user.uid));
-     setRuns(runItems as Activity[]);
-     const goals=data?.progressGoalsByType||{};
-     const nextGoals={běh:num(goals.běh?.monthly??(data.progressGoals?.type==="běh"?data.progressGoals?.monthly:100))||100,chůze:num(goals.chůze?.monthly??(data.progressGoals?.type==="chůze"?data.progressGoals?.monthly:100))||100};
-     setGoalsByType(nextGoals);
-     setMonthlyGoal(nextGoals[type]);
-   }catch(e){console.error("Nepodařilo se načíst osobního trenéra",e);}
-   finally{setLoading(false);}
- }),[router]);
+   });
+   return()=>{active=false;unsubscribe();};
+ },[router,type]);
 
  useEffect(()=>{
    const key=type+"|"+currentMonth;
