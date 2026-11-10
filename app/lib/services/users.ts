@@ -1,4 +1,4 @@
-import { doc, getDoc, getDocs, query, setDoc, where, documentId, type SetOptions } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, setDoc, where, documentId, type SetOptions } from "firebase/firestore";
 import { db } from "../firebase";
 import type { UserData } from "../../types";
 
@@ -24,7 +24,7 @@ export async function getUserAvatars(uids: string[]): Promise<Record<string, str
     if (!batch.length) continue;
 
     const snapshot = await getDocs(
-      query(doc(db, "users", "__placeholder__").parent!, where(documentId(), "in", batch))
+      query(collection(db, "users"), where(documentId(), "in", batch))
     );
 
     snapshot.docs.forEach(user => {
