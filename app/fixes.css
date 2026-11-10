@@ -1031,3 +1031,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .trainer-day-modal-overlay{padding:12px}
   .trainer-day-modal{border-radius:18px;padding:.9rem}
 }
+
+.trainer-status-legend{display:flex;flex-wrap:wrap;gap:.55rem .9rem;margin:.75rem 0 0;padding:.65rem .75rem;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.035)}
+.trainer-status-legend span{display:inline-flex;align-items:center;gap:.38rem;font-size:.72rem;font-weight:700;color:rgba(255,255,255,.72)}
+.trainer-status-dot,.trainer-modal-status i{width:9px;height:9px;border-radius:50%;display:inline-block;flex:0 0 9px;background:rgba(255,255,255,.3)}
+.trainer-status-dot.waiting,.trainer-modal-status.waiting i{background:#f2c94c}
+.trainer-status-dot.partial,.trainer-modal-status.partial i{background:#f2994a}
+.trainer-status-dot.done,.trainer-modal-status.done i{background:#27ae60}
+.trainer-status-dot.missed,.trainer-modal-status.missed i{background:#eb5757}
+.trainer-modal-status{display:inline-flex;align-items:center;gap:.45rem;width:max-content;margin:0 0 1rem;padding:.42rem .7rem;border-radius:999px;font-size:.78rem;font-weight:800;background:rgba(255,255,255,.08)}
+.trainer-modal-status.waiting{color:#f2c94c}.trainer-modal-status.partial{color:#f2994a}.trainer-modal-status.done{color:#27ae60}.trainer-modal-status.missed{color:#eb5757}
