@@ -36,6 +36,11 @@ export function olderRunsQuery(cursor: QueryDocumentSnapshot, pageSize = 20): Qu
   return query(runsCollection(), orderBy("timestamp", "desc"), startAfter(cursor), limit(pageSize));
 }
 
+export async function fetchRuns(runQuery: Query): Promise<RunData[]> {
+  const snapshot = await getDocs(runQuery);
+  return snapshot.docs.map(mapRunSnapshot);
+}
+
 export async function createRun(data: NewRunData): Promise<string> {
   const snapshot = await addDoc(runsCollection(), data);
   return snapshot.id;
