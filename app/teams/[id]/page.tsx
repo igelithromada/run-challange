@@ -93,11 +93,22 @@ export default function TeamDetailPage() {
     const file=e.target.files?.[0]; if(!file||!isOwner)return;
     if(!file.type.startsWith("image/")||file.size>5*1024*1024){setMessage("Vyber obrázek do 5 MB.");e.target.value="";return;}
     try{
-      const form=new FormData(); form.append("file",file); form.append("upload_preset","lhota_unsigned");
-      const response=await fetch("https://api.cloudinary.com/v1_1/dvb4jm8cw/image/upload",{method:"POST",body:form});
-      const result=await response.json();
-      if(!response.ok||!result.secure_url) throw new Error("Nahrání selhalo.");
-      setAvatarUrl(result.secure_url); setAvatarPublicId(result.public_id||""); setMessage("Avatar je připravený. Ulož nastavení týmu.");
+      if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
+      const token = await auth.currentUser.getIdToken();
+      const form = new FormData();
+      form.append("file", file);
+      const response = await fetch("/api/media/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || typeof result.secureUrl !== "string") {
+        throw new Error(result.error || "Nahrání selhalo.");
+      }
+      setAvatarUrl(result.secureUrl);
+      setAvatarPublicId(typeof result.publicId === "string" ? result.publicId : "");
+      setMessage("Avatar je připravený. Ulož nastavení týmu.");
     }catch(e){console.error(e);setMessage("Avatar se nepodařilo nahrát.");}
     finally{e.target.value="";}
   };
