@@ -170,19 +170,27 @@ export default function SettingsPage() {
 
   const handleDefaultActivityChange = async (value: "běh" | "chůze") => {
     const activeUserId = userId || auth.currentUser?.uid;
+    const currentUser = auth.currentUser;
     setDefaultActivity(value);
     try { localStorage.setItem(DEFAULT_ACTIVITY_KEY, value); } catch {}
-    if (!activeUserId) {
+    if (!activeUserId || !currentUser) {
       flash("Nejsi přihlášen.");
       return;
     }
     setSaving(true);
     try {
-      await setDoc(doc(db, "users", activeUserId), { defaultActivity: value }, { merge: true });
+      const token = await currentUser.getIdToken();
+      const response = await fetch("/api/settings/default-activity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ defaultActivity: value })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Výchozí aktivitu se nepodařilo uložit.");
       flash(value === "běh" ? "Výchozí aktivita: běh" : "Výchozí aktivita: chůze");
     } catch (error) {
       console.error("Nepodařilo se uložit výchozí aktivitu", error);
-      flash("Výchozí aktivitu se nepodařilo uložit");
+      flash(error instanceof Error ? error.message : "Výchozí aktivitu se nepodařilo uložit.");
     } finally {
       setSaving(false);
     }
