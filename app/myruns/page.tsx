@@ -70,6 +70,8 @@ export default function MyRunsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [km, setKm] = useState("");
   const [duration, setDuration] = useState("");
+  const [durationMinutes, setDurationMinutes] = useState("");
+  const [durationSeconds, setDurationSeconds] = useState("");
   const [activityDate, setActivityDate] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const router = useRouter();
@@ -135,14 +137,16 @@ export default function MyRunsPage() {
 
   const handleEdit = (run: RunData) => {
     setEditingId(run.id); setKm(String(run.km)); setDuration(durationString(run.minuty));
+    const totalSeconds = Math.round(Number(run.minuty) * 60); setDurationMinutes(String(Math.floor(totalSeconds / 60))); setDurationSeconds(String(totalSeconds % 60).padStart(2,"0"));
     setActivityDate(toLocalInput(dateOf(run.timestamp))); setFile(null); setActionError("");
   };
   const handleUpdate = async (id: string) => {
     if (busy) return;
     const parsedKm = Number(km);
-    const match = duration.trim().match(/^(\d{1,4}):([0-5]?\d)$/);
-    const seconds = match ? Number(match[1]) * 60 + Number(match[2]) : 0;
-    if (!Number.isFinite(parsedKm) || parsedKm <= 0 || !match || seconds <= 0 || !activityDate) {
+    const minutesValue = Number(durationMinutes);
+    const secondsValue = Number(durationSeconds);
+    const seconds = Number.isFinite(minutesValue) && Number.isFinite(secondsValue) && secondsValue >= 0 && secondsValue < 60 ? minutesValue * 60 + secondsValue : 0;
+    if (!Number.isFinite(parsedKm) || parsedKm <= 0 || !Number.isFinite(minutesValue) || minutesValue < 0 || seconds <= 0 || !activityDate) {
       setActionError("Zkontroluj vzdálenost, čas ve formátu MM:SS a datum."); return;
     }
     if (file && (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024)) {
@@ -242,18 +246,14 @@ export default function MyRunsPage() {
       <h2 className="centered-title">Moje záznamy</h2>
       {actionError && <p className="activity-action-error">{actionError}</p>}
       <div className="list-container" style={{ display:"flex", flexDirection:"column", gap:0 }}>
-        {filteredRuns.map(run => editingId === run.id ? <div key={run.id} className="tile list-tile activity-edit-form">
-          <h3>Upravit aktivitu</h3>
-          <label>Vzdálenost (km)<input type="number" min="0.1" step="0.01" value={km} onChange={e => setKm(e.target.value)} /></label>
-          <label>Celkový čas (MM:SS)<input type="text" inputMode="numeric" value={duration} onChange={e => setDuration(e.target.value.replace(/[^0-9:]/g,"").slice(0,7))} placeholder="32:45" /></label>
-          <label>Datum a čas<input type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} /></label>
-          <label className="activity-edit-upload">Přidat fotografii<input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} /></label>
-          {file && <small>Nová fotografie: {file.name}</small>}
-          <div className="activity-edit-actions">
-            <button disabled={busy} onClick={() => { setEditingId(null); setFile(null); setActionError(""); }}>Zrušit</button>
-            <button disabled={busy} onClick={() => handleUpdate(run.id)}>{busy ? "Ukládám…" : "Uložit změny"}</button>
-          </div>
-        </div> : <ActivityCard key={run.id} run={run} nickname={profile.nickname || run.nickname || run.email?.split("@")[0] || "Anonym"} avatarUrl={profile.avatarUrl} activityType={selectedType} onEdit={() => handleEdit(run)} onDelete={() => handleDelete(run.id)} onPhotosClick={(images) => { setCurrentImageIndex(0); setShowImageUrls(images); setShowImageRunId(run.id); }} />)}
+        {filteredRuns.map(run => editingId === run.id ? <section key={run.id} className="run-form-panel activity-edit-form" aria-label="Upravit aktivitu">
+          <div className="run-form-heading"><div><span className="run-form-eyebrow">ÚPRAVA AKTIVITY</span><h3>Upravit aktivitu</h3></div><button type="button" className="run-form-close" onClick={() => { setEditingId(null); setFile(null); setActionError(""); }} disabled={busy} aria-label="Zavřít formulář">×</button></div>
+          <label className="run-form-field"><span>Vzdálenost <small>km</small></span><input type="number" min="0.1" step="0.01" value={km} onChange={e => setKm(e.target.value)} /></label>
+          <div className="run-form-field"><span>Celkový čas <small>minuty a sekundy</small></span><div className="run-form-time-fields"><label className="run-form-unit-field"><input aria-label="Minuty" type="number" min="0" value={durationMinutes} onChange={e=>setDurationMinutes(e.target.value.replace(/[^0-9]/g,"").slice(0,4))}/></label><label className="run-form-unit-field"><input aria-label="Sekundy" type="number" min="0" max="59" value={durationSeconds} onChange={e=>setDurationSeconds(e.target.value.replace(/[^0-9]/g,"").slice(0,2))}/></label></div></div>
+          <label className="run-form-field"><span>Datum a čas aktivity</span><input type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} /></label>
+          <label className="run-form-upload"><span>{file ? `Vybraná fotografie: ${file.name}` : "Přidat fotografii (volitelné)"}</span><input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} /></label>
+          <div className="run-form-actions run-form-actions-single"><button type="button" className="run-primary-button" disabled={busy} onClick={() => handleUpdate(run.id)}>{busy ? "Ukládám…" : "Uložit změny"}</button></div>
+        </section> : <ActivityCard key={run.id} run={run} nickname={profile.nickname || run.nickname || run.email?.split("@")[0] || "Anonym"} avatarUrl={profile.avatarUrl} activityType={selectedType} onEdit={() => handleEdit(run)} onDelete={() => handleDelete(run.id)} onPhotosClick={(images) => { setCurrentImageIndex(0); setShowImageUrls(images); setShowImageRunId(run.id); }} />)}
       </div>
       {showImageUrls && showImageUrls.length > 0 && <div className="activity-lightbox" onClick={() => setShowImageUrls(null)}>
         <img loading="lazy" decoding="async" src={cloudinaryImageUrl(showImageUrls[currentImageIndex], 1600)} alt={`Fotografie ${currentImageIndex + 1}`} onClick={e => e.stopPropagation()} />
