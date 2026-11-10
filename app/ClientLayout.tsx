@@ -1,6 +1,6 @@
 "use client";
 import { ReactNode, useEffect } from "react";
-import { auth, db } from "./lib/firebase";
+import { auth } from "./lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import useThemeLoader from "./lib/useThemeLoader";
 import NetworkStatus from "./components/NetworkStatus";
