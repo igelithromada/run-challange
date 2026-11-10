@@ -1058,3 +1058,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .trainer-day-modal.draft{border-color:rgba(109,153,189,.8)}
 .trainer-km-field.draft input{border-color:rgba(109,153,189,.8);box-shadow:0 0 0 2px rgba(90,145,190,.08)}
 .trainer-status-action.draft{border-color:rgba(109,153,189,.8)!important;background:rgba(90,145,190,.16)!important}
+
+/* Trenér: stav Naplánováno používá stejnou modrou jako kalendář. */
+.trainer-modal-status.waiting{color:#6d99bd}
+.trainer-modal-status.waiting i{background:#6d99bd}
+.trainer-day-modal.waiting{border-color:rgba(109,153,189,.8)}
+.trainer-km-field.waiting input{border-color:rgba(109,153,189,.8);box-shadow:0 0 0 2px rgba(90,145,190,.08)}
+.trainer-status-action.waiting{border-color:rgba(109,153,189,.8)!important;background:rgba(90,145,190,.16)!important}
+
+/* Fajfka splněného dne je v rohu, datum zůstává vždy celé čitelné. */
+.trainer-calendar-day{position:relative!important;padding-top:.55rem!important}
+.trainer-calendar-day>span{position:relative;z-index:1;display:block;line-height:1.1}
+.trainer-calendar-day.selected svg{position:absolute!important;right:.18rem!important;top:.14rem!important;width:12px!important;height:12px!important;z-index:2!important}
+.trainer-calendar-day.selected.done>span{transform:translateY(2px)}
