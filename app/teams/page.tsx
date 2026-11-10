@@ -12,7 +12,7 @@ import ActivityTypeSelector, { ActivityType, ActivityTypeIcon } from "../compone
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { showAppToast } from "../components/AppToast";
-import type { Team } from "../lib/types";
+import type { TeamData as Team } from "../types";
 
 type TeamMutationResponse = {
   team?: { id?: string };
