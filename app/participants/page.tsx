@@ -142,7 +142,6 @@ export default function ParticipantsPage() {
             <div className="participants-empty">Zatím nejsou pro {selectedType === "běh" ? "běh" : "chůzi"} žádné záznamy.</div>
           ) : (
             <div className="participants-scroll-area">
-              {sortMode === "alpha" && <nav className="participants-alpha" aria-label="Abecední navigace">{alphabet.map(letter => <button key={letter} type="button" className={`${activeLetter === letter ? "active " : ""}${availableLetters.has(letter) ? "" : "disabled"}`} onClick={() => jumpToLetter(letter)}>{letter}</button>)}</nav>}
               {letterPop && <div className="participants-letter-pop" aria-hidden="true">{letterPop}</div>}
               <div className="participants-list">
               {participants.map((participant, index) => {
@@ -162,6 +161,13 @@ export default function ParticipantsPage() {
             </div>
           )}
         </section>
+        {sortMode === "alpha" && (
+          <nav className="participants-alpha participants-alpha-fixed" aria-label="Abecední navigace">
+            {alphabet.map(letter => (
+              <button key={letter} type="button" className={`${activeLetter === letter ? "active " : ""}${availableLetters.has(letter) ? "" : "disabled"}`} onClick={() => jumpToLetter(letter)}>{letter}</button>
+            ))}
+          </nav>
+        )}
       </main>
     </>
   );
