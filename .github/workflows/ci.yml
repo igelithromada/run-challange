@@ -3,14 +3,13 @@ name: Kontrola běžecké aplikace
 on:
   push:
     branches:
-      - fix/run-app-issues
-      - fix/next16-admin-ui
+      - main
   pull_request:
     branches:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -33,6 +32,9 @@ jobs:
 
       - name: Kontrola TypeScriptu
         run: npx tsc --noEmit
+
+      - name: Kontrola ESLintu
+        run: npm run lint
 
       - name: Produkční sestavení
         run: npm run build
