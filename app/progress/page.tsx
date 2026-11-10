@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { collection, query, where } from "firebase/firestore";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { Award, CalendarDays, Footprints, Medal, Target, Trophy, Users, TrendingUp, Save, CheckCircle2, Lock, Zap, Flame } from "lucide-react";
-import { db, auth } from "../lib/firebase";
+import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import type { RunData, TeamData } from "../types";
 import { getUserProfile, mergeUserProfile } from "../lib/services/users";
+import { allTeamsQuery } from "../lib/services/teams";
+import { userRunsQuery, teamRunsQuery } from "../lib/services/runs";
 
 type ProgressActivity = Pick<RunData, "id" | "uid" | "km" | "minuty" | "tempo" | "teamId" | "timestamp" | "type">;
 const asNumber = (value: unknown) => {
@@ -85,11 +86,11 @@ export default function ProgressPage() {
     return () => stopAuth();
   }, [router]);
 
-  const personalQuery = useMemo(() => query(collection(db, "runs"), where("uid", "==", uid || "__no_user__")), [uid]);
-  const teamRunsQuery = useMemo(() => query(collection(db, "runs"), where("teamId", "==", joinedTeamId || "__no_team__")), [joinedTeamId]);
-  const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
+  const personalQuery = useMemo(() => userRunsQuery(uid || "__no_user__"), [uid]);
+  const teamActivityQuery = useMemo(() => teamRunsQuery(joinedTeamId || "__no_team__"), [joinedTeamId]);
+  const teamsQuery = useMemo(() => allTeamsQuery(), []);
   const personalState = useSharedFirestoreQuery<ProgressActivity>("progress:personal:" + (uid || "none"), personalQuery);
-  const teamRunsState = useSharedFirestoreQuery<Activity>("progress:team:" + (joinedTeamId || "none"), teamRunsQuery);
+  const teamRunsState = useSharedFirestoreQuery<ProgressActivity>("progress:team:" + (joinedTeamId || "none"), teamActivityQuery);
   const teamsState = useSharedFirestoreQuery<TeamData>("teams:all", teamsQuery);
   const runs = useMemo(() => {
     const merged = new Map<string, ProgressActivity>();
