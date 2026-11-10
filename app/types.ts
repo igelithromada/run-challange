@@ -10,6 +10,7 @@ export interface RunData {
   km: number;
   minuty: string;
   tempo: string;
+  description?: string;
   type?: string;
   timestamp: {
     seconds: number;
