@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { collection, query, addDoc, deleteDoc, doc, setDoc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Users, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Users, ChevronRight, Pencil, Check, X } from "lucide-react";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -18,6 +18,8 @@ export default function TeamsPage() {
   const [teamIdsByType,setTeamIdsByType]=useState<Record<ActivityType,string|null>>({běh:null,chůze:null});
   const [user,setUser]=useState<any>(null);
   const [teamMessage,setTeamMessage]=useState("");
+  const [editingTeamId,setEditingTeamId]=useState<string|null>(null);
+  const [editingTeamName,setEditingTeamName]=useState("");
   const router=useRouter();
 
   useEffect(()=>onAuthStateChanged(auth,async u=>{
@@ -66,6 +68,17 @@ export default function TeamsPage() {
     setTeamIdsByType(next);
   };
 
+  const startEditTeam=(team:any)=>{ setEditingTeamId(team.id); setEditingTeamName(team.name||""); setTeamMessage(""); };
+
+  const saveTeamName=async(team:any)=>{
+    const name=editingTeamName.trim().slice(0,60);
+    if(!name||!user||team.createdBy!==user.uid)return;
+    try{
+      await setDoc(doc(db,"teams",team.id),{name},{merge:true});
+      setEditingTeamId(null); setEditingTeamName(""); setTeamMessage("Název týmu byl uložen.");
+    }catch(e){ console.error(e); setTeamMessage("Název týmu se nepodařilo uložit."); }
+  };
+
   const deleteTeam=async(team:any)=>{
     if(team.createdBy!==user?.uid||!window.confirm("Opravdu chceš tento tým smazat?"))return;
     await deleteDoc(doc(db,"teams",team.id));
@@ -108,13 +121,22 @@ export default function TeamsPage() {
             <div className="team-card-main">
               <div className="team-avatar">{team.avatarUrl?<img src={cloudinaryImageUrl(team.avatarUrl,96)} alt=""/>:<Users size={22}/>}</div>
               <div className="team-card-info">
-                <div className="team-card-title-row"><h3>{team.name}</h3>{isJoined&&<span className="team-member-label">Tvůj tým</span>}</div>
+                {editingTeamId===team.id ? (
+                  <div className="team-edit-name" onClick={e=>e.stopPropagation()}>
+                    <input value={editingTeamName} maxLength={60} autoFocus onChange={e=>setEditingTeamName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")void saveTeamName(team);if(e.key==="Escape"){setEditingTeamId(null);setEditingTeamName("");}}}/>
+                    <button type="button" aria-label="Uložit název týmu" onClick={()=>void saveTeamName(team)}><Check size={17}/></button>
+                    <button type="button" aria-label="Zrušit úpravu názvu" onClick={()=>{setEditingTeamId(null);setEditingTeamName("");}}><X size={17}/></button>
+                  </div>
+                ) : (
+                  <div className="team-card-title-row"><h3>{team.name}</h3>{isJoined&&<span className="team-member-label">Tvůj tým</span>}</div>
+                )}
                 <div className="team-card-sub"><span className="team-type-badge"><ActivityTypeIcon type={selectedType} size={15}/> {selectedType==="běh"?"Běh":"Chůze"}</span><span>{Number(team.challengeGoalKm)||500} km / měsíc</span></div>
               </div>
               <ChevronRight className="team-card-chevron" size={20}/>
             </div>
             <div className="team-card-actions">
               <button className="team-action-button" onClick={e=>{e.stopPropagation(); if(isJoined) router.push("/teams/"+team.id); else void joinTeam(team);}}>{isJoined?"Otevřít tým":"Přidat se"}</button>
+              {user?.uid===team.createdBy&&editingTeamId!==team.id&&<button className="team-edit-button" onClick={e=>{e.stopPropagation();startEditTeam(team);}} aria-label="Upravit tým"><Pencil size={18}/></button>}
               {user?.uid===team.createdBy&&<button className="team-delete-button" onClick={e=>{e.stopPropagation();void deleteTeam(team);}} aria-label="Smazat tým"><Trash2 size={18}/></button>}
             </div>
           </article>
