@@ -283,14 +283,23 @@ export default function SettingsPage() {
     if (!userId) return;
     setAvatarUploading(true);
     try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const token = await currentUser.getIdToken();
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("upload_preset", "lhota_unsigned");
-      const response = await fetch("https://api.cloudinary.com/v1_1/dvb4jm8cw/image/upload", { method: "POST", body: formData });
-      const result = await response.json();
-      if (!response.ok || !result.secure_url) throw new Error(result.error?.message || "Nahrání selhalo.");
-      await setDoc(doc(db, "users", userId), { avatarUrl: result.secure_url, avatarPublicId: result.public_id || "" }, { merge: true });
-      setAvatarUrl(result.secure_url);
+      const response = await fetch("/api/media/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || typeof result.secureUrl !== "string") {
+        throw new Error(result.error || "Nahrání selhalo.");
+      }
+      await setDoc(doc(db, "users", userId), { avatarUrl: result.secureUrl, avatarPublicId: result.publicId || "" }, { merge: true });
+      await mergePublicProfile(userId, { avatarUrl: result.secureUrl });
+      setAvatarUrl(result.secureUrl);
       flash("Profilová fotografie uložena");
     } catch (error) {
       console.error(error);
