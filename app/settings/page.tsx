@@ -111,8 +111,9 @@ export default function SettingsPage() {
     return () => unsub();
   }, [router]);
 
-  const flash = (message: string) => {
+  const flash = (message: string, type: "success" | "error" | "info" = "success") => {
     setNotice(message);
+    showAppToast(message, type);
     window.setTimeout(() => setNotice(""), 2200);
   };
 
@@ -378,7 +379,7 @@ export default function SettingsPage() {
             )}
           </div>
 
-          {notice && <div className="settings-notice" role="status">{notice}</div>}
+
         </section>
 
         <section className="tile">
