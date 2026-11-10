@@ -51,21 +51,30 @@ export default function ParticipantsPage() {
   }, []);
 
   useEffect(() => {
+    let active = true;
+
     const load = async () => {
-      setLoading(true);
+      if (active) setLoading(true);
       try {
         const items = await fetchRuns(latestRunsQuery(500));
+        if (!active) return;
         setRuns(items);
 
         const ids = Array.from(new Set(items.map(item => item.uid).filter((uid): uid is string => typeof uid === "string" && !!uid)));
-        setAvatars(await getUserAvatars(ids));
+        const nextAvatars = await getUserAvatars(ids);
+        if (!active) return;
+        setAvatars(nextAvatars);
       } catch (error) {
-        console.error("Nepodařilo se načíst účastníky", error);
+        if (active) console.error("Nepodařilo se načíst účastníky", error);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
+
     void load();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const participants = useMemo<Participant[]>(() => {
