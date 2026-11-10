@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { collection, query, orderBy, getDocs, where, documentId } from "firebase/firestore";
+import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
@@ -10,6 +10,7 @@ import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { Activity, Clock3, Medal, Users, Footprints, ArrowDownUp, ListFilter } from "lucide-react";
 import type { RunData } from "../types";
+import { getUserAvatars } from "../lib/services/users";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 
 type Participant = {
@@ -54,13 +55,7 @@ export default function ParticipantsPage() {
         setRuns(items);
 
         const ids = Array.from(new Set(items.map(item => item.uid).filter((uid): uid is string => typeof uid === "string" && !!uid)));
-        const next: Record<string, string> = {};
-        for (let i = 0; i < ids.length; i += 30) {
-          const batch = ids.slice(i, i + 30);
-          const profiles = await getDocs(query(collection(db, "users"), where(documentId(), "in", batch)));
-          profiles.docs.forEach(profile => { next[profile.id] = profile.data().avatarUrl || ""; });
-        }
-        setAvatars(next);
+        setAvatars(await getUserAvatars(ids));
       } catch (error) {
         console.error("Nepodařilo se načíst účastníky", error);
       } finally {
