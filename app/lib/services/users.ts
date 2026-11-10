@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, serverTimestamp, type SetOptions } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, serverTimestamp, type SetOptions } from "firebase/firestore";
 import { db } from "../firebase";
 import type { UserData } from "../../types";
 import { getPublicProfiles } from "./publicProfiles";
