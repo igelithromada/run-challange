@@ -10,10 +10,11 @@ import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
+import { getUserProfile } from "../lib/services/users";
 
-type Activity={id:string;uid?:string;km?:number|string;type?:string;timestamp?:any};
-type Plan={monthKey:string;type:ActivityType;dates:string[];dayKm:Record<string,number>;monthlyKm:number;createdAt?:string};
-type OldPlan={weekKey?:string;type?:ActivityType;days?:number[];dayKm?:Record<string,number>;weeklyKm?:number};
+type Activity = Pick<RunData, "id" | "uid" | "km" | "type" | "timestamp">;
+type Plan = TrainerPlan;
+type OldPlan = LegacyTrainerPlan;
 
 const monthKeyOf=(d:Date)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
 const dateKey=(d:Date)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -70,10 +71,9 @@ export default function TrainerPage(){
    if(!user){router.push("/login");return;}
    setUid(user.uid);
    try{
-     const profile=await getDoc(doc(db,"users",user.uid));
-     const data=profile.exists()?profile.data():{};
-     const storedLegacy=data.personalTrainerPlan as Plan|OldPlan|undefined;
-     const storedPlans=data.personalTrainerPlans&&typeof data.personalTrainerPlans==="object"?data.personalTrainerPlans:{};
+     const data=await getUserProfile(user.uid);
+     const storedLegacy=(data?.personalTrainerPlan as Plan|OldPlan|undefined);
+     const storedPlans=data?.personalTrainerPlans&&typeof data.personalTrainerPlans==="object"?data.personalTrainerPlans:{};
      const normalized:Record<string,Plan>={};
      for(const activityType of ["běh","chůze"] as ActivityType[]){
        const byMonth=storedPlans[activityType]&&typeof storedPlans[activityType]==="object"?storedPlans[activityType]:{};
@@ -88,7 +88,7 @@ export default function TrainerPage(){
      setPlansByKey(normalized);
      const runSnap=await getDocs(query(collection(db,"runs"),where("uid","==",user.uid)));
      setRuns(runSnap.docs.map(d=>({id:d.id,...d.data()} as Activity)));
-     const goals=data.progressGoalsByType||{};
+     const goals=data?.progressGoalsByType||{};
      const nextGoals={běh:num(goals.běh?.monthly??(data.progressGoals?.type==="běh"?data.progressGoals?.monthly:100))||100,chůze:num(goals.chůze?.monthly??(data.progressGoals?.type==="chůze"?data.progressGoals?.monthly:100))||100};
      setGoalsByType(nextGoals);
      setMonthlyGoal(nextGoals[type]);
