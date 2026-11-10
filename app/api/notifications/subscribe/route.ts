@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
 import { requireUser } from "../../../lib/apiAuth";
+import { isValidPushSubscription } from "../../../lib/validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
     const { decoded, adminDb } = await requireUser(request);
     const body = await request.json().catch(() => ({}));
     const subscription = body?.subscription;
-    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+    if (!isValidPushSubscription(subscription)) {
       return NextResponse.json({ error: "Neplatné předplatné notifikací." }, { status: 400 });
     }
     const id = createHash("sha256").update(String(subscription.endpoint)).digest("hex").slice(0, 64);
