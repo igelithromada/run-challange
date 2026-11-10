@@ -37,12 +37,13 @@ export default function TeamDetailPage() {
       if(!snap.exists()){ router.replace("/teams"); return; }
       const data = { id: snap.id, ...snap.data() } as TeamData;
       setTeam(data);
-      if (uid) setIsMember((data.memberIds || []).includes(uid));
+      const memberIds = data.memberIds?.length ? data.memberIds : (data.createdBy ? [data.createdBy] : []);
+      if (uid) setIsMember(memberIds.includes(uid));
       setGoal(String(Number(data.challengeGoalKm) || 500));
       setAvatarUrl(data.avatarUrl || "");
       setAvatarPublicId(data.avatarPublicId || "");
 
-      const profiles = await getPublicProfiles(data.memberIds || []);
+      const profiles = await getPublicProfiles(memberIds);
       setMembers(Object.values(profiles).sort((a, b) =>
         (a.nickname || "Uživatel").localeCompare(b.nickname || "Uživatel", "cs")
       ));
