@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { auth, db } from "./firebase";
+import { auth } from "./firebase";
+import { getUserProfile } from "./services/users";
 
 type AdminAccess = "loading" | "allowed" | "denied";
 
@@ -23,8 +23,8 @@ export default function useAdminGuard(): AdminAccess {
       }
 
       try {
-        const userSnapshot = await getDoc(doc(db, "users", user.uid));
-        const isAdmin = userSnapshot.exists() && userSnapshot.data().role === "admin";
+        const profile = await getUserProfile(user.uid);
+        const isAdmin = profile?.role === "admin";
 
         if (!active) return;
         setAccess(isAdmin ? "allowed" : "denied");
