@@ -17,7 +17,7 @@ import { activityMetrics, formatPace } from "../lib/activityMetrics";
 
 type RunData = {
   id: string; uid?: string; email?: string; nickname?: string;
-  km: number; minuty: number; tempo: number; type?: string;
+  km: number; minuty: number; tempo: number; type?: string; description?: string;
   imageUrl?: string; imageUrls?: string[]; imagePublicIds?: string[];
   timestamp?: Timestamp | { seconds: number } | Date;
 };
