@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import type { User as AuthUser } from "firebase/auth";
-import { collection, query, orderBy, getDocs, where, documentId, Timestamp } from "firebase/firestore";
+import { collection, query, orderBy, getDocs, where, documentId, Timestamp, type QueryConstraint } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
@@ -12,12 +12,14 @@ import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
+import type { RunData, TeamData, ActivityType } from "../types";
+import { allTeamsQuery } from "../lib/services/teams";
 
 export default function StatisticsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [avatars, setAvatars] = useState<Record<string, string>>({});
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [selectedType, setSelectedType] = useState("běh");
+  const [selectedType, setSelectedType] = useState<ActivityType>("běh");
   const [view, setView] = useState("já");
   const [metric, setMetric] = useState("km");
   const [startDate, setStartDate] = useState("");
@@ -30,14 +32,14 @@ export default function StatisticsPage() {
   }, [router]);
 
   const runsQuery = useMemo(() => {
-    const constraints: any[] = [orderBy("timestamp", "desc")];
+    const constraints: QueryConstraint[] = [orderBy("timestamp", "desc")];
     if (startDate) constraints.unshift(where("timestamp", ">=", Timestamp.fromDate(new Date(startDate + "T00:00:00"))));
     if (endDate) constraints.unshift(where("timestamp", "<=", Timestamp.fromDate(new Date(endDate + "T23:59:59.999"))));
     return query(collection(db, "runs"), ...constraints);
   }, [startDate, endDate]);
-  const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
-  const runsState = useSharedFirestoreQuery<any>("runs:statistics:" + (startDate || "all") + ":" + (endDate || "all"), runsQuery);
-  const teamsState = useSharedFirestoreQuery<any>("teams:all", teamsQuery);
+  const teamsQuery = useMemo(() => allTeamsQuery(), []);
+  const runsState = useSharedFirestoreQuery<RunData>("runs:statistics:" + (startDate || "all") + ":" + (endDate || "all"), runsQuery);
+  const teamsState = useSharedFirestoreQuery<TeamData>("teams:all", teamsQuery);
   const runs = runsState.data;
   const teams = teamsState.data;
 
@@ -132,7 +134,7 @@ export default function StatisticsPage() {
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
       <main className="container statistics-page">
         <div className="control-caption">Typ aktivity</div>
-        <ActivityTypeSelector value={selectedType as "běh" | "chůze"} onChange={setSelectedType} />
+        <ActivityTypeSelector value={selectedType} onChange={setSelectedType} />
 
         <div className="control-caption">Zobrazit výsledky</div>
         <div className="tile-group">
