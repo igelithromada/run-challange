@@ -72,6 +72,7 @@ export default function TrainerPage(){
    setUid(user.uid);
    try{
      const data=await getUserProfile(user.uid);
+     if (!data) { setLoading(false); return; }
      const storedLegacy=(data?.personalTrainerPlan as Plan|OldPlan|undefined);
      const storedPlans=data?.personalTrainerPlans&&typeof data.personalTrainerPlans==="object"?data.personalTrainerPlans:{};
      const normalized:Record<string,Plan>={};
