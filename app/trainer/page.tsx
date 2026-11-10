@@ -2,15 +2,15 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { collection, getDocs, query, where } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Save, Target, TrendingUp } from "lucide-react";
-import { db, auth } from "../lib/firebase";
+import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { getUserProfile } from "../lib/services/users";
+import { fetchRuns, userRunsQuery } from "../lib/services/runs";
 
 type Activity = Pick<RunData, "id" | "uid" | "km" | "type" | "timestamp">;
 type Plan = { monthKey:string; type:ActivityType; dates:string[]; dayKm:Record<string, number | string>; monthlyKm:number; createdAt?:string };
@@ -86,8 +86,8 @@ export default function TrainerPage(){
        normalized[(storedLegacy.type||"běh")+"|"+storedLegacy.monthKey]=storedLegacy as Plan;
      }
      setPlansByKey(normalized);
-     const runSnap=await getDocs(query(collection(db,"runs"),where("uid","==",user.uid)));
-     setRuns(runSnap.docs.map(d=>({id:d.id,...d.data()} as Activity)));
+     const runItems=await fetchRuns(userRunsQuery(user.uid));
+     setRuns(runItems as Activity[]);
      const goals=data?.progressGoalsByType||{};
      const nextGoals={běh:num(goals.běh?.monthly??(data.progressGoals?.type==="běh"?data.progressGoals?.monthly:100))||100,chůze:num(goals.chůze?.monthly??(data.progressGoals?.type==="chůze"?data.progressGoals?.monthly:100))||100};
      setGoalsByType(nextGoals);
