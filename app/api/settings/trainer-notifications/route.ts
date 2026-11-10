@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
-import { getAdminServices } from "../../../lib/firebaseAdmin";
+import { requireUser } from "../../../lib/apiAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const header=request.headers.get("authorization")||"";
-    if(!header.startsWith("Bearer ")) return NextResponse.json({error:"Nejsi přihlášen."},{status:401});
-    const {adminAuth,adminDb}=getAdminServices();
-    const decoded=await adminAuth.verifyIdToken(header.slice(7).trim());
+    const { decoded, adminDb } = await requireUser(request);
     const body=await request.json().catch(()=>({}));
     const value=body?.trainerNotifications;
     if(!value || typeof value!=="object") return NextResponse.json({error:"Neplatné nastavení notifikací."},{status:400});
