@@ -9,7 +9,9 @@ import Sidebar from "../components/Sidebar";
 import { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
-import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, ShieldCheck, KeyRound, Smartphone } from "lucide-react";
+import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, ShieldCheck, KeyRound, Smartphone, Bell } from "lucide-react";
+import { registerTrainerPush, removeTrainerPush } from "../lib/pushNotifications";
+import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { setHapticsEnabled } from "../lib/haptics";
 
@@ -34,6 +36,8 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [trainerNotifications, setTrainerNotifications] = useState({ enabled: false, today: true, tomorrow: true });
+  const [notificationBusy, setNotificationBusy] = useState(false);
 
   const router = useRouter();
 
@@ -91,6 +95,12 @@ export default function SettingsPage() {
           setHapticsEnabled(effectiveHaptics);
           const remoteDefaultActivity = data.defaultActivity === "chůze" ? "chůze" : "běh";
           setDefaultActivity(remoteDefaultActivity);
+          const remoteNotifications = data.trainerNotifications || {};
+          setTrainerNotifications({
+            enabled: remoteNotifications.enabled === true,
+            today: remoteNotifications.today !== false,
+            tomorrow: remoteNotifications.tomorrow !== false
+          });
           try { localStorage.setItem(DEFAULT_ACTIVITY_KEY, remoteDefaultActivity); } catch {}
           await applyTheme(storedTheme, storedColor, storedAnimations, false);
         }
@@ -171,15 +181,13 @@ export default function SettingsPage() {
   const handleDefaultActivityChange = async (value: "běh" | "chůze") => {
     const activeUserId = userId || auth.currentUser?.uid;
     const currentUser = auth.currentUser;
-    setDefaultActivity(value);
-    try { localStorage.setItem(DEFAULT_ACTIVITY_KEY, value); } catch {}
     if (!activeUserId || !currentUser) {
       flash("Nejsi přihlášen.");
       return;
     }
     setSaving(true);
     try {
-      const token = await currentUser.getIdToken();
+      const token = await currentUser.getIdToken(true);
       const response = await fetch("/api/settings/default-activity", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -187,12 +195,58 @@ export default function SettingsPage() {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Výchozí aktivitu se nepodařilo uložit.");
+      setDefaultActivity(value);
+      try { localStorage.setItem(DEFAULT_ACTIVITY_KEY, value); } catch {}
       flash(value === "běh" ? "Výchozí aktivita: běh" : "Výchozí aktivita: chůze");
     } catch (error) {
       console.error("Nepodařilo se uložit výchozí aktivitu", error);
       flash(error instanceof Error ? error.message : "Výchozí aktivitu se nepodařilo uložit.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const updateTrainerNotifications = async (patch: Partial<typeof trainerNotifications>) => {
+    const next = { ...trainerNotifications, ...patch };
+    setTrainerNotifications(next);
+    try {
+      await saveSettings({ trainerNotifications: next });
+      showAppToast("Nastavení notifikací uloženo.");
+    } catch (error) {
+      setTrainerNotifications(trainerNotifications);
+      showAppToast(error instanceof Error ? error.message : "Nastavení notifikací se nepodařilo uložit.", "error");
+    }
+  };
+
+  const enableTrainerNotifications = async () => {
+    if (notificationBusy) return;
+    setNotificationBusy(true);
+    try {
+      await registerTrainerPush();
+      const next = { ...trainerNotifications, enabled: true };
+      setTrainerNotifications(next);
+      await saveSettings({ trainerNotifications: next });
+      showAppToast("Notifikace osobního trenéra jsou zapnuté.");
+    } catch (error) {
+      showAppToast(error instanceof Error ? error.message : "Notifikace se nepodařilo zapnout.", "error");
+    } finally {
+      setNotificationBusy(false);
+    }
+  };
+
+  const disableTrainerNotifications = async () => {
+    if (notificationBusy) return;
+    setNotificationBusy(true);
+    try {
+      await removeTrainerPush();
+      const next = { ...trainerNotifications, enabled: false };
+      setTrainerNotifications(next);
+      await saveSettings({ trainerNotifications: next });
+      showAppToast("Notifikace osobního trenéra jsou vypnuté.");
+    } catch (error) {
+      showAppToast(error instanceof Error ? error.message : "Notifikace se nepodařilo vypnout.", "error");
+    } finally {
+      setNotificationBusy(false);
     }
   };
 
@@ -316,6 +370,29 @@ export default function SettingsPage() {
         <section className="tile">
           <div className="settings-section-heading"><SlidersHorizontal size={21}/><div><h2>Chování aplikace</h2><p>Výchozí typ aktivity pro rychlé přidávání záznamů.</p></div></div>
           <ActivityTypeSelector value={defaultActivity as ActivityType} onChange={(value) => void handleDefaultActivityChange(value)} ariaLabel="Výchozí aktivita" />
+        </section>
+
+        <section className="tile">
+          <div className="settings-section-heading"><Bell size={21}/><div><h2>Notifikace osobního trenéra</h2><p>Dostávej upozornění na dnešní nebo zítřejší naplánovaný trénink.</p></div></div>
+          {!trainerNotifications.enabled ? (
+            <button type="button" className="tile-button settings-save-button" onClick={() => void enableTrainerNotifications()} disabled={notificationBusy}>
+              {notificationBusy ? "Zapínám…" : "Povolit notifikace"}
+            </button>
+          ) : (
+            <>
+              <label className="settings-animation-toggle">
+                <span><strong>Dnešní plán</strong><small>Ranní upozornění, pokud máš na dnešek naplánovaný trénink.</small></span>
+                <input type="checkbox" checked={trainerNotifications.today} onChange={e => void updateTrainerNotifications({ today: e.target.checked })} disabled={notificationBusy} />
+              </label>
+              <label className="settings-animation-toggle">
+                <span><strong>Zítřejší plán</strong><small>Večerní upozornění na trénink naplánovaný na další den.</small></span>
+                <input type="checkbox" checked={trainerNotifications.tomorrow} onChange={e => void updateTrainerNotifications({ tomorrow: e.target.checked })} disabled={notificationBusy} />
+              </label>
+              <button type="button" className="tile-button settings-save-button" onClick={() => void disableTrainerNotifications()} disabled={notificationBusy}>
+                {notificationBusy ? "Vypínám…" : "Vypnout notifikace"}
+              </button>
+            </>
+          )}
         </section>
 
         <section className="tile">
