@@ -86,6 +86,7 @@ export interface UserData {
   };
   progressGoals?: {
     type?: ActivityType;
+    weekly?: number;
     monthly?: number;
   };
   progressGoalsByType?: Partial<Record<ActivityType, { weekly?: number; monthly?: number }>>;
