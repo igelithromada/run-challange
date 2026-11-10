@@ -7,9 +7,22 @@ export type FirestoreTimestamp = Timestamp | {
   nanoseconds?: number;
 } | Date;
 
+export interface OrganizationData {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  municipality?: string;
+  registrationCode?: string;
+  active?: boolean;
+}
+
 export interface RunData {
   id: string;
   uid: string;
+  organizationId?: string;
   email?: string;
   nickname?: string;
   avatarUrl?: string;
@@ -41,6 +54,7 @@ export interface RunComment {
 
 export interface UserData {
   id: string;
+  organizationId?: string;
   nickname?: string;
   email?: string;
   avatarUrl?: string;
@@ -71,6 +85,7 @@ export interface UserData {
 
 export interface TeamData {
   id: string;
+  organizationId?: string;
   name: string;
   type?: ActivityType;
   challengeGoalKm?: number;
