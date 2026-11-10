@@ -1,28 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldPath } from "firebase-admin/firestore";
-import { getAdminServices } from "../../../lib/firebaseAdmin";
+import { requireAdmin, authErrorResponse } from "../../../lib/apiAuth";
 
 export const runtime = "nodejs";
 
-async function requireAdmin(request: NextRequest) {
-  const { adminAuth, adminDb } = getAdminServices();
-  const authorization = request.headers.get("authorization");
-  if (!authorization?.startsWith("Bearer ")) throw new Error("UNAUTHORIZED");
 
-  const idToken = authorization.slice("Bearer ".length).trim();
-  const decoded = await adminAuth.verifyIdToken(idToken);
-  const adminProfile = await adminDb.collection("users").doc(decoded.uid).get();
-
-  if (!adminProfile.exists || adminProfile.data()?.role !== "admin") {
-    throw new Error("FORBIDDEN");
-  }
-
-  return { uid: decoded.uid, adminAuth, adminDb };
-}
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { uid: requestingUid, adminAuth, adminDb } = await requireAdmin(request);
+    const { decoded: adminUser, adminDb } = await requireAdmin(request);
     const body = await request.json().catch(() => ({}));
     const targetUid = typeof body?.uid === "string" ? body.uid.trim() : "";
 
@@ -30,7 +16,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Chybí ID uživatele." }, { status: 400 });
     }
 
-    if (targetUid === requestingUid) {
+    if (targetUid === adminUser.uid) {
       return NextResponse.json(
         { error: "Vlastní administrátorský účet zde nelze smazat." },
         { status: 400 }
@@ -50,6 +36,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     await adminDb.collection("users").doc(targetUid).delete();
+    const { adminAuth } = (await import("../../../lib/firebaseAdmin")).getAdminServices();
     await adminAuth.deleteUser(targetUid);
 
     return NextResponse.json({
@@ -58,15 +45,8 @@ export async function DELETE(request: NextRequest) {
       deletedRuns: runsSnapshot.size,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Neznámá chyba.";
-
-    if (message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Neautorizovaný požadavek." }, { status: 401 });
-    }
-
-    if (message === "FORBIDDEN") {
-      return NextResponse.json({ error: "Nemáš oprávnění správce." }, { status: 403 });
-    }
+    const authError = authErrorResponse(error);
+    if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
 
     console.error("DELETE /api/admin/users:", error);
     return NextResponse.json(
