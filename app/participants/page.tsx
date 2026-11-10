@@ -40,8 +40,15 @@ export default function ParticipantsPage() {
     const unsub = onAuthStateChanged(auth, user => {
       if (!user) router.push("/login");
     });
-    return () => unsub();
+    return unsub;
   }, [router]);
+
+  useEffect(() => () => {
+    if (letterTimer.current) {
+      clearTimeout(letterTimer.current);
+      letterTimer.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     const load = async () => {
