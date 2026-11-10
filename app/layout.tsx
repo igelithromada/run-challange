@@ -1,3 +1,4 @@
+import "./design-tokens.css";
 import "./globals.css";
 import "./fixes.css";
 import "./polish.css";
