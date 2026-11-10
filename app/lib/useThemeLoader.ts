@@ -55,7 +55,7 @@ export default function useThemeLoader() {
       } catch (error) { console.error("Nepodařilo se načíst vzhled", error); }
     });
     const interval = window.setInterval(() => {
-      if (userData.theme === "auto") {
+      if (userData.theme === "auto" || userData.theme === "weather") {
         void applyTheme(userData.theme, userData.customColor, userData.animationsEnabled);
       }
     }, 30 * 60 * 1000);
