@@ -57,7 +57,7 @@ export async function GET(request:Request) {
       const subscriptions=await userDoc.ref.collection("pushSubscriptions").get();
       for(const subDoc of subscriptions.docs){
         try{
-          await webpush.sendNotification(subDoc.data(),JSON.stringify({
+          await webpush.sendNotification(subDoc.data() as any,JSON.stringify({
             title:isToday?"Dnešní plán":"Zítřejší plán",
             body:texts.join("  ·  "),
             tag:`trainer-${isToday?"today":"tomorrow"}-${targetKey}`,
