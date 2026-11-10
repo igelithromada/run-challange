@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { collection, addDoc, getDoc, doc } from "firebase/firestore";
 import { db, auth } from "../lib/firebase";
 import { ImagePlus, Plus, Save, X } from "lucide-react";
+import { showAppToast } from "./AppToast";
 
 const uploadToCloudinary = async (file: File) => {
   const formData = new FormData();
@@ -183,14 +184,17 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
 
       reset();
       setShowForm(false);
-      setSuccess(
+      showAppToast(
         navigator.onLine
           ? `${activityPast} úspěšně uložena.`
-          : `${activityPast} uložena offline a po připojení se synchronizuje.`
+          : `${activityPast} uložena offline a po připojení se synchronizuje.`,
+        "success"
       );
     } catch (err) {
       console.error(err);
-      setError(translateSaveError(err));
+      const message=translateSaveError(err);
+      setError(message);
+      showAppToast(message,"error");
     } finally {
       setSaving(false);
       setUploadStatus("");
