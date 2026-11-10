@@ -1,8 +1,8 @@
 "use client";
 import { useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "./firebase";
+import { auth } from "./firebase";
+import { getUserProfile } from "./services/users";
 
 const CACHE_KEY = "dolni-lhota-theme-v1";
 type ThemeCache = { theme: string; customColor: string; animationsEnabled: boolean; savedAt: number };
@@ -34,9 +34,8 @@ export default function useThemeLoader() {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) return;
       try {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (!active || !userDoc.exists()) return;
-        const data = userDoc.data();
+        const data = await getUserProfile(user.uid);
+        if (!active || !data) return;
         userData = {
           theme: data.theme || "default",
           customColor: data.customColor || "#36D1DC",
