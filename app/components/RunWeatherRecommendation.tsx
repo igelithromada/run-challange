@@ -43,7 +43,7 @@ export default function RunWeatherRecommendation({
         const data = await response.json();
         if (active) setWeather(data);
       } catch {
-        if (active) setWeather({ error: "Počasí se nepodařilo načíst." });
+        if (active) setWeather({ configured: false, error: "Počasí se nepodařilo načíst." });
       } finally {
         if (active) setLoading(false);
       }
