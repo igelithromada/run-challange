@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
+
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, Users, ChevronRight, Pencil, Check, X } from "lucide-react";
@@ -14,6 +14,7 @@ import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { showAppToast } from "../components/AppToast";
 import type { TeamData as Team } from "../types";
 import { allTeamsQuery } from "../lib/services/teams";
+import { getUserProfile } from "../lib/services/users";
 
 type TeamMutationResponse = {
   team?: { id?: string };
