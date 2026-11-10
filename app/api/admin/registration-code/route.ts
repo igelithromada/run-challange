@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "../../../lib/apiAuth";
+import { isValidRegistrationCode } from "../../../lib/validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
     const adminDb = await requireAdmin(request);
     const body = await request.json().catch(() => ({}));
     const code = typeof body?.code === "string" ? body.code.trim() : "";
-    if (code.length < 4 || code.length > 128) {
+    if (!isValidRegistrationCode(code)) {
       return NextResponse.json({ error: "Registrační kód musí mít 4 až 128 znaků." }, { status: 400 });
     }
 
