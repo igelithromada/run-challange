@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import type { DocumentReference } from "firebase-admin/firestore";
-import { getAdminServices } from "../../../lib/firebaseAdmin";
+import { requireAdmin, authErrorResponse } from "../../../lib/apiAuth";
 import { collectCloudinaryPublicIds, deleteCloudinaryImages } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
 async function deleteRunComments(runRef: DocumentReference) {
   const collections = await runRef.listCollections();
   for (const subcollection of collections) {
@@ -17,29 +18,9 @@ async function deleteRunComments(runRef: DocumentReference) {
   }
 }
 
-
-async function verifyAdmin(request: Request) {
-  const { adminAuth, adminDb } = getAdminServices();
-  const header = request.headers.get("authorization") || "";
-  if (!header.startsWith("Bearer ")) return null;
-
-  const token = header.slice("Bearer ".length).trim();
-  if (!token) return null;
-
-  const decoded = await adminAuth.verifyIdToken(token);
-  if (decoded.admin === true) return decoded;
-
-  const profile = await adminDb.collection("users").doc(decoded.uid).get();
-  if (profile.exists && profile.data()?.role === "admin") return decoded;
-  return null;
-}
-
 export async function POST(request: Request) {
   try {
-    const admin = await verifyAdmin(request);
-    if (!admin) {
-      return NextResponse.json({ error: "Nemáš oprávnění k této operaci." }, { status: 403 });
-    }
+    const { decoded: admin, adminDb } = await requireAdmin(request);
 
     const body = await request.json().catch(() => ({}));
     const uid = typeof body.uid === "string" ? body.uid.trim() : "";
@@ -50,7 +31,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Vlastní účet zde nemaž." }, { status: 400 });
     }
 
-    const { adminDb } = getAdminServices();
     const runsSnapshot = await adminDb.collection("runs").where("uid", "==", uid).get();
 
     const imageUrls: string[] = [];
@@ -98,6 +78,9 @@ export async function POST(request: Request) {
       deletedImages: cloudinaryResult.deleted,
     });
   } catch (error) {
+    const authError = authErrorResponse(error);
+    if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
+
     console.error("Admin delete activity data failed:", error);
     return NextResponse.json(
       { error: "Data aktivit se nepodařilo kompletně smazat." },
