@@ -18,12 +18,14 @@ export async function POST(request: Request) {
       const type = normalizeActivityType(body?.type);
       if (!name) return NextResponse.json({ error: "Zadej název týmu." }, { status: 400 });
       const teamRef = adminDb.collection("teams").doc();
-      await teamRef.set({ name, type, createdBy: decoded.uid, challengeGoalKm: 500, avatarUrl: "", avatarPublicId: "", memberIds: [decoded.uid] });
       const userSnap = await userRef.get();
       const data = userSnap.exists ? userSnap.data() || {} : {};
       const stored = data.teamIdsByType && typeof data.teamIdsByType === "object" ? data.teamIdsByType : {};
       const next = { ...stored, [type]: teamRef.id };
-      await userRef.set({ teamIdsByType: next, ...(type === "běh" ? { teamId: teamRef.id, joinedTeam: teamRef.id } : {}) }, { merge: true });
+      const batch = adminDb.batch();
+      batch.set(teamRef, { name, type, createdBy: decoded.uid, challengeGoalKm: 500, avatarUrl: "", avatarPublicId: "", memberIds: [decoded.uid] });
+      batch.set(userRef, { teamIdsByType: next, ...(type === "běh" ? { teamId: teamRef.id, joinedTeam: teamRef.id } : {}) }, { merge: true });
+      await batch.commit();
       return NextResponse.json({ ok: true, team: { id: teamRef.id, name, type, createdBy: decoded.uid, challengeGoalKm: 500 } });
     }
 
@@ -48,24 +50,31 @@ export async function POST(request: Request) {
       const data = userSnap.exists ? userSnap.data() || {} : {};
       const stored = data.teamIdsByType && typeof data.teamIdsByType === "object" ? data.teamIdsByType : {};
       const next = { ...stored, [type]: action === "join" ? teamId : null };
-      await teamRef.update({ memberIds: action === "join" ? FieldValue.arrayUnion(decoded.uid) : FieldValue.arrayRemove(decoded.uid) });
-      await userRef.set({ teamIdsByType: next, ...(type === "běh" ? { teamId: action === "join" ? teamId : null, joinedTeam: action === "join" ? teamId : null } : {}) }, { merge: true });
+      const batch = adminDb.batch();
+      batch.update(teamRef, { memberIds: action === "join" ? FieldValue.arrayUnion(decoded.uid) : FieldValue.arrayRemove(decoded.uid) });
+      batch.set(userRef, { teamIdsByType: next, ...(type === "běh" ? { teamId: action === "join" ? teamId : null, joinedTeam: action === "join" ? teamId : null } : {}) }, { merge: true });
+      await batch.commit();
       return NextResponse.json({ ok: true, teamIdsByType: next });
     }
 
     if (action === "delete") {
       if (team.createdBy !== decoded.uid) return NextResponse.json({ error: "Tým může smazat jen zakladatel." }, { status: 403 });
       const memberIds = Array.isArray(team.memberIds) ? team.memberIds.filter((value): value is string => typeof value === "string") : [];
-      const batch = adminDb.batch();
-      memberIds.forEach(memberId => {
-        const memberRef = adminDb.collection("users").doc(memberId);
-        batch.set(memberRef, {
-          [`teamIdsByType.${type}`]: null,
-          ...(type === "běh" ? { teamId: null, joinedTeam: null } : {}),
-        }, { merge: true });
-      });
-      batch.delete(teamRef);
-      await batch.commit();
+      for (let i = 0; i < memberIds.length; i += 450) {
+        const batch = adminDb.batch();
+        memberIds.slice(i, i + 450).forEach(memberId => {
+          const memberRef = adminDb.collection("users").doc(memberId);
+          batch.set(memberRef, {
+            [`teamIdsByType.${type}`]: null,
+            ...(type === "běh" ? { teamId: null, joinedTeam: null } : {}),
+          }, { merge: true });
+        });
+        if (i + 450 >= memberIds.length) batch.delete(teamRef);
+        await batch.commit();
+      }
+      if (memberIds.length === 0) {
+        await teamRef.delete();
+      }
       return NextResponse.json({ ok: true });
     }
 
