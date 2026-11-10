@@ -19,7 +19,9 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.auth.uid == userId;
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && !request.resource.data.keys().hasAny(["role", "blocked"]);
 
       // Users may edit their own profile/preferences, but never elevate themselves
       // or change moderation/account-control fields.
@@ -53,7 +55,8 @@ service cloud.firestore {
       allow read: if signedIn();
 
       allow create: if signedIn()
-        && request.resource.data.uid == request.auth.uid;
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasAll(["uid", "km", "minuty", "tempo", "timestamp"]);
 
       allow update: if isAdmin()
         || (signedIn()
