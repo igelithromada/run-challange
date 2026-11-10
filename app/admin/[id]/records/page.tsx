@@ -10,11 +10,9 @@ import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/Sidebar";
 import ActivityCard from "../../../components/ActivityCard";
 import ActivityTypeSelector from "../../../components/ActivityTypeSelector";
+import type { RunData, ActivityType } from "../../../types";
 
-type Run = {
-  id:string; uid?:string; km?:number|string; minuty?:number|string; tempo?:number|string; type?:string;
-  timestamp?:any; imageUrls?:string[]; imageUrl?:string; imagePublicIds?:string[]; nickname?:string; email?:string; teamId?:string;
-};
+type Run = RunData;
 
 export default function RecordsPage() {
   const adminAccess = useAdminGuard();
