@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -265,11 +266,17 @@ export default function TrainerPage(){
         </button>
       })}</div>)}
     </div>
-    {quickInfo&&<div className={`trainer-quick-info ${quickInfo.status}`} style={{left:quickInfo.x,top:quickInfo.y}}>
-      <strong>{statusLabel(quickInfo.status)}</strong>
-      {quickInfo.status!=="off"&&<span>Cíl <b>{quickInfo.target.toFixed(1)} km</b> · Splněno <b>{quickInfo.actual.toFixed(1)} km</b></span>}
-      {quickInfo.status==="off"&&<span>Den bez naplánovaného tréninku</span>}
-    </div>}
+    {quickInfo&&typeof document!=="undefined"&&createPortal(
+      <div className={`trainer-quick-info ${quickInfo.status}`} style={{
+        left:`clamp(110px, ${quickInfo.x}px, calc(100vw - 110px))`,
+        top:`max(78px, ${quickInfo.y-12}px)`
+      }}>
+        <strong>{statusLabel(quickInfo.status)}</strong>
+        {quickInfo.status!=="off"&&<span>Cíl <b>{quickInfo.target.toFixed(1)} km</b> · Splněno <b>{quickInfo.actual.toFixed(1)} km</b></span>}
+        {quickInfo.status==="off"&&<span>Den bez naplánovaného tréninku</span>}
+      </div>,
+      document.body
+    )}
     {bulkMode&&<div className="trainer-bulk-panel">
       <div><strong>{bulkDates.length} {bulkDates.length===1?"den":"dny"}</strong><span>Společný cíl pro vybrané dny</span></div>
       <label><span>km / den</span><input type="number" min=".5" step=".5" inputMode="decimal" value={bulkKm} onChange={e=>setBulkKm(e.target.value)}/></label>
