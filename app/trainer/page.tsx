@@ -70,26 +70,42 @@ export default function TrainerPage(){
    try{
      const profile=await getDoc(doc(db,"users",user.uid));
      const data=profile.exists()?profile.data():{};
-     const stored=data.personalTrainerPlan as Plan|OldPlan|undefined;
-     const runSnap=await getDocs(query(collection(db,"runs"),where("uid","==",user.uid)));
-     const loaded=runSnap.docs.map(d=>({id:d.id,...d.data()} as Activity));
-     setRuns(loaded);
-     const goalType=(stored as any)?.type||"běh";
-     const goals=data.progressGoalsByType||{};
-     setMonthlyGoal(num(goals[goalType]?.monthly??data.progressGoals?.monthly??100)||100);
-     if(stored&&"monthKey" in stored&&stored.monthKey===currentMonth){
-       const p=stored as Plan;
-       setPlan(p);setType(p.type||"běh");setDates(Array.isArray(p.dates)?p.dates:[]);
-       setDayKm(Object.fromEntries((p.dates||[]).map(d=>[d,String(p.dayKm?.[d]??5)])));
-       setSelectedDate(p.dates?.[0]||dateKey(month));
-     }else{
-       setPlan(null);setDates([]);setDayKm({});
-       setType((stored as any)?.type==="chůze"?"chůze":"běh");
-       setSelectedDate(dateKey(month));
+     const storedLegacy=data.personalTrainerPlan as Plan|OldPlan|undefined;
+     const storedPlans=data.personalTrainerPlans&&typeof data.personalTrainerPlans==="object"?data.personalTrainerPlans:{};
+     const normalized:Record<string,Plan>={};
+     for(const activityType of ["běh","chůze"] as ActivityType[]){
+       const byMonth=storedPlans[activityType]&&typeof storedPlans[activityType]==="object"?storedPlans[activityType]:{};
+       for(const [key,value] of Object.entries(byMonth)){
+         const p=value as Partial<Plan>;
+         if(p&&typeof p==="object"&&p.monthKey===key&&p.type===activityType) normalized[activityType+"|"+key]=p as Plan;
+       }
      }
+     if(Object.keys(normalized).length===0&&storedLegacy&&"monthKey" in storedLegacy&&storedLegacy.monthKey){
+       normalized[(storedLegacy.type||"běh")+"|"+storedLegacy.monthKey]=storedLegacy as Plan;
+     }
+     setPlansByKey(normalized);
+     const runSnap=await getDocs(query(collection(db,"runs"),where("uid","==",user.uid)));
+     setRuns(runSnap.docs.map(d=>({id:d.id,...d.data()} as Activity)));
+     const goals=data.progressGoalsByType||{};
+     const nextGoals={běh:num(goals.běh?.monthly??(data.progressGoals?.type==="běh"?data.progressGoals?.monthly:100))||100,chůze:num(goals.chůze?.monthly??(data.progressGoals?.type==="chůze"?data.progressGoals?.monthly:100))||100};
+     setGoalsByType(nextGoals);
+     setMonthlyGoal(nextGoals[type]);
    }catch(e){console.error("Nepodařilo se načíst osobního trenéra",e);}
    finally{setLoading(false);}
- }),[router,currentMonth]);
+ }),[router]);
+
+ useEffect(()=>{
+   const key=type+"|"+currentMonth;
+   const p=plansByKey[key]||null;
+   setPlan(p);
+   setDates(Array.isArray(p?.dates)?p!.dates:[]);
+   setDayKm(p?Object.fromEntries((p.dates||[]).map(d=>[d,String(p.dayKm?.[d]??"")])):{});
+   setSelectedDate(dateKey(month));
+   setBulkDates([]);
+   setBulkMode(false);
+ },[type,currentMonth,plansByKey]);
+
+ useEffect(()=>{setMonthlyGoal(goalsByType[type]||100);},[type,goalsByType]);
 
  useEffect(()=>{ if(!selectedDate||!selectedDate.startsWith(currentMonth)) setSelectedDate(dateKey(month)); },[currentMonth,selectedDate,month]);
 
@@ -130,42 +146,52 @@ export default function TrainerPage(){
  };
  const [saving,setSaving]=useState(false);
  const [saveError,setSaveError]=useState("");
+ const planKey=(t:ActivityType,m:string)=>t+"|"+m;
+ const persistPlan=async(next:Plan)=>{
+   const user=auth.currentUser;
+   if(!user) throw new Error("UNAUTHORIZED");
+   const token=await user.getIdToken();
+   const response=await fetch("/api/trainer/plan",{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`},body:JSON.stringify({plan:next})});
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok) throw new Error(result?.error||"SAVE_FAILED");
+   return (result?.plan||next) as Plan;
+ };
  const saveSelected=async()=>{
    if(!uid||!selectedDate||selectedIsPast)return false;
    const value=Math.max(0,num(selectedKmValue));
    if(value<=0)return false;
-   setSaving(true);
-   setSaveError("");
+   setSaving(true);setSaveError("");
    try{
      const nextDates=dates.includes(selectedDate)?dates:[...dates,selectedDate].sort();
      const nextDayKm={...dayKm,[selectedDate]:String(value)};
      const normalizedDayKm=Object.fromEntries(nextDates.map(d=>[d,Math.max(.5,num(nextDayKm[d]))]));
      const next:Plan={monthKey:currentMonth,type,dates:nextDates,dayKm:normalizedDayKm,monthlyKm:nextDates.reduce((s,d)=>s+num(normalizedDayKm[d]),0),createdAt:plan?.createdAt||new Date().toISOString()};
-     const user=auth.currentUser;
-     if(!user) throw new Error("UNAUTHORIZED");
-     const token=await user.getIdToken();
-     const response=await fetch("/api/trainer/plan",{
-       method:"POST",
-       headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`},
-       body:JSON.stringify({plan:next}),
-     });
-     const result=await response.json().catch(()=>({}));
-     if(!response.ok) throw new Error(result?.error||"SAVE_FAILED");
-     const savedPlan=(result?.plan||next) as Plan;
-     setPlan(savedPlan);
-     setDates(savedPlan.dates);
-     setDayKm(Object.fromEntries(savedPlan.dates.map(d=>[d,String(savedPlan.dayKm?.[d]??"")])));
-     setDirty(false);
-     setModalOpen(false);
-     return true;
-   }catch(error){
-     console.error("Nepodařilo se uložit plán trenéra",error);
-     setSaveError(error instanceof Error && error.message ? error.message : "Plán se nepodařilo uložit. Zkus to prosím znovu.");
-     return false;
-   }finally{
-     setSaving(false);
-   }
+     const savedPlan=await persistPlan(next);
+     setPlan(savedPlan);setPlansByKey(cur=>({...cur,[planKey(type,currentMonth)]:savedPlan}));
+     setDates(savedPlan.dates);setDayKm(Object.fromEntries(savedPlan.dates.map(d=>[d,String(savedPlan.dayKm?.[d]??"")])));
+     setDirty(false);setModalOpen(false);return true;
+   }catch(error){setSaveError(error instanceof Error&&error.message?error.message:"Plán se nepodařilo uložit. Zkus to prosím znovu.");return false;}
+   finally{setSaving(false);}
  };
+ const saveBulk=async()=>{
+   const value=Math.max(.5,num(bulkKm));
+   const selected=bulkDates.filter(d=>d>=todayKey);
+   if(!uid||!selected.length||value<=0)return;
+   setSaving(true);setSaveError("");
+   try{
+     const nextDates=Array.from(new Set([...dates,...selected])).sort();
+     const nextDayKm={...dayKm};
+     selected.forEach(d=>nextDayKm[d]=String(value));
+     const normalizedDayKm=Object.fromEntries(nextDates.map(d=>[d,Math.max(.5,num(nextDayKm[d]))]));
+     const next:Plan={monthKey:currentMonth,type,dates:nextDates,dayKm:normalizedDayKm,monthlyKm:nextDates.reduce((s,d)=>s+num(normalizedDayKm[d]),0),createdAt:plan?.createdAt||new Date().toISOString()};
+     const savedPlan=await persistPlan(next);
+     setPlan(savedPlan);setPlansByKey(cur=>({...cur,[planKey(type,currentMonth)]:savedPlan}));
+     setDates(savedPlan.dates);setDayKm(Object.fromEntries(savedPlan.dates.map(d=>[d,String(savedPlan.dayKm?.[d]??"")])));
+     setBulkDates([]);setBulkMode(false);
+   }catch(error){setSaveError(error instanceof Error&&error.message?error.message:"Hromadné plánování se nepodařilo uložit.");}
+   finally{setSaving(false);}
+ };
+
  const updateSelectedKm=(value:string)=>{if(!selectedIsPast){setDayKm(cur=>({...cur,[selectedDate]:value}));setDirty(true);}};
 
  const openDayEditor=(key:string)=>{
