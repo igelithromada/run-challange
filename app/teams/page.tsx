@@ -101,7 +101,8 @@ export default function TeamsPage() {
 
     try {
       const result = await teamRequest("join", { teamId: team.id });
-      setTeamIdsByType(result.teamIdsByType || { ...teamIdsByType, [type]: team.id });
+      const next = result.teamIdsByType || {};
+      setTeamIdsByType({ běh: next.běh ?? teamIdsByType.běh, chůze: next.chůze ?? teamIdsByType.chůze });
       showAppToast("Přidal ses do týmu.");
     } catch (error) {
       showAppToast(error instanceof Error ? error.message : "Do týmu se nepodařilo přidat.", "error");
@@ -113,7 +114,8 @@ export default function TeamsPage() {
 
     try {
       const result = await teamRequest("leave", { teamId: joinedTeamId });
-      setTeamIdsByType(result.teamIdsByType || { ...teamIdsByType, [selectedType]: null });
+      const next = result.teamIdsByType || {};
+      setTeamIdsByType({ běh: next.běh ?? teamIdsByType.běh, chůze: next.chůze ?? teamIdsByType.chůze });
       showAppToast("Z týmu ses odhlásil.");
     } catch (error) {
       showAppToast(error instanceof Error ? error.message : "Z týmu se nepodařilo odejít.", "error");
