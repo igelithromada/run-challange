@@ -49,10 +49,27 @@ export default function TeamDetailPage() {
     } finally { setLoading(false); }
   };
 
-  useEffect(()=>onAuthStateChanged(auth,async u=>{
-    if(!u){router.push("/login");return;}
-    setUser(u); await load(u.uid);
-  }),[id,router]);
+  useEffect(() => {
+    let active = true;
+    const unsubscribe = onAuthStateChanged(auth, async u => {
+      if (!active) return;
+      if (!u) { router.push("/login"); return; }
+      setUser(u);
+      try {
+        await load(u.uid);
+      } catch (error) {
+        if (active) {
+          console.error("Nepodařilo se načíst tým", error);
+          setMessage("Tým se nepodařilo načíst.");
+          setLoading(false);
+        }
+      }
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [id, router]);
 
   const isOwner=team?.createdBy===user?.uid;
   const teamType:ActivityType=team?.type==="chůze"?"chůze":"běh";
