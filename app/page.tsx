@@ -189,7 +189,8 @@ export default function Page() {
         <h2 className="centered-title">Poslední záznamy</h2>
         <div className="list-container">
           {profilesLoading ? <LoadingSkeleton count={3} /> : allRuns.filter((run) => (run.type || "běh") === selectedType).map(run => {
-            const teamName = run.teamId ? teams.find(t => t.id === run.teamId)?.name || "?" : null;
+            const team = run.teamId ? teams.find(t => t.id === run.teamId) : null;
+            const teamName = team?.name || (run.teamId ? "?" : null);
 
             const user = userAvatars[run.uid] || {};
             const nickname = user.nickname || run.nickname || "Anonym";
@@ -200,6 +201,7 @@ export default function Page() {
                 nickname={nickname}
                 avatarUrl={user.avatarUrl}
                 teamName={teamName}
+                teamAvatarUrl={team?.avatarUrl || ""}
                 activityType={selectedType}
                 onUserClick={() => router.push(`/user/${run.uid}`)}
                 onPhotosClick={handleShowImages}
