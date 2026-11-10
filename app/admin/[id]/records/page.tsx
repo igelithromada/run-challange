@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { auth } from "../../../lib/firebase";
 import { signOut } from "firebase/auth";
@@ -20,17 +20,20 @@ export default function RecordsPage() {
   const { id } = useParams() as { id:string };
   const router = useRouter();
   const [menuVisible,setMenuVisible] = useState(false);
-  const [runs,setRuns] = useState<Run[]>([]);
   const [selectedType,setSelectedType] = useState<"běh"|"chůze">("běh");
   const [lightbox,setLightbox] = useState<{urls:string[];index:number}|null>(null);
 
   const runsState = useSharedFirestoreQuery<Run>(`admin-records:${id}`, userRunsQuery(id || "__none__"));
 
-  useEffect(() => {
-    if (adminAccess !== "allowed" || runsState.loading) return;
-    const items = [...runsState.data].sort((a,b) => { const av=a.timestamp instanceof Date?a.timestamp.getTime():a.timestamp&&"toDate" in a.timestamp&&typeof a.timestamp.toDate==="function"?a.timestamp.toDate().getTime():a.timestamp&&"seconds" in a.timestamp&&typeof a.timestamp.seconds==="number"?a.timestamp.seconds*1000:0; const bv=b.timestamp instanceof Date?b.timestamp.getTime():b.timestamp&&"toDate" in b.timestamp&&typeof b.timestamp.toDate==="function"?b.timestamp.toDate().getTime():b.timestamp&&"seconds" in b.timestamp&&typeof b.timestamp.seconds==="number"?b.timestamp.seconds*1000:0; return bv-av; });
-    setRuns(items);
-  }, [adminAccess, runsState.data, runsState.loading]);
+  const runs = useMemo(() => [...runsState.data].sort((a,b) => {
+    const toMillis = (value: Run["timestamp"]) => {
+      if (value instanceof Date) return value.getTime();
+      if (value && "toDate" in value && typeof value.toDate === "function") return value.toDate().getTime();
+      if (value && "seconds" in value && typeof value.seconds === "number") return value.seconds * 1000;
+      return 0;
+    };
+    return toMillis(b.timestamp) - toMillis(a.timestamp);
+  }), [runsState.data]);
 
   const handleDelete = async (runId:string) => {
     if (!window.confirm("Opravdu smazat tento záznam? Fotografie se odstraní také.")) return;
