@@ -146,7 +146,7 @@ export default function TeamDetailPage() {
         <div className="progress-section-title"><Users/><div><h2>Účastníci týmu</h2><p>Seznam lidí, kteří mají tento tým nastavený pro {teamType}.</p></div></div>
         <div className="team-members-list">
           {members.map(member=><button key={member.id} type="button" className="team-member-row" onClick={()=>router.push("/user/"+member.id)}>
-            <span className="team-member-avatar">{member.avatarUrl?<img src={cloudinaryImageUrl(member.avatarUrl,96)} alt=""/>:member.nickname.charAt(0).toUpperCase()}</span>
+            <span className="team-member-avatar">{member.avatarUrl?<img src={cloudinaryImageUrl(member.avatarUrl,96)} alt=""/>:(member.nickname || "U").charAt(0).toUpperCase()}</span>
             <span><strong>{member.nickname}</strong></span>
             {member.id===team?.createdBy&&<Check size={17}/>}
           </button>)}
