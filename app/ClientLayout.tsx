@@ -42,7 +42,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
       const defaultNickname = user.email?.split("@")[0] || "uživatel";
       if (!profile) {
         await mergeUserProfile(user.uid, {
-          id:user.uid, email:user.email||"", nickname:defaultNickname, avatarUrl:"", theme:"default",
+          email:user.email||"", nickname:defaultNickname, avatarUrl:"", theme:"default",
           customColor:"#36D1DC", hapticsEnabled:true
         });
         await mergePublicProfile(user.uid, { nickname: defaultNickname, avatarUrl: "", activityType: "běh" });
