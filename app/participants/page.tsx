@@ -9,7 +9,8 @@ import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { Activity, Clock3, Medal, Users, Footprints, ArrowDownUp, ListFilter } from "lucide-react";
 import type { RunData } from "../types";
-import { fetchRuns, latestRunsQuery } from "../lib/services/runs";
+import { latestRunsQuery } from "../lib/services/runs";
+import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { getUserAvatars } from "../lib/services/users";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 
@@ -27,9 +28,11 @@ type RunRecord = RunData;
 export default function ParticipantsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedType, setSelectedType] = useState<ActivityType>("běh");
-  const [runs, setRuns] = useState<RunRecord[]>([]);
+  const runsQuery = useMemo(() => latestRunsQuery(500), []);
+  const runsState = useSharedFirestoreQuery<RunRecord>("participants:runs:500", runsQuery);
+  const runs = runsState.data;
   const [avatars, setAvatars] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
+  const loading = runsState.loading;
   const [sortMode, setSortMode] = useState<"km" | "alpha">("km");
   const [activeLetter, setActiveLetter] = useState("");
   const [letterPop, setLetterPop] = useState("");
@@ -50,32 +53,14 @@ export default function ParticipantsPage() {
     }
   }, []);
 
+
   useEffect(() => {
     let active = true;
-
-    const load = async () => {
-      if (active) setLoading(true);
-      try {
-        const items = await fetchRuns(latestRunsQuery(500));
-        if (!active) return;
-        setRuns(items);
-
-        const ids = Array.from(new Set(items.map(item => item.uid).filter((uid): uid is string => typeof uid === "string" && !!uid)));
-        const nextAvatars = await getUserAvatars(ids);
-        if (!active) return;
-        setAvatars(nextAvatars);
-      } catch (error) {
-        if (active) console.error("Nepodařilo se načíst účastníky", error);
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
-
-    void load();
-    return () => {
-      active = false;
-    };
-  }, []);
+    const ids = Array.from(new Set(runs.map(item => item.uid).filter((uid): uid is string => typeof uid === "string" && !!uid)));
+    if (!ids.length) { setAvatars({}); return () => { active = false; }; }
+    void getUserAvatars(ids).then(next => { if (active) setAvatars(next); }).catch(error => { if (active) console.error("Nepodařilo se načíst avatary účastníků", error); });
+    return () => { active = false; };
+  }, [runs]);
 
   const participants = useMemo<Participant[]>(() => {
     const map: Record<string, Participant> = {};
