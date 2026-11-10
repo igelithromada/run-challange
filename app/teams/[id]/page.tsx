@@ -1,25 +1,27 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Camera, Check, Save, Users } from "lucide-react";
 import { db, auth } from "../../lib/firebase";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
-import { ActivityType, ActivityTypeIcon } from "../../components/ActivityTypeSelector";
+import { ActivityType } from "../../components/ActivityTypeSelector";
 import { cloudinaryImageUrl } from "../../lib/imageUrl";
+import type { TeamData, PublicProfileData } from "../../types";
+import { getPublicProfiles } from "../../lib/services/publicProfiles";
 
-type Member = { id:string; nickname:string; email:string; avatarUrl:string };
+type Member = PublicProfileData;
 
 export default function TeamDetailPage() {
   const { id } = useParams<{id:string}>();
   const router = useRouter();
   const [menuVisible,setMenuVisible]=useState(false);
-  const [team,setTeam]=useState<any>(null);
+  const [team,setTeam]=useState<TeamData|null>(null);
   const [members,setMembers]=useState<Member[]>([]);
-  const [user,setUser]=useState<any>(null);
+  const [user,setUser]=useState<import("firebase/auth").User|null>(null);
   const [goal,setGoal]=useState("500");
   const [avatarUrl,setAvatarUrl]=useState("");
   const [avatarPublicId,setAvatarPublicId]=useState("");
@@ -33,20 +35,17 @@ export default function TeamDetailPage() {
     try {
       const snap=await getDoc(doc(db,"teams",id));
       if(!snap.exists()){ router.replace("/teams"); return; }
-      const data=snap.data();
-      setTeam({id:snap.id,...data});
-      if(uid){ const profile=await getDoc(doc(db,"users",uid)); const p=profile.exists()?profile.data():{}; setIsMember(p.teamIdsByType?.[data.type==="chůze"?"chůze":"běh"]===id || (data.type!=="chůze" && p.teamId===id)); }
-      setGoal(String(Number(data.challengeGoalKm)||500));
-      setAvatarUrl(data.avatarUrl||"");
-      setAvatarPublicId(data.avatarPublicId||"");
-      const type:ActivityType=data.type==="chůze"?"chůze":"běh";
-      const [memberSnap, legacySnap]=await Promise.all([
-        getDocs(query(collection(db,"users"),where(`teamIdsByType.${type}`,"==",id))),
-        type==="běh" ? getDocs(query(collection(db,"users"),where("teamId","==",id))) : Promise.resolve(null)
-      ]);
-      const memberDocs=[...memberSnap.docs,...(legacySnap?.docs||[])];
-      const unique=new Map(memberDocs.map(d=>[d.id,d]));
-      setMembers(Array.from(unique.values()).map(d=>({id:d.id,nickname:d.data().nickname||"Uživatel",email:d.data().email||"",avatarUrl:d.data().avatarUrl||""})).sort((a,b)=>a.nickname.localeCompare(b.nickname,"cs")));
+      const data = { id: snap.id, ...snap.data() } as TeamData;
+      setTeam(data);
+      if (uid) setIsMember((data.memberIds || []).includes(uid));
+      setGoal(String(Number(data.challengeGoalKm) || 500));
+      setAvatarUrl(data.avatarUrl || "");
+      setAvatarPublicId(data.avatarPublicId || "");
+
+      const profiles = await getPublicProfiles(data.memberIds || []);
+      setMembers(Object.values(profiles).sort((a, b) =>
+        (a.nickname || "Uživatel").localeCompare(b.nickname || "Uživatel", "cs")
+      ));
     } finally { setLoading(false); }
   };
 
@@ -60,11 +59,21 @@ export default function TeamDetailPage() {
 
   const leave=async()=>{
     if(!user||!isMember)return;
-    const next={...(team?.type==="chůze"?{}:{}), běh:null, chůze:null};
-    const profile=await getDoc(doc(db,"users",user.uid)); const data=profile.exists()?profile.data():{}; const stored=data.teamIdsByType||{};
-    const activity:ActivityType=team?.type==="chůze"?"chůze":"běh"; next[activity]=null;
-    await setDoc(doc(db,"users",user.uid),{teamIdsByType:{...stored,...next},...(activity==="běh"?{teamId:null,joinedTeam:null}:{})},{merge:true});
-    setIsMember(false); setMessage("Z týmu jsi odešel.");
+    try {
+      const token = await user.getIdToken(true);
+      const response = await fetch("/api/teams/manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: "leave", teamId: id }),
+      });
+      if (!response.ok) throw new Error("leave-failed");
+      setIsMember(false);
+      setTeam(previous => previous ? { ...previous, memberIds: (previous.memberIds || []).filter(memberId => memberId !== user.uid) } : previous);
+      setMembers(previous => previous.filter(member => member.id !== user.uid));
+      setMessage("Z týmu jsi odešel.");
+    } catch {
+      setMessage("Z týmu se nepodařilo odejít.");
+    }
   };
 
   const save=async()=>{
@@ -127,7 +136,7 @@ export default function TeamDetailPage() {
         <div className="team-members-list">
           {members.map(member=><button key={member.id} type="button" className="team-member-row" onClick={()=>router.push("/user/"+member.id)}>
             <span className="team-member-avatar">{member.avatarUrl?<img src={cloudinaryImageUrl(member.avatarUrl,96)} alt=""/>:member.nickname.charAt(0).toUpperCase()}</span>
-            <span><strong>{member.nickname}</strong><small>{member.email}</small></span>
+            <span><strong>{member.nickname}</strong></span>
             {member.id===team?.createdBy&&<Check size={17}/>}
           </button>)}
           {!members.length&&<p className="team-empty">Tým zatím nemá načtené účastníky.</p>}
