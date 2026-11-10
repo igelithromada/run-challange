@@ -269,7 +269,7 @@ export default function TrainerPage(){
     {quickInfo&&typeof document!=="undefined"&&createPortal(
       <div className={`trainer-quick-info ${quickInfo.status}`} style={{
         left:`clamp(110px, ${quickInfo.x}px, calc(100vw - 110px))`,
-        "--quick-arrow-x":`${Math.max(18,Math.min(82,((quickInfo.x-Math.max(110,Math.min(quickInfo.x,window.innerWidth-110))+110)/220)*100))}%`,
+        ["--quick-arrow-x" as string]:`${Math.max(18,Math.min(82,((quickInfo.x-Math.max(110,Math.min(quickInfo.x,window.innerWidth-110))+110)/220)*100))}%`,
         top:`max(78px, ${quickInfo.y-30}px)`
       }}>
         <strong>{statusLabel(quickInfo.status)}</strong>
