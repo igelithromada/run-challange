@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { WeatherResponse } from "../lib/weather";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../lib/firebase";
+import { auth } from "../lib/firebase";
+import { getUserProfile } from "../lib/services/users";
 import Link from "next/link";
 import { CloudSun, CloudRain, CloudSnow, Wind, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { ActivityType, ActivityTypeIcon } from "./ActivityTypeSelector";
@@ -29,9 +29,9 @@ export default function RunWeatherRecommendation({
         if (cached === "běh" || cached === "chůze") setResolvedType(cached);
         const user = auth.currentUser;
         if (user) {
-          const profile = await getDoc(doc(db, "users", user.uid));
-          if (profile.exists() && profile.data().defaultActivity === "chůze") setResolvedType("chůze");
-          else if (profile.exists()) setResolvedType("běh");
+          const profile = await getUserProfile(user.uid);
+          if (profile?.defaultActivity === "chůze") setResolvedType("chůze");
+          else if (profile) setResolvedType("běh");
         }
       } catch {}
     };
