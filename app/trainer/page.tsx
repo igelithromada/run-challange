@@ -40,7 +40,7 @@ export default function TrainerPage(){
  const [bulkMode,setBulkMode]=useState(false);
  const [bulkDates,setBulkDates]=useState<string[]>([]);
  const [bulkKm,setBulkKm]=useState("5");
- const [quickInfo,setQuickInfo]=useState<{key:string;status:string;target:number;actual:number}|null>(null);
+ const [quickInfo,setQuickInfo]=useState<{key:string;status:string;target:number;actual:number;x:number;y:number}|null>(null);
  const longPressTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
  const longPressTriggered=useRef(false);
  const [loading,setLoading]=useState(true);
@@ -203,18 +203,19 @@ export default function TrainerPage(){
    setDirty(false);
  };
 
- const showQuickInfo=(key:string)=>{
+ const showQuickInfo=(key:string,x:number,y:number)=>{
    const info=cellInfo(new Date(key+"T00:00:00"));
-   setQuickInfo({key,status:info.status,target:info.target,actual:info.actual});
-   window.setTimeout(()=>setQuickInfo(cur=>cur?.key===key?null:cur),2600);
+   setQuickInfo({key,status:info.status,target:info.target,actual:info.actual,x,y});
  };
- const beginLongPress=(key:string)=>{
+ const beginLongPress=(key:string,e:React.PointerEvent<HTMLButtonElement>)=>{
    longPressTriggered.current=false;
    if(longPressTimer.current)clearTimeout(longPressTimer.current);
-   longPressTimer.current=setTimeout(()=>{longPressTriggered.current=true;showQuickInfo(key);},550);
+   const x=e.clientX,y=e.clientY;
+   longPressTimer.current=setTimeout(()=>{longPressTriggered.current=true;showQuickInfo(key,x,y);},550);
  };
  const cancelLongPress=()=>{
    if(longPressTimer.current){clearTimeout(longPressTimer.current);longPressTimer.current=null;}
+   setQuickInfo(null);
  };
  const handleDayClick=(s:ReturnType<typeof cellInfo>)=>{
    if(longPressTriggered.current){longPressTriggered.current=false;return;}
@@ -258,13 +259,13 @@ export default function TrainerPage(){
       {weeks.map((week,i)=><div className="trainer-calendar-week" key={i}>{week.map(d=>{
         const s=cellInfo(d), bulkSelected=bulkDates.includes(s.key);
         return <button type="button" key={s.key} className={`trainer-calendar-day ${s.inMonth?"":"outside"} ${s.selected?"selected":""} ${s.status} ${s.key<todayKey?"past":""} ${bulkSelected?"bulk-selected":""}`}
-          onPointerDown={()=>beginLongPress(s.key)} onPointerUp={cancelLongPress} onPointerLeave={cancelLongPress} onPointerCancel={cancelLongPress}
+          onPointerDown={e=>beginLongPress(s.key,e)} onPointerUp={cancelLongPress} onPointerLeave={cancelLongPress} onPointerCancel={cancelLongPress}
           onContextMenu={e=>e.preventDefault()} onClick={()=>handleDayClick(s)}>
           <span>{d.getDate()}</span>{s.selected&&<small>{s.target.toFixed(1)} km</small>}{s.selected&&s.status==="done"&&<Check size={13}/>}
         </button>
       })}</div>)}
     </div>
-    {quickInfo&&<div className={`trainer-quick-info ${quickInfo.status}`}>
+    {quickInfo&&<div className={`trainer-quick-info ${quickInfo.status}`} style={{left:quickInfo.x,top:quickInfo.y}}>
       <strong>{statusLabel(quickInfo.status)}</strong>
       {quickInfo.status!=="off"&&<span>Cíl <b>{quickInfo.target.toFixed(1)} km</b> · Splněno <b>{quickInfo.actual.toFixed(1)} km</b></span>}
       {quickInfo.status==="off"&&<span>Den bez naplánovaného tréninku</span>}
