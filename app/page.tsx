@@ -28,7 +28,7 @@ export default function Page() {
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const [userAvatars, setUserAvatars] = useState<{ [key: string]: { avatarUrl: string; nickname: string } }>({});
-  const [profilesLoading, setProfilesLoading] = useState(true);
+  const [profilesLoading, setProfilesLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -176,7 +176,7 @@ export default function Page() {
 
         <h2 className="centered-title">Poslední záznamy</h2>
         <div className="list-container">
-          {profilesLoading ? <LoadingSkeleton count={3} /> : allRuns.filter((run) => (run.type || "běh") === selectedType).map(run => {
+          {runsState.loading ? <LoadingSkeleton count={3} /> : allRuns.filter((run) => (run.type || "běh") === selectedType).map(run => {
             const team = run.teamId ? teams.find(t => t.id === run.teamId) : null;
             const teamName = team?.name || (run.teamId ? "?" : null);
 
@@ -195,6 +195,13 @@ export default function Page() {
                 onPhotosClick={handleShowImages}
               />
             );          })}
+          {!runsState.loading && allRuns.filter((run) => (run.type || "běh") === selectedType).length === 0 && (
+            <div className="activity-empty-state">
+              <Footprints size={28} aria-hidden="true" />
+              <strong>Zatím tu není žádný záznam</strong>
+              <span>Buď první, kdo přidá svou aktivitu.</span>
+            </div>
+          )}
         </div>
         {hasMore && allRuns.length >= 30 && (
           <button className="activity-load-more" onClick={loadOlderRuns} disabled={loadingOlder}>
