@@ -121,7 +121,7 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
 
       trimCache();
     };
-  }, [cacheKey]);
+  }, [cacheKey, source]);
 
   return state;
 }
