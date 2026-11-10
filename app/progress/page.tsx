@@ -68,9 +68,9 @@ export default function ProgressPage() {
           if (trainer && Number(trainer.weeklyKm) > 0) setTrainerKm(String(trainer.weeklyKm));
           const storedGoals = data.progressGoalsByType || {};
           const legacy = data.progressGoals || {};
-          const nextGoals = {
-            běh: { weekly: asNumber(storedGoals.běh?.weekly ?? (legacy.type === "běh" ? 25 : 25)) || 25, monthly: asNumber(storedGoals.běh?.monthly ?? (legacy.type === "běh" ? 100 : 100)) || 100 },
-            chůze: { weekly: asNumber(storedGoals.chůze?.weekly ?? (legacy.type === "chůze" ? 25 : 25)) || 25, monthly: asNumber(storedGoals.chůze?.monthly ?? (legacy.type === "chůze" ? 100 : 100)) || 100 }
+          const nextGoals: Record<ActivityType, { weekly: number; monthly: number }> = {
+            běh: { weekly: asNumber(storedGoals.běh?.weekly ?? legacy.weekly) || 25, monthly: asNumber(storedGoals.běh?.monthly ?? legacy.monthly) || 100 },
+            chůze: { weekly: asNumber(storedGoals.chůze?.weekly ?? legacy.weekly) || 25, monthly: asNumber(storedGoals.chůze?.monthly ?? legacy.monthly) || 100 }
           };
           setGoalsByType(nextGoals);
           const initialType = legacy.type === "chůze" ? "chůze" : "běh";
