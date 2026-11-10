@@ -1016,7 +1016,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   color:#fff;text-align:center;font-size:1.2rem;font-weight:800;color-scheme:dark;
 }
 .trainer-km-field b{font-size:.9rem;color:rgba(255,255,255,.7)}
-.trainer-day-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-top:1rem}
+.trainer-day-modal-actions{display:grid;grid-template-columns:1fr;gap:.55rem;margin-top:1rem}
 .trainer-day-modal-actions button{width:100%!important}
 .trainer-save-error{margin:.65rem 0 0;color:#ffb4b4;font-size:.78rem;font-weight:700;text-align:center}
 .trainer-day-modal .trainer-day-readonly{margin-top:0}
