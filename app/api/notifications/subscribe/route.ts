@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
-import { getAdminServices } from "../../../lib/firebaseAdmin";
-import { requireUser } from "../../../lib/apiAuth";
+import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { isValidPushSubscription } from "../../../lib/validation";
 
 export const runtime = "nodejs";
@@ -15,14 +14,18 @@ export async function POST(request: Request) {
     if (!isValidPushSubscription(subscription)) {
       return NextResponse.json({ error: "Neplatné předplatné notifikací." }, { status: 400 });
     }
+
     const id = createHash("sha256").update(String(subscription.endpoint)).digest("hex").slice(0, 64);
     await adminDb.collection("users").doc(decoded.uid).collection("pushSubscriptions").doc(id).set({
       ...subscription,
       updatedAt: new Date(),
-      userAgent: request.headers.get("user-agent") || ""
+      userAgent: request.headers.get("user-agent") || "",
     }, { merge: true });
+
     return NextResponse.json({ ok: true });
   } catch (error) {
+    const authError = authErrorResponse(error);
+    if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
     console.error("POST /api/notifications/subscribe:", error);
     return NextResponse.json({ error: "Notifikace se nepodařilo zapnout." }, { status: 500 });
   }
@@ -30,15 +33,18 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const decoded = await verify(request);
+    const { decoded, adminDb } = await requireUser(request);
     const body = await request.json().catch(() => ({}));
-    const endpoint = String(body?.endpoint || "");
+    const endpoint = typeof body?.endpoint === "string" ? body.endpoint.trim() : "";
     if (!endpoint) return NextResponse.json({ error: "Chybí identifikátor notifikace." }, { status: 400 });
-    const { adminDb } = getAdminServices();
+
     const id = createHash("sha256").update(endpoint).digest("hex").slice(0, 64);
     await adminDb.collection("users").doc(decoded.uid).collection("pushSubscriptions").doc(id).delete();
+
     return NextResponse.json({ ok: true });
   } catch (error) {
+    const authError = authErrorResponse(error);
+    if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
     console.error("DELETE /api/notifications/subscribe:", error);
     return NextResponse.json({ error: "Notifikaci se nepodařilo vypnout." }, { status: 500 });
   }
