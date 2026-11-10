@@ -70,6 +70,15 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
     setCommentCount(Number(run.commentCount) || 0);
   }, [run.id, run.likeCount, run.commentCount, run.likedBy]);
 
+  useEffect(() => {
+    return () => {
+      if (likeLongPressTimer.current) {
+        clearTimeout(likeLongPressTimer.current);
+        likeLongPressTimer.current = null;
+      }
+    };
+  }, []);
+
   const loadSocial = async (mode: "likes" | "comments") => {
     setSocialOpen(mode);
     setSocialLoading(true);
