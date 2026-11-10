@@ -1,10 +1,10 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { doc, updateDoc, Timestamp, getDocs } from "firebase/firestore";
+import { Timestamp } from "firebase/firestore";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { db, auth } from "../lib/firebase";
+import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 
 import Sidebar from "../components/Sidebar";
@@ -15,7 +15,7 @@ import ActivityTypeSelector from "../components/ActivityTypeSelector";
 import { MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
 import type { RunData as BaseRunData, ActivityType } from "../types";
-import { olderRunsQuery, userRunsQuery, mapRunSnapshot } from "../lib/services/runs";
+import { fetchOlderRuns, updateRun, userRunsQuery } from "../lib/services/runs";
 import { getUserProfile } from "../lib/services/users";
 
 type RunData = BaseRunData;
@@ -117,11 +117,11 @@ export default function MyRunsPage() {
     if (!cursor || loadingOlder || !hasMore || !uid) return;
     setLoadingOlder(true);
     try {
-      const next = await getDocs(olderRunsQuery(cursor, 30));
-      const items = next.docs.map(mapRunSnapshot);
+      const next = await fetchOlderRuns(cursor, 30);
+      const items = next.items;
       setOlderRuns(previous => [...previous, ...items.filter(item => !previous.some(old => old.id === item.id) && !runsState.data.some(current => current.id === item.id))]);
-      setOlderCursor(next.docs.length ? next.docs[next.docs.length - 1] : cursor);
-      setHasMore(next.docs.length === 30);
+      setOlderCursor(next.lastDocument || cursor);
+      setHasMore(next.items.length === 30);
     } catch (err) { console.error("Nepodařilo se načíst starší aktivity", err); setActionError("Starší záznamy se nepodařilo načíst."); }
     finally { setLoadingOlder(false); }
   };
@@ -181,7 +181,7 @@ export default function MyRunsPage() {
         updates.imageUrl = uploaded.secureUrl;
         if (uploaded.publicId) updates.imagePublicIds = [...(current?.imagePublicIds || []), uploaded.publicId];
       }
-      await updateDoc(doc(db, "runs", id), updates);
+      await updateRun(id, updates);
       setLocalUpdates(previous => ({ ...previous, [id]: { ...(previous[id] || {}), ...updates } }));
       setEditingId(null); setFile(null);
     } catch (err) {
