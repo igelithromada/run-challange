@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Timestamp } from "firebase/firestore";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -69,6 +69,9 @@ export default function MyRunsPage() {
   const [hasMore, setHasMore] = useState(true);
   const [profile, setProfile] = useState({ nickname: "", avatarUrl: "" });
   const [confirmDelete, setConfirmDelete] = useState(true);
+  const pageActive = useRef(true);
+
+  useEffect(() => () => { pageActive.current = false; }, []);
 
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
@@ -121,12 +124,19 @@ export default function MyRunsPage() {
     setLoadingOlder(true);
     try {
       const next = await fetchOlderRuns(cursor, 30);
+      if (!pageActive.current) return;
       const items = next.items;
       setOlderRuns(previous => [...previous, ...items.filter(item => !previous.some(old => old.id === item.id) && !runsState.data.some(current => current.id === item.id))]);
       setOlderCursor(next.lastDocument || cursor);
       setHasMore(next.items.length === 30);
-    } catch (err) { console.error("Nepodařilo se načíst starší aktivity", err); setActionError("Starší záznamy se nepodařilo načíst."); }
-    finally { setLoadingOlder(false); }
+    } catch (err) {
+      if (pageActive.current) {
+        console.error("Nepodařilo se načíst starší aktivity", err);
+        setActionError("Starší záznamy se nepodařilo načíst.");
+      }
+    } finally {
+      if (pageActive.current) setLoadingOlder(false);
+    }
   };
   useEffect(() => {
     if (runsState.error) setError("Chyba při načítání dat.");
