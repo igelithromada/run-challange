@@ -25,10 +25,11 @@ export default function AdminPage() {
   const router = useRouter();
   const adminAccess = useAdminGuard();
 
-  const loadUsers = async () => {
+  const loadUsers = async (isActive: () => boolean = () => true) => {
     setLoading(true); setError("");
     try {
       const profiles = await getAllUserProfiles();
+      if (!isActive()) return;
       const list: AdminUser[] = profiles.map(d => ({
         id:d.id,
         nickname:d.nickname || "",
@@ -38,13 +39,22 @@ export default function AdminPage() {
         avatarUrl:d.avatarUrl || "",
       }));
       list.sort((a,b) => (a.nickname || a.email).localeCompare(b.nickname || b.email, "cs"));
+      if (!isActive()) return;
       setUsers(list);
       if (selectedUser) setSelectedUser(list.find(u => u.id === selectedUser.id) || null);
-    } catch { setError("Seznam uživatelů se nepodařilo načíst."); }
-    finally { setLoading(false); }
+    } catch {
+      if (isActive()) setError("Seznam uživatelů se nepodařilo načíst.");
+    } finally {
+      if (isActive()) setLoading(false);
+    }
   };
 
-  useEffect(() => { if (adminAccess === "allowed") void loadUsers(); }, [adminAccess]);
+  useEffect(() => {
+    if (adminAccess !== "allowed") return;
+    let active = true;
+    void loadUsers(() => active);
+    return () => { active = false; };
+  }, [adminAccess]);
 
   useEffect(() => {
     if (adminAccess !== "allowed") return;
