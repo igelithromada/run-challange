@@ -54,8 +54,17 @@ export async function POST(request: Request) {
       createdAt: typeof plan.createdAt === "string" ? plan.createdAt : new Date().toISOString(),
     };
 
-    await adminDb.collection("users").doc(decoded.uid).set(
-      { personalTrainerPlan: safePlan },
+    const userRef = adminDb.collection("users").doc(decoded.uid);
+    const userSnap = await userRef.get();
+    const userData = userSnap.exists ? userSnap.data() || {} : {};
+    const existingPlans = userData.personalTrainerPlans && typeof userData.personalTrainerPlans === "object"
+      ? userData.personalTrainerPlans
+      : {};
+    const typePlans = existingPlans[type] && typeof existingPlans[type] === "object" ? existingPlans[type] : {};
+    const nextPlans = { ...existingPlans, [type]: { ...typePlans, [monthKey]: safePlan } };
+
+    await userRef.set(
+      { personalTrainerPlans: nextPlans, personalTrainerPlan: safePlan },
       { merge: true }
     );
 
