@@ -1111,3 +1111,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .trainer-quick-info strong{font-size:.86rem;line-height:1.1}
 .trainer-quick-info span{font-size:.78rem;color:rgba(255,255,255,.78);text-align:left}
 @keyframes trainerQuickInfoIn{from{opacity:0;transform:translate(-50%,-92%) scale(.97)}to{opacity:1;transform:translate(-50%,-100%) scale(1)}}
+
+/* Rychlý stav trenéra: vždy plovoucí overlay mimo tok stránky */
+.trainer-quick-info{position:fixed!important;z-index:2147483647!important;transform:translate(-50%,-100%)!important;margin:0!important;pointer-events:none!important;box-sizing:border-box}
