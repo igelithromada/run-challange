@@ -294,7 +294,7 @@ export default function SettingsPage() {
       if (!response.ok || typeof result.secureUrl !== "string") {
         throw new Error(result.error || "Nahrání selhalo.");
       }
-      await setDoc(doc(db, "users", userId), { avatarUrl: result.secureUrl, avatarPublicId: result.publicId || "" }, { merge: true });
+      await saveUserSettings(userId, { avatarUrl: result.secureUrl, avatarPublicId: result.publicId || "" });
       await mergePublicProfile(userId, { avatarUrl: result.secureUrl });
       setAvatarUrl(result.secureUrl);
       flash("Profilová fotografie uložena");
