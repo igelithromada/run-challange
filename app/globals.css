@@ -276,7 +276,10 @@ html[data-weather="snow-wind"] body::before {
   background-size: 220px 180px;
   animation: weather-snow 10s linear infinite;
 }
-@keyframes weather-rain { from { transform: translate3d(0,-8%,0); } to { transform: translate3d(-5%,8%,0); } }
+@keyframes weather-rain {
+  from { transform: translate3d(0,-150px,0); }
+  to { transform: translate3d(-86px,0,0); }
+}
 @keyframes weather-snow { from { transform: translate3d(0,-5%,0); } to { transform: translate3d(3%,10%,0); } }
 @media (prefers-reduced-motion: reduce) {
   html[data-weather="rain"] body::before, html[data-weather="rain-wind"] body::before, html[data-weather="snow"] body::before, html[data-weather="snow-wind"] body::before { animation: none; }
