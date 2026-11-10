@@ -10,7 +10,7 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
-import type { RunData, TeamData } from "../types";
+import type { RunData, TeamData, LegacyTrainerPlan } from "../types";
 import { getUserProfile, mergeUserProfile } from "../lib/services/users";
 import { allTeamsQuery } from "../lib/services/teams";
 import { userRunsQuery, teamRunsQuery } from "../lib/services/runs";
@@ -21,8 +21,12 @@ const asNumber = (value: unknown) => {
   return Number.isFinite(n) ? n : 0;
 };
 const activityDate = (run: ProgressActivity) => {
-  const value = run.timestamp?.seconds ? run.timestamp.seconds * 1000 : run.timestamp?.toDate ? run.timestamp.toDate().getTime() : Number(run.timestamp) || 0;
-  return new Date(value);
+  const value = run.timestamp;
+  if (!value) return new Date(0);
+  if (value instanceof Date) return value;
+  if ("toDate" in value && typeof value.toDate === "function") return value.toDate();
+  if ("seconds" in value && typeof value.seconds === "number") return new Date(value.seconds * 1000);
+  return new Date(0);
 };
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
 const formatPace = (pace: number) => {
@@ -59,9 +63,9 @@ export default function ProgressPage() {
       try {
         const data = await getUserProfile(user.uid);
         if (data) {
-          const trainer = data.personalTrainerPlan || {};
-          if (Array.isArray(trainer.days)) setTrainerDays(trainer.days.filter((day: unknown) => typeof day === "number" && day >= 0 && day <= 6));
-          if (Number(trainer.weeklyKm) > 0) setTrainerKm(String(trainer.weeklyKm));
+          const trainer = data.personalTrainerPlan as LegacyTrainerPlan | undefined;
+          if (trainer && Array.isArray(trainer.days)) setTrainerDays(trainer.days.filter((day: unknown) => typeof day === "number" && day >= 0 && day <= 6));
+          if (trainer && Number(trainer.weeklyKm) > 0) setTrainerKm(String(trainer.weeklyKm));
           const storedGoals = data.progressGoalsByType || {};
           const legacy = data.progressGoals || {};
           const nextGoals = {
@@ -116,7 +120,7 @@ export default function ProgressPage() {
 
   const sorted = [...selected].sort((a,b) => activityDate(a).getTime()-activityDate(b).getTime());
   const longest = sorted.reduce<ProgressActivity | null>((best, run) => !best || asNumber(run.km)>asNumber(best.km) ? run : best, null);
-  const fastest = sorted.filter(run => asNumber(run.tempo)>0).reduce<Activity | null>((best, run) => !best || asNumber(run.tempo)<asNumber(best.tempo) ? run : best, null);
+  const fastest = sorted.filter(run => asNumber(run.tempo)>0).reduce<ProgressActivity | null>((best, run) => !best || asNumber(run.tempo)<asNumber(best.tempo) ? run : best, null);
   const dailyTotals = new Map<string, number>();
   selected.forEach(run => { const d=activityDate(run); if (!Number.isNaN(d.getTime())) dailyTotals.set(dateKey(d),(dailyTotals.get(dateKey(d))||0)+asNumber(run.km)); });
   const maxDay = Math.max(0, ...Array.from(dailyTotals.values()));
