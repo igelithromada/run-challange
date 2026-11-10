@@ -1,26 +1,19 @@
 import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
+import { requireUser } from "../../../lib/apiAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function verify(request: Request) {
-  const header = request.headers.get("authorization") || "";
-  if (!header.startsWith("Bearer ")) throw new Error("UNAUTHORIZED");
-  const { adminAuth } = getAdminServices();
-  return adminAuth.verifyIdToken(header.slice(7).trim());
-}
-
 export async function POST(request: Request) {
   try {
-    const decoded = await verify(request);
+    const { decoded, adminDb } = await requireUser(request);
     const body = await request.json().catch(() => ({}));
     const subscription = body?.subscription;
     if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
       return NextResponse.json({ error: "Neplatné předplatné notifikací." }, { status: 400 });
     }
-    const { adminDb } = getAdminServices();
     const id = createHash("sha256").update(String(subscription.endpoint)).digest("hex").slice(0, 64);
     await adminDb.collection("users").doc(decoded.uid).collection("pushSubscriptions").doc(id).set({
       ...subscription,
