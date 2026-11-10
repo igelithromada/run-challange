@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { collection, doc, getDocs, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { ArrowLeft, Camera, ShieldCheck, User, Footprints, Ban, UserCheck, Trash2, KeyRound } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { db, auth } from "../lib/firebase";
+import { auth } from "../lib/firebase";
+import { getAllUserProfiles, updateUserProfile } from "../lib/services/users";
 import useAdminGuard from "../lib/useAdminGuard";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -28,11 +28,15 @@ export default function AdminPage() {
   const loadUsers = async () => {
     setLoading(true); setError("");
     try {
-      const snapshot = await getDocs(collection(db, "users"));
-      const list: AdminUser[] = snapshot.docs.map(s => {
-        const d = s.data();
-        return { id:s.id, nickname:d.nickname||"", email:d.email||"", role:d.role, blocked:d.blocked===true, avatarUrl:d.avatarUrl||"" };
-      });
+      const profiles = await getAllUserProfiles();
+      const list: AdminUser[] = profiles.map(d => ({
+        id:d.id,
+        nickname:d.nickname || "",
+        email:d.email || "",
+        role:d.role,
+        blocked:d.blocked === true,
+        avatarUrl:d.avatarUrl || "",
+      }));
       list.sort((a,b) => (a.nickname || a.email).localeCompare(b.nickname || b.email, "cs"));
       setUsers(list);
       if (selectedUser) setSelectedUser(list.find(u => u.id === selectedUser.id) || null);
@@ -89,7 +93,7 @@ export default function AdminPage() {
   const updateUser = async (id: string, patch: Partial<AdminUser>) => {
     setBusy(true); setError("");
     try {
-      await updateDoc(doc(db, "users", id), patch);
+      await updateUserProfile(id, patch);
       setUsers(prev => prev.map(u => u.id === id ? { ...u, ...patch } : u));
       setSelectedUser(prev => prev?.id === id ? { ...prev, ...patch } : prev);
     } catch (e) {
