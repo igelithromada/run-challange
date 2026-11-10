@@ -20,7 +20,7 @@ type OldPlan = LegacyTrainerPlan;
 const monthKeyOf=(d:Date)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
 const dateKey=(d:Date)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const num=(v:unknown)=>{const n=Number(v);return Number.isFinite(n)?n:0;};
-const activityDate=(r:Activity)=>{const v=r.timestamp?.seconds?r.timestamp.seconds*1000:r.timestamp?.toDate?r.timestamp.toDate().getTime():Number(r.timestamp)||0;return new Date(v);};
+const activityDate=(r:Activity)=>{const v=r.timestamp; if(!v)return new Date(0); if(v instanceof Date)return v; if("toDate" in v&&typeof v.toDate==="function")return v.toDate(); if("seconds" in v&&typeof v.seconds==="number")return new Date(v.seconds*1000); return new Date(0);};
 const monthTitle=(d:Date)=>d.toLocaleDateString("cs-CZ",{month:"long",year:"numeric"});
 const monday=(d:Date)=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x;};
 
