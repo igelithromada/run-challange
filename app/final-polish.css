@@ -658,3 +658,186 @@
 }
 .participants-alpha button.disabled { opacity:.16 !important; }
 .participants-alpha button.active { opacity:1 !important; transform:scale(1.2); }
+
+/* ===== Poslední mobilní doladění ===== */
+
+/* Záznamy: menší výpočty a výrazně menší vertikální mezery. */
+.activity-card-modern { gap:.48rem !important; padding:.72rem !important; }
+.activity-card-modern .activity-card-top { margin-bottom:0 !important; }
+.activity-card-modern .activity-description {
+  margin:.15rem 0 !important;
+  padding:.48rem .1rem !important;
+  font-size:.82rem !important;
+}
+.activity-card-modern .activity-metrics {
+  gap:.28rem !important;
+  margin:.08rem 0 !important;
+}
+.activity-card-modern .activity-metrics > div {
+  min-height:66px !important;
+  padding:.42rem .32rem !important;
+  border-radius:11px !important;
+  gap:.14rem !important;
+}
+.activity-card-modern .activity-metrics svg { width:15px !important; height:15px !important; }
+.activity-card-modern .activity-metrics strong {
+  font-size:1rem !important;
+  line-height:1.05 !important;
+}
+.activity-card-modern .activity-metrics > div > span { font-size:.64rem !important; }
+.activity-card-modern .activity-metrics strong small { font-size:.66em !important; }
+.activity-card-modern .activity-pace-bar { width:min(92px,100%) !important; height:4px !important; margin-top:.25rem !important; }
+.activity-card-modern .activity-pace-marker,
+.activity-card-modern .activity-metrics .activity-pace-bar > span { width:8px !important; height:8px !important; }
+.activity-card-modern .activity-social-actions {
+  gap:.35rem !important;
+  padding-top:.42rem !important;
+  margin-top:.02rem !important;
+}
+.activity-card-modern .activity-social-button {
+  width:40px !important;
+  min-width:40px !important;
+  height:32px !important;
+  min-height:32px !important;
+  padding:.2rem .28rem !important;
+  border-radius:9px !important;
+}
+.activity-card-modern .activity-social-button svg { width:17px !important; height:17px !important; }
+.activity-card-modern .activity-social-button span { font-size:.68rem !important; }
+.activity-card-modern .activity-manage-button {
+  min-height:32px !important;
+  padding:.25rem .45rem !important;
+  font-size:.68rem !important;
+}
+
+/* Lajk: pouze srdce je červené, tlačítko zůstává neutrální. */
+.activity-card-modern .activity-social-button.is-liked {
+  color:#fff !important;
+  background:rgba(255,255,255,.10) !important;
+  border-color:rgba(255,255,255,.12) !important;
+}
+.activity-card-modern .activity-social-button.is-liked svg {
+  color:#ff5f78 !important;
+  fill:#ff5f78 !important;
+  stroke:#ff5f78 !important;
+}
+
+/* Úspěšné uložení záznamu je plovoucí toast, nikdy neposouvá tlačítko. */
+.run-form-toast {
+  position:fixed;
+  left:50%;
+  bottom:max(22px,calc(env(safe-area-inset-bottom) + 18px));
+  transform:translateX(-50%);
+  z-index:2147483640;
+  width:min(92vw,520px);
+  box-sizing:border-box;
+  padding:.8rem 1rem;
+  border-radius:14px;
+  text-align:center;
+  font-size:.86rem;
+  line-height:1.35;
+  box-shadow:0 12px 35px rgba(0,0,0,.35);
+  backdrop-filter:blur(12px);
+}
+.run-form-toast-success {
+  color:#dcffed;
+  background:rgba(30,135,94,.94);
+  border:1px solid rgba(150,255,205,.25);
+}
+
+/* Týmy: kompaktní úprava názvu + ikony akcí. */
+.team-edit-button,.team-delete-button {
+  width:38px !important;
+  height:38px !important;
+  min-width:38px !important;
+  min-height:38px !important;
+  padding:0 !important;
+  display:grid !important;
+  place-items:center !important;
+  border-radius:11px !important;
+}
+.team-edit-button {
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.08);
+  color:inherit;
+}
+.team-edit-name {
+  display:flex;
+  align-items:center;
+  gap:.35rem;
+}
+.team-edit-name input {
+  width:100%;
+  min-width:0;
+  min-height:38px;
+  box-sizing:border-box;
+  padding:.45rem .6rem;
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:10px;
+  background:rgba(255,255,255,.96);
+  color:#14232c;
+  font:inherit;
+  font-weight:750;
+}
+.team-edit-name button {
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:9px;
+  background:rgba(255,255,255,.08);
+  color:inherit;
+}
+.team-edit-name button:first-of-type { background:rgba(70,190,130,.22); }
+.team-edit-name button:last-of-type { background:rgba(190,80,90,.18); }
+
+/* Účastníci: abeceda je mimo kartu, takže ji nemůže oříznout overflow rodiče. */
+.participants-alpha-fixed {
+  position:fixed !important;
+  right:0 !important;
+  top:50% !important;
+  transform:translateY(-50%) !important;
+  z-index:2147483000 !important;
+  width:24px !important;
+  box-sizing:border-box !important;
+  padding:6px 2px !important;
+  margin:0 !important;
+  border-radius:10px 0 0 10px !important;
+  background:rgba(7,22,31,.88) !important;
+  border:1px solid rgba(255,255,255,.14) !important;
+  border-right:0 !important;
+  box-shadow:0 8px 28px rgba(0,0,0,.28);
+}
+.participants-alpha-fixed button {
+  display:block !important;
+  width:20px !important;
+  min-width:20px !important;
+  min-height:17px !important;
+  padding:0 !important;
+  margin:0 auto !important;
+  line-height:1 !important;
+  font-size:10px !important;
+}
+.participants-alpha-fixed button.disabled { opacity:.15 !important; }
+.participants-alpha-fixed button.active { opacity:1 !important; transform:scale(1.18); }
+
+/* Hlášky v nastavení jsou také plovoucí a nepřerovnávají obsah. */
+.settings-notice {
+  position:fixed !important;
+  left:50% !important;
+  bottom:max(22px,calc(env(safe-area-inset-bottom) + 18px)) !important;
+  transform:translateX(-50%) !important;
+  z-index:2147483640 !important;
+  width:min(92vw,520px) !important;
+  box-sizing:border-box !important;
+  margin:0 !important;
+  padding:.8rem 1rem !important;
+  border-radius:14px !important;
+  background:rgba(18,31,42,.96) !important;
+  border:1px solid rgba(255,255,255,.16) !important;
+  color:#fff !important;
+  box-shadow:0 12px 35px rgba(0,0,0,.35) !important;
+  text-align:center;
+}
