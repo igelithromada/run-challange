@@ -130,6 +130,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
       const runData = {
         uid: user.uid,
         email: user.email,
+        nickname: typeof userData.nickname === "string" ? userData.nickname : "",
         avatarUrl: typeof userData.avatarUrl === "string" ? userData.avatarUrl : "",
         km: kmVal,
         minuty: parsedDuration / 60,
