@@ -26,6 +26,7 @@ export default function TeamDetailPage() {
   const [saving,setSaving]=useState(false);
   const [message,setMessage]=useState("");
   const [loading,setLoading]=useState(true);
+  const [isMember,setIsMember]=useState(false);
 
   const load = async (uid?:string) => {
     if(!id) return;
@@ -34,6 +35,7 @@ export default function TeamDetailPage() {
       if(!snap.exists()){ router.replace("/teams"); return; }
       const data=snap.data();
       setTeam({id:snap.id,...data});
+      if(uid){ const profile=await getDoc(doc(db,"users",uid)); const p=profile.exists()?profile.data():{}; setIsMember(p.teamIdsByType?.[data.type==="chůze"?"chůze":"běh"]===id || (data.type!=="chůze" && p.teamId===id)); }
       setGoal(String(Number(data.challengeGoalKm)||500));
       setAvatarUrl(data.avatarUrl||"");
       setAvatarPublicId(data.avatarPublicId||"");
@@ -55,6 +57,15 @@ export default function TeamDetailPage() {
 
   const isOwner=team?.createdBy===user?.uid;
   const teamType:ActivityType=team?.type==="chůze"?"chůze":"běh";
+
+  const leave=async()=>{
+    if(!user||!isMember)return;
+    const next={...(team?.type==="chůze"?{}:{}), běh:null, chůze:null};
+    const profile=await getDoc(doc(db,"users",user.uid)); const data=profile.exists()?profile.data():{}; const stored=data.teamIdsByType||{};
+    const activity:ActivityType=team?.type==="chůze"?"chůze":"běh"; next[activity]=null;
+    await setDoc(doc(db,"users",user.uid),{teamIdsByType:{...stored,...next},...(activity==="běh"?{teamId:null,joinedTeam:null}:{})},{merge:true});
+    setIsMember(false); setMessage("Z týmu jsi odešel.");
+  };
 
   const save=async()=>{
     if(!isOwner) return;
@@ -109,6 +120,7 @@ export default function TeamDetailPage() {
       </section>}
 
       {!isOwner && message&&<p className="teams-message">{message}</p>}
+      {isMember && <button type="button" className="trainer-secondary-button team-leave-button" onClick={()=>void leave()}>Odejít z týmu</button>}
 
       <section className="tile team-members-card">
         <div className="progress-section-title"><Users/><div><h2>Účastníci týmu</h2><p>Seznam lidí, kteří mají tento tým nastavený pro {teamType}.</p></div></div>
