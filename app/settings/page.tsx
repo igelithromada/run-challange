@@ -79,7 +79,7 @@ export default function SettingsPage() {
             cachedTheme = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
           } catch {}
           const cachedSavedAt = typeof cachedTheme?.savedAt === "number" ? cachedTheme.savedAt : 0;
-          const remoteSavedAt = typeof data.themeUpdatedAt?.toMillis === "function" ? data.themeUpdatedAt.toMillis() : Number(data.themeUpdatedAt || 0);
+          const remoteSavedAt = data.themeUpdatedAt instanceof Date ? data.themeUpdatedAt.getTime() : data.themeUpdatedAt && "toDate" in data.themeUpdatedAt && typeof data.themeUpdatedAt.toDate === "function" ? data.themeUpdatedAt.toDate().getTime() : data.themeUpdatedAt && "seconds" in data.themeUpdatedAt && typeof data.themeUpdatedAt.seconds === "number" ? data.themeUpdatedAt.seconds * 1000 : Number(data.themeUpdatedAt || 0);
           const useRemoteTheme = cachedSavedAt === 0 || remoteSavedAt >= cachedSavedAt;
           const storedTheme = useRemoteTheme ? remoteTheme : (cachedTheme?.theme || remoteTheme);
           const storedColor = useRemoteTheme ? remoteColor : (cachedTheme?.customColor || remoteColor);
