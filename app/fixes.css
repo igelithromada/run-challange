@@ -996,26 +996,33 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 /* Trenér – zadání kilometrů v modálním okně po výběru dne */
 .trainer-day-modal-overlay{
-  position:fixed;inset:0;z-index:2147482500;display:flex;align-items:center;justify-content:center;
-  padding:16px;background:rgba(3,10,16,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  position:fixed!important;left:0!important;top:0!important;right:0!important;bottom:0!important;
+  width:100vw!important;height:100dvh!important;min-height:100vh!important;
+  z-index:2147483647!important;display:flex!important;align-items:center!important;justify-content:center!important;
+  box-sizing:border-box!important;padding:16px!important;margin:0!important;
+  background:rgba(3,10,16,.78);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  overflow:auto;
 }
 .trainer-day-modal{
-  width:min(100%,420px);box-sizing:border-box;padding:1rem;
-  background:rgba(9,22,33,.97);border:1px solid rgba(255,255,255,.16);
+  width:min(420px,calc(100vw - 32px))!important;max-width:calc(100vw - 32px)!important;
+  min-width:0!important;box-sizing:border-box!important;padding:1rem;
+  margin:0!important;position:relative!important;overflow:hidden!important;
+  background:rgba(9,22,33,.98);border:1px solid rgba(255,255,255,.16);
   border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.55);color:#fff;
 }
-.trainer-day-modal-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+.trainer-day-modal-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:1rem;min-width:0}
+.trainer-day-modal-header .ui-icon-button{flex:0 0 48px;width:48px!important;height:48px!important;min-width:48px!important;padding:0!important}
 .trainer-day-modal-header>div{min-width:0}
 .trainer-day-modal-header span{display:block;color:rgba(255,255,255,.62);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;font-weight:750}
 .trainer-day-modal-header h3{margin:.2rem 0 0;font-size:1.05rem;text-transform:capitalize}
 .trainer-day-modal-form>label{display:grid;gap:.4rem;color:rgba(255,255,255,.7);font-size:.78rem;font-weight:750}
 .trainer-km-field{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.55rem}
 .trainer-km-field input{
-  width:100%;box-sizing:border-box;min-height:54px;padding:.7rem .85rem;
+  width:100%;min-width:0;box-sizing:border-box;min-height:54px;padding:.7rem .85rem;
   border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(0,0,0,.28);
   color:#fff;text-align:center;font-size:1.2rem;font-weight:800;color-scheme:dark;
 }
-.trainer-km-field b{font-size:.9rem;color:rgba(255,255,255,.7)}
+.trainer-km-field b{font-size:.9rem;color:rgba(255,255,255,.7);white-space:nowrap}
 .trainer-day-modal-actions{display:grid;grid-template-columns:1fr;gap:.55rem;margin-top:1rem}
 .trainer-day-modal-actions button{width:100%!important}
 .trainer-save-error{margin:.65rem 0 0;color:#ffb4b4;font-size:.78rem;font-weight:700;text-align:center}
