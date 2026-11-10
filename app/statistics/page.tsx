@@ -7,7 +7,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
-import { Footprints, Medal, Trophy, Users, User } from "lucide-react";
+import { Footprints, Medal, Trophy, Users, User, MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
@@ -154,9 +154,9 @@ export default function StatisticsPage() {
         </div>
 
         <div className="tile-group stat-summary-grid">
-          <div className="tile stat-card"><span>Celkem km</span><strong>{totalKm.toFixed(2)} km</strong></div>
-          <div className="tile stat-card"><span>Průměrné tempo</span><strong>{formatPace(avgTempo)}</strong></div>
-          <div className="tile stat-card"><span>Počet</span><strong>{count}</strong></div>
+          <div className="tile stat-card"><MapPin/><span>Celkem km</span><strong>{totalKm.toFixed(2)} km</strong></div>
+          <div className="tile stat-card"><Gauge/><span>Průměrné tempo</span><strong>{formatPace(avgTempo)}</strong></div>
+          <div className="tile stat-card"><ListChecks/><span>Počet</span><strong>{count}</strong></div>
         </div>
 
         {view === "já" && (
