@@ -40,7 +40,7 @@ export default function useThemeLoader() {
           theme: data.theme || "default",
           customColor: data.customColor || "#36D1DC",
           animationsEnabled: data.animationsEnabled !== false,
-          savedAt: typeof data.themeUpdatedAt?.toMillis === "function" ? data.themeUpdatedAt.toMillis() : Number(data.themeUpdatedAt || 0)
+          savedAt: data.themeUpdatedAt instanceof Date ? data.themeUpdatedAt.getTime() : data.themeUpdatedAt && "toDate" in data.themeUpdatedAt && typeof data.themeUpdatedAt.toDate === "function" ? data.themeUpdatedAt.toDate().getTime() : data.themeUpdatedAt && "seconds" in data.themeUpdatedAt && typeof data.themeUpdatedAt.seconds === "number" ? data.themeUpdatedAt.seconds * 1000 : Number(data.themeUpdatedAt || 0)
         };
         const cached = readThemeCache();
         const remoteIsNewer = userData.savedAt > cached.savedAt;
