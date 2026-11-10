@@ -56,7 +56,7 @@ service cloud.firestore {
       allow create: if isAdmin()
         || (signedIn()
           && request.auth.uid == userId
-          && request.resource.data.keys().hasOnly(["nickname", "avatarUrl", "activityType", "organizationId"]));
+          && request.resource.data.keys().hasOnly(["nickname", "avatarUrl", "activityType"]));
       allow update: if isAdmin()
         || (signedIn()
           && request.auth.uid == userId
