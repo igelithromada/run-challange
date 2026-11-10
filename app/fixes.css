@@ -1105,3 +1105,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
  .trainer-quick-info{align-items:flex-start;flex-direction:column}
  .trainer-quick-info span{text-align:left}
 }
+
+.trainer-quick-info{position:fixed;z-index:10050;transform:translate(-50%,-100%);margin:0;min-width:210px;max-width:min(310px,calc(100vw - 24px));padding:.72rem .9rem;border:1px solid rgba(255,255,255,.2);border-radius:14px;background:rgba(8,20,30,.96);box-shadow:0 12px 30px rgba(0,0,0,.42);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:.22rem;pointer-events:none;animation:trainerQuickInfoIn .12s ease-out}
+.trainer-quick-info::after{content:"";position:absolute;left:50%;bottom:-7px;width:13px;height:13px;background:rgba(8,20,30,.96);border-right:1px solid rgba(255,255,255,.2);border-bottom:1px solid rgba(255,255,255,.2);transform:translateX(-50%) rotate(45deg)}
+.trainer-quick-info strong{font-size:.86rem;line-height:1.1}
+.trainer-quick-info span{font-size:.78rem;color:rgba(255,255,255,.78);text-align:left}
+@keyframes trainerQuickInfoIn{from{opacity:0;transform:translate(-50%,-92%) scale(.97)}to{opacity:1;transform:translate(-50%,-100%) scale(1)}}
