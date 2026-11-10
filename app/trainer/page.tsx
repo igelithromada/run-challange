@@ -132,6 +132,16 @@ export default function TrainerPage(){
  const monthActualTotal=runs.filter(r=>(r.type||"běh")===type&&monthKeyOf(activityDate(r))===currentMonth).reduce((s,r)=>s+num(r.km),0);
  const percent=monthlyGoal?Math.min(100,monthActualTotal/monthlyGoal*100):0;
  const planPercent=plannedTotal?Math.min(100,completed/plannedTotal*100):0;
+ const currentWeekStart=monday(new Date());
+ const currentWeekEnd=new Date(currentWeekStart);
+ currentWeekEnd.setDate(currentWeekStart.getDate()+6);
+ const weekActualTotal=runs.filter(r=>{
+   if((r.type||"běh")!==type)return false;
+   const d=activityDate(r);
+   return d>=currentWeekStart&&d<=new Date(currentWeekEnd.getFullYear(),currentWeekEnd.getMonth(),currentWeekEnd.getDate(),23,59,59);
+ }).reduce((s,r)=>s+num(r.km),0);
+ const weekPlannedTotal=dates.filter(key=>{const d=new Date(key+"T00:00:00");return d>=currentWeekStart&&d<=currentWeekEnd;}).reduce((s,d)=>s+num(dayKm[d]),0);
+ const weekPlanPercent=weekPlannedTotal?Math.min(100,weekActualTotal/weekPlannedTotal*100):0;
  const selectedInfo=selectedDate?cellInfo(new Date(selectedDate+"T00:00:00")):cellInfo(new Date());
 
  const todayKey=dateKey(new Date());
@@ -284,15 +294,22 @@ export default function TrainerPage(){
       <button type="button" className="progress-save" disabled={!bulkDates.length||saving} onClick={()=>void saveBulk()}><Save size={17}/> {saving?"Ukládám…":"Naplánovat"}</button>
     </div>}
 
-    <div className="trainer-plan-footer"><div><span>Plán měsíce</span><strong>{plannedTotal.toFixed(1)} km</strong></div><div><span>Měsíční cíl</span><strong>{monthlyGoal.toFixed(0)} km</strong></div><div><span>Plnění cíle</span><strong>{percent.toFixed(0)} %</strong></div>
-    </div>
    </section>
 
    <section className="tile trainer-summary-card">
-    <div className="progress-section-title"><Target/><div><h2>Plnění měsíce</h2><p>Počítají se pouze aktivity stejného typu jako plán.</p></div></div>
+    <div className="progress-section-title"><Target/><div><h2>Plnění měsíce</h2><p>Souhrn skutečného pohybu a plnění naplánovaných tréninků.</p></div></div>
     <div className="trainer-score"><div><span>{monthActualTotal.toFixed(1)} / {monthlyGoal.toFixed(1)} km</span><strong>{percent.toFixed(0)} %</strong></div><div className="progress-track"><i style={{width:`${percent}%`}}/></div></div>
-    <div className="trainer-stats"><div><span>Naplánované dny</span><strong>{dates.length}</strong></div><div><span>Splnění plánu</span><strong>{planPercent.toFixed(0)} %</strong></div></div>
-    <p className="trainer-goal-note">Na kalendáři okamžitě vidíš, které dny jsou naplánované a jak se daří jejich plnění.</p>
+    <div className="trainer-stats">
+      <div><span>Plán měsíce</span><strong>{plannedTotal.toFixed(1)} km</strong></div>
+      <div><span>Měsíční cíl</span><strong>{monthlyGoal.toFixed(0)} km</strong></div>
+      <div><span>Naplánované dny</span><strong>{dates.length}</strong></div>
+      <div><span>Splnění plánu</span><strong>{planPercent.toFixed(0)} %</strong></div>
+    </div>
+    <div className="trainer-week-summary">
+      <div><span>Tento týden</span><strong>{weekActualTotal.toFixed(1)} / {weekPlannedTotal.toFixed(1)} km</strong></div>
+      <div><span>Plnění týdne</span><strong>{weekPlanPercent.toFixed(0)} %</strong></div>
+    </div>
+    <p className="trainer-goal-note">Kalendář zůstává hlavním místem pro plánování. Tady máš souhrn měsíce i aktuálního týdne na jednom místě.</p>
    </section>
 
   </main>
