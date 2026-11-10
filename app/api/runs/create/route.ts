@@ -24,8 +24,35 @@ export async function POST(request: Request) {
     const minuty = Number(data.minuty);
     const tempo = Number(data.tempo);
     const type = data.type === "běh" || data.type === "chůze" ? normalizeActivityType(data.type) : "";
-    if (!Number.isFinite(km) || km <= 0 || !Number.isFinite(minuty) || minuty <= 0 || !Number.isFinite(tempo) || !type) {
+    if (
+      !Number.isFinite(km) || km <= 0 || km > 1000 ||
+      !Number.isFinite(minuty) || minuty <= 0 || minuty > 24 * 60 ||
+      !Number.isFinite(tempo) || tempo <= 0 || tempo > 60 ||
+      !type
+    ) {
       return NextResponse.json({ error: "Aktivita obsahuje neplatné údaje." }, { status: 400 });
+    }
+
+    const teamId = typeof data.teamId === "string" && data.teamId.trim() ? data.teamId.trim() : null;
+    if (teamId) {
+      const [teamSnapshot, userSnapshot] = await Promise.all([
+        adminDb.collection("teams").doc(teamId).get(),
+        adminDb.collection("users").doc(decoded.uid).get(),
+      ]);
+      if (!teamSnapshot.exists) {
+        return NextResponse.json({ error: "Vybraný tým neexistuje." }, { status: 400 });
+      }
+
+      const team = teamSnapshot.data() || {};
+      const teamType = team.type === "chůze" ? "chůze" : "běh";
+      const userData = userSnapshot.exists ? userSnapshot.data() || {} : {};
+      const teamIdsByType = userData.teamIdsByType && typeof userData.teamIdsByType === "object"
+        ? userData.teamIdsByType as Record<string, unknown>
+        : {};
+
+      if (teamType !== type || teamIdsByType[type] !== teamId) {
+        return NextResponse.json({ error: "Aktivitu nelze přiřadit k tomuto týmu." }, { status: 403 });
+      }
     }
 
     const timestamp = typeof data.timestamp === "string" ? new Date(data.timestamp) : new Date();
@@ -39,7 +66,7 @@ export async function POST(request: Request) {
       timestamp: Number.isNaN(timestamp.getTime()) ? new Date() : timestamp,
       imageUrls: Array.isArray(data.imageUrls) ? data.imageUrls.filter((x): x is string => typeof x === "string").slice(0, 6) : [],
       imagePublicIds: Array.isArray(data.imagePublicIds) ? data.imagePublicIds.filter((x): x is string => typeof x === "string").slice(0, 6) : [],
-      teamId: typeof data.teamId === "string" ? data.teamId : null,
+      teamId,
       activityType: type, likedBy: [], likeCount: 0, commentCount: 0,
     };
 
