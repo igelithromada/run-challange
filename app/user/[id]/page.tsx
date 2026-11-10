@@ -62,12 +62,7 @@ export default function UserPage() {
     if (id) void fetchUser();
   }, [id]);
 
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "teams"), snap => {
-      setTeams(snap.docs.map(item => ({ id: item.id, name: item.data().name })));
-    });
-    return () => unsub();
-  }, []);
+
 
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
