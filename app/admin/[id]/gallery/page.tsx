@@ -2,13 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { collection, getDocs, query, where } from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import { db, auth } from "../../../lib/firebase";
+import { auth } from "../../../lib/firebase";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/Sidebar";
 import useAdminGuard from "../../../lib/useAdminGuard";
 import { Camera, X } from "lucide-react";
+import { fetchRuns, userRunsQuery } from "../../../lib/services/runs";
 
 type GalleryPhoto = { id:string; photoUrl:string; date:string; runId:string; photoIndex:number };
 
@@ -29,10 +29,10 @@ export default function GalleryPage() {
     const load=async()=>{
       setLoading(true); setError("");
       try {
-        const snapshot=await getDocs(query(collection(db,"runs"),where("uid","==",id)));
+        const runs = await fetchRuns(userRunsQuery(id));
         const result:GalleryPhoto[]=[];
-        snapshot.forEach(d=>{
-          const data=d.data();
+        runs.forEach(d=>{
+          const data=d;
           const urls:string[] = Array.isArray(data.imageUrls) ? data.imageUrls.filter((u:unknown):u is string=>typeof u==="string"&&u.length>0) : [];
           if (!urls.length && typeof data.imageUrl==="string" && data.imageUrl) urls.push(data.imageUrl);
           const date = data.timestamp?.seconds ? new Date(data.timestamp.seconds*1000).toLocaleString("cs-CZ",{day:"numeric",month:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "Neznámé datum";
