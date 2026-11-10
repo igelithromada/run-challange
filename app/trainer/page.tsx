@@ -33,6 +33,7 @@ export default function TrainerPage(){
  const [type,setType]=useState<ActivityType>("běh");
  const [runs,setRuns]=useState<Activity[]>([]);
  const [monthlyGoal,setMonthlyGoal]=useState(100);
+ const [goalsByType,setGoalsByType]=useState<Record<ActivityType,number>>({běh:100,chůze:100});
  const [dirty,setDirty]=useState(false);
  const [modalOpen,setModalOpen]=useState(false);
  const [loading,setLoading]=useState(true);
@@ -183,21 +184,39 @@ export default function TrainerPage(){
 
    <section className="tile trainer-plan-card">
     <div className="progress-section-title"><TrendingUp/><div><h2>Plán na měsíc</h2><p>{monthTitle(month)} · {type}</p></div></div>
-    <ActivityTypeSelector value={type} onChange={v=>{setType(v);setDirty(true);}} ariaLabel="Typ tréninku"/>
+    <ActivityTypeSelector value={type} onChange={v=>{setType(v);setDirty(false);setModalOpen(false);setBulkMode(false);setBulkDates([]);}} ariaLabel="Typ tréninku"/>
     <div className="trainer-month-nav">
       <button className="ui-icon-button" type="button" onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()-1,1))} aria-label="Předchozí měsíc"><ChevronLeft size={19}/></button>
       <strong>{monthTitle(month)}</strong>
       <button className="ui-icon-button" type="button" onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()+1,1))} aria-label="Další měsíc"><ChevronRight size={19}/></button>
     </div>
     <div className="trainer-calendar-weekdays">{["Po","Út","St","Čt","Pá","So","Ne"].map(d=><span key={d}>{d}</span>)}</div>
-    <div className="trainer-calendar">
+    <div className="trainer-calendar-toolbar">
+      <button type="button" className={`trainer-bulk-toggle ${bulkMode?"active":""}`} onClick={()=>{setBulkMode(v=>!v);setBulkDates([]);setModalOpen(false);}}>
+        {bulkMode?"Zrušit výběr":"☑ Hromadně"}
+      </button>
+      {bulkMode&&<span>Vyber dny, které chceš naplánovat</span>}
+    </div>
+    <div className={`trainer-calendar ${bulkMode?"bulk-mode":""}`}>
       {weeks.map((week,i)=><div className="trainer-calendar-week" key={i}>{week.map(d=>{
-        const s=cellInfo(d);
-        return <button type="button" key={s.key} className={`trainer-calendar-day ${s.inMonth?"":"outside"} ${s.selected?"selected":""} ${s.status} ${s.key<todayKey?"past":""}`} onClick={()=>openDayEditor(s.key)}>
-          <span>{d.getDate()}</span>{s.selected&&<small>{s.target.toFixed(1)} km</small>}{s.selected&&s.status==="done"&&<Check size={14}/>}
+        const s=cellInfo(d), bulkSelected=bulkDates.includes(s.key);
+        return <button type="button" key={s.key} className={`trainer-calendar-day ${s.inMonth?"":"outside"} ${s.selected?"selected":""} ${s.status} ${s.key<todayKey?"past":""} ${bulkSelected?"bulk-selected":""}`}
+          onPointerDown={()=>beginLongPress(s.key)} onPointerUp={cancelLongPress} onPointerLeave={cancelLongPress} onPointerCancel={cancelLongPress}
+          onContextMenu={e=>e.preventDefault()} onClick={()=>handleDayClick(s)}>
+          <span>{d.getDate()}</span>{s.selected&&<small>{s.target.toFixed(1)} km</small>}{s.selected&&s.status==="done"&&<Check size={13}/>}
         </button>
       })}</div>)}
     </div>
+    {quickInfo&&<div className={`trainer-quick-info ${quickInfo.status}`}>
+      <strong>{statusLabel(quickInfo.status)}</strong>
+      {quickInfo.status!=="off"&&<span>Cíl <b>{quickInfo.target.toFixed(1)} km</b> · Splněno <b>{quickInfo.actual.toFixed(1)} km</b></span>}
+      {quickInfo.status==="off"&&<span>Den bez naplánovaného tréninku</span>}
+    </div>}
+    {bulkMode&&<div className="trainer-bulk-panel">
+      <div><strong>{bulkDates.length} {bulkDates.length===1?"den":"dny"}</strong><span>Společný cíl pro vybrané dny</span></div>
+      <label><span>km / den</span><input type="number" min=".5" step=".5" inputMode="decimal" value={bulkKm} onChange={e=>setBulkKm(e.target.value)}/></label>
+      <button type="button" className="progress-save" disabled={!bulkDates.length||saving} onClick={()=>void saveBulk()}><Save size={17}/> {saving?"Ukládám…":"Naplánovat"}</button>
+    </div>}
 
     <div className="trainer-plan-footer"><div><span>Objem měsíce</span><strong>{plannedTotal.toFixed(1)} km</strong></div><div><span>Měsíční cíl</span><strong>{monthlyGoal.toFixed(0)} km</strong></div><div><span>Plnění</span><strong>{percent.toFixed(0)} %</strong></div>
     </div>
@@ -217,7 +236,7 @@ export default function TrainerPage(){
         <div><span>Vybraný den</span><h3 id="trainer-day-modal-title">{selectedDate?new Date(selectedDate+"T00:00:00").toLocaleDateString("cs-CZ",{weekday:"long",day:"numeric",month:"long"}):"—"}</h3></div>
         <button type="button" className="ui-icon-button" onClick={()=>setModalOpen(false)} aria-label="Zavřít">×</button>
       </div>
-      <div className={`trainer-modal-status ${modalStatus}`}><i/>{statusLabel(selectedInfo.status)}</div>
+      <div className={`trainer-modal-status ${modalStatus}`}><i/>{statusLabel(modalStatus)}{selectedInfo.selected&&modalStatus!=="draft"&&<span> · {selectedInfo.actual.toFixed(1)} / {selectedInfo.target.toFixed(1)} km</span>}</div>
       {selectedIsPast ? <div className="trainer-day-readonly"><strong>{selectedInfo.selected ? statusLabel(selectedInfo.status) : "Volný den"}</strong><span>{selectedInfo.selected ? selectedInfo.actual.toFixed(1)+" / "+selectedInfo.target.toFixed(1)+" km" : "Tento den nebyl naplánovaný."}</span></div> : <div className="trainer-day-modal-form">
         <label><span>Cíl dne</span><div className={`trainer-km-field ${selectedInfo.status}`}><input className={selectedInfo.status} autoFocus type="number" min=".5" step=".5" inputMode="decimal" placeholder="5" value={selectedKmValue} onChange={e=>updateSelectedKm(e.target.value)}/><b>km</b></div></label>
         {saveError&&<p className="trainer-save-error">{saveError}</p>}
