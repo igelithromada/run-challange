@@ -142,6 +142,21 @@ export default function TeamDetailPage() {
 
   if(loading) return <><Navbar title="Tým" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/><main className="container"><div className="tile"><p>Načítám tým…</p></div></main></>;
 
+  if (!team) {
+    return (
+      <>
+        <Navbar title="Tým" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")} />
+        <main className="container">
+          <div className="tile form-message-error" role="alert">
+            <strong>Tým se nepodařilo načíst</strong>
+            <p>{message || "Tým nebyl nalezen nebo k němu nemáš přístup."}</p>
+            <button type="button" className="run-primary-button" onClick={() => router.replace("/teams")}>Zpět na týmy</button>
+          </div>
+        </main>
+      </>
+    );
+  }
+
   return <>
     <Navbar title={team?.name||"Tým"} onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
     <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/>
