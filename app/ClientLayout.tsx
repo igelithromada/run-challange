@@ -6,9 +6,14 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import useThemeLoader from "./lib/useThemeLoader";
 import NetworkStatus from "./components/NetworkStatus";
 import { setHapticsEnabled, triggerHaptic } from "./lib/haptics";
+import AppToast from "./components/AppToast";
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   useThemeLoader();
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }, []);
 
   useEffect(() => {
     try {
@@ -63,5 +68,5 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  return <><NetworkStatus />{children}</>;
+  return <><NetworkStatus /><AppToast />{children}</>;
 }
