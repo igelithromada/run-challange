@@ -169,14 +169,22 @@ export default function SettingsPage() {
   };
 
   const handleDefaultActivityChange = async (value: "běh" | "chůze") => {
+    const activeUserId = userId || auth.currentUser?.uid;
     setDefaultActivity(value);
     try { localStorage.setItem(DEFAULT_ACTIVITY_KEY, value); } catch {}
+    if (!activeUserId) {
+      flash("Nejsi přihlášen.");
+      return;
+    }
+    setSaving(true);
     try {
-      await saveSettings({ defaultActivity: value });
+      await setDoc(doc(db, "users", activeUserId), { defaultActivity: value }, { merge: true });
       flash(value === "běh" ? "Výchozí aktivita: běh" : "Výchozí aktivita: chůze");
     } catch (error) {
       console.error("Nepodařilo se uložit výchozí aktivitu", error);
       flash("Výchozí aktivitu se nepodařilo uložit");
+    } finally {
+      setSaving(false);
     }
   };
 
