@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { FieldPath, FieldValue } from "firebase-admin/firestore";
-import { getAdminServices } from "../../../lib/firebaseAdmin";
-import { requireUser as requireApiUser } from "../../../lib/apiAuth";
+import { requireUser as requireApiUser, authErrorResponse } from "../../../lib/apiAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -62,9 +61,9 @@ export async function GET(request: Request) {
       isAdmin: decoded.admin === true || decoded.role === "admin",
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "";
-    const status = message === "UNAUTHORIZED" ? 401 : 500;
-    return NextResponse.json({ error: status === 401 ? "Nejsi přihlášen." : "Sociální data se nepodařilo načíst." }, { status });
+    const authError = authErrorResponse(error);
+    if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
+    return NextResponse.json({ error: "Sociální data se nepodařilo načíst." }, { status: 500 });
   }
 }
 
@@ -163,9 +162,9 @@ export async function POST(request: Request) {
       comment: { id: commentRef.id, uid: decoded.uid, nickname, avatarUrl, text, mine: true },
     });
   } catch (error) {
+    const authError = authErrorResponse(error);
+    if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
     console.error("POST /api/runs/social:", error);
-    const message = error instanceof Error ? error.message : "";
-    const status = message === "UNAUTHORIZED" ? 401 : 500;
-    return NextResponse.json({ error: status === 401 ? "Nejsi přihlášen." : "Operaci se nepodařilo provést." }, { status });
+    return NextResponse.json({ error: "Operaci se nepodařilo provést." }, { status: 500 });
   }
 }
