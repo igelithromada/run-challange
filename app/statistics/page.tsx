@@ -122,16 +122,24 @@ export default function StatisticsPage() {
     router.push("/" + (item === "myrun" ? "myruns" : item));
   };
 
+  if (runsState.loading || teamsState.loading) {
+    return (
+      <>
+        <Navbar title="Výsledky" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
+        <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+        <main className="container statistics-page">
+          <LoadingSkeleton count={3} />
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <Navbar title="Výsledky" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
       <main className="container statistics-page">
-        {runsState.loading || teamsState.loading ? (
-          <LoadingSkeleton count={3} />
-        ) : runsState.error || teamsState.error ? (
-          <div className="tile form-message-error" role="alert">Výsledky se nepodařilo načíst. Zkus stránku obnovit.</div>
-        ) : null}
+        {(runsState.error || teamsState.error) && <div className="tile form-message-error" role="alert">Výsledky se nepodařilo načíst. Zkus stránku obnovit.</div>}
 
         <div className="control-caption">Typ aktivity</div>
         <ActivityTypeSelector value={selectedType} onChange={setSelectedType} />
