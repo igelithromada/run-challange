@@ -9,7 +9,7 @@ export type ActivityCardRun = {
   id: string; uid?: string; nickname?: string; email?: string;
   km: number | string; minuty: number | string; tempo: number | string;
   timestamp?: { seconds: number } | Date; imageUrl?: string; imageUrls?: string[]; teamId?: string;
-  likedBy?: string[]; likeCount?: number; commentCount?: number;
+  likedBy?: string[]; likeCount?: number; commentCount?: number; description?: string;
 };
 type SocialComment = { id: string; uid: string; nickname: string; avatarUrl?: string; text: string; createdAt?: string | null; mine?: boolean };
 type SocialUser = { uid: string; nickname: string; avatarUrl?: string };
@@ -210,6 +210,8 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
           {date && <time className="activity-date" dateTime={date.toISOString()}>{date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}
         </header>
 
+        {run.description?.trim() && <div className="activity-description">{run.description.trim()}</div>}
+
         <div className="activity-metrics">
           <div><MapPin size={17} /><strong>{run.km} <small>km</small></strong><span>Vzdálenost</span></div>
           <div><Clock3 size={17} /><strong>{formatTime(run.minuty)}</strong><span>Čas</span></div>
@@ -272,8 +274,8 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
                           </div>
                         ) : <p>{comment.text}</p>}
                         {(comment.mine || isAdmin) && editingCommentId !== comment.id && <div className="social-comment-tools">
-                          {comment.mine && <button type="button" onClick={() => startEditComment(comment)} disabled={socialBusy}>Upravit</button>}
-                          <button type="button" onClick={() => void deleteComment(comment.id)} disabled={socialBusy}>Smazat</button>
+                          {comment.mine && <button type="button" className="social-comment-icon-button" onClick={() => startEditComment(comment)} disabled={socialBusy} aria-label="Upravit komentář" title="Upravit komentář"><Pencil size={15}/></button>}
+                          <button type="button" className="social-comment-icon-button social-comment-delete-button" onClick={() => void deleteComment(comment.id)} disabled={socialBusy} aria-label="Smazat komentář" title="Smazat komentář"><Trash2 size={15}/></button>
                         </div>}
                       </div>
                     </article>
