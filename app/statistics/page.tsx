@@ -2,10 +2,9 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import type { User as AuthUser } from "firebase/auth";
-import { collection, query, orderBy, getDocs, where, documentId, Timestamp, type QueryConstraint } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { db, auth } from "../lib/firebase";
+import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import { Footprints, Medal, Trophy, Users, User, MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
@@ -15,6 +14,7 @@ import { activityMetrics, formatPace } from "../lib/activityMetrics";
 import type { RunData, TeamData, ActivityType } from "../types";
 import { allTeamsQuery } from "../lib/services/teams";
 import { getUserAvatars } from "../lib/services/users";
+import { filteredRunsQuery } from "../lib/services/runs";
 
 export default function StatisticsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -32,12 +32,7 @@ export default function StatisticsPage() {
     return () => unsub();
   }, [router]);
 
-  const runsQuery = useMemo(() => {
-    const constraints: QueryConstraint[] = [orderBy("timestamp", "desc")];
-    if (startDate) constraints.unshift(where("timestamp", ">=", Timestamp.fromDate(new Date(startDate + "T00:00:00"))));
-    if (endDate) constraints.unshift(where("timestamp", "<=", Timestamp.fromDate(new Date(endDate + "T23:59:59.999"))));
-    return query(collection(db, "runs"), ...constraints);
-  }, [startDate, endDate]);
+  const runsQuery = useMemo(() => filteredRunsQuery(startDate || undefined, endDate || undefined), [startDate, endDate]);
   const teamsQuery = useMemo(() => allTeamsQuery(), []);
   const runsState = useSharedFirestoreQuery<RunData>("runs:statistics:" + (startDate || "all") + ":" + (endDate || "all"), runsQuery);
   const teamsState = useSharedFirestoreQuery<TeamData>("teams:all", teamsQuery);
