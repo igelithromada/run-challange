@@ -91,15 +91,33 @@ export default function TrainerPage(){
  const todayKey=dateKey(new Date());
  const selectedIsPast=!!selectedDate && selectedDate<todayKey;
  const selectedKmValue=dayKm[selectedDate]??"";
+ const [saving,setSaving]=useState(false);
+ const [saveError,setSaveError]=useState("");
  const saveSelected=async()=>{
-   if(!uid||!selectedDate||selectedIsPast)return;
+   if(!uid||!selectedDate||selectedIsPast)return false;
    const value=Math.max(0,num(selectedKmValue));
-   if(value<=0)return;
-   const nextDates=dates.includes(selectedDate)?dates:[...dates,selectedDate].sort();
-   const nextDayKm={...dayKm,[selectedDate]:String(value)};
-   const next:Plan={monthKey:currentMonth,type,dates:nextDates,dayKm:Object.fromEntries(nextDates.map(d=>[d,Math.max(.5,num(nextDayKm[d]))])),monthlyKm:nextDates.reduce((s,d)=>s+num(nextDayKm[d]),0),createdAt:plan?.createdAt||new Date().toISOString()};
-   await setDoc(doc(db,"users",uid),{personalTrainerPlan:next},{merge:true});
-   setPlan(next);setDates(nextDates);setDayKm(nextDayKm);setDirty(false);
+   if(value<=0)return false;
+   setSaving(true);
+   setSaveError("");
+   try{
+     const nextDates=dates.includes(selectedDate)?dates:[...dates,selectedDate].sort();
+     const nextDayKm={...dayKm,[selectedDate]:String(value)};
+     const normalizedDayKm=Object.fromEntries(nextDates.map(d=>[d,Math.max(.5,num(nextDayKm[d]))]));
+     const next:Plan={monthKey:currentMonth,type,dates:nextDates,dayKm:normalizedDayKm,monthlyKm:nextDates.reduce((s,d)=>s+num(normalizedDayKm[d]),0),createdAt:plan?.createdAt||new Date().toISOString()};
+     await setDoc(doc(db,"users",uid),{personalTrainerPlan:next},{merge:true});
+     setPlan(next);
+     setDates(nextDates);
+     setDayKm(Object.fromEntries(nextDates.map(d=>[d,String(normalizedDayKm[d])])));
+     setDirty(false);
+     setModalOpen(false);
+     return true;
+   }catch(error){
+     console.error("Nepodařilo se uložit plán trenéra",error);
+     setSaveError("Plán se nepodařilo uložit. Zkus to prosím znovu.");
+     return false;
+   }finally{
+     setSaving(false);
+   }
  };
  const updateSelectedKm=(value:string)=>{if(!selectedIsPast){setDayKm(cur=>({...cur,[selectedDate]:value}));setDirty(true);}};
 
@@ -162,7 +180,8 @@ export default function TrainerPage(){
         </div>
         {selectedIsPast ? <div className="trainer-day-readonly"><strong>Ukončený den</strong><span>{selectedInfo.selected ? selectedInfo.actual.toFixed(1)+" / "+selectedInfo.target.toFixed(1)+" km" : "Tento den už nelze měnit."}</span></div> : <div className="trainer-day-modal-form">
           <label><span>Cíl dne</span><div className="trainer-km-field"><input autoFocus type="number" min=".5" step=".5" inputMode="decimal" placeholder="5" value={selectedKmValue} onChange={e=>updateSelectedKm(e.target.value)}/><b>km</b></div></label>
-          <div className="trainer-day-modal-actions"><button type="button" className="trainer-secondary-button" onClick={()=>setModalOpen(false)}>Zrušit</button><button type="button" className="progress-save" disabled={!selectedKmValue||num(selectedKmValue)<=0} onClick={async()=>{await saveSelected();setModalOpen(false);}}><Save size={17}/> Uložit</button></div>
+          {saveError&&<p className="trainer-save-error">{saveError}</p>}
+          <div className="trainer-day-modal-actions"><button type="button" className="trainer-secondary-button" onClick={()=>setModalOpen(false)} disabled={saving}>Zrušit</button><button type="button" className="progress-save" disabled={!selectedKmValue||num(selectedKmValue)<=0||saving} onClick={()=>void saveSelected()}><Save size={17}/> {saving?"Ukládám…":"Uložit"}</button></div>
         </div>}
       </div>
     </div>}
