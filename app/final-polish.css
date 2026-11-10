@@ -65,8 +65,6 @@
   border-radius:13px;
 }
 .run-form-time-fields { gap:.55rem !important; }
-.run-form-actions { margin-top:.8rem !important; }
-.run-form-actions button { min-height:48px; border-radius:13px; }
 
 /* Personal records — same visual language as summary tiles */
 .my-records-grid {
