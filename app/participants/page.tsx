@@ -11,7 +11,6 @@ import { Activity, Clock3, Medal, Users, Footprints, ArrowDownUp, ListFilter } f
 import type { RunData } from "../types";
 import { fetchRuns, latestRunsQuery } from "../lib/services/runs";
 import { getUserAvatars } from "../lib/services/users";
-c=c
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 
 type Participant = {
