@@ -35,7 +35,7 @@ export default function GalleryPage() {
           const data=d;
           const urls:string[] = Array.isArray(data.imageUrls) ? data.imageUrls.filter((u:unknown):u is string=>typeof u==="string"&&u.length>0) : [];
           if (!urls.length && typeof data.imageUrl==="string" && data.imageUrl) urls.push(data.imageUrl);
-          const date = data.timestamp?.seconds ? new Date(data.timestamp.seconds*1000).toLocaleString("cs-CZ",{day:"numeric",month:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "Neznámé datum";
+          const ts = data.timestamp; const dateValue = ts instanceof Date ? ts : ts && "toDate" in ts && typeof ts.toDate === "function" ? ts.toDate() : ts && "seconds" in ts && typeof ts.seconds === "number" ? new Date(ts.seconds*1000) : null; const date = dateValue ? dateValue.toLocaleString("cs-CZ",{day:"numeric",month:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "Neznámé datum";
           urls.forEach((photoUrl,index)=>result.push({id:`${d.id}-${index}`,photoUrl,date,runId:d.id,photoIndex:index}));
         });
         result.sort((a,b)=>a.date<b.date?1:-1);
