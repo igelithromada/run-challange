@@ -17,19 +17,32 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Nepovolený zdroj GPX." }, { status: 400 });
     }
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
     const response = await fetch(target.toString(), {
       cache: "no-store",
+      signal: controller.signal,
       headers: {
         Accept: "application/gpx+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
         "User-Agent": "Dolni-Lhota-v-pohybu/1.0",
       },
     });
 
+    clearTimeout(timeout);
+
     if (!response.ok) {
       return NextResponse.json({ error: "GPX se nepodařilo načíst." }, { status: 502 });
     }
 
+    const contentLength = Number(response.headers.get("content-length") || 0);
+    if (contentLength > 2_000_000) {
+      return NextResponse.json({ error: "GPX soubor je příliš velký." }, { status: 413 });
+    }
+
     const text = await response.text();
+    if (text.length > 2_000_000) {
+      return NextResponse.json({ error: "GPX soubor je příliš velký." }, { status: 413 });
+    }
     if (!/<(?:\w+:)?gpx[\s>]/i.test(text) || !/<(?:\w+:)?trkpt[\s>]/i.test(text)) {
       return NextResponse.json({ error: "Zdroj neobsahuje platnou GPX trasu." }, { status: 422 });
     }
