@@ -1,7 +1,16 @@
-import { doc, getDoc, setDoc, serverTimestamp, type SetOptions } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, serverTimestamp, type SetOptions } from "firebase/firestore";
 import { db } from "../firebase";
 import type { UserData } from "../../types";
 import { getPublicProfiles } from "./publicProfiles";
+
+export async function getAllUserProfiles(): Promise<UserData[]> {
+  const snapshot = await getDocs(collection(db, "users"));
+  return snapshot.docs.map(item => ({ id: item.id, ...item.data() } as UserData));
+}
+
+export async function updateUserProfile(uid: string, data: Partial<Omit<UserData, "id">>): Promise<void> {
+  await updateDoc(doc(db, "users", uid), data);
+}
 
 export async function getUserProfile(uid: string): Promise<UserData | null> {
   const snapshot = await getDoc(doc(db, "users", uid));
