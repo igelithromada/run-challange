@@ -3,12 +3,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   collection,
   query,
-  orderBy,
-  limit,
   doc,
   getDocs,
   getDoc,
-  startAfter,
   documentId,
   where,
 } from "firebase/firestore";
@@ -25,11 +22,13 @@ import RunWeatherRecommendation from "./components/RunWeatherRecommendation";
 import ActivityTypeSelector from "./components/ActivityTypeSelector";
 import { RunData } from "./types";
 import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
+import { latestRunsQuery, olderRunsQuery, mapRunSnapshot } from "./lib/services/runs";
+import type { TeamData } from "./types";
 
 export default function Page() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [olderRuns, setOlderRuns] = useState<RunData[]>([]);
-  const [olderCursor, setOlderCursor] = useState<any>(null);
+  const [olderCursor, setOlderCursor] = useState<import("firebase/firestore").QueryDocumentSnapshot | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [selectedType, setSelectedType] = useState<"běh" | "chůze">("běh");
@@ -56,10 +55,10 @@ export default function Page() {
     return () => unsubAuth();
   }, [router]);
 
-  const runsQuery = useMemo(() => query(collection(db, "runs"), orderBy("timestamp", "desc"), limit(30)), []);
+  const runsQuery = useMemo(() => latestRunsQuery(30), []);
   const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
   const runsState = useSharedFirestoreQuery<RunData>("runs:latest:30", runsQuery);
-  const teamsState = useSharedFirestoreQuery<any>("teams:all", teamsQuery);
+  const teamsState = useSharedFirestoreQuery<TeamData>("teams:all", teamsQuery);
   const runs = runsState.data;
   const teams = teamsState.data;
   const allRuns = Array.from(new Map<string, RunData>([...runs, ...olderRuns].map(run => [run.id, run] as const)).values());
@@ -80,8 +79,8 @@ export default function Page() {
     if (!cursor || loadingOlder || !hasMore) return;
     setLoadingOlder(true);
     try {
-      const next = await getDocs(query(collection(db, "runs"), orderBy("timestamp", "desc"), startAfter(cursor), limit(20)));
-      const items = next.docs.map(item => ({ id: item.id, ...item.data() } as RunData));
+      const next = await getDocs(olderRunsQuery(cursor, 20));
+      const items = next.docs.map(mapRunSnapshot);
       setOlderRuns(previous => [
         ...previous,
         ...items.filter(item => !previous.some(old => old.id === item.id) && !runs.some(current => current.id === item.id))
