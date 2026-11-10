@@ -1,0 +1,50 @@
+:root {
+  /* Design tokens – jediný zdroj základního vizuálního systému */
+  --card-background: rgba(0, 0, 0, 0.32);
+  --card-border: 1px solid rgba(255, 255, 255, 0.07);
+  --card-radius: 18px;
+  --card-padding: 1rem;
+  --card-margin: 0.6rem 0;
+  --card-shadow: none;
+  --card-blur: 0px;
+
+  --list-card-padding: 0.85rem;
+  --list-card-margin: 0.6rem 0;
+  --list-card-min-height: 96px;
+  --list-card-gap: 0.85rem;
+
+  --control-background: rgba(255, 255, 255, 0.2);
+  --control-background-hover: rgba(255, 255, 255, 0.3);
+  --control-background-active: rgba(255, 255, 255, 0.38);
+  --control-radius: 16px;
+  --control-shadow-active: 0 5px 18px rgba(0, 0, 0, 0.22);
+
+  --ui-bg: rgba(0, 0, 0, 0.32);
+  --ui-bg-soft: rgba(255, 255, 255, 0.08);
+  --ui-bg-hover: rgba(255, 255, 255, 0.13);
+  --ui-border: rgba(255, 255, 255, 0.1);
+  --ui-border-strong: rgba(255, 255, 255, 0.18);
+  --ui-text: #ffffff;
+  --ui-muted: rgba(255, 255, 255, 0.72);
+  --ui-muted-strong: rgba(255, 255, 255, 0.86);
+  --ui-success: #69e6a3;
+  --ui-danger: #ff6b78;
+  --ui-info: #64d9ff;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  --radius-sm: 10px;
+  --radius-md: 13px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  --motion-fast: 140ms;
+  --motion-normal: 220ms;
+  --motion-slow: 320ms;
+}
