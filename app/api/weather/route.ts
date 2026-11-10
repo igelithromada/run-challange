@@ -4,6 +4,16 @@ export const dynamic = "force-dynamic";
 const LATITUDE = 49.84;
 const LONGITUDE = 18.10;
 
+async function fetchWithTimeout(url: string, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { next: { revalidate: 1800 }, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function googleWeather(path: string, apiKey: string) {
   const url = new URL(`https://weather.googleapis.com/v1/${path}`);
   url.searchParams.set("key", apiKey);
@@ -15,7 +25,7 @@ async function googleWeather(path: string, apiKey: string) {
     url.searchParams.set("hours", "12");
     url.searchParams.set("pageSize", "12");
   }
-  const response = await fetch(url.toString(), { next: { revalidate: 1800 } });
+  const response = await fetchWithTimeout(url.toString());
   if (!response.ok) throw new Error(`Google Weather API ${response.status}: ${await response.text()}`);
   return response.json();
 }
@@ -49,7 +59,7 @@ async function openMeteoFallback() {
   url.searchParams.set("current", "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m");
   url.searchParams.set("hourly", "temperature_2m,precipitation_probability,weather_code,wind_speed_10m");
   url.searchParams.set("wind_speed_unit", "kmh");
-  const response = await fetch(url.toString(), { next: { revalidate: 1800 } });
+  const response = await fetchWithTimeout(url.toString());
   if (!response.ok) throw new Error(`Open-Meteo API ${response.status}`);
   const data = await response.json();
   const c = data.current;
