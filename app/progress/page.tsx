@@ -134,12 +134,13 @@ export default function ProgressPage() {
     return count;
   })();
 
+  const activityWord = goalType === "chůze" ? "chodec" : "běžec";
   const levels = [
     { name:"Začátečník", min:0, next:25, icon:"🌱" },
-    { name:"Pravidelný běžec", min:25, next:100, icon:"👟" },
+    { name:`Pravidelný ${activityWord}`, min:25, next:100, icon:"👟" },
     { name:"Pokročilý", min:100, next:250, icon:"🔥" },
-    { name:"Zkušený běžec", min:250, next:500, icon:"🏅" },
-    { name:"Běžecký matador", min:500, next:1000, icon:"🏆" },
+    { name:`Zkušený ${activityWord}`, min:250, next:500, icon:"🏅" },
+    { name:`${goalType === "chůze" ? "Chodecký" : "Běžecký"} matador`, min:500, next:1000, icon:"🏆" },
     { name:"Legenda", min:1000, next:2000, icon:"👑" },
     { name:"Legenda 2.0", min:2000, next:5000, icon:"💎" }
   ];
