@@ -47,11 +47,7 @@ export default function ParticipantsPage() {
     const load = async () => {
       setLoading(true);
       try {
-        const snapshot = await getDocs(query(collection(db, "runs"), orderBy("timestamp", "desc")));
-        const items: RunRecord[] = snapshot.docs.map(item => ({
-          id: item.id,
-          ...(item.data() as Omit<RunRecord, "id">),
-        }));
+        const items = await fetchRuns(latestRunsQuery(500));
         setRuns(items);
 
         const ids = Array.from(new Set(items.map(item => item.uid).filter((uid): uid is string => typeof uid === "string" && !!uid)));
