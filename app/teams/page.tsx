@@ -32,27 +32,36 @@ export default function TeamsPage() {
   const [editingTeamName, setEditingTeamName] = useState("");
   const router = useRouter();
 
-  useEffect(
-    () =>
-      onAuthStateChanged(auth, async currentUser => {
-        if (!currentUser) {
-          router.push("/login");
-          return;
-        }
+  useEffect(() => {
+    let active = true;
 
-        setUser(currentUser);
+    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
+      if (!currentUser) {
+        if (active) router.push("/login");
+        return;
+      }
+
+      if (active) setUser(currentUser);
+
+      try {
         const data = await getUserProfile(currentUser.uid);
+        if (!active || !data) return;
 
-        if (data) {
-          const stored = data.teamIdsByType || {};
-          setTeamIdsByType({
-            běh: typeof stored.běh === "string" ? stored.běh : typeof data.teamId === "string" ? data.teamId : null,
-            chůze: typeof stored.chůze === "string" ? stored.chůze : null,
-          });
-        }
-      }),
-    [router]
-  );
+        const stored = data.teamIdsByType || {};
+        setTeamIdsByType({
+          běh: typeof stored.běh === "string" ? stored.běh : typeof data.teamId === "string" ? data.teamId : null,
+          chůze: typeof stored.chůze === "string" ? stored.chůze : null,
+        });
+      } catch (error) {
+        if (active) console.error("Nepodařilo se načíst týmové nastavení uživatele", error);
+      }
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [router]);
 
   const teamsQuery = useMemo(() => allTeamsQuery(), []);
   const teamsState = useSharedFirestoreQuery<Team>("teams:all", teamsQuery);
