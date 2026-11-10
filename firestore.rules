@@ -61,7 +61,7 @@ service cloud.firestore {
         || (signedIn()
           && request.auth.uid == userId
           && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(["nickname", "avatarUrl", "activityType", "organizationId"]));
+            .hasOnly(["nickname", "avatarUrl", "activityType"]));
       allow delete: if isAdmin() || (signedIn() && request.auth.uid == userId);
     }
 
