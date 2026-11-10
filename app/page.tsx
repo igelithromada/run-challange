@@ -5,7 +5,6 @@ import {
   query,
   doc,
   getDocs,
-  getDoc,
   documentId,
   where,
 } from "firebase/firestore";
@@ -23,6 +22,8 @@ import ActivityTypeSelector from "./components/ActivityTypeSelector";
 import { RunData } from "./types";
 import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
 import { latestRunsQuery, olderRunsQuery, mapRunSnapshot } from "./lib/services/runs";
+import { getUserProfile } from "./lib/services/users";
+import { allTeamsQuery } from "./lib/services/teams";
 import type { TeamData } from "./types";
 
 export default function Page() {
@@ -44,9 +45,9 @@ export default function Page() {
       try {
         const cachedActivity = localStorage.getItem("dolni-lhota-default-activity-v1");
         if (cachedActivity === "běh" || cachedActivity === "chůze") setSelectedType(cachedActivity);
-        const profile = await getDoc(doc(db, "users", user.uid));
-        if (profile.exists()) {
-          const remoteActivity = profile.data().defaultActivity === "chůze" ? "chůze" : "běh";
+        const profile = await getUserProfile(user.uid);
+        if (profile) {
+          const remoteActivity = profile.defaultActivity === "chůze" ? "chůze" : "běh";
           setSelectedType(remoteActivity);
           try { localStorage.setItem("dolni-lhota-default-activity-v1", remoteActivity); } catch {}
         }
@@ -56,7 +57,7 @@ export default function Page() {
   }, [router]);
 
   const runsQuery = useMemo(() => latestRunsQuery(30), []);
-  const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
+  const teamsQuery = useMemo(() => allTeamsQuery(), []);
   const runsState = useSharedFirestoreQuery<RunData>("runs:latest:30", runsQuery);
   const teamsState = useSharedFirestoreQuery<TeamData>("teams:all", teamsQuery);
   const runs = runsState.data;
