@@ -91,6 +91,13 @@ export default function TrainerPage(){
  const todayKey=dateKey(new Date());
  const selectedIsPast=!!selectedDate && selectedDate<todayKey;
  const selectedKmValue=dayKm[selectedDate]??"";
+ const statusLabel=(status:string)=>{
+   if(status==="done")return "Splněno";
+   if(status==="partial")return "Částečně splněno";
+   if(status==="missed")return "Nesplněno";
+   if(status==="waiting")return "Naplánováno";
+   return "Volný den";
+ };
  const [saving,setSaving]=useState(false);
  const [saveError,setSaveError]=useState("");
  const saveSelected=async()=>{
@@ -162,6 +169,14 @@ export default function TrainerPage(){
       <button className="ui-icon-button" type="button" onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()+1,1))} aria-label="Další měsíc"><ChevronRight size={19}/></button>
     </div>
     <div className="trainer-calendar-weekdays">{["Po","Út","St","Čt","Pá","So","Ne"].map(d=><span key={d}>{d}</span>)}</div>
+    <div className="trainer-status-legend">
+      {[
+        ["waiting","Naplánováno"],
+        ["partial","Částečně splněno"],
+        ["done","Splněno"],
+        ["missed","Nesplněno"]
+      ].map(([key,label])=><span key={key}><i className={`trainer-status-dot ${key}`}/>{label}</span>)}
+    </div>
     <div className="trainer-calendar">
       {weeks.map((week,i)=><div className="trainer-calendar-week" key={i}>{week.map(d=>{
         const s=cellInfo(d);
@@ -189,7 +204,8 @@ export default function TrainerPage(){
         <div><span>Vybraný den</span><h3 id="trainer-day-modal-title">{selectedDate?new Date(selectedDate+"T00:00:00").toLocaleDateString("cs-CZ",{weekday:"long",day:"numeric",month:"long"}):"—"}</h3></div>
         <button type="button" className="ui-icon-button" onClick={()=>setModalOpen(false)} aria-label="Zavřít">×</button>
       </div>
-      {selectedIsPast ? <div className="trainer-day-readonly"><strong>Ukončený den</strong><span>{selectedInfo.selected ? selectedInfo.actual.toFixed(1)+" / "+selectedInfo.target.toFixed(1)+" km" : "Tento den už nelze měnit."}</span></div> : <div className="trainer-day-modal-form">
+      <div className={`trainer-modal-status ${selectedInfo.status}`}><i/>{statusLabel(selectedInfo.status)}</div>
+      {selectedIsPast ? <div className="trainer-day-readonly"><strong>{selectedInfo.selected ? statusLabel(selectedInfo.status) : "Volný den"}</strong><span>{selectedInfo.selected ? selectedInfo.actual.toFixed(1)+" / "+selectedInfo.target.toFixed(1)+" km" : "Tento den nebyl naplánovaný."}</span></div> : <div className="trainer-day-modal-form">
         <label><span>Cíl dne</span><div className="trainer-km-field"><input autoFocus type="number" min=".5" step=".5" inputMode="decimal" placeholder="5" value={selectedKmValue} onChange={e=>updateSelectedKm(e.target.value)}/><b>km</b></div></label>
         {saveError&&<p className="trainer-save-error">{saveError}</p>}
         <div className="trainer-day-modal-actions"><button type="button" className="progress-save" disabled={!selectedKmValue||num(selectedKmValue)<=0||saving} onClick={()=>void saveSelected()}><Save size={17}/> {saving?"Ukládám…":"Uložit"}</button></div>
