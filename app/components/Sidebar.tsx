@@ -6,6 +6,7 @@ import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X, C
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
+import { useRouter } from "next/navigation";
 
 type SidebarProps = { visible: boolean; onClose: () => void; onSelect: (item: string) => void };
 
@@ -23,6 +24,16 @@ const items = [
 
 export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
   const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
+
+  const handleNavigation = (id: string) => {
+    if (id === "routes") {
+      onClose();
+      router.push("/routes");
+      return;
+    }
+    onSelect(id);
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -77,7 +88,7 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
         </div>
         <div className="site-sidebar-grid">
           {navigationItems.map(({ id, label, Icon }) => (
-            <button key={id} type="button" className="site-sidebar-item" onClick={() => onSelect(id)}>
+            <button key={id} type="button" className="site-sidebar-item" onClick={() => handleNavigation(id)}>
               <Icon size={22} strokeWidth={2} aria-hidden="true" />
               <span>{label}</span>
             </button>
