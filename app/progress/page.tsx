@@ -92,6 +92,7 @@ export default function ProgressPage() {
           };
           setTeamIdsByType(nextTeamIds);
           setJoinedTeamId(nextTeamIds[initialType] || "");
+        }
       } catch (error) {
         if (active) console.error("Nepodařilo se načíst profil a cíle", error);
       }
