@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const adminDb = await requireAdmin(request);
+    const { adminDb } = await requireAdmin(request);
     const body = await request.json().catch(() => ({}));
     const code = typeof body?.code === "string" ? body.code.trim() : "";
     if (!isValidRegistrationCode(code)) {
