@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,8 @@ import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { getUserProfile } from "../lib/services/users";
 import type { RunData, LegacyTrainerPlan } from "../types";
-import { fetchRuns, userRunsQuery } from "../lib/services/runs";
+import { userRunsQuery } from "../lib/services/runs";
+import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 
 type Activity = Pick<RunData, "id" | "uid" | "km" | "type" | "timestamp">;
 type Plan = { monthKey:string; type:ActivityType; dates:string[]; dayKm:Record<string, number | string>; monthlyKm:number; createdAt?:string };
@@ -35,7 +36,7 @@ export default function TrainerPage(){
  const [dayKm,setDayKm]=useState<Record<string,string>>({});
  const [selectedDate,setSelectedDate]=useState("");
  const [type,setType]=useState<ActivityType>("běh");
- const [runs,setRuns]=useState<Activity[]>([]);
+ const [profileLoading,setProfileLoading]=useState(true);
  const [monthlyGoal,setMonthlyGoal]=useState(100);
  const [goalsByType,setGoalsByType]=useState<Record<ActivityType,number>>({běh:100,chůze:100});
  const [dirty,setDirty]=useState(false);
@@ -46,7 +47,6 @@ export default function TrainerPage(){
  const [quickInfo,setQuickInfo]=useState<{key:string;status:string;target:number;actual:number;x:number;y:number}|null>(null);
  const longPressTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
  const longPressTriggered=useRef(false);
- const [loading,setLoading]=useState(true);
  const currentMonth=monthKeyOf(month);
 
  useEffect(()=>{
@@ -77,7 +77,7 @@ export default function TrainerPage(){
      try{
        const data=await getUserProfile(user.uid);
        if(!active)return;
-       if (!data) { setLoading(false); return; }
+       if (!data) { setProfileLoading(false); return; }
        const storedLegacy=(data?.personalTrainerPlan as Plan|OldPlan|undefined);
        const storedPlans=data?.personalTrainerPlans&&typeof data.personalTrainerPlans==="object"?data.personalTrainerPlans:{};
        const normalized:Record<string,Plan>={};
@@ -92,9 +92,6 @@ export default function TrainerPage(){
          normalized[(storedLegacy.type||"běh")+"|"+storedLegacy.monthKey]=storedLegacy as Plan;
        }
        setPlansByKey(normalized);
-       const runItems=await fetchRuns(userRunsQuery(user.uid));
-       if(!active)return;
-       setRuns(runItems as Activity[]);
        const goals=data?.progressGoalsByType||{};
        const nextGoals={běh:num(goals.běh?.monthly??(data.progressGoals?.type==="běh"?data.progressGoals?.monthly:100))||100,chůze:num(goals.chůze?.monthly??(data.progressGoals?.type==="chůze"?data.progressGoals?.monthly:100))||100};
        setGoalsByType(nextGoals);
@@ -102,11 +99,17 @@ export default function TrainerPage(){
      }catch(e){
        if(active)console.error("Nepodařilo se načíst osobního trenéra",e);
      }finally{
-       if(active)setLoading(false);
+       if(active)setProfileLoading(false);
      }
    });
    return()=>{active=false;unsubscribe();};
  },[router]);
+
+ const runsQuery = useMemo(() => userRunsQuery(uid || "__no_user__"), [uid]);
+ const runsState = useSharedFirestoreQuery<Activity>("trainer:runs:" + (uid || "none"), runsQuery);
+ const runs = runsState.data;
+ const loading = profileLoading || runsState.loading;
+
 
  useEffect(()=>{
    const key=type+"|"+currentMonth;
