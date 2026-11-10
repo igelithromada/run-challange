@@ -14,6 +14,7 @@ import ActivityTypeSelector from "../components/ActivityTypeSelector";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
 import type { RunData, TeamData, ActivityType } from "../types";
 import { allTeamsQuery } from "../lib/services/teams";
+import { getUserAvatars } from "../lib/services/users";
 
 export default function StatisticsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -49,12 +50,8 @@ export default function StatisticsPage() {
     let cancelled = false;
     const load = async () => {
       try {
-        const batches: string[][] = [];
-        for (let i = 0; i < ids.length; i += 30) batches.push(ids.slice(i, i + 30));
-        const snapshots = await Promise.all(batches.map(batch => getDocs(query(collection(db, "users"), where(documentId(), "in", batch)))));
+        const next = await getUserAvatars(ids);
         if (cancelled) return;
-        const next: Record<string, string> = {};
-        snapshots.forEach(snapshot => snapshot.docs.forEach(profile => { next[profile.id] = profile.data().avatarUrl || ""; }));
         setAvatars(next);
       } catch (error) { console.error("Nepodařilo se načíst avatary ve výsledcích", error); }
     };
