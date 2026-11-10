@@ -11,18 +11,14 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
+import type { RunData, TeamData } from "../types";
 
-type Activity = {
-  id: string; uid?: string; km?: number | string; minuty?: number | string; tempo?: number | string;
-  type?: string; teamId?: string; timestamp?: any;
-};
-type Team = { id: string; name?: string };
-
+type ProgressActivity = Pick<RunData, "id" | "uid" | "km" | "minuty" | "tempo" | "teamId" | "timestamp" | "type">;
 const asNumber = (value: unknown) => {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
 };
-const activityDate = (run: Activity) => {
+const activityDate = (run: ProgressActivity) => {
   const value = run.timestamp?.seconds ? run.timestamp.seconds * 1000 : run.timestamp?.toDate ? run.timestamp.toDate().getTime() : Number(run.timestamp) || 0;
   return new Date(value);
 };
@@ -47,7 +43,7 @@ export default function ProgressPage() {
   const [goalWeekly, setGoalWeekly] = useState("25");
   const [goalMonthly, setGoalMonthly] = useState("100");
   const [goalType, setGoalType] = useState("běh");
-  const [goalsByType, setGoalsByType] = useState<Record<string, { weekly: number; monthly: number }>>({ běh: { weekly: 25, monthly: 100 }, chůze: { weekly: 25, monthly: 100 } });
+  const [goalsByType, setGoalsByType] = useState<Record<ActivityType, { weekly: number; monthly: number }>>({ běh: { weekly: 25, monthly: 100 }, chůze: { weekly: 25, monthly: 100 } });
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [trainerDays, setTrainerDays] = useState<number[]>([1,3,5]);
@@ -92,11 +88,11 @@ export default function ProgressPage() {
   const personalQuery = useMemo(() => query(collection(db, "runs"), where("uid", "==", uid || "__no_user__")), [uid]);
   const teamRunsQuery = useMemo(() => query(collection(db, "runs"), where("teamId", "==", joinedTeamId || "__no_team__")), [joinedTeamId]);
   const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
-  const personalState = useSharedFirestoreQuery<Activity>("progress:personal:" + (uid || "none"), personalQuery);
+  const personalState = useSharedFirestoreQuery<ProgressActivity>("progress:personal:" + (uid || "none"), personalQuery);
   const teamRunsState = useSharedFirestoreQuery<Activity>("progress:team:" + (joinedTeamId || "none"), teamRunsQuery);
-  const teamsState = useSharedFirestoreQuery<Team>("teams:all", teamsQuery);
+  const teamsState = useSharedFirestoreQuery<TeamData>("teams:all", teamsQuery);
   const runs = useMemo(() => {
-    const merged = new Map<string, Activity>();
+    const merged = new Map<string, ProgressActivity>();
     [...personalState.data, ...teamRunsState.data].forEach(run => merged.set(run.id, run));
     return Array.from(merged.values());
   }, [personalState.data, teamRunsState.data]);
@@ -118,7 +114,7 @@ export default function ProgressPage() {
   const progressMonthly = Math.min(100, goalMonthly && asNumber(goalMonthly)>0 ? monthKm/asNumber(goalMonthly)*100 : 0);
 
   const sorted = [...selected].sort((a,b) => activityDate(a).getTime()-activityDate(b).getTime());
-  const longest = sorted.reduce<Activity | null>((best, run) => !best || asNumber(run.km)>asNumber(best.km) ? run : best, null);
+  const longest = sorted.reduce<ProgressActivity | null>((best, run) => !best || asNumber(run.km)>asNumber(best.km) ? run : best, null);
   const fastest = sorted.filter(run => asNumber(run.tempo)>0).reduce<Activity | null>((best, run) => !best || asNumber(run.tempo)<asNumber(best.tempo) ? run : best, null);
   const dailyTotals = new Map<string, number>();
   selected.forEach(run => { const d=activityDate(run); if (!Number.isNaN(d.getTime())) dailyTotals.set(dateKey(d),(dailyTotals.get(dateKey(d))||0)+asNumber(run.km)); });
@@ -169,7 +165,7 @@ export default function ProgressPage() {
   const teamProgress = teams.filter(team => team.id === joinedTeamId).map(team => {
     const km = runs.filter(run => (run.type || "běh")===goalType && run.teamId===team.id && activityDate(run).getFullYear()===now.getFullYear() && activityDate(run).getMonth()===now.getMonth())
       .reduce((sum,run)=>sum+asNumber(run.km),0);
-    const goalKm = asNumber((team as any).challengeGoalKm) || 500;
+    const goalKm = asNumber(team.challengeGoalKm) || 500;
     return { ...team, km, goalKm, percent:Math.min(100,km/goalKm*100) };
   }).sort((a,b)=>b.km-a.km);
 
