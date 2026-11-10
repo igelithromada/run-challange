@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X, CloudSun, TrendingUp, ListOrdered, Dumbbell, Map } from "lucide-react";
-import { onIdTokenChanged } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
+import { getUserProfile } from "../lib/services/users";
 import { useRouter } from "next/navigation";
 
 type SidebarProps = { visible: boolean; onClose: () => void; onSelect: (item: string) => void };
@@ -35,19 +36,23 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
   };
 
   useEffect(() => {
-    const unsubscribe = onIdTokenChanged(auth, async user => {
+    let active = true;
+    const unsubscribe = onAuthStateChanged(auth, async user => {
       if (!user) {
-        setIsAdmin(false);
+        if (active) setIsAdmin(false);
         return;
       }
       try {
-        const token = await user.getIdTokenResult();
-        setIsAdmin(token.claims.admin === true);
+        const profile = await getUserProfile(user.uid);
+        if (active) setIsAdmin(profile?.role === "admin");
       } catch {
-        setIsAdmin(false);
+        if (active) setIsAdmin(false);
       }
     });
-    return () => unsubscribe();
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
