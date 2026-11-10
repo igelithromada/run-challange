@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, Users, ChevronRight, Pencil, Check, X } from "lucide-react";
-import { db, auth } from "../lib/firebase";
+import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType, ActivityTypeIcon } from "../components/ActivityTypeSelector";
