@@ -1114,3 +1114,5 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 /* Rychlý stav trenéra: vždy plovoucí overlay mimo tok stránky */
 .trainer-quick-info{position:fixed!important;z-index:2147483647!important;transform:translate(-50%,-100%)!important;margin:0!important;pointer-events:none!important;box-sizing:border-box}
+
+.trainer-quick-info::after{left:var(--quick-arrow-x,50%)}
