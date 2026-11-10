@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X, CloudSun, TrendingUp, ListOrdered, Dumbbell } from "lucide-react";
+import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X, CloudSun, TrendingUp, ListOrdered, Dumbbell, Map } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
@@ -17,6 +17,7 @@ const items = [
   { id: "statistics", label: "Výsledky", Icon: Trophy },
   { id: "participants", label: "Účastníci", Icon: ListOrdered },
   { id: "weather", label: "Počasí pro běh", Icon: CloudSun },
+  { id: "routes", label: "Doporučené trasy", Icon: Map },
   { id: "settings", label: "Nastavení", Icon: SlidersHorizontal },
 ];
 
