@@ -24,10 +24,8 @@ export default function UserPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [runs, setRuns] = useState<RunData[]>([]);
   const [selectedType, setSelectedType] = useState<ActivityType>("běh");
   const [userInfo, setUserInfo] = useState({ nickname: "", avatarUrl: "" });
-  const [teams, setTeams] = useState<{ id: string; name?: string }[]>([]);
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -35,22 +33,17 @@ export default function UserPage() {
   const runsState = useSharedFirestoreQuery<RunData>(`user-runs:${id}`, runsQuery || userRunsQuery("__none__"));
   const teamsState = useSharedFirestoreQuery<{ id: string; name?: string }>("teams:all", allTeamsQuery());
 
-  useEffect(() => {
-    if (!runsState.loading) {
-      const items = runsState.data.map(item => ({
-        ...item,
-        km: Number(item.km) || 0,
-        minuty: Number(item.minuty) || 0,
-        tempo: Number(item.tempo) || 0,
-      })) as RunData[];
-      items.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-      setRuns(items);
-    }
-  }, [runsState.data, runsState.loading]);
+  const runs = useMemo(() => {
+    const items = runsState.data.map(item => ({
+      ...item,
+      km: Number(item.km) || 0,
+      minuty: Number(item.minuty) || 0,
+      tempo: Number(item.tempo) || 0,
+    })) as RunData[];
+    return items.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+  }, [runsState.data]);
 
-  useEffect(() => {
-    setTeams(teamsState.data);
-  }, [teamsState.data]);
+  const teams = teamsState.data;
 
   useEffect(() => {
     const fetchUser = async () => {
