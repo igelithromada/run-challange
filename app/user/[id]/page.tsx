@@ -4,12 +4,13 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { db, auth } from "../../lib/firebase";
 import { signOut } from "firebase/auth";
-import { collection, query, where, onSnapshot, getDoc, doc } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import ActivityCard from "../../components/ActivityCard";
 import ActivityTypeSelector, { ActivityType } from "../../components/ActivityTypeSelector";
 import { cloudinaryImageUrl } from "../../lib/imageUrl";
+import { getPublicProfile } from "../../lib/services/publicProfiles";
 
 type RunData = {
   id: string; uid?: string; email?: string; nickname?: string; avatarUrl?: string;
@@ -23,7 +24,7 @@ export default function UserPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [runs, setRuns] = useState<RunData[]>([]);
   const [selectedType, setSelectedType] = useState<ActivityType>("běh");
-  const [userInfo, setUserInfo] = useState({ nickname: "", avatarUrl: "", email: "" });
+  const [userInfo, setUserInfo] = useState({ nickname: "", avatarUrl: "" });
   const [teams, setTeams] = useState<{ id: string; name?: string }[]>([]);
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -46,15 +47,8 @@ export default function UserPage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const snapshot = await getDoc(doc(db, "users", id));
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          setUserInfo({
-            nickname: data.nickname || "",
-            avatarUrl: data.avatarUrl || "",
-            email: data.email || "",
-          });
-        }
+        const profile = await getPublicProfile(id);
+        if (profile) setUserInfo({ nickname: profile.nickname || "", avatarUrl: profile.avatarUrl || "" });
       } catch (error) { console.error("Nepodařilo se načíst profil uživatele", error); }
     };
     if (id) void fetchUser();
@@ -75,7 +69,7 @@ export default function UserPage() {
     router.push("/" + (item === "myrun" ? "myruns" : item));
   };
 
-  const profileName = userInfo.nickname || userInfo.email?.split("@")[0] || "Uživatel";
+  const profileName = userInfo.nickname || "Uživatel";
   const filteredRuns = runs.filter(run => (run.type || "běh") === selectedType);
 
   const showRunImages = (images: string[], fallback: string) => {
