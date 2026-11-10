@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { FieldValue } from "firebase-admin/firestore";
 import { requireUser } from "../../../lib/apiAuth";
 import { normalizeActivityType, normalizeTeamName } from "../../../lib/validation";
 
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
       const type = normalizeActivityType(body?.type);
       if (!name) return NextResponse.json({ error: "Zadej název týmu." }, { status: 400 });
       const teamRef = adminDb.collection("teams").doc();
-      await teamRef.set({ name, type, createdBy: decoded.uid, challengeGoalKm: 500, avatarUrl: "", avatarPublicId: "" });
+      await teamRef.set({ name, type, createdBy: decoded.uid, challengeGoalKm: 500, avatarUrl: "", avatarPublicId: "", memberIds: [decoded.uid] });
       const userSnap = await userRef.get();
       const data = userSnap.exists ? userSnap.data() || {} : {};
       const stored = data.teamIdsByType && typeof data.teamIdsByType === "object" ? data.teamIdsByType : {};
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
       const data = userSnap.exists ? userSnap.data() || {} : {};
       const stored = data.teamIdsByType && typeof data.teamIdsByType === "object" ? data.teamIdsByType : {};
       const next = { ...stored, [type]: action === "join" ? teamId : null };
+      await teamRef.update({ memberIds: action === "join" ? FieldValue.arrayUnion(decoded.uid) : FieldValue.arrayRemove(decoded.uid) });
       await userRef.set({ teamIdsByType: next, ...(type === "běh" ? { teamId: action === "join" ? teamId : null, joinedTeam: action === "join" ? teamId : null } : {}) }, { merge: true });
       return NextResponse.json({ ok: true, teamIdsByType: next });
     }
