@@ -9,6 +9,7 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { Activity, Clock3, Medal, Users, Footprints, ArrowDownUp, ListFilter } from "lucide-react";
+import type { RunData } from "../types";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 
 type Participant = {
@@ -20,7 +21,7 @@ type Participant = {
   activities: number;
 };
 
-type RunRecord = Record<string, any> & { id: string };
+type RunRecord = RunData;
 
 export default function ParticipantsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -48,7 +49,7 @@ export default function ParticipantsPage() {
         const snapshot = await getDocs(query(collection(db, "runs"), orderBy("timestamp", "desc")));
         const items: RunRecord[] = snapshot.docs.map(item => ({
           id: item.id,
-          ...(item.data() as Record<string, any>),
+          ...(item.data() as Omit<RunRecord, "id">),
         }));
         setRuns(items);
 
