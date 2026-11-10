@@ -2,8 +2,10 @@
 
 import React from "react";
 import { Footprints } from "lucide-react";
+import type { ActivityType } from "../types";
 
-export type ActivityType = "běh" | "chůze";
+export type { ActivityType } from "../types";
+
 
 export function ActivityTypeIcon({ type, size = 25 }: { type: ActivityType; size?: number }) {
   if (type === "běh") {
