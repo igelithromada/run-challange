@@ -7,7 +7,6 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import RouteMap from "../components/RouteMap";
 import { routeGroups } from "../lib/routes";
-import type { ActivityType } from "../types";
 
 export default function RoutesPage() {
   const router = useRouter();
