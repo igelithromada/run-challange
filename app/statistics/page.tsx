@@ -9,6 +9,7 @@ import Navbar from "../components/Navbar";
 import { Footprints, Medal, Trophy, Users, User, MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import Sidebar from "../components/Sidebar";
+import LoadingSkeleton from "../components/LoadingSkeleton";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
 import type { RunData, TeamData, ActivityType } from "../types";
@@ -126,6 +127,12 @@ export default function StatisticsPage() {
       <Navbar title="Výsledky" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
       <main className="container statistics-page">
+        {runsState.loading || teamsState.loading ? (
+          <LoadingSkeleton count={3} />
+        ) : runsState.error || teamsState.error ? (
+          <div className="tile form-message-error" role="alert">Výsledky se nepodařilo načíst. Zkus stránku obnovit.</div>
+        ) : null}
+
         <div className="control-caption">Typ aktivity</div>
         <ActivityTypeSelector value={selectedType} onChange={setSelectedType} />
 
