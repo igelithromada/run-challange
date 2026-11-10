@@ -34,14 +34,20 @@ export default function WeatherCard() {
   const [lastUpdated, setLastUpdated] = useState("");
 
   const loadWeather = async (forceRefresh = false) => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 10000);
     try {
-      const response = await fetch("/api/weather", forceRefresh ? { cache: "reload" } : undefined);
+      const response = await fetch("/api/weather", {
+        ...(forceRefresh ? { cache: "reload" as RequestCache } : {}),
+        signal: controller.signal,
+      });
       const data = await response.json();
       setWeather(data);
       setLastUpdated(new Date().toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" }));
     } catch {
       setWeather({ configured: true, error: "Počasí se nepodařilo načíst. Zkus to později." });
     } finally {
+      window.clearTimeout(timeout);
       setLoading(false);
     }
   };
