@@ -2,7 +2,6 @@ import { collection, doc, getDoc, getDocs, query, setDoc, where, documentId, typ
 import { db } from "../firebase";
 import type { UserData } from "../../types";
 import { getPublicProfiles } from "./publicProfiles";
-import { collection, getDocs, query, where, documentId } from "firebase/firestore";
 
 export async function getUserProfile(uid: string): Promise<UserData | null> {
   const snapshot = await getDoc(doc(db, "users", uid));
