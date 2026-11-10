@@ -48,6 +48,23 @@
 .activity-type-icon-run { object-fit:contain; }
 
 .run-form-shell { margin:1rem 0 1.35rem !important; }
+.run-form-actions {
+  display:grid;
+  grid-template-columns:1fr;
+  gap:.7rem;
+  width:100%;
+  margin-top:.8rem;
+}
+.run-form-actions button {
+  width:100%;
+  min-height:48px;
+  border-radius:13px;
+}
+.run-form-actions button:disabled {
+  cursor:wait;
+  opacity:.65;
+}
+
 .run-form-shell > .run-primary-button {
   min-height:58px !important;
   border-radius:18px !important;
