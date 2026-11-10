@@ -48,12 +48,12 @@ export async function GET(request: Request) {
     for (let i = 0; i < uniqueLikeIds.length; i += 30) {
       const chunk = uniqueLikeIds.slice(i, i + 30);
       if (!chunk.length) continue;
-      const snapshots = await adminDb.collection("users").where(FieldPath.documentId(), "in", chunk).get();
+      const snapshots = await adminDb.collection("publicProfiles").where(FieldPath.documentId(), "in", chunk).get();
       snapshots.docs.forEach(profile => {
         const item = profile.data();
         likeUsers.push({
           uid: profile.id,
-          nickname: item.nickname || item.email?.split("@")[0] || "Uživatel",
+          nickname: item.nickname || "Uživatel",
           avatarUrl: item.avatarUrl || "",
         });
       });
