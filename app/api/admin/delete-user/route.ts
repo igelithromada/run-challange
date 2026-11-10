@@ -138,7 +138,7 @@ export async function POST(request: Request) {
       email: target.email || "",
       ...deleted,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Admin delete user failed:", error);
     const message = error instanceof Error ? error.message : "";
 
