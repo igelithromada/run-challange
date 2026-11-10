@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldPath } from "firebase-admin/firestore";
+import { getAdminServices } from "../../../lib/firebaseAdmin";
 import { requireAdmin, authErrorResponse } from "../../../lib/apiAuth";
 
 export const runtime = "nodejs";
-
-
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -36,7 +35,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     await adminDb.collection("users").doc(targetUid).delete();
-    const { adminAuth } = (await import("../../../lib/firebaseAdmin")).getAdminServices();
+    const { adminAuth } = getAdminServices();
     await adminAuth.deleteUser(targetUid);
 
     return NextResponse.json({
