@@ -334,7 +334,6 @@ html[data-weather="snow-wind"] .activity-card-modern {
 }
 
 /* Vnitřní prvky karet zůstávají nad animovanou vrstvou a plně čitelné. */
- zůstávají nad animovanou vrstvou a plně čitelné. */
 html[data-windy="true"] .tile > *,
 html[data-windy="true"] .list-tile > *,
 html[data-weather="rain"] .tile > *,
