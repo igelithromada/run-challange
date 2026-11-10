@@ -32,20 +32,21 @@ export default function Page() {
   const router = useRouter();
 
   useEffect(() => {
+    let active = true;
     const unsubAuth = onAuthStateChanged(auth, async user => {
+      if (!active) return;
       if (!user) { router.push("/login"); return; }
       try {
         const cachedActivity = localStorage.getItem("dolni-lhota-default-activity-v1");
-        if (cachedActivity === "běh" || cachedActivity === "chůze") setSelectedType(cachedActivity);
+        if (active && (cachedActivity === "běh" || cachedActivity === "chůze")) setSelectedType(cachedActivity);
         const profile = await getUserProfile(user.uid);
-        if (profile) {
-          const remoteActivity = profile.defaultActivity === "chůze" ? "chůze" : "běh";
-          setSelectedType(remoteActivity);
-          try { localStorage.setItem("dolni-lhota-default-activity-v1", remoteActivity); } catch {}
-        }
+        if (!active || !profile) return;
+        const remoteActivity = profile.defaultActivity === "chůze" ? "chůze" : "běh";
+        setSelectedType(remoteActivity);
+        try { localStorage.setItem("dolni-lhota-default-activity-v1", remoteActivity); } catch {}
       } catch {}
     });
-    return () => unsubAuth();
+    return () => { active = false; unsubAuth(); };
   }, [router]);
 
   const runsQuery = useMemo(() => latestRunsQuery(30), []);
