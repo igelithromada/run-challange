@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Save, Target, TrendingUp } from "lucide-react";
