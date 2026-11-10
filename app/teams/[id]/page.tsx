@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Camera, Check, Save, Users } from "lucide-react";
-import { db, auth } from "../../lib/firebase";
+import { auth } from "../../lib/firebase";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import { ActivityType } from "../../components/ActivityTypeSelector";
 import { cloudinaryImageUrl } from "../../lib/imageUrl";
 import type { TeamData, PublicProfileData } from "../../types";
 import { getPublicProfiles } from "../../lib/services/publicProfiles";
+import { getTeam, mergeTeam } from "../../lib/services/teams";
 
 type Member = PublicProfileData;
 
@@ -33,9 +33,8 @@ export default function TeamDetailPage() {
   const load = async (uid?:string) => {
     if(!id) return;
     try {
-      const snap=await getDoc(doc(db,"teams",id));
-      if(!snap.exists()){ router.replace("/teams"); return; }
-      const data = { id: snap.id, ...snap.data() } as TeamData;
+      const data = await getTeam(id);
+      if(!data){ router.replace("/teams"); return; }
       setTeam(data);
       const memberIds = data.memberIds?.length ? data.memberIds : (data.createdBy ? [data.createdBy] : []);
       if (uid) setIsMember(memberIds.includes(uid));
@@ -83,7 +82,7 @@ export default function TeamDetailPage() {
     if(!Number.isFinite(value)||value<=0){setMessage("Zadej platný cíl.");return;}
     setSaving(true); setMessage("");
     try{
-      await setDoc(doc(db,"teams",id),{challengeGoalKm:value,avatarUrl,avatarPublicId},{merge:true});
+      await mergeTeam(id,{challengeGoalKm:value,avatarUrl,avatarPublicId});
       setMessage("Nastavení týmu bylo uloženo.");
     }catch(e){console.error(e);setMessage("Nastavení se nepodařilo uložit.");}
     finally{setSaving(false);}
