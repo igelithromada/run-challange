@@ -181,7 +181,7 @@ export default function TrainerPage(){
         {selectedIsPast ? <div className="trainer-day-readonly"><strong>Ukončený den</strong><span>{selectedInfo.selected ? selectedInfo.actual.toFixed(1)+" / "+selectedInfo.target.toFixed(1)+" km" : "Tento den už nelze měnit."}</span></div> : <div className="trainer-day-modal-form">
           <label><span>Cíl dne</span><div className="trainer-km-field"><input autoFocus type="number" min=".5" step=".5" inputMode="decimal" placeholder="5" value={selectedKmValue} onChange={e=>updateSelectedKm(e.target.value)}/><b>km</b></div></label>
           {saveError&&<p className="trainer-save-error">{saveError}</p>}
-          <div className="trainer-day-modal-actions"><button type="button" className="trainer-secondary-button" onClick={()=>setModalOpen(false)} disabled={saving}>Zrušit</button><button type="button" className="progress-save" disabled={!selectedKmValue||num(selectedKmValue)<=0||saving} onClick={()=>void saveSelected()}><Save size={17}/> {saving?"Ukládám…":"Uložit"}</button></div>
+          <div className="trainer-day-modal-actions"><button type="button" className="progress-save" disabled={!selectedKmValue||num(selectedKmValue)<=0||saving} onClick={()=>void saveSelected()}><Save size={17}/> {saving?"Ukládám…":"Uložit"}</button></div>
         </div>}
       </div>
     </div>}
