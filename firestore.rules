@@ -39,7 +39,9 @@ service cloud.firestore {
               "joinedTeam",
               "teamIdsByType",
               "progressGoals",
-              "progressGoalsByType"
+              "progressGoalsByType",
+              "personalTrainerPlan",
+              "personalTrainerHistory"
             ]));
 
       allow delete: if isAdmin();
