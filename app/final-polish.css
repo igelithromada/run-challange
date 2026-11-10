@@ -841,3 +841,80 @@
   box-shadow:0 12px 35px rgba(0,0,0,.35) !important;
   text-align:center;
 }
+
+
+/* Globální plovoucí hlášky – nikdy nezabírají místo v layoutu. */
+.app-toast {
+  position:fixed;
+  left:50%;
+  bottom:calc(14px + env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  z-index:2147483647;
+  width:min(calc(100vw - 28px),520px);
+  padding:.8rem 1rem;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:15px;
+  background:rgba(10,30,40,.94);
+  color:#fff;
+  box-shadow:0 14px 40px rgba(0,0,0,.34);
+  backdrop-filter:blur(14px);
+  font-size:.88rem;
+  font-weight:700;
+  text-align:center;
+  animation:app-toast-in .2s ease-out;
+}
+.app-toast-success { border-color:rgba(110,225,160,.35); }
+.app-toast-error { border-color:rgba(255,125,135,.42); background:rgba(55,24,31,.95); }
+.app-toast-info { border-color:rgba(110,200,255,.35); }
+@keyframes app-toast-in {
+  from { opacity:0; transform:translate(-50%,12px); }
+  to { opacity:1; transform:translate(-50%,0); }
+}
+
+/* Aktivita – ještě kompaktnější vertikální rytmus. */
+.activity-card-modern { gap:.52rem !important; }
+.activity-card-modern .activity-description { margin:.28rem 0 0 !important; padding:.5rem .1rem !important; }
+.activity-card-modern .activity-metrics { gap:.32rem !important; margin:.35rem 0 !important; }
+.activity-card-modern .activity-metrics > div { min-height:68px !important; padding:.42rem .3rem !important; border-radius:11px !important; }
+.activity-card-modern .activity-metrics strong { font-size:1.02rem !important; }
+.activity-card-modern .activity-metrics > div > span { font-size:.64rem !important; }
+.activity-card-modern .activity-card-actions { padding-top:.42rem !important; gap:.32rem !important; }
+
+/* Osobní rekordy – žádná dlaždice v dlaždici. */
+.progress-record-grid {
+  gap:0 !important;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:16px;
+  background:rgba(255,255,255,.035);
+}
+.progress-record-grid > div {
+  min-width:0;
+  min-height:82px;
+  padding:.75rem .7rem !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+.progress-record-grid > div:nth-child(odd) { border-right:1px solid rgba(255,255,255,.08) !important; }
+.progress-record-grid > div:nth-child(-n+2) { border-bottom:1px solid rgba(255,255,255,.08) !important; }
+
+/* Účastníci – abeceda opravdu až na pravém okraji displeje. */
+.participants-alpha-fixed {
+  right:0 !important;
+  width:24px;
+  padding:6px 2px !important;
+  border-radius:12px 0 0 12px !important;
+}
+.participants-alpha-fixed button { width:20px !important; }
+
+/* Týmové chybové/success stavy už nejsou součástí karty. */
+.teams-message { display:none !important; }
+
+@media(max-width:520px) {
+  .activity-card-modern { gap:.45rem !important; }
+  .activity-card-modern .activity-metrics > div { min-height:64px !important; }
+  .activity-card-modern .activity-metrics strong { font-size:.94rem !important; }
+  .progress-record-grid > div { min-height:74px; padding:.62rem .55rem !important; }
+}
