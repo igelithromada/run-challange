@@ -14,6 +14,7 @@ import { registerTrainerPush, removeTrainerPush } from "../lib/pushNotifications
 import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { setHapticsEnabled } from "../lib/haptics";
+import { mergePublicProfile } from "../lib/services/publicProfiles";
 
 const DEFAULT_COLOR = "#36D1DC";
 const DEFAULT_ACTIVITY_KEY = "dolni-lhota-default-activity-v1";
@@ -127,6 +128,11 @@ export default function SettingsPage() {
         nickname, avatarUrl, theme, customColor, animationsEnabled, ...patch,
         ...(themeChanged ? { themeUpdatedAt: serverTimestamp() } : {})
       }, { merge: true });
+      await mergePublicProfile(activeUserId, {
+        nickname: typeof patch.nickname === "string" ? patch.nickname : nickname,
+        avatarUrl: typeof patch.avatarUrl === "string" ? patch.avatarUrl : avatarUrl,
+        activityType: defaultActivity,
+      });
     } finally {
       setSaving(false);
     }
