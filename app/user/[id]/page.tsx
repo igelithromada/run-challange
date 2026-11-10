@@ -29,8 +29,8 @@ export default function UserPage() {
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const runsQuery = useMemo(() => id ? userRunsQuery(id) : null, [id]);
-  const runsState = useSharedFirestoreQuery<RunData>(`user-runs:${id}`, runsQuery || userRunsQuery("__none__"));
+  const runsQuery = useMemo(() => userRunsQuery(id || "__none__"), [id]);
+  const runsState = useSharedFirestoreQuery<RunData>(`user-runs:${id || "none"}`, runsQuery);
   const teamsState = useSharedFirestoreQuery<{ id: string; name?: string }>("teams:all", allTeamsQuery());
 
   const runs = useMemo(() => {
