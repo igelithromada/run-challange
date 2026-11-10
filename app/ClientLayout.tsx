@@ -6,6 +6,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import useThemeLoader from "./lib/useThemeLoader";
 import NetworkStatus from "./components/NetworkStatus";
 import { setHapticsEnabled, triggerHaptic } from "./lib/haptics";
+import { mergePublicProfile } from "./lib/services/publicProfiles";
 import AppToast from "./components/AppToast";
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
@@ -45,6 +46,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           id:user.uid, email:user.email||"", nickname:defaultNickname, avatarUrl:"", theme:"default",
           customColor:"#36D1DC", hapticsEnabled:true
         });
+        await mergePublicProfile(user.uid, { nickname: defaultNickname, avatarUrl: "", activityType: "běh" });
       } else {
         const data = snap.data() || {};
         if (data.blocked === true) {
@@ -63,6 +65,11 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           try { localStorage.setItem("dolni-lhota-haptics-v1", data.hapticsEnabled === false ? "false" : "true"); } catch {}
         }
         if (Object.keys(update).length) await setDoc(ref, update, { merge:true });
+        await mergePublicProfile(user.uid, {
+          nickname: typeof update.nickname === "string" ? update.nickname : (data.nickname || defaultNickname),
+          avatarUrl: typeof update.avatarUrl === "string" ? update.avatarUrl : (data.avatarUrl || ""),
+          activityType: data.defaultActivity === "chůze" ? "chůze" : "běh",
+        });
       }
     });
     return () => unsubscribe();
