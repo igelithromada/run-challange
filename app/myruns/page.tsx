@@ -92,17 +92,20 @@ export default function MyRunsPage() {
   const router = useRouter();
 
   useEffect(() => {
+    let active = true;
     const unsubAuth = onAuthStateChanged(auth, user => {
+      if (!active) return;
       if (!user) { router.push("/login"); return; }
       setUid(user.uid);
       getUserProfile(user.uid).then(data => {
-        if (data) {
-          setProfile({ nickname: data.nickname || "", avatarUrl: data.avatarUrl || "" });
-          setConfirmDelete(data.confirmDelete !== false);
-        }
-      }).catch(err => console.error("Nepodařilo se načíst profil", err));
+        if (!active || !data) return;
+        setProfile({ nickname: data.nickname || "", avatarUrl: data.avatarUrl || "" });
+        setConfirmDelete(data.confirmDelete !== false);
+      }).catch(err => {
+        if (active) console.error("Nepodařilo se načíst profil", err);
+      });
     });
-    return () => unsubAuth();
+    return () => { active = false; unsubAuth(); };
   }, [router]);
 
   const runsQuery = useMemo(() => userRunsQuery(uid || "__no_user__"), [uid]);
