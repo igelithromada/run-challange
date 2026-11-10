@@ -106,7 +106,7 @@ export default function TrainerPage(){
      }
    });
    return()=>{active=false;unsubscribe();};
- },[router,type]);
+ },[router]);
 
  useEffect(()=>{
    const key=type+"|"+currentMonth;
