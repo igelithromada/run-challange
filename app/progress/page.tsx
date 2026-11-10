@@ -48,7 +48,7 @@ export default function ProgressPage() {
   const [teamIdsByType, setTeamIdsByType] = useState<Record<ActivityType, string | null>>({ běh: null, chůze: null });
   const [goalWeekly, setGoalWeekly] = useState("25");
   const [goalMonthly, setGoalMonthly] = useState("100");
-  const [goalType, setGoalType] = useState("běh");
+  const [goalType, setGoalType] = useState<ActivityType>("běh");
   const [goalsByType, setGoalsByType] = useState<Record<ActivityType, { weekly: number; monthly: number }>>({ běh: { weekly: 25, monthly: 100 }, chůze: { weekly: 25, monthly: 100 } });
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
