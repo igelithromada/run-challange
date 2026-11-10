@@ -398,3 +398,263 @@
   .participants-list-card { padding-right:24px; }
   .participants-toolbar { align-items:flex-start; flex-direction:column; }
 }
+
+
+/* ===== Finální sjednocení UI podle poslední revize ===== */
+
+/* Aktivita: kompaktnější výpočtové dlaždice */
+.activity-card-modern .activity-metrics { gap:.5rem; margin:.7rem 0; }
+.activity-card-modern .activity-metrics > div {
+  min-height:74px;
+  padding:.55rem .45rem;
+  border-radius:13px;
+  gap:.2rem;
+}
+.activity-card-modern .activity-metrics strong { font-size:1.18rem; }
+.activity-card-modern .activity-metrics span { font-size:.72rem; }
+.activity-card-modern .activity-metrics small { font-size:.68em; }
+.activity-card-modern .activity-metrics svg { width:16px; height:16px; }
+
+/* Popis je vlastní oddělená část mezi uživatelem a výpočty */
+.activity-card-modern .activity-description {
+  margin:.7rem 0 0;
+  padding:.7rem .15rem;
+  border-top:1px solid rgba(255,255,255,.10);
+  border-bottom:1px solid rgba(255,255,255,.10);
+  color:rgba(255,255,255,.84);
+  font-size:.86rem;
+  line-height:1.45;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+
+/* Sociální tlačítka menší; při lajku je červené pouze srdce */
+.activity-card-modern .activity-social-actions {
+  gap:.42rem;
+  padding-top:.65rem;
+  border-top:1px solid rgba(255,255,255,.10);
+}
+.activity-card-modern .activity-social-button {
+  width:42px !important;
+  min-width:42px !important;
+  height:34px !important;
+  min-height:34px !important;
+  padding:.25rem .35rem !important;
+  border-radius:10px !important;
+  gap:.2rem;
+}
+.activity-card-modern .activity-social-button svg { width:18px !important; height:18px !important; }
+.activity-card-modern .activity-social-button span { font-size:.72rem; }
+.activity-card-modern .activity-social-button.is-liked {
+  color:#fff !important;
+  background:rgba(255,255,255,.10) !important;
+  border-color:rgba(255,255,255,.12) !important;
+}
+.activity-card-modern .activity-social-button.is-liked svg {
+  color:#ff6278 !important;
+  fill:#ff6278 !important;
+  stroke:#ff6278 !important;
+}
+.activity-card-modern .activity-manage-button {
+  min-height:34px;
+  padding:.3rem .55rem;
+  border-radius:10px;
+  font-size:.72rem;
+  gap:.25rem;
+}
+.activity-card-modern .activity-manage-button svg { width:14px; height:14px; }
+
+/* Komentáře – stejné kompaktní ikonové ovládání jako jinde */
+.social-comment-tools { display:flex; gap:.35rem; margin-top:.35rem; }
+.social-comment-icon-button {
+  width:32px;
+  height:32px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:9px;
+  background:rgba(255,255,255,.07);
+  color:inherit;
+  cursor:pointer;
+}
+.social-comment-icon-button:hover { background:rgba(255,255,255,.13); }
+.social-comment-delete-button { color:#ff9aa8; }
+
+/* Formulář aktivity – popis */
+.run-form-description {
+  width:100%;
+  min-height:82px;
+  box-sizing:border-box;
+  resize:vertical;
+  padding:.75rem .8rem;
+  border:1px solid var(--ui-border,rgba(255,255,255,.12));
+  border-radius:13px;
+  background:rgba(255,255,255,.96);
+  color:#14232c;
+  font:inherit;
+  line-height:1.4;
+}
+.run-form-description::placeholder { color:#68747c; }
+
+/* Týmy – přehledná karta místo rozbitého rozložení */
+.teams-grid { display:grid !important; grid-template-columns:1fr !important; gap:.65rem !important; }
+.team-card {
+  min-height:0 !important;
+  padding:.85rem !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  grid-template-rows:auto auto !important;
+  gap:.7rem !important;
+  cursor:pointer;
+}
+.team-card-main {
+  grid-column:1 / -1 !important;
+  display:grid !important;
+  grid-template-columns:52px minmax(0,1fr) 24px !important;
+  align-items:center !important;
+  gap:.75rem !important;
+}
+.team-avatar { width:52px !important; height:52px !important; border-radius:15px !important; }
+.team-card-info { min-width:0; }
+.team-card-title-row { display:flex; align-items:center; gap:.45rem; min-width:0; }
+.team-card-title-row h3 { margin:0 !important; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:1rem !important; }
+.team-member-label { flex:0 0 auto; }
+.team-card-sub { display:flex; align-items:center; gap:.45rem; flex-wrap:wrap; margin-top:.35rem; font-size:.74rem; opacity:.78; }
+.team-card-chevron { opacity:.55; }
+.team-card-actions {
+  grid-column:1 / -1 !important;
+  display:flex !important;
+  justify-content:flex-end !important;
+  align-items:center !important;
+  gap:.45rem !important;
+  margin:0 !important;
+}
+.team-action-button {
+  min-height:38px !important;
+  padding:.45rem .8rem !important;
+  border-radius:11px !important;
+}
+.team-delete-button {
+  width:38px !important;
+  height:38px !important;
+  border-radius:11px !important;
+}
+.team-card-joined { border-color:rgba(120,230,180,.35) !important; }
+.team-current-button { min-height:42px; }
+
+/* Administrace – registrační kód dobře čitelný a kompaktní */
+.admin-registration-form {
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  gap:.55rem !important;
+  margin-top:.8rem !important;
+}
+.admin-registration-form input {
+  min-height:48px !important;
+  padding:.65rem .8rem !important;
+  background:rgba(255,255,255,.98) !important;
+  color:#14232c !important;
+  border:1px solid rgba(255,255,255,.35) !important;
+  border-radius:13px !important;
+  font-size:1rem !important;
+  font-weight:800 !important;
+}
+.admin-registration-form .admin-action-button {
+  width:auto !important;
+  min-width:108px !important;
+  min-height:48px !important;
+  padding:.55rem .8rem !important;
+  border-radius:13px !important;
+}
+@media(max-width:520px) {
+  .admin-registration-form { grid-template-columns:minmax(0,1fr) auto !important; }
+  .admin-registration-form .admin-action-button { width:auto !important; min-width:96px !important; }
+}
+
+/* Osobní trenér – výpočty jsou jen v jedné souhrnné kartě */
+.trainer-plan-footer { display:none !important; }
+.trainer-summary-card .trainer-score { margin-top:.7rem; }
+.trainer-summary-card .trainer-stats {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.5rem;
+}
+.trainer-summary-card .trainer-stats > div {
+  padding:.7rem .75rem;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:13px;
+  background:rgba(255,255,255,.045);
+}
+.trainer-week-summary {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.5rem;
+  margin-top:.5rem;
+}
+.trainer-week-summary > div {
+  padding:.7rem .75rem;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:13px;
+  background:rgba(255,255,255,.045);
+}
+.trainer-week-summary span { display:block; font-size:.7rem; color:var(--ui-muted); text-transform:uppercase; letter-spacing:.04em; }
+.trainer-week-summary strong { display:block; margin-top:.18rem; font-size:1rem; }
+@media(max-width:420px) {
+  .trainer-week-summary { grid-template-columns:1fr 1fr; }
+}
+
+/* Můj progres – osobní rekordy jako standardní karty */
+.progress-record-grid {
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:.6rem !important;
+}
+.progress-record-grid > div {
+  min-height:92px;
+  padding:.75rem !important;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:15px !important;
+  background:var(--card-background) !important;
+  display:grid !important;
+  grid-template-columns:40px minmax(0,1fr);
+  grid-template-rows:auto auto;
+  column-gap:.6rem;
+  align-content:center;
+}
+.progress-record-grid > div > span {
+  grid-row:1 / span 2;
+  width:40px !important;
+  height:40px !important;
+  border-radius:12px !important;
+  background:rgba(255,255,255,.09) !important;
+}
+.progress-record-grid small { align-self:end; font-size:.7rem !important; }
+.progress-record-grid strong { font-size:.98rem !important; }
+@media(max-width:390px) {
+  .progress-record-grid { gap:.45rem !important; }
+  .progress-record-grid > div { grid-template-columns:34px minmax(0,1fr); min-height:82px; padding:.6rem !important; }
+  .progress-record-grid > div > span { width:34px !important; height:34px !important; }
+}
+
+/* Účastníci – abeceda vždy pevně u samotného okraje obrazovky */
+.participants-scroll-area { position:relative; }
+.participants-alpha {
+  position:fixed !important;
+  right:0 !important;
+  top:50% !important;
+  transform:translateY(-50%) !important;
+  z-index:200 !important;
+  padding:7px 3px !important;
+  gap:1px !important;
+  border-radius:12px 0 0 12px !important;
+  background:rgba(7,22,31,.82) !important;
+  border:1px solid rgba(255,255,255,.10);
+  border-right:0;
+  backdrop-filter:blur(10px);
+}
+.participants-alpha button {
+  width:22px !important;
+  min-height:17px !important;
+  font-size:10px !important;
+}
+.participants-alpha button.disabled { opacity:.16 !important; }
+.participants-alpha button.active { opacity:1 !important; transform:scale(1.2); }
