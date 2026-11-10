@@ -69,8 +69,8 @@ export default function ProgressPage() {
           const storedGoals = data.progressGoalsByType || {};
           const legacy = data.progressGoals || {};
           const nextGoals = {
-            běh: { weekly: asNumber(storedGoals.běh?.weekly ?? (legacy.type === "běh" ? legacy.weekly : 25)) || 25, monthly: asNumber(storedGoals.běh?.monthly ?? (legacy.type === "běh" ? legacy.monthly : 100)) || 100 },
-            chůze: { weekly: asNumber(storedGoals.chůze?.weekly ?? (legacy.type === "chůze" ? legacy.weekly : 25)) || 25, monthly: asNumber(storedGoals.chůze?.monthly ?? (legacy.type === "chůze" ? legacy.monthly : 100)) || 100 }
+            běh: { weekly: asNumber(storedGoals.běh?.weekly ?? (legacy.type === "běh" ? 25 : 25)) || 25, monthly: asNumber(storedGoals.běh?.monthly ?? (legacy.type === "běh" ? 100 : 100)) || 100 },
+            chůze: { weekly: asNumber(storedGoals.chůze?.weekly ?? (legacy.type === "chůze" ? 25 : 25)) || 25, monthly: asNumber(storedGoals.chůze?.monthly ?? (legacy.type === "chůze" ? 100 : 100)) || 100 }
           };
           setGoalsByType(nextGoals);
           const initialType = legacy.type === "chůze" ? "chůze" : "běh";
