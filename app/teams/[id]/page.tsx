@@ -30,23 +30,27 @@ export default function TeamDetailPage() {
   const [loading,setLoading]=useState(true);
   const [isMember,setIsMember]=useState(false);
 
-  const load = async (uid?:string) => {
-    if(!id) return;
+  const load = async (uid: string, isActive: () => boolean) => {
+    if (!id || !isActive()) return;
     try {
       const data = await getTeam(id);
+      if (!isActive()) return;
       if(!data){ router.replace("/teams"); return; }
       setTeam(data);
       const memberIds = data.memberIds?.length ? data.memberIds : (data.createdBy ? [data.createdBy] : []);
-      if (uid) setIsMember(memberIds.includes(uid));
+      setIsMember(memberIds.includes(uid));
       setGoal(String(Number(data.challengeGoalKm) || 500));
       setAvatarUrl(data.avatarUrl || "");
       setAvatarPublicId(data.avatarPublicId || "");
 
       const profiles = await getPublicProfiles(memberIds);
+      if (!isActive()) return;
       setMembers(Object.values(profiles).sort((a, b) =>
         (a.nickname || "Uživatel").localeCompare(b.nickname || "Uživatel", "cs")
       ));
-    } finally { setLoading(false); }
+    } finally {
+      if (isActive()) setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -56,7 +60,7 @@ export default function TeamDetailPage() {
       if (!u) { router.push("/login"); return; }
       setUser(u);
       try {
-        await load(u.uid);
+        await load(u.uid, () => active);
       } catch (error) {
         if (active) {
           console.error("Nepodařilo se načíst tým", error);
