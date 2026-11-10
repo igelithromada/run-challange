@@ -6,122 +6,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import RouteMap from "../components/RouteMap";
-
-type RouteItem = {
-  name: string;
-  distance: string;
-  activity: "běh" | "chůze";
-  description: string;
-  mapUrl: string;
-  gpxUrl?: string;
-  badge?: string;
-};
-
-const routeGroups = [
-  {
-    id: "skrpal",
-    title: "Dolnolhotský Škrpál",
-    subtitle: "Pochod za zdravím pro celou rodinu",
-    icon: Footprints,
-    sourceUrl: "https://www.sksdl.cz/skrpal/trasy/",
-    routes: [
-      {
-        name: "Trasa A",
-        distance: "~6 km",
-        activity: "chůze" as const,
-        description: "Rodinná trasa přes Čavisov, les a Vlčí kout. Počítej s náročnějším terénem a delší vycházkou.",
-        mapUrl: "https://mapy.com/s/cekuhukuhe",
-        gpxUrl: "https://sarops.info/skrpal/2026/A.gpx",
-        badge: "Rodinná",
-      },
-      {
-        name: "Trasa B",
-        distance: "~15 km",
-        activity: "chůze" as const,
-        description: "Středně dlouhá trasa přes lesy, rybníčky, Zbyslavice, Sezinu a Čavisov.",
-        mapUrl: "https://mapy.com/s/fukavalela",
-        gpxUrl: "https://sarops.info/skrpal/2026/B.gpx",
-        badge: "Střední",
-      },
-      {
-        name: "Trasa C",
-        distance: "~31 km",
-        activity: "chůze" as const,
-        description: "Nejdelší trasa pro zkušenější chodce. Vede přes Bítov, Kyjovice, Zátiší, Horník a Čavisov.",
-        mapUrl: "https://mapy.com/s/bugonekeku",
-        gpxUrl: "https://sarops.info/skrpal/2026/C.gpx",
-        badge: "Výzva",
-      },
-    ],
-  },
-  {
-    id: "obora",
-    title: "Obora Trail Run",
-    subtitle: "Běžecké trasy v lese Obora u Dolní Lhoty",
-    icon: Mountain,
-    sourceUrl: "https://www.sksdl.cz/obora-trail-run/trasy-r4f/",
-    routes: [
-      {
-        name: "Obora 100 m",
-        distance: "100 m",
-        activity: "běh" as const,
-        description: "Krátká dětská běžecká trasa.",
-        mapUrl: "https://mapy.com/s/cavozunuja",
-        badge: "Děti",
-      },
-      {
-        name: "Obora 200 m",
-        distance: "200 m",
-        activity: "běh" as const,
-        description: "Krátký dětský okruh v lese Obora.",
-        mapUrl: "https://mapy.com/s/gesugecamu",
-        badge: "Děti",
-      },
-      {
-        name: "Obora 400 m",
-        distance: "400 m",
-        activity: "běh" as const,
-        description: "Dětská běžecká trasa využívající značení okruhu Obora.",
-        mapUrl: "https://mapy.com/s/kucagusenu",
-        badge: "Děti",
-      },
-      {
-        name: "Obora 600 m",
-        distance: "600 m",
-        activity: "běh" as const,
-        description: "Delší dětský okruh v lese Obora.",
-        mapUrl: "https://mapy.com/s/jadepogecu",
-        badge: "Děti",
-      },
-      {
-        name: "Obora 900 m",
-        distance: "900 m",
-        activity: "běh" as const,
-        description: "Krátký běžecký okruh v Obora, vhodný i pro samostatný trénink.",
-        mapUrl: "https://mapy.com/s/fasolozese",
-        badge: "Okruh",
-      },
-      {
-        name: "Obora 5 km",
-        distance: "5 km",
-        activity: "běh" as const,
-        description: "Běžecký okruh v mírném lesním terénu. Jeden okruh závodní trasy.",
-        mapUrl: "https://mapy.com/s/janevojeku",
-        gpxUrl: "https://sarops.info/oboratrailrun/2026/5km.gpx",
-        badge: "Běh",
-      },
-      {
-        name: "Obora 10 km",
-        distance: "10 km",
-        activity: "běh" as const,
-        description: "Dva okruhy stejné trasy jako u varianty 5 km.",
-        mapUrl: "https://mapy.com/s/janevojeku",
-        gpxUrl: "https://sarops.info/oboratrailrun/2026/5km.gpx",
-        badge: "Výzva",
-      },
-    ],
-  },
-];
+import { routeGroups } from "../lib/routes";
 
 export default function RoutesPage() {
   const router = useRouter();
@@ -194,7 +79,7 @@ export default function RoutesPage() {
 
         <div className="routes-groups">
           {visibleGroups.map(group => {
-            const Icon = group.icon;
+            const Icon = group.id === "obora" ? Mountain : Footprints;
             const isOpen = openGroup === group.id;
             return (
               <section className="routes-group tile" key={group.id}>
@@ -232,7 +117,16 @@ export default function RoutesPage() {
                             <p>{route.description}</p>
                           </div>
                         </div>
-                        {route.gpxUrl ? <RouteMap gpxUrl={route.gpxUrl} name={route.name} /> : <div className="route-map-unavailable"><MapPinned size={18} /><span>Interaktivní mapa bude doplněna z GPX.</span></div>}
+
+                        {route.gpxUrl ? (
+                          <RouteMap gpxUrl={route.gpxUrl} name={route.name} laps={route.laps} />
+                        ) : (
+                          <div className="route-map-unavailable">
+                            <MapPinned size={18} />
+                            <span>Interaktivní mapa není k dispozici – pořadatel pro tuto trasu nezveřejňuje GPX.</span>
+                          </div>
+                        )}
+
                         <div className="route-card-actions">
                           <a className="route-primary-action" href={route.mapUrl} target="_blank" rel="noopener noreferrer">
                             <Map size={18} /> Zobrazit trasu
@@ -266,7 +160,7 @@ export default function RoutesPage() {
         </section>
 
         <p className="routes-disclaimer">
-          Trasy a jejich průběh může pořadatel podle aktuálních podmínek upravit. Aplikace proto odkazuje na aktuální mapové podklady a zdroj SKS Dolní Lhota.
+          Trasy a jejich průběh může pořadatel podle aktuálních podmínek upravit. Aplikace zobrazuje data z veřejných stránek SKS Dolní Lhota.
         </p>
       </main>
     </>
