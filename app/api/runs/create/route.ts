@@ -49,6 +49,7 @@ export async function POST(request: Request) {
       minuty,
       tempo: tempo.toFixed(2),
       type,
+      description: typeof data.description === "string" ? data.description.trim().slice(0, 500) : "",
       timestamp: Number.isNaN(timestamp.getTime()) ? new Date() : timestamp,
       imageUrls: Array.isArray(data.imageUrls) ? data.imageUrls.filter((x): x is string => typeof x === "string").slice(0, 6) : [],
       imagePublicIds: Array.isArray(data.imagePublicIds) ? data.imagePublicIds.filter((x): x is string => typeof x === "string").slice(0, 6) : [],
