@@ -169,7 +169,7 @@ export default function ProgressPage() {
     return { ...team, km, goalKm, percent:Math.min(100,km/goalKm*100) };
   }).sort((a,b)=>b.km-a.km);
 
-  const switchGoalType = (nextType: string) => {
+  const switchGoalType = (nextType: ActivityType) => {
     setGoalType(nextType);
     const values = goalsByType[nextType] || { weekly: 25, monthly: 100 };
     setGoalWeekly(String(values.weekly));
@@ -203,7 +203,7 @@ export default function ProgressPage() {
 
       <section className="progress-goal-settings tile">
         <div className="progress-section-title"><Target/><div><h2>Moje cíle</h2><p>Nastav si vlastní vzdálenost, které chceš dosáhnout.</p></div></div>
-        <ActivityTypeSelector value={goalType as ActivityType} onChange={switchGoalType as (value: ActivityType) => void} ariaLabel="Typ cíle" />
+        <ActivityTypeSelector value={goalType as ActivityType} onChange={switchGoalType} ariaLabel="Typ cíle" />
         <div className="progress-goal-inputs">
           <label>Týdenní cíl (km)<input type="number" min="0.1" step="0.5" value={goalWeekly} onChange={e=>setGoalWeekly(e.target.value)}/></label>
           <label>Měsíční cíl (km)<input type="number" min="0.1" step="1" value={goalMonthly} onChange={e=>setGoalMonthly(e.target.value)}/></label>
