@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { ExternalLink, Footprints, Map, Mountain, Route, Download, ChevronDown } from "lucide-react";
+import { ExternalLink, Footprints, Map, Mountain, Route, Download, ChevronDown, MapPinned } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import RouteMap from "../components/RouteMap";
 
 type RouteItem = {
   name: string;
@@ -231,6 +232,7 @@ export default function RoutesPage() {
                             <p>{route.description}</p>
                           </div>
                         </div>
+                        {route.gpxUrl ? <RouteMap gpxUrl={route.gpxUrl} name={route.name} /> : <div className="route-map-unavailable"><MapPinned size={18} /><span>Interaktivní mapa bude doplněna z GPX.</span></div>}
                         <div className="route-card-actions">
                           <a className="route-primary-action" href={route.mapUrl} target="_blank" rel="noopener noreferrer">
                             <Map size={18} /> Zobrazit trasu
