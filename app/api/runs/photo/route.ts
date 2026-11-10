@@ -1,28 +1,16 @@
 import { NextResponse } from "next/server";
-import { getAdminServices } from "../../../lib/firebaseAdmin";
+import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { deleteCloudinaryImages, collectCloudinaryPublicIds } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function getUser(request: Request) {
-  const { adminAuth, adminDb } = getAdminServices();
-  const header = request.headers.get("authorization") || "";
-  if (!header.startsWith("Bearer ")) throw new Error("UNAUTHORIZED");
-  const token = header.slice("Bearer ".length).trim();
-  if (!token) throw new Error("UNAUTHORIZED");
-  const decoded = await adminAuth.verifyIdToken(token);
-  const profile = await adminDb.collection("users").doc(decoded.uid).get();
-  return {
-    uid: decoded.uid,
-    isAdmin: decoded.admin === true || (profile.exists && profile.data()?.role === "admin"),
-    adminDb,
-  };
-}
-
 export async function DELETE(request: Request) {
   try {
-    const user = await getUser(request);
+    const { decoded, adminDb } = await requireUser(request);
+    const profile = await adminDb.collection("users").doc(decoded.uid).get();
+    const isAdmin = decoded.admin === true || profile.data()?.role === "admin";
+
     const body = await request.json().catch(() => ({}));
     const runId = typeof body.runId === "string" ? body.runId.trim() : "";
     const index = Number(body.index);
@@ -30,11 +18,11 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Chybí platné ID záznamu nebo fotografie." }, { status: 400 });
     }
 
-    const runRef = user.adminDb.collection("runs").doc(runId);
+    const runRef = adminDb.collection("runs").doc(runId);
     const snapshot = await runRef.get();
     if (!snapshot.exists) return NextResponse.json({ error: "Záznam neexistuje." }, { status: 404 });
     const data = snapshot.data() || {};
-    if (data.uid !== user.uid && !user.isAdmin) {
+    if (data.uid !== decoded.uid && !isAdmin) {
       return NextResponse.json({ error: "Nemáš oprávnění tuto fotografii smazat." }, { status: 403 });
     }
 
@@ -65,9 +53,11 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ ok: true, imageUrls: nextImages });
   } catch (error) {
+    const authError = authErrorResponse(error);
+    if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
+
     console.error("DELETE /api/runs/photo:", error);
     const message = error instanceof Error ? error.message : "";
-    if (message === "UNAUTHORIZED") return NextResponse.json({ error: "Nejsi přihlášen." }, { status: 401 });
     if (message.includes("CLOUDINARY")) return NextResponse.json({ error: "Mazání fotografie není na serveru správně nakonfigurované." }, { status: 500 });
     return NextResponse.json({ error: "Fotografii se nepodařilo smazat. Zkus to prosím znovu." }, { status: 500 });
   }
