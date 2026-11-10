@@ -924,3 +924,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media(max-width:520px){.trainer-calendar-week,.trainer-calendar-weekdays{gap:.2rem}.trainer-calendar-day{min-height:58px;padding:.3rem;border-radius:10px}.trainer-calendar-day small{font-size:.55rem}.trainer-selected-day,.trainer-day-editor-month{align-items:stretch;flex-direction:column}.trainer-day-plan-toggle,.trainer-day-editor-month input{width:100%}}
 
 .activity-team-line{display:flex!important;align-items:center;gap:.3rem}.activity-team-avatar{width:20px;height:20px;border-radius:6px;display:inline-grid;place-items:center;overflow:hidden;background:rgba(255,255,255,.12);font-size:.58rem;font-weight:800}.activity-team-avatar img{width:100%;height:100%;object-fit:cover}
+
+/* Jednotný systém ovládacích prvků */
+.tile-button,.run-primary-button,.run-secondary-button,.progress-save,.trainer-secondary-button{min-height:42px;border-radius:13px;font-weight:750}
+.tile-button svg,.run-primary-button svg,.run-secondary-button svg,.progress-save svg,.trainer-secondary-button svg{width:20px;height:20px}
+.activity-quick-filters button,.activity-type-selector button{min-height:42px;border-radius:13px;font-weight:750}
+.activity-quick-filters button svg,.activity-type-selector button svg{width:20px;height:20px}
+.team-leave-button{margin-top:1rem}
