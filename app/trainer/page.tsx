@@ -74,7 +74,7 @@ export default function TrainerPage(){
  const daysInMonth=new Date(month.getFullYear(),month.getMonth()+1,0).getDate();
  const calendarStart=monday(new Date(month.getFullYear(),month.getMonth(),1));
  const calendarEnd=new Date(month.getFullYear(),month.getMonth(),daysInMonth);
- const calendar=[];
+ const calendar:Date[]=[];
  for(let d=new Date(calendarStart);d<=calendarEnd||d.getDay()!==1;d.setDate(d.getDate()+1)){
    calendar.push(new Date(d));
    if(calendar.length>42)break;
