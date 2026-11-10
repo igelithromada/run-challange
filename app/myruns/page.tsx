@@ -20,13 +20,28 @@ import { getUserProfile } from "../lib/services/users";
 
 type RunData = BaseRunData;
 const uploadToCloudinary = async (file: File) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Nejsi přihlášen.");
+
+  const token = await user.getIdToken();
   const data = new FormData();
-  data.append("file", file); data.append("upload_preset", "lhota_unsigned");
-  const response = await fetch("https://api.cloudinary.com/v1_1/dvb4jm8cw/image/upload", { method: "POST", body: data });
-  if (!response.ok) throw new Error("Fotografii se nepodařilo nahrát.");
-  const result = await response.json();
-  if (!result.secure_url) throw new Error("Server fotografii nevrátil platnou adresu.");
-  return { secureUrl: result.secure_url as string, publicId: typeof result.public_id === "string" ? result.public_id : "" };
+  data.append("file", file);
+
+  const response = await fetch("/api/media/upload", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: data,
+  });
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok || typeof result.secureUrl !== "string") {
+    throw new Error(result.error || "Fotografii se nepodařilo nahrát.");
+  }
+
+  return {
+    secureUrl: result.secureUrl,
+    publicId: typeof result.publicId === "string" ? result.publicId : "",
+  };
 };
 const dateOf = (value: RunData["timestamp"]) => {
   if (value instanceof Date) return value;
