@@ -18,20 +18,24 @@ export async function mergeUserProfile(
 export async function getUserAvatars(uids: string[]): Promise<Record<string, string>> {
   const uniqueIds = Array.from(new Set(uids.filter(Boolean)));
   const result: Record<string, string> = {};
+  const batches: string[][] = [];
 
   for (let index = 0; index < uniqueIds.length; index += 30) {
-    const batch = uniqueIds.slice(index, index + 30);
-    if (!batch.length) continue;
+    batches.push(uniqueIds.slice(index, index + 30));
+  }
 
-    const snapshot = await getDocs(
-      query(collection(db, "users"), where(documentId(), "in", batch))
-    );
+  const snapshots = await Promise.all(
+    batches.map(batch =>
+      getDocs(query(collection(db, "users"), where(documentId(), "in", batch)))
+    )
+  );
 
+  snapshots.forEach(snapshot => {
     snapshot.docs.forEach(user => {
       const data = user.data();
       result[user.id] = typeof data.avatarUrl === "string" ? data.avatarUrl : "";
     });
-  }
+  });
 
   return result;
 }
