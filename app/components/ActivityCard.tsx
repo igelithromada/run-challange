@@ -14,7 +14,7 @@ export type ActivityCardRun = {
 type SocialComment = { id: string; uid: string; nickname: string; avatarUrl?: string; text: string; createdAt?: string | null; mine?: boolean };
 type SocialUser = { uid: string; nickname: string; avatarUrl?: string };
 type Props = {
-  run: ActivityCardRun; nickname: string; avatarUrl?: string; teamName?: string | null;
+  run: ActivityCardRun; nickname: string; avatarUrl?: string; teamName?: string | null; teamAvatarUrl?: string;
   activityType: string; onUserClick?: () => void; onPhotosClick: (images: string[], fallback: string) => void;
   onEdit?: () => void; onDelete?: () => void;
 };
@@ -205,7 +205,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, activ
           </button>
           <div className="activity-person">
             <span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{nickname}</span>
-            {teamName && <small><b>Tým</b> · {teamName}</small>}
+            {teamName && <small className="activity-team-line"><span className="activity-team-avatar">{teamAvatarUrl ? <img src={cloudinaryImageUrl(teamAvatarUrl, 48)} alt="" /> : "T"}</span><b>Tým</b> · {teamName}</small>}
           </div>
           {date && <time className="activity-date" dateTime={date.toISOString()}>{date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}
         </header>
