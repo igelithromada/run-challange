@@ -68,7 +68,8 @@ export default function WeatherCard() {
   const feelsLike = current?.feelsLikeTemperature?.degrees;
   const wind = current?.wind?.speed?.value;
   const windUnit = current?.wind?.speed?.unit === "KILOMETERS_PER_HOUR" ? "km/h" : "m/s";
-  const rainChance = current?.precipitation?.probability?.percent ?? hours[0]?.precipitation?.probability?.percent ?? hours[1]?.precipitation?.probability?.percent;
+  const rainValues = [current?.precipitation?.probability?.percent, ...hours.slice(0, 6).map(item => item?.precipitation?.probability?.percent)].filter(value => typeof value === "number");
+  const rainChance = rainValues.length ? Math.max(...rainValues) : undefined;
 
   return (
     <section className="tile weather-card" style={{ marginBottom: "1.25rem", overflow: "hidden" }} aria-label="Předpověď počasí">
