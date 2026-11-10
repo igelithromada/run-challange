@@ -2,11 +2,11 @@
 import { ReactNode, useEffect } from "react";
 import { auth, db } from "./lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
 import useThemeLoader from "./lib/useThemeLoader";
 import NetworkStatus from "./components/NetworkStatus";
 import { setHapticsEnabled, triggerHaptic } from "./lib/haptics";
 import { mergePublicProfile } from "./lib/services/publicProfiles";
+import { getUserProfile, mergeUserProfile } from "./lib/services/users";
 import AppToast from "./components/AppToast";
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
@@ -38,17 +38,16 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) return;
-      const ref = doc(db, "users", user.uid);
-      const snap = await getDoc(ref);
+      const profile = await getUserProfile(user.uid);
       const defaultNickname = user.email?.split("@")[0] || "uživatel";
-      if (!snap.exists()) {
-        await setDoc(ref, {
+      if (!profile) {
+        await mergeUserProfile(user.uid, {
           id:user.uid, email:user.email||"", nickname:defaultNickname, avatarUrl:"", theme:"default",
           customColor:"#36D1DC", hapticsEnabled:true
         });
         await mergePublicProfile(user.uid, { nickname: defaultNickname, avatarUrl: "", activityType: "běh" });
       } else {
-        const data = snap.data() || {};
+        const data = profile;
         if (data.blocked === true) {
           await auth.signOut();
           try { sessionStorage.setItem("dolni-lhota-blocked", "true"); } catch {}
@@ -64,7 +63,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           setHapticsEnabled(data.hapticsEnabled !== false);
           try { localStorage.setItem("dolni-lhota-haptics-v1", data.hapticsEnabled === false ? "false" : "true"); } catch {}
         }
-        if (Object.keys(update).length) await setDoc(ref, update, { merge:true });
+        if (Object.keys(update).length) await mergeUserProfile(user.uid, update);
         await mergePublicProfile(user.uid, {
           nickname: typeof update.nickname === "string" ? update.nickname : (data.nickname || defaultNickname),
           avatarUrl: typeof update.avatarUrl === "string" ? update.avatarUrl : (data.avatarUrl || ""),
