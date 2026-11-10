@@ -56,7 +56,8 @@ export default function StatisticsPage() {
 
   const filtered = runs.filter(run => {
     if ((run.type || "běh") !== selectedType) return false;
-    const date = new Date(run.timestamp?.seconds ? run.timestamp.seconds * 1000 : run.timestamp);
+    const timestamp = run.timestamp;
+    const date = !timestamp ? new Date(0) : timestamp instanceof Date ? timestamp : "toDate" in timestamp && typeof timestamp.toDate === "function" ? timestamp.toDate() : "seconds" in timestamp && typeof timestamp.seconds === "number" ? new Date(timestamp.seconds * 1000) : new Date(0);
     if (startDate && new Date(startDate) > date) return false;
     if (endDate && new Date(endDate + "T23:59") < date) return false;
     return true;
