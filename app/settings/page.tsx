@@ -9,8 +9,9 @@ import Sidebar from "../components/Sidebar";
 import { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
-import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, ShieldCheck, KeyRound } from "lucide-react";
+import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, ShieldCheck, KeyRound, Smartphone } from "lucide-react";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
+import { setHapticsEnabled } from "../lib/haptics";
 
 const DEFAULT_COLOR = "#36D1DC";
 const DEFAULT_ACTIVITY_KEY = "dolni-lhota-default-activity-v1";
@@ -26,6 +27,7 @@ export default function SettingsPage() {
   const [customColor, setCustomColor] = useState(DEFAULT_COLOR);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
+  const [hapticsEnabled, setHapticsEnabledState] = useState(true);
   const [defaultActivity, setDefaultActivity] = useState<"běh" | "chůze">("běh");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
@@ -39,6 +41,8 @@ export default function SettingsPage() {
     try {
       const cachedActivity = localStorage.getItem(DEFAULT_ACTIVITY_KEY);
       if (cachedActivity === "běh" || cachedActivity === "chůze") setDefaultActivity(cachedActivity);
+      const cachedHaptics = localStorage.getItem("dolni-lhota-haptics-v1");
+      if (cachedHaptics !== null) setHapticsEnabledState(cachedHaptics !== "false");
       const cached = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
       if (cached) {
         setTheme(cached.theme || "default");
@@ -61,6 +65,7 @@ export default function SettingsPage() {
           const remoteTheme = data.theme || "default";
           const remoteColor = data.customColor || DEFAULT_COLOR;
           const remoteAnimations = data.animationsEnabled !== false;
+          const remoteHaptics = data.hapticsEnabled !== false;
           let cachedTheme: { theme?: string; customColor?: string; animationsEnabled?: boolean; savedAt?: number } | null = null;
           try {
             cachedTheme = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
@@ -76,6 +81,8 @@ export default function SettingsPage() {
           setTheme(storedTheme);
           setCustomColor(storedColor);
           setAnimationsEnabled(storedAnimations);
+          setHapticsEnabledState(remoteHaptics);
+          setHapticsEnabled(remoteHaptics);
           const remoteDefaultActivity = data.defaultActivity === "chůze" ? "chůze" : "běh";
           setDefaultActivity(remoteDefaultActivity);
           try { localStorage.setItem(DEFAULT_ACTIVITY_KEY, remoteDefaultActivity); } catch {}
@@ -140,6 +147,19 @@ export default function SettingsPage() {
     await applyTheme(theme, customColor, enabled);
     await saveSettings({ animationsEnabled: enabled });
     flash(enabled ? "Animace zapnuty" : "Animace vypnuty");
+  };
+
+  const handleHapticsChange = async (enabled: boolean) => {
+    setHapticsEnabledState(enabled);
+    setHapticsEnabled(enabled);
+    try { localStorage.setItem("dolni-lhota-haptics-v1", enabled ? "true" : "false"); } catch {}
+    try {
+      await saveSettings({ hapticsEnabled: enabled });
+      flash(enabled ? "Haptická odezva zapnuta" : "Haptická odezva vypnuta");
+    } catch (error) {
+      console.error("Nepodařilo se uložit haptickou odezvu", error);
+      flash("Nastavení haptiky se nepodařilo uložit");
+    }
   };
 
   const handleDefaultActivityChange = async (value: "běh" | "chůze") => {
@@ -274,6 +294,14 @@ export default function SettingsPage() {
         <section className="tile">
           <div className="settings-section-heading"><SlidersHorizontal size={21}/><div><h2>Chování aplikace</h2><p>Výchozí typ aktivity pro rychlé přidávání záznamů.</p></div></div>
           <ActivityTypeSelector value={defaultActivity as ActivityType} onChange={(value) => void handleDefaultActivityChange(value)} ariaLabel="Výchozí aktivita" />
+        </section>
+
+        <section className="tile">
+          <div className="settings-section-heading"><Smartphone size={21}/><div><h2>Haptická odezva</h2><p>Velmi jemné krátké zavibrování při kliknutí a přepnutí ovládacích prvků.</p></div></div>
+          <label className="settings-animation-toggle">
+            <span><strong>Haptická odezva</strong><small>Telefon krátce zavibruje při interakci. Nastavení se uloží i pro příště.</small></span>
+            <input type="checkbox" checked={hapticsEnabled} onChange={e => void handleHapticsChange(e.target.checked)} />
+          </label>
         </section>
 
         <section className="tile settings-password-section">
