@@ -58,11 +58,12 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
         if (basePoints.length < 2) throw new Error("GPX neobsahuje dostatek bodů.");
 
         const lapCount = Math.max(1, Math.floor(laps));
-        const routePoints =
+        const routeLines =
           lapCount === 1
-            ? basePoints
-            : Array.from({ length: lapCount }, () => basePoints).flat();
+            ? [basePoints]
+            : Array.from({ length: lapCount }, () => basePoints);
 
+        const routePoints = routeLines.flat();
         const bounds = new ml.LngLatBounds(routePoints[0], routePoints[0]);
         routePoints.forEach(point => bounds.extend(point));
 
@@ -104,7 +105,9 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
             data: {
               type: "Feature",
               properties: {},
-              geometry: { type: "LineString", coordinates: routePoints },
+              geometry: lapCount === 1
+                ? { type: "LineString", coordinates: basePoints }
+                : { type: "MultiLineString", coordinates: routeLines },
             },
           });
 
