@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getAdminServices } from "../../../lib/firebaseAdmin";
 import { requireUser } from "../../../lib/apiAuth";
 
 export const runtime = "nodejs";
@@ -7,10 +6,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const { decoded } = await requireUser(request);
+    const { decoded, adminDb } = await requireUser(request);
     const body = await request.json().catch(() => ({}));
     const action = String(body?.action || "");
-    const { adminDb } = await requireUser(request);
     const userRef = adminDb.collection("users").doc(decoded.uid);
 
     if (action === "create") {
