@@ -1,22 +1,16 @@
 import { NextResponse } from "next/server";
 import { FieldPath, FieldValue } from "firebase-admin/firestore";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
+import { requireUser as requireApiUser } from "../../../lib/apiAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function requireUser(request: Request) {
-  const { adminAuth, adminDb } = getAdminServices();
-  const header = request.headers.get("authorization") || "";
-  if (!header.startsWith("Bearer ")) throw new Error("UNAUTHORIZED");
-  const token = header.slice("Bearer ".length).trim();
-  const decoded = await adminAuth.verifyIdToken(token);
-  return { ...getAdminServices(), decoded };
-}
+
 
 export async function GET(request: Request) {
   try {
-    const { adminDb, decoded } = await requireUser(request);
+    const { adminDb, decoded } = await requireApiUser(request);
     const runId = new URL(request.url).searchParams.get("runId")?.trim();
     if (!runId) return NextResponse.json({ error: "Chybí ID záznamu." }, { status: 400 });
 
@@ -59,15 +53,13 @@ export async function GET(request: Request) {
       });
     }
 
-    const currentProfile = await adminDb.collection("users").doc(decoded.uid).get();
-    const currentProfileData = currentProfile.exists ? currentProfile.data() || {} : {};
     return NextResponse.json({
       liked: likedBy.includes(decoded.uid),
       likeCount: Number(data.likeCount) || likedBy.length,
       commentCount: Number(data.commentCount) || comments.length,
       likes: likeUsers,
       comments,
-      isAdmin: decoded.admin === true || currentProfileData.role === "admin",
+      isAdmin: decoded.admin === true || decoded.role === "admin",
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
@@ -78,7 +70,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { adminDb, decoded } = await requireUser(request);
+    const { adminDb, decoded } = await requireApiUser(request);
     const body = await request.json().catch(() => ({}));
     const runId = typeof body?.runId === "string" ? body.runId.trim() : "";
     const action = typeof body?.action === "string" ? body.action : "";
@@ -95,9 +87,7 @@ export async function POST(request: Request) {
       const commentSnapshot = await commentRef.get();
       if (!commentSnapshot.exists) return NextResponse.json({ error: "Komentář neexistuje." }, { status: 404 });
       const commentData = commentSnapshot.data() || {};
-      const profile = await adminDb.collection("users").doc(decoded.uid).get();
-      const profileData = profile.exists ? profile.data() || {} : {};
-      const isAdmin = decoded.admin === true || profileData.role === "admin";
+      const isAdmin = decoded.admin === true || decoded.role === "admin";
       if (commentData.uid !== decoded.uid && !isAdmin) {
         return NextResponse.json({ error: "K tomuto komentáři nemáš oprávnění." }, { status: 403 });
       }
@@ -149,10 +139,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Komentář musí mít 1 až 500 znaků." }, { status: 400 });
     }
 
-    const profile = await adminDb.collection("users").doc(decoded.uid).get();
-    const profileData = profile.exists ? profile.data() || {} : {};
-    const nickname = profileData.nickname || decoded.email?.split("@")[0] || "Uživatel";
-    const avatarUrl = profileData.avatarUrl || "";
+    const publicProfile = await adminDb.collection("publicProfiles").doc(decoded.uid).get();
+    const publicProfileData = publicProfile.exists ? publicProfile.data() || {} : {};
+    const nickname = typeof publicProfileData.nickname === "string" && publicProfileData.nickname.trim() ? publicProfileData.nickname : "Uživatel";
+    const avatarUrl = typeof publicProfileData.avatarUrl === "string" ? publicProfileData.avatarUrl : "";
     const commentRef = adminDb.collection("runs").doc(runId).collection("comments").doc();
 
     await adminDb.runTransaction(async transaction => {
