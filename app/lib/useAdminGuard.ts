@@ -23,8 +23,12 @@ export default function useAdminGuard(): AdminAccess {
       }
 
       try {
-        const profile = await getUserProfile(user.uid);
-        const isAdmin = profile?.role === "admin";
+        const [tokenResult, profile] = await Promise.all([
+          user.getIdTokenResult(),
+          getUserProfile(user.uid),
+        ]);
+
+        const isAdmin = tokenResult.claims.admin === true || profile?.role === "admin";
 
         if (!active) return;
         setAccess(isAdmin ? "allowed" : "denied");
