@@ -1,5 +1,6 @@
 import {
   collection,
+  getDocs,
   limit,
   orderBy,
   query,
@@ -27,6 +28,17 @@ export function teamRunsQuery(teamId: string): Query {
 
 export function olderRunsQuery(cursor: QueryDocumentSnapshot, pageSize = 20): Query {
   return query(runsCollection(), orderBy("timestamp", "desc"), startAfter(cursor), limit(pageSize));
+}
+
+export async function fetchOlderRuns(
+  cursor: QueryDocumentSnapshot,
+  pageSize = 20
+): Promise<{ items: RunData[]; lastDocument: QueryDocumentSnapshot | null }> {
+  const snapshot = await getDocs(olderRunsQuery(cursor, pageSize));
+  return {
+    items: snapshot.docs.map(mapRunSnapshot),
+    lastDocument: snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null,
+  };
 }
 
 export function mapRunSnapshot(data: { id: string; data(): Record<string, unknown> }): RunData {
