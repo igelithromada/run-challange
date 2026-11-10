@@ -52,6 +52,14 @@ export interface RunComment {
   updatedAt?: FirestoreTimestamp;
 }
 
+export interface PublicProfileData {
+  id: string;
+  nickname?: string;
+  avatarUrl?: string;
+  activityType?: ActivityType;
+  organizationId?: string;
+}
+
 export interface UserData {
   id: string;
   organizationId?: string;
