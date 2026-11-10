@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { getDocs } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "./lib/firebase";
@@ -14,7 +13,7 @@ import RunWeatherRecommendation from "./components/RunWeatherRecommendation";
 import ActivityTypeSelector from "./components/ActivityTypeSelector";
 import { RunData } from "./types";
 import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
-import { latestRunsQuery, olderRunsQuery, mapRunSnapshot } from "./lib/services/runs";
+import { latestRunsQuery, fetchOlderRuns } from "./lib/services/runs";
 import { getUserAvatars, getUserProfile } from "./lib/services/users";
 import { allTeamsQuery } from "./lib/services/teams";
 import type { TeamData } from "./types";
@@ -73,14 +72,14 @@ export default function Page() {
     if (!cursor || loadingOlder || !hasMore) return;
     setLoadingOlder(true);
     try {
-      const next = await getDocs(olderRunsQuery(cursor, 20));
-      const items = next.docs.map(mapRunSnapshot);
+      const next = await fetchOlderRuns(cursor, 20);
+      const items = next.items;
       setOlderRuns(previous => [
         ...previous,
         ...items.filter(item => !previous.some(old => old.id === item.id) && !runs.some(current => current.id === item.id))
       ]);
-      setOlderCursor(next.docs.length ? next.docs[next.docs.length - 1] : cursor);
-      setHasMore(next.docs.length === 20);
+      setOlderCursor(next.lastDocument || cursor);
+      setHasMore(next.items.length === 20);
     } catch (error) {
       console.error("Nepodařilo se načíst starší aktivity", error);
     } finally {
