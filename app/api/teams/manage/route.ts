@@ -1,22 +1,16 @@
 import { NextResponse } from "next/server";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
+import { requireUser } from "../../../lib/apiAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function authUser(request: Request) {
-  const header = request.headers.get("authorization") || "";
-  if (!header.startsWith("Bearer ")) throw new Error("UNAUTHORIZED");
-  const { adminAuth } = getAdminServices();
-  return adminAuth.verifyIdToken(header.slice(7).trim());
-}
-
 export async function POST(request: Request) {
   try {
-    const decoded = await authUser(request);
+    const { decoded } = await requireUser(request);
     const body = await request.json().catch(() => ({}));
     const action = String(body?.action || "");
-    const { adminDb } = getAdminServices();
+    const { adminDb } = await requireUser(request);
     const userRef = adminDb.collection("users").doc(decoded.uid);
 
     if (action === "create") {
