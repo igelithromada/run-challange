@@ -68,7 +68,8 @@ export default function WeatherCard() {
   const feelsLike = current?.feelsLikeTemperature?.degrees;
   const wind = current?.wind?.speed?.value;
   const windUnit = current?.wind?.speed?.unit === "KILOMETERS_PER_HOUR" ? "km/h" : "m/s";
-  const rainChance = current?.precipitation?.probability?.percent;
+  const rainValues = [current?.precipitation?.probability?.percent, ...hours.slice(0, 6).map(item => item?.precipitation?.probability?.percent)].filter(value => typeof value === "number");
+  const rainChance = rainValues.length ? Math.max(...rainValues) : undefined;
 
   return (
     <section className="tile weather-card" style={{ marginBottom: "1.25rem", overflow: "hidden" }} aria-label="Předpověď počasí">
@@ -77,7 +78,7 @@ export default function WeatherCard() {
           <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Počasí pro pohyb</h2>
           <p style={{ margin: "0.2rem 0 0", opacity: 0.78, fontSize: "0.85rem" }}>Dolní Lhota u Ostravy</p>
         </div>
-        <button type="button" className="weather-refresh-button" onClick={() => void loadWeather(true)} aria-label="Obnovit počasí" title="Obnovit počasí" style={{ background: "rgba(255,255,255,0.16)", border: 0, borderRadius: 999, color: "inherit", padding: "0.55rem", cursor: "pointer" }}>
+        <button type="button" className="weather-refresh-button" onClick={() => void loadWeather(true)} aria-label="Obnovit počasí" title="Obnovit počasí" style={{ background: "rgba(255,255,255,0.16)", border: "1px solid rgba(255,255,255,.18)", borderRadius: "13px", color: "inherit", width: "42px", height: "42px", display: "grid", placeItems: "center", padding: 0, cursor: "pointer" }}>
           <RefreshCw size={18} />
         </button>
       </div>

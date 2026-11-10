@@ -9,7 +9,7 @@ import Sidebar from "../components/Sidebar";
 import { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
-import { Check, Palette, Sparkles, Clock3, SlidersHorizontal, ShieldCheck, KeyRound } from "lucide-react";
+import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, ShieldCheck, KeyRound } from "lucide-react";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 
 const DEFAULT_COLOR = "#36D1DC";
@@ -94,11 +94,12 @@ export default function SettingsPage() {
   };
 
   const saveSettings = async (patch: Record<string, unknown>) => {
-    if (!userId) return;
+    const activeUserId = userId || auth.currentUser?.uid;
+    if (!activeUserId) throw new Error("Nejsi přihlášen.");
     setSaving(true);
     try {
       const themeChanged = "theme" in patch || "customColor" in patch || "animationsEnabled" in patch;
-      await setDoc(doc(db, "users", userId), {
+      await setDoc(doc(db, "users", activeUserId), {
         nickname, avatarUrl, theme, customColor, animationsEnabled, ...patch,
         ...(themeChanged ? { themeUpdatedAt: serverTimestamp() } : {})
       }, { merge: true });
@@ -250,6 +251,7 @@ export default function SettingsPage() {
             <ThemeItem color="linear-gradient(180deg,#2980b9,#2c3e50)" active={theme === "man"} onClick={() => void handleThemeChange("man")} text="Muž" />
             <ThemeItem color="linear-gradient(180deg,#ff7eb3,#ff758c)" active={theme === "woman"} onClick={() => void handleThemeChange("woman")} text="Žena" />
             <ThemeItem icon={<Clock3 size={19}/>} color="linear-gradient(180deg,#4facfe,#1b2430)" active={theme === "auto"} onClick={() => void handleThemeChange("auto")} text="Podle času" />
+            <ThemeItem icon={<CloudSun size={19}/>} color="linear-gradient(180deg,#ffd166,#4facfe)" active={theme === "weather"} onClick={() => void handleThemeChange("weather")} text="Podle počasí" />
           </div>
 
           <div className={`custom-theme-box ${theme === "custom" ? "active" : ""}`}>

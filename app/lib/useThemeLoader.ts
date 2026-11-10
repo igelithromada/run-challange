@@ -14,7 +14,7 @@ function readThemeCache(): ThemeCache {
     if (!raw) return defaults;
     const value = JSON.parse(raw);
     return {
-      theme: typeof value.theme === "string" ? (value.theme === "weather" ? "default" : value.theme) : defaults.theme,
+      theme: typeof value.theme === "string" ? value.theme : defaults.theme,
       customColor: typeof value.customColor === "string" ? value.customColor : defaults.customColor,
       animationsEnabled: value.animationsEnabled !== false,
       savedAt: typeof value.savedAt === "number" ? value.savedAt : 0
@@ -38,7 +38,7 @@ export default function useThemeLoader() {
         if (!active || !userDoc.exists()) return;
         const data = userDoc.data();
         userData = {
-          theme: data.theme === "weather" ? "default" : (data.theme || "default"),
+          theme: data.theme || "default",
           customColor: data.customColor || "#36D1DC",
           animationsEnabled: data.animationsEnabled !== false,
           savedAt: typeof data.themeUpdatedAt?.toMillis === "function" ? data.themeUpdatedAt.toMillis() : Number(data.themeUpdatedAt || 0)
@@ -55,7 +55,7 @@ export default function useThemeLoader() {
       } catch (error) { console.error("Nepodařilo se načíst vzhled", error); }
     });
     const interval = window.setInterval(() => {
-      if (userData.theme === "auto") {
+      if (userData.theme === "auto" || userData.theme === "weather") {
         void applyTheme(userData.theme, userData.customColor, userData.animationsEnabled);
       }
     }, 30 * 60 * 1000);
@@ -80,7 +80,7 @@ export async function applyTheme(selectedTheme: string, color: string, animation
   if (persist) writeThemeCache({ theme: selectedTheme, customColor: color, animationsEnabled, savedAt: Date.now() });
   root.style.setProperty("--main-gradient", gradient);
 
-  if (animationsEnabled) {
+  if (animationsEnabled || selectedTheme === "weather") {
     try {
       const response = await fetch("/api/weather");
       if (!response.ok) throw new Error("Počasí není dostupné");
@@ -95,6 +95,14 @@ export async function applyTheme(selectedTheme: string, color: string, animation
       const isSnow = condition.includes("SNOW") || condition.includes("SLEET") || condition.includes("HAIL");
       const isRain = condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER");
       const isWindy = wind >= 8;
+      if (selectedTheme === "weather") {
+        if (isRain) gradient = night ? "linear-gradient(180deg,#243b55,#101820)" : "linear-gradient(180deg,#5f7f99,#243b55)";
+        else if (isSnow) gradient = night ? "linear-gradient(180deg,#26384a,#16232f)" : "linear-gradient(180deg,#dbeafe,#6f8fa8)";
+        else if (condition.includes("FOG")) gradient = "linear-gradient(180deg,#7f8c8d,#46545c)";
+        else if (condition.includes("CLOUD")) gradient = night ? "linear-gradient(180deg,#293949,#1b2630)" : "linear-gradient(180deg,#8fa9bc,#4f7188)";
+        else gradient = night ? "linear-gradient(180deg,#15253d,#243b55)" : "linear-gradient(180deg,#ffd166,#4facfe)";
+        root.style.setProperty("--main-gradient", gradient);
+      }
       root.style.setProperty("--wind-strength", String(Math.min(1, Math.max(0.15, wind / 45))));
       if (animationsEnabled && isWindy) root.setAttribute("data-windy", "true");
 
@@ -105,7 +113,7 @@ export async function applyTheme(selectedTheme: string, color: string, animation
       else if (isWindy) weather = "wind";
       else if (condition.includes("CLOUD")) weather = "cloudy";
       else if (night) weather = "night";
-      if (animationsEnabled) root.setAttribute("data-weather", weather);
+      root.setAttribute("data-weather", weather);
 
 
     } catch (error) {

@@ -1,237 +1,125 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  collection,
-  query,
-  addDoc,
-  deleteDoc,
-  doc,
-  setDoc,
-  getDoc,
-} from "firebase/firestore";
+import { collection, query, addDoc, deleteDoc, doc, setDoc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import { Plus, Trash2, Users, ChevronRight } from "lucide-react";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import { Plus, DoorOpen, Trash2 } from "lucide-react";
 import ActivityTypeSelector, { ActivityType, ActivityTypeIcon } from "../components/ActivityTypeSelector";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
+import { cloudinaryImageUrl } from "../lib/imageUrl";
 
 export default function TeamsPage() {
+  const [menuVisible,setMenuVisible]=useState(false);
+  const [teamName,setTeamName]=useState("");
+  const [selectedType,setSelectedType]=useState<ActivityType>("běh");
+  const [teamIdsByType,setTeamIdsByType]=useState<Record<ActivityType,string|null>>({běh:null,chůze:null});
+  const [user,setUser]=useState<any>(null);
+  const [teamMessage,setTeamMessage]=useState("");
+  const router=useRouter();
 
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [teamName, setTeamName] = useState("");
-  const [challengeGoal, setChallengeGoal] = useState("500");
-  const [challengeSaving, setChallengeSaving] = useState(false);
-  const [challengeMessage, setChallengeMessage] = useState("");
-  const [teamMessage, setTeamMessage] = useState("");
-  const [selectedType, setSelectedType] = useState<ActivityType>("běh");
-  const [teamIdsByType, setTeamIdsByType] = useState<Record<ActivityType, string | null>>({ běh: null, chůze: null });
-  const [user, setUser] = useState<any>(null);
+  useEffect(()=>onAuthStateChanged(auth,async u=>{
+    if(!u){router.push("/login");return;}
+    setUser(u);
+    const snap=await getDoc(doc(db,"users",u.uid));
+    if(snap.exists()){
+      const data=snap.data(), stored=data.teamIdsByType||{};
+      setTeamIdsByType({
+        běh:typeof stored.běh==="string"?stored.běh:(typeof data.teamId==="string"?data.teamId:null),
+        chůze:typeof stored.chůze==="string"?stored.chůze:null
+      });
+    }
+  }),[router]);
 
-  const router = useRouter();
+  const teamsQuery=useMemo(()=>query(collection(db,"teams")),[]);
+  const teamsState=useSharedFirestoreQuery<any>("teams:all",teamsQuery);
+  const teams=teamsState.data;
+  const visibleTeams=teams.filter(team=>(team.type==="chůze"?"chůze":"běh")===selectedType);
+  const joinedTeamId=teamIdsByType[selectedType];
+  const joinedTeam=teams.find(t=>t.id===joinedTeamId);
 
-  useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, async u => {
-      if (!u) {
-        router.push("/login");
-      } else {
-        setUser(u);
-        const userDoc = await getDoc(doc(db, "users", u.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          const stored = data.teamIdsByType;
-          const next: Record<ActivityType, string | null> = {
-            běh: typeof stored?.běh === "string" ? stored.běh : (typeof data.teamId === "string" ? data.teamId : null),
-            chůze: typeof stored?.chůze === "string" ? stored.chůze : null,
-          };
-          setTeamIdsByType(next);
-        }
-      }
-    });
-    return () => unsubAuth();
-  }, [router]);
-
-  const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
-  const teamsState = useSharedFirestoreQuery<any>("teams:all", teamsQuery);
-  const teams = teamsState.data;
-  const joinedTeam = teamIdsByType[selectedType];
-  const currentTeam = teams.find((team: any) => team.id === joinedTeam);
-  const isTeamOwner = !!currentTeam && currentTeam.createdBy === user?.uid;
-
-  useEffect(() => {
-    if (currentTeam) setChallengeGoal(String(Number(currentTeam.challengeGoalKm) || 500));
-  }, [joinedTeam, currentTeam?.challengeGoalKm]);
-
-  const createTeam = async () => {
-    if (!teamName.trim() || !user) return;
+  const createTeam=async()=>{
+    if(!teamName.trim()||!user)return;
     setTeamMessage("");
-    try {
-    const newTeam = await addDoc(collection(db, "teams"), {
-      name: teamName.trim(),
-      type: selectedType,
-      createdBy: user.uid,
-      challengeGoalKm: Number(challengeGoal) > 0 ? Number(challengeGoal) : 500,
-    });
-    const next = { ...teamIdsByType, [selectedType]: newTeam.id };
-    await setDoc(doc(db, "users", user.uid), {
-      teamIdsByType: next,
-      ...(selectedType === "běh" ? { teamId: newTeam.id, joinedTeam: newTeam.id } : {}),
-    }, { merge: true });
+    try{
+      const created=await addDoc(collection(db,"teams"),{name:teamName.trim(),type:selectedType,createdBy:user.uid,challengeGoalKm:500,avatarUrl:"",avatarPublicId:""});
+      const next={...teamIdsByType,[selectedType]:created.id};
+      await setDoc(doc(db,"users",user.uid),{teamIdsByType:next,...(selectedType==="běh"?{teamId:created.id,joinedTeam:created.id}:{})},{merge:true});
+      setTeamIdsByType(next); setTeamName(""); setTeamMessage("Tým byl vytvořen a stal ses jeho členem.");
+      router.push("/teams/"+created.id);
+    }catch(e){console.error(e);setTeamMessage("Tým se nepodařilo vytvořit.");}
+  };
+
+  const joinTeam=async(team:any)=>{
+    const type:ActivityType=team.type==="chůze"?"chůze":"běh";
+    const next={...teamIdsByType,[type]:team.id};
+    await setDoc(doc(db,"users",user.uid),{teamIdsByType:next,...(type==="běh"?{teamId:team.id,joinedTeam:team.id}:{})},{merge:true});
     setTeamIdsByType(next);
-    setTeamName("");
-    setTeamMessage(`Tým pro ${selectedType} byl vytvořen.`);
-    } catch (error) {
-      console.error("Nepodařilo se vytvořit tým", error);
-      setTeamMessage("Tým se nepodařilo vytvořit. Zkontroluj přihlášení a zkus to znovu.");
-    }
   };
 
-  const saveChallengeGoal = async () => {
-    const value = Number(challengeGoal.replace(",", "."));
-    if (!joinedTeam || !isTeamOwner || !Number.isFinite(value) || value <= 0 || value > 100000) {
-      setChallengeMessage("Zadej platný cíl od 0,1 do 100 000 km.");
-      return;
-    }
-    setChallengeSaving(true);
-    setChallengeMessage("");
-    try {
-      await setDoc(doc(db, "teams", joinedTeam), { challengeGoalKm: value }, { merge: true });
-      setChallengeGoal(String(value));
-      setChallengeMessage("Cíl týmové výzvy byl uložen.");
-    } catch (error) {
-      console.error("Nepodařilo se uložit cíl týmové výzvy", error);
-      setChallengeMessage("Cíl se nepodařilo uložit. Zkus to znovu.");
-    } finally { setChallengeSaving(false); }
-  };
-
-  const joinTeam = async (teamId: string, teamType: ActivityType) => {
-    const next = { ...teamIdsByType, [teamType]: teamId };
+  const leaveTeam=async()=>{
+    if(!joinedTeamId||!user)return;
+    const next={...teamIdsByType,[selectedType]:null};
+    await setDoc(doc(db,"users",user.uid),{teamIdsByType:next,...(selectedType==="běh"?{teamId:null,joinedTeam:null}:{})},{merge:true});
     setTeamIdsByType(next);
-    if (user) {
-      await setDoc(doc(db, "users", user.uid), {
-        teamIdsByType: next,
-        ...(teamType === "běh" ? { teamId, joinedTeam: teamId } : {}),
-      }, { merge: true });
-    }
   };
 
-  const leaveTeam = async () => {
-    const next = { ...teamIdsByType, [selectedType]: null };
-    setTeamIdsByType(next);
-    if (user) {
-      await setDoc(doc(db, "users", user.uid), {
-        teamIdsByType: next,
-        ...(selectedType === "běh" ? { teamId: null, joinedTeam: null } : {}),
-      }, { merge: true });
-    }
+  const deleteTeam=async(team:any)=>{
+    if(team.createdBy!==user?.uid||!window.confirm("Opravdu chceš tento tým smazat?"))return;
+    await deleteDoc(doc(db,"teams",team.id));
+    if(joinedTeamId===team.id) await leaveTeam();
   };
 
-  const deleteTeam = async (teamId: string) => {
-    if (!window.confirm("Opravdu chceš tento tým smazat?")) return;
-    await deleteDoc(doc(db, "teams", teamId));
-    if (joinedTeam === teamId) {
-      const next = { ...teamIdsByType, [selectedType]: null };
-      setTeamIdsByType(next);
-      if (user) {
-        await setDoc(doc(db, "users", user.uid), {
-          teamIdsByType: next,
-          ...(selectedType === "běh" ? { teamId: null, joinedTeam: null } : {}),
-        }, { merge: true });
-      }
-    }
-  };
-
-  const handleSelect = async (item: string) => {
+  const handleSelect=async(item:string)=>{
     setMenuVisible(false);
-    if (item === "logout") {
-      try {
-        await signOut(auth);
-        router.push("/login");
-      } catch (err) {
-        console.error("Chyba při odhlašování: ", err);
-      }
-    } else if (item === "home") router.push("/");
-    else if (item === "myrun") router.push("/myruns");
-    else if (item === "teams") router.push("/teams");
-    else if (item === "settings") router.push("/settings");
-    else if (item === "statistics") router.push("/statistics");
-    else if (item === "participants") router.push("/participants");
-    else if (item === "progress") router.push("/progress");
-    else if (item === "trainer") router.push("/trainer");
-    else if (item === "weather") router.push("/weather");
-    else if (item === "admin") router.push("/admin");
+    if(item==="logout"){await signOut(auth);router.push("/login");return;}
+    const routes:Record<string,string>={home:"/",myrun:"/myruns",teams:"/teams",settings:"/settings",statistics:"/statistics",participants:"/participants",progress:"/progress",trainer:"/trainer",weather:"/weather",admin:"/admin"};
+    router.push(routes[item]||"/");
   };
 
-  return (
-    <>
-      <Navbar title="Týmy" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+  return <>
+    <Navbar title="Týmy" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
+    <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/>
+    <main className="container teams-page">
+      <header className="teams-header"><span className="teams-eyebrow">SPOLEČNĚ ZA POHYBEM</span><h1>Týmy</h1><p>Vyber si tým podle aktivity. Každý tým má vlastní nastavení, cíl a seznam účastníků.</p></header>
 
-      <div className="container teams-page">
-        <header className="teams-header"><span className="teams-eyebrow">SPOLEČNĚ ZA POHYBEM</span><h1>Týmy</h1><p>Vytvoř vlastní tým nebo se přidej k ostatním z Dolní Lhoty.</p></header>
+      <section className="tile teams-create">
+        <div className="control-caption">Aktivita týmů</div>
+        <ActivityTypeSelector value={selectedType} onChange={setSelectedType} ariaLabel="Aktivita týmů"/>
+        <div className="teams-section-heading"><div><h2>Vytvořit nový tým</h2><p>Nový tým bude automaticky určený pro {selectedType}.</p></div></div>
+        <div className="teams-create-form">
+          <input type="text" placeholder="Zadej název týmu" value={teamName} onChange={e=>setTeamName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")void createTeam();}}/>
+          <button onClick={()=>void createTeam()} className="run-primary-button" disabled={!teamName.trim()}><Plus size={18}/> Vytvořit tým</button>
+        </div>
+        {teamMessage&&<p className="teams-message">{teamMessage}</p>}
+      </section>
 
-        {joinedTeam && (
-          <div className="tile teams-current">
-            <div className="teams-current-icon">🏅</div>
-            <div><small>TVŮJ AKTUÁLNÍ TÝM</small><strong>{teams.find((t) => t.id === joinedTeam)?.name || "?"}</strong></div>
-          </div>
-        )}
-
-        <section className="tile teams-create">
-          <div className="control-caption">Tým pro aktivitu</div>
-          <ActivityTypeSelector value={selectedType} onChange={setSelectedType} ariaLabel="Aktivita týmu" />
-          <div className="teams-section-heading"><div><h2>Vytvořit nový tým</h2><p>Založ tým a pozvi ostatní členy.</p></div></div>
-          <div className="teams-create-form">
-            <input type="text" placeholder="Zadej název týmu" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
-            <button onClick={createTeam} className="tile-button teams-primary-button" disabled={!teamName.trim()}><Plus size={18} /> Vytvořit tým</button>
-          </div>
-          {teamMessage && <p className="teams-message" role="status">{teamMessage}</p>}
-        </section>
-
-        {joinedTeam && currentTeam && (
-          <section className="tile teams-challenge-settings">
-            <div><h2>Měsíční týmová výzva</h2><p>Nastavte si společný cíl v kilometrech. Výsledek se zobrazí v Mém progresu.</p></div>
-            {isTeamOwner ? (
-              <div className="teams-challenge-form">
-                <label>Cílová vzdálenost (km)<input type="number" min="0.1" max="100000" step="1" value={challengeGoal} onChange={e => setChallengeGoal(e.target.value)} /></label>
-                <button className="tile-button teams-primary-button" onClick={saveChallengeGoal} disabled={challengeSaving}>{challengeSaving ? "Ukládám…" : "Uložit cíl"}</button>
-              </div>
-            ) : <p className="teams-challenge-current">Aktuální cíl: <strong>{Number(currentTeam.challengeGoalKm) || 500} km</strong>. Měnit ho může zakladatel týmu.</p>}
-            {challengeMessage && <small className="teams-challenge-message" role="status">{challengeMessage}</small>}
-          </section>
-        )}
-
-        <section className="teams-list-section">
-          <div className="teams-list-heading"><h2>Dostupné týmy</h2><span className="teams-count">{teams.length}</span></div>
-          <div className="teams-grid">
-            {teams.map((team) => {
-              const teamType: ActivityType = team.type === "chůze" ? "chůze" : "běh";
-              const isJoined = joinedTeam === team.id;
-              return (
-              <article key={team.id} className={isJoined ? "tile team-card team-card-joined" : "tile team-card"}>
-                <div className="team-card-top">
-                  <div className="team-avatar">{(team.name || "T").charAt(0).toUpperCase()}</div>
-                  <span className="team-type-badge"><ActivityTypeIcon type={teamType} size={16} /> {teamType === "chůze" ? "Chůze" : "Běh"}</span>
-                  {isJoined && <span className="team-member-label">Tvůj tým</span>}
-                </div>
-                <h3>{team.name}</h3>
-                <div className="team-card-actions">
-                  {isJoined ? (
-                    <button onClick={leaveTeam} className="tile-button team-action-button"><DoorOpen size={18} /> Odejít z týmu</button>
-                  ) : (
-                    <button onClick={() => joinTeam(team.id, teamType)} className="tile-button team-action-button"><Plus size={18} /> Přidat se</button>
-                  )}
-                  {user?.uid === team.createdBy && <button onClick={() => deleteTeam(team.id)} className="tile-button team-delete-button" title="Smazat tým" aria-label="Smazat tým"><Trash2 size={18} /></button>}
-                </div>
-              </article>
-              );
-            })}
-            {teams.length === 0 && <div className="tile teams-empty"><div className="teams-empty-icon">👟</div><strong>Zatím tu nejsou žádné týmy</strong><p>Buď první a založ vlastní tým.</p></div>}
-          </div>
-        </section>
+      <div className="teams-list-heading">
+        <div><h2>{selectedType==="běh"?"Běžecké":"Chodecké"} týmy</h2><p>{visibleTeams.length} {visibleTeams.length===1?"tým":"týmů"}</p></div>
+        {joinedTeam&&<button className="tile-button team-current-button" onClick={()=>router.push("/teams/"+joinedTeam.id)}><Users size={17}/> Můj tým</button>}
       </div>
-    </>
-  );
+
+      <section className="teams-grid">
+        {visibleTeams.map(team=>{
+          const isJoined=joinedTeamId===team.id;
+          return <article key={team.id} className={`tile team-card ${isJoined?"team-card-joined":""}`} onClick={()=>router.push("/teams/"+team.id)}>
+            <div className="team-card-top">
+              <div className="team-avatar">{team.avatarUrl?<img src={cloudinaryImageUrl(team.avatarUrl,96)} alt=""/>:<Users size={22}/>}</div>
+              <span className="team-type-badge"><ActivityTypeIcon type={selectedType} size={16}/> {selectedType==="běh"?"Běh":"Chůze"}</span>
+              {isJoined&&<span className="team-member-label">Tvůj tým</span>}
+            </div>
+            <h3>{team.name}</h3>
+            <div className="team-card-meta"><span>Cíl</span><strong>{Number(team.challengeGoalKm)||500} km / měsíc</strong></div>
+            <div className="team-card-actions">
+              <button className="tile-button team-action-button" onClick={e=>{e.stopPropagation(); if(isJoined) router.push("/teams/"+team.id); else void joinTeam(team);}}>{isJoined?"Otevřít tým":"Přidat se"} <ChevronRight size={17}/></button>
+              {user?.uid===team.createdBy&&<button className="tile-button team-delete-button" onClick={e=>{e.stopPropagation();void deleteTeam(team);}} aria-label="Smazat tým"><Trash2 size={18}/></button>}
+            </div>
+          </article>
+        })}
+        {!visibleTeams.length&&<div className="tile teams-empty"><Users size={30}/><strong>Zatím tu není žádný tým</strong><p>Vytvoř první tým pro {selectedType}.</p></div>}
+      </section>
+    </main>
+  </>;
 }
