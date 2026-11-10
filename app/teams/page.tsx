@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { collection, query, addDoc, deleteDoc, doc, setDoc, getDoc } from "firebase/firestore";
+import { collection, query, doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, Users, ChevronRight, Pencil, Check, X } from "lucide-react";
@@ -10,6 +10,7 @@ import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType, ActivityTypeIcon } from "../components/ActivityTypeSelector";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
+import { showAppToast } from "../components/AppToast";
 
 export default function TeamsPage() {
   const [menuVisible,setMenuVisible]=useState(false);
@@ -17,7 +18,6 @@ export default function TeamsPage() {
   const [selectedType,setSelectedType]=useState<ActivityType>("běh");
   const [teamIdsByType,setTeamIdsByType]=useState<Record<ActivityType,string|null>>({běh:null,chůze:null});
   const [user,setUser]=useState<any>(null);
-  const [teamMessage,setTeamMessage]=useState("");
   const [editingTeamId,setEditingTeamId]=useState<string|null>(null);
   const [editingTeamName,setEditingTeamName]=useState("");
   const router=useRouter();
@@ -42,47 +42,49 @@ export default function TeamsPage() {
   const joinedTeamId=teamIdsByType[selectedType];
   const joinedTeam=teams.find(t=>t.id===joinedTeamId);
 
+  const teamRequest=async(action:string,payload:Record<string,unknown>={})=>{
+    if(!auth.currentUser) throw new Error("Nejsi přihlášen.");
+    const token=await auth.currentUser.getIdToken(true);
+    const response=await fetch("/api/teams/manage",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({action,...payload})});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(result.error||"Operaci se nepodařilo dokončit.");
+    return result;
+  };
+
   const createTeam=async()=>{
     if(!teamName.trim()||!user)return;
-    setTeamMessage("");
     try{
-      const created=await addDoc(collection(db,"teams"),{name:teamName.trim(),type:selectedType,createdBy:user.uid,challengeGoalKm:500,avatarUrl:"",avatarPublicId:""});
-      const next={...teamIdsByType,[selectedType]:created.id};
-      await setDoc(doc(db,"users",user.uid),{teamIdsByType:next,...(selectedType==="běh"?{teamId:created.id,joinedTeam:created.id}:{})},{merge:true});
-      setTeamIdsByType(next); setTeamName(""); setTeamMessage("Tým byl vytvořen a stal ses jeho členem.");
-      router.push("/teams/"+created.id);
-    }catch(e){console.error(e);setTeamMessage("Tým se nepodařilo vytvořit.");}
+      const result=await teamRequest("create",{name:teamName.trim(),type:selectedType});
+      const id=result.team?.id;
+      if(id){setTeamName("");showAppToast("Tým byl vytvořen.","success");router.push("/teams/"+id);}
+    }catch(e){console.error(e);showAppToast(e instanceof Error?e.message:"Tým se nepodařilo vytvořit.","error");}
   };
 
   const joinTeam=async(team:any)=>{
     const type:ActivityType=team.type==="chůze"?"chůze":"běh";
-    const next={...teamIdsByType,[type]:team.id};
-    await setDoc(doc(db,"users",user.uid),{teamIdsByType:next,...(type==="běh"?{teamId:team.id,joinedTeam:team.id}:{})},{merge:true});
-    setTeamIdsByType(next);
+    try{ const result=await teamRequest("join",{teamId:team.id}); setTeamIdsByType(result.teamIdsByType||{...teamIdsByType,[type]:team.id}); showAppToast("Přidal ses do týmu."); }
+    catch(e){showAppToast(e instanceof Error?e.message:"Do týmu se nepodařilo přidat.","error");}
   };
 
   const leaveTeam=async()=>{
     if(!joinedTeamId||!user)return;
-    const next={...teamIdsByType,[selectedType]:null};
-    await setDoc(doc(db,"users",user.uid),{teamIdsByType:next,...(selectedType==="běh"?{teamId:null,joinedTeam:null}:{})},{merge:true});
-    setTeamIdsByType(next);
+    try{ const result=await teamRequest("leave",{teamId:joinedTeamId}); setTeamIdsByType(result.teamIdsByType||{...teamIdsByType,[selectedType]:null}); showAppToast("Z týmu ses odhlásil."); }
+    catch(e){showAppToast(e instanceof Error?e.message:"Z týmu se nepodařilo odejít.","error");}
   };
 
-  const startEditTeam=(team:any)=>{ setEditingTeamId(team.id); setEditingTeamName(team.name||""); setTeamMessage(""); };
+  const startEditTeam=(team:any)=>{ setEditingTeamId(team.id); setEditingTeamName(team.name||""); };
 
   const saveTeamName=async(team:any)=>{
     const name=editingTeamName.trim().slice(0,60);
     if(!name||!user||team.createdBy!==user.uid)return;
-    try{
-      await setDoc(doc(db,"teams",team.id),{name},{merge:true});
-      setEditingTeamId(null); setEditingTeamName(""); setTeamMessage("Název týmu byl uložen.");
-    }catch(e){ console.error(e); setTeamMessage("Název týmu se nepodařilo uložit."); }
+    try{ await teamRequest("rename",{teamId:team.id,name}); setEditingTeamId(null); setEditingTeamName(""); showAppToast("Název týmu byl uložen."); }
+    catch(e){ console.error(e); showAppToast(e instanceof Error?e.message:"Název týmu se nepodařilo uložit.","error"); }
   };
 
   const deleteTeam=async(team:any)=>{
     if(team.createdBy!==user?.uid||!window.confirm("Opravdu chceš tento tým smazat?"))return;
-    await deleteDoc(doc(db,"teams",team.id));
-    if(joinedTeamId===team.id) await leaveTeam();
+    try{ await teamRequest("delete",{teamId:team.id}); if(joinedTeamId===team.id){setTeamIdsByType(cur=>({...cur,[selectedType]:null}));} showAppToast("Tým byl smazán."); }
+    catch(e){showAppToast(e instanceof Error?e.message:"Tým se nepodařilo smazat.","error");}
   };
 
   const handleSelect=async(item:string)=>{
@@ -106,7 +108,6 @@ export default function TeamsPage() {
           <input type="text" placeholder="Zadej název týmu" value={teamName} onChange={e=>setTeamName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")void createTeam();}}/>
           <button onClick={()=>void createTeam()} className="run-primary-button" disabled={!teamName.trim()}><Plus size={18}/> Vytvořit tým</button>
         </div>
-        {teamMessage&&<p className="teams-message">{teamMessage}</p>}
       </section>
 
       <div className="teams-list-heading">
