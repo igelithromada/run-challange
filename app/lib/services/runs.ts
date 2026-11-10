@@ -1,6 +1,8 @@
 import {
   collection,
   getDocs,
+  updateDoc,
+  doc,
   limit,
   orderBy,
   query,
@@ -11,6 +13,8 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { RunData } from "../../types";
+
+export type RunUpdate = Partial<Omit<RunData, "id">>;
 
 export const runsCollection = () => collection(db, "runs");
 
@@ -28,6 +32,10 @@ export function teamRunsQuery(teamId: string): Query {
 
 export function olderRunsQuery(cursor: QueryDocumentSnapshot, pageSize = 20): Query {
   return query(runsCollection(), orderBy("timestamp", "desc"), startAfter(cursor), limit(pageSize));
+}
+
+export async function updateRun(runId: string, data: RunUpdate): Promise<void> {
+  await updateDoc(doc(db, "runs", runId), data);
 }
 
 export async function fetchOlderRuns(
