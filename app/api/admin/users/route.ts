@@ -4,6 +4,7 @@ import { getAdminServices } from "../../../lib/firebaseAdmin";
 import { requireAdmin, authErrorResponse } from "../../../lib/apiAuth";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function DELETE(request: NextRequest) {
   try {
