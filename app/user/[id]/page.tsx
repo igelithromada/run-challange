@@ -2,15 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { db, auth } from "../../lib/firebase";
+import { auth } from "../../lib/firebase";
 import { signOut } from "firebase/auth";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import ActivityCard from "../../components/ActivityCard";
 import ActivityTypeSelector, { ActivityType } from "../../components/ActivityTypeSelector";
 import { cloudinaryImageUrl } from "../../lib/imageUrl";
 import { getPublicProfile } from "../../lib/services/publicProfiles";
+import { userRunsQuery } from "../../lib/services/runs";
+import { allTeamsQuery } from "../../lib/services/teams";
+import { useSharedFirestoreQuery } from "../../lib/useSharedFirestoreQuery";
 
 type RunData = {
   id: string; uid?: string; email?: string; nickname?: string; avatarUrl?: string;
@@ -29,20 +31,26 @@ export default function UserPage() {
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  const runsQuery = useMemo(() => id ? userRunsQuery(id) : null, [id]);
+  const runsState = useSharedFirestoreQuery<RunData>(`user-runs:${id}`, runsQuery || userRunsQuery("__none__"));
+  const teamsState = useSharedFirestoreQuery<{ id: string; name?: string }>("teams:all", allTeamsQuery());
+
   useEffect(() => {
-    if (!id) return;
-    const q = query(collection(db, "runs"), where("uid", "==", id));
-    const unsub = onSnapshot(q, snap => {
-      const items = snap.docs.map(item => { const data = item.data(); return { id: item.id, ...data, km: Number(data.km) || 0, minuty: Number(data.minuty) || 0, tempo: Number(data.tempo) || 0 } as RunData; });
-      items.sort((a, b) => {
-        const at = a.timestamp?.seconds || 0;
-        const bt = b.timestamp?.seconds || 0;
-        return bt - at;
-      });
+    if (!runsState.loading) {
+      const items = runsState.data.map(item => ({
+        ...item,
+        km: Number(item.km) || 0,
+        minuty: Number(item.minuty) || 0,
+        tempo: Number(item.tempo) || 0,
+      })) as RunData[];
+      items.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
       setRuns(items);
-    });
-    return () => unsub();
-  }, [id]);
+    }
+  }, [runsState.data, runsState.loading]);
+
+  useEffect(() => {
+    setTeams(teamsState.data);
+  }, [teamsState.data]);
 
   useEffect(() => {
     const fetchUser = async () => {
