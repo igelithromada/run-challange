@@ -286,7 +286,6 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
       )}
 
       {!showForm && error && <p className="form-message form-message-error" role="alert">{error}</p>}
-      {success && <div className="run-form-toast run-form-toast-success" role="status">{success}</div>}
     </div>
   );
 }
