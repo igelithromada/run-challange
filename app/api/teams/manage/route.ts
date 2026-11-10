@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "../../../lib/apiAuth";
+import { normalizeActivityType, normalizeTeamName } from "../../../lib/validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,8 +13,8 @@ export async function POST(request: Request) {
     const userRef = adminDb.collection("users").doc(decoded.uid);
 
     if (action === "create") {
-      const name = String(body?.name || "").trim().slice(0, 60);
-      const type = body?.type === "chůze" ? "chůze" : "běh";
+      const name = normalizeTeamName(body?.name);
+      const type = normalizeActivityType(body?.type);
       if (!name) return NextResponse.json({ error: "Zadej název týmu." }, { status: 400 });
       const teamRef = adminDb.collection("teams").doc();
       await teamRef.set({ name, type, createdBy: decoded.uid, challengeGoalKm: 500, avatarUrl: "", avatarPublicId: "" });
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
 
     if (action === "rename") {
       if (team.createdBy !== decoded.uid) return NextResponse.json({ error: "Název může měnit jen zakladatel týmu." }, { status: 403 });
-      const name = String(body?.name || "").trim().slice(0, 60);
+      const name = normalizeTeamName(body?.name);
       if (!name) return NextResponse.json({ error: "Zadej název týmu." }, { status: 400 });
       await teamRef.set({ name }, { merge: true });
       return NextResponse.json({ ok: true, name });
