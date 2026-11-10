@@ -41,7 +41,7 @@ async function socialRequest(runId: string, init?: RequestInit) {
   return result;
 }
 
-export default function ActivityCard({ run, nickname, avatarUrl, teamName, activityType, onUserClick, onPhotosClick, onEdit, onDelete }: Props) {
+export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamAvatarUrl, activityType, onUserClick, onPhotosClick, onEdit, onDelete }: Props) {
   const tempo = Number(run.tempo) || 0;
   const range = activityType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
   const pos = Math.min(100, Math.max(0, ((range.max - tempo) / (range.max - range.min)) * 100));
