@@ -55,12 +55,17 @@ export async function POST(request: Request) {
 
     if (action === "delete") {
       if (team.createdBy !== decoded.uid) return NextResponse.json({ error: "Tým může smazat jen zakladatel." }, { status: 403 });
-      await teamRef.delete();
-      const userSnap = await userRef.get();
-      const data = userSnap.exists ? userSnap.data() || {} : {};
-      const stored = data.teamIdsByType && typeof data.teamIdsByType === "object" ? data.teamIdsByType : {};
-      const next = { ...stored, [type]: null };
-      await userRef.set({ teamIdsByType: next, ...(type === "běh" ? { teamId: null, joinedTeam: null } : {}) }, { merge: true });
+      const memberIds = Array.isArray(team.memberIds) ? team.memberIds.filter((value): value is string => typeof value === "string") : [];
+      const batch = adminDb.batch();
+      memberIds.forEach(memberId => {
+        const memberRef = adminDb.collection("users").doc(memberId);
+        batch.set(memberRef, {
+          teamIdsByType: { [type]: null },
+          ...(type === "běh" ? { teamId: null, joinedTeam: null } : {}),
+        }, { merge: true });
+      });
+      batch.delete(teamRef);
+      await batch.commit();
       return NextResponse.json({ ok: true });
     }
 
