@@ -23,7 +23,8 @@ export default function RecordsPage() {
   const [selectedType,setSelectedType] = useState<"běh"|"chůze">("běh");
   const [lightbox,setLightbox] = useState<{urls:string[];index:number}|null>(null);
 
-  const runsState = useSharedFirestoreQuery<Run>(`admin-records:${id}`, userRunsQuery(id || "__none__"));
+  const runsQuery = useMemo(() => userRunsQuery(id || "__none__"), [id]);
+  const runsState = useSharedFirestoreQuery<Run>(`admin-records:${id || "none"}`, runsQuery);
 
   const runs = useMemo(() => [...runsState.data].sort((a,b) => {
     const toMillis = (value: Run["timestamp"]) => {
