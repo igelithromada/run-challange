@@ -13,8 +13,8 @@ export type SharedQueryState<T> = {
 };
 
 type CacheEntry = {
-  state: SharedQueryState<any>;
-  listeners: Set<(state: SharedQueryState<any>) => void>;
+  state: SharedQueryState<unknown>;
+  listeners: Set<(state: SharedQueryState<unknown>) => void>;
   unsubscribe?: () => void;
   refs: number;
   touched: number;
@@ -22,8 +22,12 @@ type CacheEntry = {
 
 const cache = new Map<string, CacheEntry>();
 const emptyState = <T,>(): SharedQueryState<T> => ({
-  data: [], loading: true, error: null, fromCache: true,
-  hasPendingWrites: false, lastDocument: null
+  data: [],
+  loading: true,
+  error: null,
+  fromCache: true,
+  hasPendingWrites: false,
+  lastDocument: null,
 });
 
 function trimCache() {
@@ -41,23 +45,35 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
 ): SharedQueryState<T> {
   const [local, setLocal] = useState<{ key: string; state: SharedQueryState<T> }>(() => ({
     key: cacheKey,
-    state: (cache.get(cacheKey)?.state as SharedQueryState<T>) || emptyState<T>()
+    state: (cache.get(cacheKey)?.state as SharedQueryState<T>) || emptyState<T>(),
   }));
-  const state = local.key === cacheKey
-    ? local.state
-    : (cache.get(cacheKey)?.state as SharedQueryState<T>) || emptyState<T>();
+
+  const state =
+    local.key === cacheKey
+      ? local.state
+      : (cache.get(cacheKey)?.state as SharedQueryState<T>) || emptyState<T>();
 
   useEffect(() => {
     let entry = cache.get(cacheKey);
+
     if (!entry) {
-      entry = { state: emptyState(), listeners: new Set(), refs: 0, touched: Date.now() };
+      entry = {
+        state: emptyState<unknown>(),
+        listeners: new Set(),
+        refs: 0,
+        touched: Date.now(),
+      };
       cache.set(cacheKey, entry);
     }
 
     const current = entry;
     current.refs += 1;
     current.touched = Date.now();
-    const notify = (next: SharedQueryState<any>) => setLocal({ key: cacheKey, state: next as SharedQueryState<T> });
+
+    const notify = (next: SharedQueryState<unknown>) => {
+      setLocal({ key: cacheKey, state: next as SharedQueryState<T> });
+    };
+
     current.listeners.add(notify);
     setLocal({ key: cacheKey, state: current.state as SharedQueryState<T> });
 
@@ -72,11 +88,14 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
             error: null,
             fromCache: snapshot.metadata.fromCache,
             hasPendingWrites: snapshot.metadata.hasPendingWrites,
-            lastDocument: snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null
+            lastDocument: snapshot.docs.length
+              ? snapshot.docs[snapshot.docs.length - 1]
+              : null,
           };
-          current.state = next;
+
+          current.state = next as SharedQueryState<unknown>;
           current.touched = Date.now();
-          current.listeners.forEach(listener => listener(next));
+          current.listeners.forEach(listener => listener(current.state));
         },
         error => {
           const next = { ...current.state, loading: false, error };
@@ -89,10 +108,12 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
     return () => {
       current.listeners.delete(notify);
       current.refs = Math.max(0, current.refs - 1);
+
       if (current.refs === 0) {
         current.unsubscribe?.();
         current.unsubscribe = undefined;
       }
+
       trimCache();
     };
   }, [cacheKey, source]);
