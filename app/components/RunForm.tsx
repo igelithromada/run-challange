@@ -36,6 +36,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
   const [durationMinutes, setDurationMinutes] = useState("");
   const [durationSeconds, setDurationSeconds] = useState("");
   const [activityDate, setActivityDate] = useState(localDateTime);
+  const [description, setDescription] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -63,6 +64,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
     setDurationMinutes("");
     setDurationSeconds("");
     setFiles([]);
+    setDescription("");
     setActivityDate(localDateTime());
     setError("");
     setUploadStatus("");
@@ -136,6 +138,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
         minuty: parsedDuration / 60,
         tempo: (parsedDuration / 60 / kmVal).toFixed(2),
         type,
+        description: description.trim().slice(0, 500),
         timestamp: new Date(activityDate),
         imageUrls,
         imagePublicIds,
@@ -230,6 +233,11 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
               <strong>{formatDuration(Math.round(pace))} /km</strong>
             </div>
           )}
+
+          <label className="run-form-field">
+            <span>Popis <small>volitelné</small></span>
+            <textarea className="run-form-description" maxLength={500} placeholder="Jaký byl dnešní běh nebo chůze?" value={description} onChange={e => setDescription(e.target.value)} />
+          </label>
 
           <label className="run-form-field">
             <span>Datum a čas aktivity</span>
