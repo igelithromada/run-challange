@@ -89,27 +89,22 @@ export default function TrainerPage(){
  const plannedTotal=dates.reduce((s,d)=>s+num(dayKm[d]),0);
  const completed=dates.reduce((s,d)=>s+Math.min(actualFor(d),num(dayKm[d])),0);
  const percent=plannedTotal?Math.min(100,completed/plannedTotal*100):0;
- const selectedInfo=cellInfo(new Date(selectedDate+"T00:00:00"));
+ const selectedInfo=selectedDate?cellInfo(new Date(selectedDate+"T00:00:00")):cellInfo(new Date());
 
- const toggleSelected=()=>{
-   if(!selectedDate)return;
-   setDates(cur=>cur.includes(selectedDate)?cur.filter(d=>d!==selectedDate):[...cur,selectedDate].sort());
-   setDayKm(cur=>cur[selectedDate]?cur:{...cur,[selectedDate]:"5"});
-   setDirty(true);
- };
- const setSelectedKm=(value:string)=>{setDayKm(cur=>({...cur,[selectedDate]:value}));setDirty(true);};
- const save=async()=>{
-   if(!uid||!dates.length||plannedTotal<=0)return;
-   const next:Plan={monthKey:currentMonth,type,dates,dayKm:Object.fromEntries(dates.map(d=>[d,Math.max(.5,num(dayKm[d]))])),monthlyKm:plannedTotal,createdAt:plan?.createdAt||new Date().toISOString()};
+ const todayKey=dateKey(new Date());
+ const selectedIsPast=!!selectedDate && selectedDate<todayKey;
+ const selectedKmValue=dayKm[selectedDate]??"";
+ const saveSelected=async()=>{
+   if(!uid||!selectedDate||selectedIsPast)return;
+   const value=Math.max(0,num(selectedKmValue));
+   if(value<=0)return;
+   const nextDates=dates.includes(selectedDate)?dates:[...dates,selectedDate].sort();
+   const nextDayKm={...dayKm,[selectedDate]:String(value)};
+   const next:Plan={monthKey:currentMonth,type,dates:nextDates,dayKm:Object.fromEntries(nextDates.map(d=>[d,Math.max(.5,num(nextDayKm[d]))])),monthlyKm:nextDates.reduce((s,d)=>s+num(nextDayKm[d]),0),createdAt:plan?.createdAt||new Date().toISOString()};
    await setDoc(doc(db,"users",uid),{personalTrainerPlan:next},{merge:true});
-   setPlan(next);setDirty(false);
+   setPlan(next);setDates(nextDates);setDayKm(nextDayKm);setDirty(false);
  };
- const usePrevious=()=>{
-   const previous=history[0];if(!previous)return;
-   setType(previous.type||"běh");
-   const nextDates=(previous.days||[]).map(n=>{const d=monday(new Date());d.setDate(d.getDate()+n);return dateKey(d);}).filter(d=>d.startsWith(currentMonth));
-   setDates(nextDates);setDayKm(Object.fromEntries(nextDates.map(d=>[d,String(previous.weeklyKm/(previous.days?.length||1))])));setDirty(true);
- };
+ const updateSelectedKm=(value:string)=>{if(!selectedIsPast){setDayKm(cur=>({...cur,[selectedDate]:value}));setDirty(true);}};
 
  const handleSelect=async(item:string)=>{
    setMenuVisible(false);if(item==="logout"){await signOut(auth);router.push("/login");return;}
@@ -137,7 +132,7 @@ export default function TrainerPage(){
     <div className="trainer-calendar">
       {weeks.map((week,i)=><div className="trainer-calendar-week" key={i}>{week.map(d=>{
         const s=cellInfo(d);
-        return <button type="button" key={s.key} className={`trainer-calendar-day ${s.inMonth?"":"outside"} ${s.selected?"selected":""} ${s.status}`} onClick={()=>{setSelectedDate(s.key);if(!s.inMonth&&d.getMonth()!==month.getMonth())return;}}>
+        return <button type="button" key={s.key} className={`trainer-calendar-day ${s.inMonth?"":"outside"} ${s.selected?"selected":""} ${s.status} ${s.key<todayKey?"past":""}`} onClick={()=>setSelectedDate(s.key)}>
           <span>{d.getDate()}</span>{s.selected&&<small>{s.target.toFixed(1)} km</small>}{s.selected&&s.status==="done"&&<Check size={14}/>}
         </button>
       })}</div>)}
@@ -145,12 +140,14 @@ export default function TrainerPage(){
 
     <div className="trainer-selected-day">
       <div><span className="trainer-selected-label">Vybraný den</span><strong>{selectedInfo.key?new Date(selectedInfo.key+"T00:00:00").toLocaleDateString("cs-CZ",{weekday:"long",day:"numeric",month:"long"}):"—"}</strong></div>
-      <button type="button" className={`trainer-day-plan-toggle ${selectedInfo.selected?"active":""}`} onClick={toggleSelected}>{selectedInfo.selected?"Trénink naplánován":"Naplánovat trénink"}</button>
+      <span className={`trainer-day-status ${selectedInfo.status}`}>{selectedInfo.selected?(selectedInfo.status==="done"?"Splněno":selectedInfo.status==="partial"?"Částečně":selectedInfo.status==="missed"?"Nesplněno":"Naplánováno"):"Bez plánu"}</span>
     </div>
-    {selectedInfo.selected&&<div className="trainer-day-editor-month">
-      <div><strong>{selectedInfo.status==="done"?"Splněno":selectedInfo.status==="partial"?"Částečně":selectedInfo.status==="missed"?"Nesplněno":"Naplánováno"}</strong><span>{selectedInfo.actual.toFixed(1)} / {selectedInfo.target.toFixed(1)} km</span></div>
-      <label><span>Cíl dne (km)</span><input type="number" min=".5" step=".5" value={dayKm[selectedDate]??""} onChange={e=>setSelectedKm(e.target.value)}/></label>
-    </div>}
+    {selectedIsPast ? <div className="trainer-day-readonly">
+      <strong>Ukončený den</strong><span>{selectedInfo.selected ? selectedInfo.actual.toFixed(1)+" / "+selectedInfo.target.toFixed(1)+" km" : "Pro tento den není možné zpětně nastavovat ani měnit plán."}</span>
+    </div> : <div className="trainer-day-editor-month">
+      <label><span>Cíl dne (km)</span><input type="number" min=".5" step=".5" placeholder="např. 5" value={selectedKmValue} onChange={e=>updateSelectedKm(e.target.value)}/></label>
+      <button type="button" className="progress-save" disabled={!selectedKmValue||num(selectedKmValue)<=0||!dirty} onClick={()=>void saveSelected()}><Save size={17}/> Uložit</button>
+    </div>
 
     <div className="trainer-plan-footer"><div><span>Objem měsíce</span><strong>{plannedTotal.toFixed(1)} km</strong></div><div><span>Měsíční cíl</span><strong>{monthlyGoal.toFixed(0)} km</strong></div><div><span>Plnění</span><strong>{percent.toFixed(0)} %</strong></div>
       {dirty&&<button type="button" className="progress-save" onClick={()=>void save()}><Save size={17}/> Uložit plán</button>}
@@ -165,10 +162,4 @@ export default function TrainerPage(){
     <p className="trainer-goal-note">Na kalendáři okamžitě vidíš, které dny jsou naplánované a jak se daří jejich plnění.</p>
    </section>
 
-   <section className="tile trainer-history-card">
-    <div className="progress-section-title"><CalendarDays/><div><h2>Historie trenéra</h2><p>Starší uzavřené týdny zůstávají zachované.</p></div></div>
-    {history.length?<div className="trainer-history-list">{history.slice(0,12).map(h=><details key={h.weekKey} className="trainer-history-item"><summary><span>{h.weekKey}</span><b>{h.status==="done"?"Splněn":h.status==="partial"?"Částečně":"Nesplněn"}</b><strong>{Number(h.percent||0).toFixed(0)} %</strong></summary><div>{h.type} · plán {Number(h.weeklyKm||0).toFixed(1)} km · skutečnost {Number(h.completedKm||0).toFixed(1)} km</div></details>)}</div>:<p className="trainer-empty">Zatím nemáš historii.</p>}
-   </section>
-  </main>
- </>;
-}
+
