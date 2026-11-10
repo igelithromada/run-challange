@@ -1052,3 +1052,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .trainer-day-modal-overlay{align-items:center;padding:10px}
   .trainer-day-modal{max-height:calc(var(--trainer-vv-height,100dvh) - 20px);overflow-y:auto}
 }
+
+.trainer-modal-status.draft{color:#6d99bd}
+.trainer-modal-status.draft i{background:#6d99bd}
+.trainer-day-modal.draft{border-color:rgba(109,153,189,.8)}
+.trainer-km-field.draft input{border-color:rgba(109,153,189,.8);box-shadow:0 0 0 2px rgba(90,145,190,.08)}
+.trainer-status-action.draft{border-color:rgba(109,153,189,.8)!important;background:rgba(90,145,190,.16)!important}
