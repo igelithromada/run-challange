@@ -21,7 +21,7 @@ import ActivityTypeSelector from "./components/ActivityTypeSelector";
 import { RunData } from "./types";
 import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
 import { latestRunsQuery, olderRunsQuery, mapRunSnapshot } from "./lib/services/runs";
-import { getUserProfile } from "./lib/services/users";
+import { getUserAvatars, getUserProfile } from "./lib/services/users";
 import { allTeamsQuery } from "./lib/services/teams";
 import type { TeamData } from "./types";
 
@@ -103,18 +103,13 @@ export default function Page() {
     const loadUsers = async () => {
       try {
         // Firestore "in" dotaz načte profily dávkově místo jednoho požadavku pro každý záznam.
-        const chunks: string[][] = [];
-        for (let i = 0; i < userIds.length; i += 30) chunks.push(userIds.slice(i, i + 30));
-        const snapshots = await Promise.all(chunks.map((ids) =>
-          getDocs(query(collection(db, "users"), where(documentId(), "in", ids)))
-        ));
+        const avatarMap = await getUserAvatars(userIds);
         if (cancelled) return;
         setUserAvatars((prev) => {
           const next = { ...prev };
-          snapshots.forEach((snapshot) => snapshot.docs.forEach((userDoc) => {
-            const data = userDoc.data();
-            next[userDoc.id] = { avatarUrl: data.avatarUrl || "", nickname: data.nickname || "" };
-          }));
+          userIds.forEach(uid => {
+            next[uid] = { ...(prev[uid] || { nickname: "" }), avatarUrl: avatarMap[uid] || "" };
+          });
           return next;
         });
         setProfilesLoading(false);
