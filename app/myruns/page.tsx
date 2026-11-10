@@ -150,7 +150,7 @@ export default function MyRunsPage() {
 
 
   const handleEdit = (run: RunData) => {
-    setEditingId(run.id); setKm(String(run.km)); setDuration(durationString(run.minuty));
+    setEditingId(run.id); setKm(String(run.km)); setDuration(durationString(Number(run.minuty)));
     const totalSeconds = Math.round(Number(run.minuty) * 60); setDurationMinutes(String(Math.floor(totalSeconds / 60))); setDurationSeconds(String(totalSeconds % 60).padStart(2,"0"));
     setActivityDate(toLocalInput(dateOf(run.timestamp))); setDescription(run.description || ""); setFile(null); setActionError("");
   };
