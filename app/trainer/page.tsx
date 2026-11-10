@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -36,6 +36,12 @@ export default function TrainerPage(){
  const [goalsByType,setGoalsByType]=useState<Record<ActivityType,number>>({běh:100,chůze:100});
  const [dirty,setDirty]=useState(false);
  const [modalOpen,setModalOpen]=useState(false);
+ const [bulkMode,setBulkMode]=useState(false);
+ const [bulkDates,setBulkDates]=useState<string[]>([]);
+ const [bulkKm,setBulkKm]=useState("5");
+ const [quickInfo,setQuickInfo]=useState<{key:string;status:string;target:number;actual:number}|null>(null);
+ const longPressTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+ const longPressTriggered=useRef(false);
  const [loading,setLoading]=useState(true);
  const currentMonth=monthKeyOf(month);
 
@@ -170,6 +176,28 @@ export default function TrainerPage(){
    setDirty(false);
  };
 
+ const showQuickInfo=(key:string)=>{
+   const info=cellInfo(new Date(key+"T00:00:00"));
+   setQuickInfo({key,status:info.status,target:info.target,actual:info.actual});
+   window.setTimeout(()=>setQuickInfo(cur=>cur?.key===key?null:cur),2600);
+ };
+ const beginLongPress=(key:string)=>{
+   longPressTriggered.current=false;
+   if(longPressTimer.current)clearTimeout(longPressTimer.current);
+   longPressTimer.current=setTimeout(()=>{longPressTriggered.current=true;showQuickInfo(key);},550);
+ };
+ const cancelLongPress=()=>{
+   if(longPressTimer.current){clearTimeout(longPressTimer.current);longPressTimer.current=null;}
+ };
+ const handleDayClick=(s:ReturnType<typeof cellInfo>)=>{
+   if(longPressTriggered.current){longPressTriggered.current=false;return;}
+   if(bulkMode){
+     if(!s.inMonth||s.key<todayKey)return;
+     setBulkDates(cur=>cur.includes(s.key)?cur.filter(d=>d!==s.key):[...cur,s.key].sort());
+     return;
+   }
+   openDayEditor(s.key);
+ };
  const handleSelect=async(item:string)=>{
    setMenuVisible(false);if(item==="logout"){await signOut(auth);router.push("/login");return;}
    const routes:Record<string,string>={home:"/",myrun:"/myruns",teams:"/teams",progress:"/progress",trainer:"/trainer",statistics:"/statistics",participants:"/participants",weather:"/weather",settings:"/settings",admin:"/admin"};
