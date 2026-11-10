@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Plán obsahuje neplatné údaje." }, { status: 400 });
     }
 
-    const safeDates = Array.from(new Set(dates)).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d) && d.slice(0, 7) === monthKey).sort();
+    const safeDates: string[] = Array.from(new Set<string>(dates)).filter((d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d) && d.slice(0, 7) === monthKey).sort();
     const dayKm: Record<string, number> = {};
     for (const date of safeDates) {
       const km = Number(rawDayKm[date]);
