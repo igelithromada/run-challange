@@ -43,6 +43,7 @@ export async function POST(request: Request) {
     const safeData = {
       uid: decoded.uid,
       email: typeof data.email === "string" ? data.email : decoded.email || "",
+      nickname: typeof data.nickname === "string" ? data.nickname : "",
       avatarUrl: typeof data.avatarUrl === "string" ? data.avatarUrl : "",
       km,
       minuty,
