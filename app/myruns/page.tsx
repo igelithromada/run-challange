@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { collection, query, where, orderBy, doc, getDoc, updateDoc, Timestamp, limit, startAfter, getDocs } from "firebase/firestore";
+import { doc, updateDoc, Timestamp, getDocs } from "firebase/firestore";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -14,13 +14,11 @@ import { cloudinaryImageUrl } from "../lib/imageUrl";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
 import { MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
+import type { RunData as BaseRunData, ActivityType } from "../types";
+import { olderRunsQuery, userRunsQuery, mapRunSnapshot } from "../lib/services/runs";
+import { getUserProfile } from "../lib/services/users";
 
-type RunData = {
-  id: string; uid?: string; email?: string; nickname?: string;
-  km: number; minuty: number; tempo: number; type?: string; description?: string;
-  imageUrl?: string; imageUrls?: string[]; imagePublicIds?: string[];
-  timestamp?: Timestamp | { seconds: number } | Date;
-};
+type RunData = BaseRunData;
 const uploadToCloudinary = async (file: File) => {
   const data = new FormData();
   data.append("file", file); data.append("upload_preset", "lhota_unsigned");
@@ -51,7 +49,7 @@ export default function MyRunsPage() {
   const [uid, setUid] = useState("");
   const [olderRuns, setOlderRuns] = useState<RunData[]>([]);
   const [localUpdates, setLocalUpdates] = useState<Record<string, Partial<RunData>>>({});
-  const [olderCursor, setOlderCursor] = useState<any>(null);
+  const [olderCursor, setOlderCursor] = useState<import("firebase/firestore").QueryDocumentSnapshot | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [profile, setProfile] = useState({ nickname: "", avatarUrl: "" });
@@ -64,7 +62,7 @@ export default function MyRunsPage() {
   const [showImageRunId, setShowImageRunId] = useState<string | null>(null);
   const [deletingPhoto, setDeletingPhoto] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [selectedType, setSelectedType] = useState("běh");
+  const [selectedType, setSelectedType] = useState<ActivityType>("běh");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [quickFilter, setQuickFilter] = useState("all");
@@ -82,9 +80,8 @@ export default function MyRunsPage() {
     const unsubAuth = onAuthStateChanged(auth, user => {
       if (!user) { router.push("/login"); return; }
       setUid(user.uid);
-      getDoc(doc(db, "users", user.uid)).then(profileDoc => {
-        if (profileDoc.exists()) {
-          const data = profileDoc.data();
+      getUserProfile(user.uid).then(data => {
+        if (data) {
           setProfile({ nickname: data.nickname || "", avatarUrl: data.avatarUrl || "" });
           setConfirmDelete(data.confirmDelete !== false);
         }
@@ -93,7 +90,7 @@ export default function MyRunsPage() {
     return () => unsubAuth();
   }, [router]);
 
-  const runsQuery = useMemo(() => query(collection(db, "runs"), where("uid", "==", uid || "__no_user__"), orderBy("timestamp", "desc"), limit(30)), [uid]);
+  const runsQuery = useMemo(() => userRunsQuery(uid || "__no_user__"), [uid]);
   const runsState = useSharedFirestoreQuery<RunData>("runs:user:" + (uid || "none"), runsQuery);
   const runs = useMemo(() => Array.from(new Map<string, RunData>([...runsState.data, ...olderRuns].map(run => [run.id, { ...run, ...(localUpdates[run.id] || {}) }] as const)).values()).map(run => ({
     ...run, km: Number(run.km) || 0, minuty: Number(run.minuty) || 0, tempo: Number(run.tempo) || 0
@@ -105,8 +102,8 @@ export default function MyRunsPage() {
     if (!cursor || loadingOlder || !hasMore || !uid) return;
     setLoadingOlder(true);
     try {
-      const next = await getDocs(query(collection(db, "runs"), where("uid", "==", uid), orderBy("timestamp", "desc"), startAfter(cursor), limit(30)));
-      const items = next.docs.map(item => ({ id: item.id, ...item.data() } as RunData));
+      const next = await getDocs(olderRunsQuery(cursor, 30));
+      const items = next.docs.map(mapRunSnapshot);
       setOlderRuns(previous => [...previous, ...items.filter(item => !previous.some(old => old.id === item.id) && !runsState.data.some(current => current.id === item.id))]);
       setOlderCursor(next.docs.length ? next.docs[next.docs.length - 1] : cursor);
       setHasMore(next.docs.length === 30);
@@ -156,7 +153,7 @@ export default function MyRunsPage() {
     }
     setBusy(true); setActionError("");
     try {
-      const updates: Record<string, any> = {
+      const updates: Partial<RunData> = {
         km: parsedKm, minuty: seconds / 60, tempo: (seconds / 60 / parsedKm).toFixed(2),
         timestamp: Timestamp.fromDate(new Date(activityDate)),
         description: description.trim().slice(0, 500)
