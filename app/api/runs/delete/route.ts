@@ -14,15 +14,17 @@ async function deleteRunComments(runRef: DocumentReference) {
       const batch = runRef.firestore.batch();
       snapshot.docs.slice(i, i + 450).forEach(doc => batch.delete(doc.ref));
       await batch.commit();
-    }async function getAuthorizedUser(request: Request) {
+    }
+  }
+}
+
+async function getAuthorizedUser(request: Request) {
   const { decoded, adminDb } = await requireUser(request);
   const profile = await adminDb.collection("users").doc(decoded.uid).get();
   return {
     uid: decoded.uid,
     isAdmin: decoded.admin === true || profile.data()?.role === "admin",
     adminDb,
-  };
-},
   };
 }
 
