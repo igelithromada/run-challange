@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { collection, addDoc, getDoc, doc } from "firebase/firestore";
-import { db, auth } from "../lib/firebase";
+import { auth } from "../lib/firebase";
 import { ImagePlus, Plus, Save, X } from "lucide-react";
 import { showAppToast } from "./AppToast";
+import { createRun } from "../lib/services/runs";
+import { getUserProfile } from "../lib/services/users";
 
 const uploadToCloudinary = async (file: File) => {
   const user = auth.currentUser;
@@ -137,8 +138,8 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
 
       let userData: Record<string, unknown> = {};
       try {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) userData = userDoc.data();
+        const profile = await getUserProfile(user.uid);
+        if (profile) userData = profile as unknown as Record<string, unknown>;
       } catch {
         // Firestore může při offline režimu načtení profilu odmítnout.
         // Samotný zápis lze i tak zařadit do lokální fronty Firestore.
@@ -173,7 +174,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
 
       try {
         // Primární cesta zachovává Firestore offline podporu.
-        await addDoc(collection(db, "runs"), runData);
+        await createRun(runData);
       } catch (firestoreError) {
         const firestoreCode = firestoreError && typeof firestoreError === "object" && "code" in firestoreError
           ? String((firestoreError as { code?: unknown }).code || "")
