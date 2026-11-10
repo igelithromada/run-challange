@@ -37,10 +37,23 @@ export async function requireAdmin(request: Request): Promise<{
   return { decoded, adminDb };
 }
 
+function isFirebaseAuthError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error ? String((error as { code?: unknown }).code) : "";
+  return code.startsWith("auth/");
+}
+
 export function authErrorResponse(error: unknown): { status: number; message: string } | null {
-  if (!(error instanceof ApiAuthError)) return null;
-  return {
-    status: error.code === "FORBIDDEN" ? 403 : 401,
-    message: error.code === "FORBIDDEN" ? "Nemáš oprávnění správce." : "Nejsi přihlášen.",
-  };
+  if (error instanceof ApiAuthError) {
+    return {
+      status: error.code === "FORBIDDEN" ? 403 : 401,
+      message: error.code === "FORBIDDEN" ? "Nemáš oprávnění správce." : "Nejsi přihlášen.",
+    };
+  }
+
+  if (isFirebaseAuthError(error)) {
+    return { status: 401, message: "Přihlášení vypršelo nebo není platné." };
+  }
+
+  return null;
 }
