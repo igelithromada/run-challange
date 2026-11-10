@@ -9,6 +9,7 @@ import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType, ActivityTypeIcon } from "../components/ActivityTypeSelector";
+import LoadingSkeleton from "../components/LoadingSkeleton";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { showAppToast } from "../components/AppToast";
@@ -106,8 +107,6 @@ export default function TeamsPage() {
   };
 
   const joinTeam = async (team: Team) => {
-    const type: ActivityType = team.type === "chůze" ? "chůze" : "běh";
-
     try {
       const result = await teamRequest("join", { teamId: team.id });
       const next = result.teamIdsByType || {};
@@ -238,6 +237,14 @@ export default function TeamsPage() {
           )}
         </div>
 
+        {teamsState.loading ? (
+          <LoadingSkeleton count={3} />
+        ) : teamsState.error ? (
+          <div className="tile teams-empty" role="alert">
+            <strong>Týmy se nepodařilo načíst</strong>
+            <p>Zkus stránku obnovit. Pokud problém přetrvá, zkontroluj připojení.</p>
+          </div>
+        ) : (
         <section className="teams-grid">
           {visibleTeams.map(team => {
             const isJoined = joinedTeamId === team.id;
@@ -351,6 +358,7 @@ export default function TeamsPage() {
             </div>
           )}
         </section>
+        )}
       </main>
     </>
   );
