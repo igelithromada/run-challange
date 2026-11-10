@@ -66,6 +66,11 @@ export default function SettingsPage() {
           const remoteColor = data.customColor || DEFAULT_COLOR;
           const remoteAnimations = data.animationsEnabled !== false;
           const remoteHaptics = data.hapticsEnabled !== false;
+          let localHaptics: boolean | null = null;
+          try {
+            const stored = localStorage.getItem("dolni-lhota-haptics-v1");
+            if (stored !== null) localHaptics = stored !== "false";
+          } catch {}
           let cachedTheme: { theme?: string; customColor?: string; animationsEnabled?: boolean; savedAt?: number } | null = null;
           try {
             cachedTheme = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
@@ -81,8 +86,9 @@ export default function SettingsPage() {
           setTheme(storedTheme);
           setCustomColor(storedColor);
           setAnimationsEnabled(storedAnimations);
-          setHapticsEnabledState(remoteHaptics);
-          setHapticsEnabled(remoteHaptics);
+          const effectiveHaptics = localHaptics ?? remoteHaptics;
+          setHapticsEnabledState(effectiveHaptics);
+          setHapticsEnabled(effectiveHaptics);
           const remoteDefaultActivity = data.defaultActivity === "chůze" ? "chůze" : "běh";
           setDefaultActivity(remoteDefaultActivity);
           try { localStorage.setItem(DEFAULT_ACTIVITY_KEY, remoteDefaultActivity); } catch {}
