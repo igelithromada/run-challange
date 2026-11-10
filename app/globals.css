@@ -1166,3 +1166,37 @@ html[data-animations="true"][data-weather="wind"] body::before {
   .route-primary-action { min-width:0; }
   .route-secondary-action { flex:0 0 auto; }
 }
+
+
+/* Vlastní mapy doporučených tras */
+.route-map-shell {
+  position:relative; overflow:hidden; margin-top:.75rem; height:260px;
+  border:1px solid rgba(255,255,255,.1); border-radius:16px;
+  background:#10181c; box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);
+}
+.route-map { width:100%; height:100%; }
+.route-map::after {
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(180deg,rgba(8,18,22,.06),transparent 35%,rgba(8,18,22,.16));
+  z-index:2;
+}
+.route-map-state {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  gap:.5rem; padding:1rem; text-align:center; color:rgba(255,255,255,.78);
+  background:linear-gradient(135deg,#102026,#16252a); font-size:.8rem; z-index:3;
+}
+.route-map-spin { animation:route-map-spin .9s linear infinite; }
+@keyframes route-map-spin { to { transform:rotate(360deg); } }
+.route-map-badge {
+  position:absolute; z-index:4; left:10px; bottom:10px;
+  display:inline-flex; align-items:center; gap:.3rem; padding:.34rem .55rem;
+  border-radius:999px; background:rgba(10,25,30,.84);
+  border:1px solid rgba(255,255,255,.12); backdrop-filter:blur(8px);
+  color:rgba(255,255,255,.82); font-size:.66rem; font-weight:700;
+}
+.route-map-unavailable {
+  display:flex; align-items:center; justify-content:center; gap:.45rem;
+  min-height:76px; margin-top:.75rem; border-radius:14px;
+  border:1px dashed rgba(255,255,255,.13); background:rgba(255,255,255,.035);
+  color:rgba(255,255,255,.6); font-size:.76rem; text-align:center;
+}
