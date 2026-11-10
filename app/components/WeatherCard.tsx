@@ -1,20 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import type { WeatherHour, WeatherResponse } from "../lib/weather";
 import {
   Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudSnow,
   CloudSun, Sun, Wind, Droplets, Thermometer, RefreshCw
 } from "lucide-react";
 
-type WeatherResponse = {
-  configured: boolean;
-  source?: string;
-  current?: any;
-  hourly?: any[];
-  timeZone?: { id?: string };
-  fetchedAt?: string;
-  error?: string;
-};
 
 function conditionIcon(type = "") {
   const value = type.toUpperCase();
@@ -29,7 +21,7 @@ function conditionIcon(type = "") {
   return CloudSun;
 }
 
-function hourLabel(item: any) {
+function hourLabel(item: WeatherHour) {
   const raw = item?.displayDateTime;
   if (raw?.hours !== undefined) return `${String(raw.hours).padStart(2, "0")}:00`;
   const date = item?.interval?.startTime ? new Date(item.interval.startTime) : null;
@@ -63,7 +55,7 @@ export default function WeatherCard() {
   const current = weather?.current;
   const condition = current?.weatherCondition;
   const Icon = conditionIcon(condition?.type);
-  const hours = (weather?.hourly || []).slice(0, 8);
+  const hours: WeatherHour[] = (weather?.hourly || []).slice(0, 8);
   const temperature = current?.temperature?.degrees;
   const feelsLike = current?.feelsLikeTemperature?.degrees;
   const wind = current?.wind?.speed?.value;
