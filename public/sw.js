@@ -35,3 +35,30 @@ self.addEventListener("fetch", event => {
     event.respondWith(fetch(request).catch(() => caches.match("/offline.html")));
   }
 });
+
+
+self.addEventListener("push", event => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch {}
+  event.waitUntil(self.registration.showNotification(data.title || "Dolní Lhota v pohybu", {
+    body: data.body || "",
+    icon: "/icon.svg",
+    badge: "/icon.svg",
+    tag: data.tag || "trainer-plan",
+    data: { url: data.url || "/trainer" }
+  }));
+});
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const url = event.notification?.data?.url || "/trainer";
+  event.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+    for (const client of list) {
+      if ("focus" in client) {
+        client.navigate(url);
+        return client.focus();
+      }
+    }
+    return clients.openWindow(url);
+  }));
+});
