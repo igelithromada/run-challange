@@ -41,10 +41,9 @@ export default function TeamsPage() {
         }
 
         setUser(currentUser);
-        const snap = await getDoc(doc(db, "users", currentUser.uid));
+        const data = await getUserProfile(currentUser.uid);
 
-        if (snap.exists()) {
-          const data = snap.data();
+        if (data) {
           const stored = data.teamIdsByType || {};
           setTeamIdsByType({
             běh: typeof stored.běh === "string" ? stored.běh : typeof data.teamId === "string" ? data.teamId : null,
@@ -55,7 +54,7 @@ export default function TeamsPage() {
     [router]
   );
 
-  const teamsQuery = useMemo(() => query(collection(db, "teams")), []);
+  const teamsQuery = useMemo(() => allTeamsQuery(), []);
   const teamsState = useSharedFirestoreQuery<Team>("teams:all", teamsQuery);
   const teams = teamsState.data;
   const visibleTeams = teams.filter(team => (team.type === "chůze" ? "chůze" : "běh") === selectedType);
