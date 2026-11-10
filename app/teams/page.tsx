@@ -105,16 +105,17 @@ export default function TeamsPage() {
         {visibleTeams.map(team=>{
           const isJoined=joinedTeamId===team.id;
           return <article key={team.id} className={`tile team-card ${isJoined?"team-card-joined":""}`} onClick={()=>router.push("/teams/"+team.id)}>
-            <div className="team-card-top">
+            <div className="team-card-main">
               <div className="team-avatar">{team.avatarUrl?<img src={cloudinaryImageUrl(team.avatarUrl,96)} alt=""/>:<Users size={22}/>}</div>
-              <span className="team-type-badge"><ActivityTypeIcon type={selectedType} size={16}/> {selectedType==="běh"?"Běh":"Chůze"}</span>
-              {isJoined&&<span className="team-member-label">Tvůj tým</span>}
+              <div className="team-card-info">
+                <div className="team-card-title-row"><h3>{team.name}</h3>{isJoined&&<span className="team-member-label">Tvůj tým</span>}</div>
+                <div className="team-card-sub"><span className="team-type-badge"><ActivityTypeIcon type={selectedType} size={15}/> {selectedType==="běh"?"Běh":"Chůze"}</span><span>{Number(team.challengeGoalKm)||500} km / měsíc</span></div>
+              </div>
+              <ChevronRight className="team-card-chevron" size={20}/>
             </div>
-            <h3>{team.name}</h3>
-            <div className="team-card-meta"><span>Cíl</span><strong>{Number(team.challengeGoalKm)||500} km / měsíc</strong></div>
             <div className="team-card-actions">
-              <button className="tile-button team-action-button" onClick={e=>{e.stopPropagation(); if(isJoined) router.push("/teams/"+team.id); else void joinTeam(team);}}>{isJoined?"Otevřít tým":"Přidat se"} <ChevronRight size={17}/></button>
-              {user?.uid===team.createdBy&&<button className="tile-button team-delete-button" onClick={e=>{e.stopPropagation();void deleteTeam(team);}} aria-label="Smazat tým"><Trash2 size={18}/></button>}
+              <button className="team-action-button" onClick={e=>{e.stopPropagation(); if(isJoined) router.push("/teams/"+team.id); else void joinTeam(team);}}>{isJoined?"Otevřít tým":"Přidat se"}</button>
+              {user?.uid===team.createdBy&&<button className="team-delete-button" onClick={e=>{e.stopPropagation();void deleteTeam(team);}} aria-label="Smazat tým"><Trash2 size={18}/></button>}
             </div>
           </article>
         })}
