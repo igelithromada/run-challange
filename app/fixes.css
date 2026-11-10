@@ -1071,3 +1071,37 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .trainer-calendar-day>span{position:relative;z-index:1;display:block;line-height:1.1}
 .trainer-calendar-day.selected svg{position:absolute!important;right:.18rem!important;top:.14rem!important;width:12px!important;height:12px!important;z-index:2!important}
 .trainer-calendar-day.selected.done>span{transform:translateY(2px)}
+
+/* Trenér – rychlý přehled a hromadné plánování */
+.trainer-calendar-toolbar{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin:.65rem 0 .35rem}
+.trainer-bulk-toggle{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:rgba(255,255,255,.82);border-radius:12px;padding:.55rem .8rem;font-weight:800;font-size:.8rem}
+.trainer-bulk-toggle.active{background:rgba(109,153,189,.2);border-color:rgba(109,153,189,.7);color:#dcecf8}
+.trainer-calendar-toolbar span{font-size:.72rem;color:rgba(255,255,255,.62)}
+.trainer-calendar-day{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.trainer-calendar.bulk-mode .trainer-calendar-day.past{opacity:.32}
+.trainer-calendar-day.bulk-selected{outline:2px solid rgba(109,153,189,.95)!important;outline-offset:-2px;background:rgba(109,153,189,.24)!important;transform:scale(.97)}
+.trainer-quick-info{margin:.7rem 0 0;padding:.75rem .9rem;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:rgba(8,20,30,.72);display:flex;align-items:center;justify-content:space-between;gap:.8rem}
+.trainer-quick-info strong{font-size:.86rem}
+.trainer-quick-info span{font-size:.78rem;color:rgba(255,255,255,.75);text-align:right}
+.trainer-quick-info.done{border-color:rgba(39,174,96,.65)}
+.trainer-quick-info.done strong{color:#69d493}
+.trainer-quick-info.partial{border-color:rgba(242,153,74,.65)}
+.trainer-quick-info.partial strong{color:#f2a96b}
+.trainer-quick-info.waiting{border-color:rgba(109,153,189,.75)}
+.trainer-quick-info.waiting strong{color:#9bc2df}
+.trainer-quick-info.missed{border-color:rgba(235,87,87,.65)}
+.trainer-quick-info.missed strong{color:#ef8585}
+.trainer-bulk-panel{margin-top:.8rem;padding:.8rem;border:1px solid rgba(109,153,189,.45);border-radius:16px;background:rgba(18,38,52,.58);display:grid;grid-template-columns:1fr auto auto;align-items:end;gap:.65rem}
+.trainer-bulk-panel>div{display:flex;flex-direction:column;gap:.15rem}
+.trainer-bulk-panel>div strong{font-size:.95rem}
+.trainer-bulk-panel>div span{font-size:.7rem;color:rgba(255,255,255,.62)}
+.trainer-bulk-panel label{display:flex;flex-direction:column;gap:.2rem;font-size:.7rem;font-weight:800}
+.trainer-bulk-panel input{width:88px;border:1px solid rgba(255,255,255,.16);border-radius:10px;background:rgba(0,0,0,.2);color:#fff;padding:.62rem .55rem;font-weight:800;text-align:center}
+.trainer-bulk-panel .progress-save{min-height:42px;white-space:nowrap}
+.trainer-modal-status span{font-weight:600;opacity:.78}
+@media(max-width:600px){
+ .trainer-bulk-panel{grid-template-columns:1fr auto}
+ .trainer-bulk-panel .progress-save{grid-column:1/-1;width:100%}
+ .trainer-quick-info{align-items:flex-start;flex-direction:column}
+ .trainer-quick-info span{text-align:left}
+}
