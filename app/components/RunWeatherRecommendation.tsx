@@ -37,14 +37,17 @@ export default function RunWeatherRecommendation({
     };
     void resolveType();
     const load = async () => {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 10000);
       try {
-        const response = await fetch("/api/weather");
+        const response = await fetch("/api/weather", { signal: controller.signal });
         if (!response.ok) throw new Error("Počasí se nepodařilo načíst.");
         const data = await response.json();
         if (active) setWeather(data);
       } catch {
         if (active) setWeather({ configured: false, error: "Počasí se nepodařilo načíst." });
       } finally {
+        window.clearTimeout(timeout);
         if (active) setLoading(false);
       }
     };
