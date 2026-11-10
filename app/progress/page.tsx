@@ -62,12 +62,15 @@ export default function ProgressPage() {
   }, []);
 
   useEffect(() => {
+    let active = true;
     const stopAuth = onAuthStateChanged(auth, async user => {
+      if (!active) return;
       if (!user) { router.push("/login"); return; }
       setUid(user.uid);
       try {
         const data = await getUserProfile(user.uid);
-        if (data) {
+        if (!active || !data) return;
+        {
           const trainer = data.personalTrainerPlan as LegacyTrainerPlan | undefined;
           if (trainer && Array.isArray(trainer.days)) setTrainerDays(trainer.days.filter((day: unknown) => typeof day === "number" && day >= 0 && day <= 6));
           if (trainer && Number(trainer.weeklyKm) > 0) setTrainerKm(String(trainer.weeklyKm));
@@ -89,10 +92,11 @@ export default function ProgressPage() {
           };
           setTeamIdsByType(nextTeamIds);
           setJoinedTeamId(nextTeamIds[initialType] || "");
-        }
-      } catch (error) { console.error("Nepodařilo se načíst profil a cíle", error); }
+      } catch (error) {
+        if (active) console.error("Nepodařilo se načíst profil a cíle", error);
+      }
     });
-    return () => stopAuth();
+    return () => { active = false; stopAuth(); };
   }, [router]);
 
   const personalQuery = useMemo(() => userRunsQuery(uid || "__no_user__"), [uid]);
