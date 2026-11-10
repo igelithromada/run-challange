@@ -38,8 +38,13 @@ export default function TeamDetailPage() {
       setAvatarUrl(data.avatarUrl||"");
       setAvatarPublicId(data.avatarPublicId||"");
       const type:ActivityType=data.type==="chůze"?"chůze":"běh";
-      const memberSnap=await getDocs(query(collection(db,"users"),where(`teamIdsByType.${type}`,"==",id)));
-      setMembers(memberSnap.docs.map(d=>({id:d.id,nickname:d.data().nickname||"Uživatel",email:d.data().email||"",avatarUrl:d.data().avatarUrl||""})).sort((a,b)=>a.nickname.localeCompare(b.nickname,"cs")));
+      const [memberSnap, legacySnap]=await Promise.all([
+        getDocs(query(collection(db,"users"),where(`teamIdsByType.${type}`,"==",id))),
+        type==="běh" ? getDocs(query(collection(db,"users"),where("teamId","==",id))) : Promise.resolve(null)
+      ]);
+      const memberDocs=[...memberSnap.docs,...(legacySnap?.docs||[])];
+      const unique=new Map(memberDocs.map(d=>[d.id,d]));
+      setMembers(Array.from(unique.values()).map(d=>({id:d.id,nickname:d.data().nickname||"Uživatel",email:d.data().email||"",avatarUrl:d.data().avatarUrl||""})).sort((a,b)=>a.nickname.localeCompare(b.nickname,"cs")));
     } finally { setLoading(false); }
   };
 
