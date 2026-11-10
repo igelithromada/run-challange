@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Check, ChevronLeft, ChevronRight, Copy, Save, Target, TrendingUp } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Save, Target, TrendingUp } from "lucide-react";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -13,7 +13,6 @@ import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSe
 type Activity={id:string;uid?:string;km?:number|string;type?:string;timestamp?:any};
 type Plan={monthKey:string;type:ActivityType;dates:string[];dayKm:Record<string,number>;monthlyKm:number;createdAt?:string};
 type OldPlan={weekKey?:string;type?:ActivityType;days?:number[];dayKm?:Record<string,number>;weeklyKm?:number};
-type HistoryItem={weekKey:string;type:ActivityType;weeklyKm:number;completedKm:number;percent:number;status:string;completedSessions:number;days:number[];closedAt:string};
 
 const monthKeyOf=(d:Date)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
 const dateKey=(d:Date)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -34,7 +33,6 @@ export default function TrainerPage(){
  const [type,setType]=useState<ActivityType>("běh");
  const [runs,setRuns]=useState<Activity[]>([]);
  const [monthlyGoal,setMonthlyGoal]=useState(100);
- const [history,setHistory]=useState<HistoryItem[]>([]);
  const [dirty,setDirty]=useState(false);
  const [loading,setLoading]=useState(true);
  const currentMonth=monthKeyOf(month);
@@ -46,8 +44,6 @@ export default function TrainerPage(){
      const profile=await getDoc(doc(db,"users",user.uid));
      const data=profile.exists()?profile.data():{};
      const stored=data.personalTrainerPlan as Plan|OldPlan|undefined;
-     const storedHistory=Array.isArray(data.personalTrainerHistory)?data.personalTrainerHistory:[];
-     setHistory(storedHistory);
      const runSnap=await getDocs(query(collection(db,"runs"),where("uid","==",user.uid)));
      const loaded=runSnap.docs.map(d=>({id:d.id,...d.data()} as Activity));
      setRuns(loaded);
@@ -150,8 +146,6 @@ export default function TrainerPage(){
     </div>
 
     <div className="trainer-plan-footer"><div><span>Objem měsíce</span><strong>{plannedTotal.toFixed(1)} km</strong></div><div><span>Měsíční cíl</span><strong>{monthlyGoal.toFixed(0)} km</strong></div><div><span>Plnění</span><strong>{percent.toFixed(0)} %</strong></div>
-      {dirty&&<button type="button" className="progress-save" onClick={()=>void save()}><Save size={17}/> Uložit plán</button>}
-      {!plan&&history.length>0&&<button type="button" className="trainer-secondary-button" onClick={usePrevious}><Copy size={17}/> Použít minulý plán</button>}
     </div>
    </section>
 
@@ -162,4 +156,6 @@ export default function TrainerPage(){
     <p className="trainer-goal-note">Na kalendáři okamžitě vidíš, které dny jsou naplánované a jak se daří jejich plnění.</p>
    </section>
 
-
+  </main>
+ </>
+}
