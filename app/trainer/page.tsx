@@ -143,7 +143,7 @@ export default function TrainerPage(){
     </div> : <div className="trainer-day-editor-month">
       <label><span>Cíl dne (km)</span><input type="number" min=".5" step=".5" placeholder="např. 5" value={selectedKmValue} onChange={e=>updateSelectedKm(e.target.value)}/></label>
       <button type="button" className="progress-save" disabled={!selectedKmValue||num(selectedKmValue)<=0||!dirty} onClick={()=>void saveSelected()}><Save size={17}/> Uložit</button>
-    </div>
+    </div>}
 
     <div className="trainer-plan-footer"><div><span>Objem měsíce</span><strong>{plannedTotal.toFixed(1)} km</strong></div><div><span>Měsíční cíl</span><strong>{monthlyGoal.toFixed(0)} km</strong></div><div><span>Plnění</span><strong>{percent.toFixed(0)} %</strong></div>
     </div>
