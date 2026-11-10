@@ -12,6 +12,8 @@ type Props = {
 
 type Coordinate = [number, number];
 
+const CLIENT_TIMEOUT_MS = 12_000;
+
 function parseGpx(text: string): Coordinate[] {
   const doc = new DOMParser().parseFromString(text, "application/xml");
   if (doc.querySelector("parsererror")) throw new Error("Neplatný GPX soubor.");
@@ -30,16 +32,18 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
-    if (!elementRef.current) return;
+    const element = elementRef.current;
+    if (!element) return;
 
     let alive = true;
     let map: MapLibreMap | null = null;
     const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), CLIENT_TIMEOUT_MS);
 
     const load = async () => {
       try {
         const ml = await import("maplibre-gl");
-        if (!alive || !elementRef.current) return;
+        if (!alive || !element) return;
 
         const response = await fetch(
           "/api/routes/gpx?url=" + encodeURIComponent(gpxUrl),
@@ -48,21 +52,22 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
         if (!response.ok) throw new Error("GPX se nepodařilo načíst.");
 
         const text = await response.text();
+        if (!alive) return;
+
         const basePoints = parseGpx(text);
         if (basePoints.length < 2) throw new Error("GPX neobsahuje dostatek bodů.");
 
+        const lapCount = Math.max(1, Math.floor(laps));
         const routePoints =
-          Math.max(1, Math.floor(laps)) === 1
+          lapCount === 1
             ? basePoints
-            : Array.from({ length: Math.max(1, Math.floor(laps)) }, () => basePoints).flat();
+            : Array.from({ length: lapCount }, () => basePoints).flat();
 
-        const minX = Math.min(...routePoints.map(point => point[0]));
-        const maxX = Math.max(...routePoints.map(point => point[0]));
-        const minY = Math.min(...routePoints.map(point => point[1]));
-        const maxY = Math.max(...routePoints.map(point => point[1]));
+        const bounds = new ml.LngLatBounds(routePoints[0], routePoints[0]);
+        routePoints.forEach(point => bounds.extend(point));
 
         map = new ml.Map({
-          container: elementRef.current,
+          container: element,
           style: {
             version: 8,
             sources: {
@@ -83,7 +88,7 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
               },
             ],
           },
-          center: [(minX + maxX) / 2, (minY + maxY) / 2],
+          center: [bounds.getCenter().lng, bounds.getCenter().lat],
           zoom: 13,
           maxZoom: 19,
           attributionControl: { compact: true },
@@ -168,22 +173,23 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
             },
           });
 
-          const bounds = new ml.LngLatBounds(routePoints[0], routePoints[0]);
-          routePoints.forEach(point => bounds.extend(point));
           map.fitBounds(bounds, {
             padding: { top: 34, bottom: 34, left: 34, right: 34 },
             duration: 0,
             maxZoom: 16,
           });
 
+          window.clearTimeout(timeout);
           setState("ready");
         });
 
-        window.setTimeout(() => {
-          if (alive && map && !map.isStyleLoaded()) setState("error");
-        }, 15000);
+        map.once("error", () => {
+          if (alive) setState("error");
+        });
       } catch (error) {
-        if (alive && (error as Error).name !== "AbortError") setState("error");
+        if (alive && (error as Error).name !== "AbortError") {
+          setState("error");
+        }
       }
     };
 
@@ -192,6 +198,7 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
     return () => {
       alive = false;
       controller.abort();
+      window.clearTimeout(timeout);
       mapRef.current?.remove();
       mapRef.current = null;
     };
