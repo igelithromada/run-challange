@@ -146,7 +146,7 @@ export default function StatisticsPage() {
       <Navbar title="Výsledky" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
       <main className="container statistics-page">
-        {(runsState.error || teamsState.error) && <div className="tile form-message-error">Výsledky se nepodařilo načíst. Zkus stránku obnovit.</div>}
+        {(runsState.error || teamsState.error) &&  }
 
         <div className="control-caption">Typ aktivity</div>
         <ActivityTypeSelector value={selectedType} onChange={setSelectedType} />
