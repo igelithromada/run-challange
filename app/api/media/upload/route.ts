@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
+import { isUserCloudinaryPublicId, userCloudinaryPrefix } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -74,10 +75,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Obrázek se nepodařilo nahrát." }, { status: 502 });
     }
 
+    const publicId = typeof result.public_id === "string" ? result.public_id : "";
+    const secureUrl = result.secure_url;
+    if (
+      typeof secureUrl !== "string" ||
+      !secureUrl.startsWith(`https://res.cloudinary.com/`) ||
+      !isUserCloudinaryPublicId(publicId, decoded.uid) ||
+      !publicId.startsWith(userCloudinaryPrefix(decoded.uid))
+    ) {
+      console.error("Cloudinary upload returned an unexpected asset:", {
+        secureUrl: typeof secureUrl === "string" ? secureUrl.slice(0, 160) : "",
+        publicId,
+      });
+      return NextResponse.json({ error: "Nahraný obrázek má neplatné údaje." }, { status: 502 });
+    }
+
     return NextResponse.json({
       ok: true,
-      secureUrl: result.secure_url,
-      publicId: typeof result.public_id === "string" ? result.public_id : "",
+      secureUrl,
+      publicId,
     });
   } catch (error) {
     const authResponse = authErrorResponse(error);
