@@ -47,12 +47,12 @@ export async function POST(request: Request) {
     }
 
     publicIds.push(...collectCloudinaryPublicIds(imageUrls, uid));
-    let cloudinaryResult = { deleted: [] as string[], failed: [] as string[] };
+    let cloudinaryResult = { deleted: 0, failed: [] as string[] };
     try {
       cloudinaryResult = await deleteCloudinaryImages(publicIds);
     } catch (error) {
       console.error("Cloudinary cleanup failed during admin data reset:", error);
-      cloudinaryResult = { deleted: [], failed: publicIds };
+      cloudinaryResult = { deleted: 0, failed: publicIds };
     }
 
     const refs = runsSnapshot.docs.map((item) => item.ref);
