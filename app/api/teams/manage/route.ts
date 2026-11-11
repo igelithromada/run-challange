@@ -21,6 +21,15 @@ export async function POST(request: Request) {
       const userSnap = await userRef.get();
       const data = userSnap.exists ? userSnap.data() || {} : {};
       const stored = data.teamIdsByType && typeof data.teamIdsByType === "object" ? data.teamIdsByType : {};
+      const existingTeamId = typeof (stored as Record<string, unknown>)[type] === "string"
+        ? String((stored as Record<string, unknown>)[type])
+        : "";
+      if (existingTeamId) {
+        return NextResponse.json(
+          { error: "Nejdřív opusť svůj současný tým tohoto typu." },
+          { status: 409 }
+        );
+      }
       const next = { ...stored, [type]: teamRef.id };
       const batch = adminDb.batch();
       batch.set(teamRef, { name, type, createdBy: decoded.uid, challengeGoalKm: 500, avatarUrl: "", avatarPublicId: "", memberIds: [decoded.uid] });
@@ -46,15 +55,53 @@ export async function POST(request: Request) {
     }
 
     if (action === "join" || action === "leave") {
-      const userSnap = await userRef.get();
-      const data = userSnap.exists ? userSnap.data() || {} : {};
-      const stored = data.teamIdsByType && typeof data.teamIdsByType === "object" ? data.teamIdsByType : {};
-      const next = { ...stored, [type]: action === "join" ? teamId : null };
-      const batch = adminDb.batch();
-      batch.update(teamRef, { memberIds: action === "join" ? FieldValue.arrayUnion(decoded.uid) : FieldValue.arrayRemove(decoded.uid) });
-      batch.set(userRef, { teamIdsByType: next, ...(type === "běh" ? { teamId: action === "join" ? teamId : null, joinedTeam: action === "join" ? teamId : null } : {}) }, { merge: true });
-      await batch.commit();
-      return NextResponse.json({ ok: true, teamIdsByType: next });
+      const result = await adminDb.runTransaction(async transaction => {
+        const userSnap = await transaction.get(userRef);
+        const data = userSnap.exists ? userSnap.data() || {} : {};
+        const stored = data.teamIdsByType && typeof data.teamIdsByType === "object"
+          ? data.teamIdsByType as Record<string, unknown>
+          : {};
+        const currentTeamId = typeof stored[type] === "string" ? String(stored[type]) : "";
+
+        if (action === "join" && currentTeamId === teamId) {
+          return { next: { ...stored, [type]: teamId }, changed: false };
+        }
+
+        if (action === "leave" && currentTeamId !== teamId) {
+          return { next: { ...stored, [type]: currentTeamId || null }, changed: false };
+        }
+
+        const oldTeamRef = currentTeamId && currentTeamId !== teamId
+          ? adminDb.collection("teams").doc(currentTeamId)
+          : null;
+        if (oldTeamRef) {
+          transaction.update(oldTeamRef, { memberIds: FieldValue.arrayRemove(decoded.uid) });
+        }
+
+        if (action === "join") {
+          transaction.update(teamRef, { memberIds: FieldValue.arrayUnion(decoded.uid) });
+        } else {
+          transaction.update(teamRef, { memberIds: FieldValue.arrayRemove(decoded.uid) });
+        }
+
+        const next = { ...stored, [type]: action === "join" ? teamId : null };
+        transaction.set(
+          userRef,
+          {
+            teamIdsByType: next,
+            ...(type === "běh"
+              ? {
+                  teamId: action === "join" ? teamId : null,
+                  joinedTeam: action === "join" ? teamId : null,
+                }
+              : {}),
+          },
+          { merge: true }
+        );
+        return { next, changed: true };
+      });
+
+      return NextResponse.json({ ok: true, teamIdsByType: result.next, changed: result.changed });
     }
 
     if (action === "delete") {
