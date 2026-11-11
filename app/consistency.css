@@ -305,3 +305,38 @@
     font-size: .68rem;
   }
 }
+
+/* Aktivita – jediná finální vizuální vrstva metrik a sociálních akcí. */
+.activity-card-modern .activity-description {
+  margin:.15rem 0;
+  padding:.48rem .1rem;
+  border-top:1px solid rgba(255,255,255,.10);
+  border-bottom:1px solid rgba(255,255,255,.10);
+  color:rgba(255,255,255,.84);
+  font-size:.82rem;
+  line-height:1.45;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+.activity-card-modern .activity-metrics { gap:.28rem; margin:.08rem 0; }
+.activity-card-modern .activity-metrics > div {
+  min-height:66px;
+  padding:.42rem .32rem;
+  border-radius:11px;
+  gap:.14rem;
+}
+.activity-card-modern .activity-metrics > div svg { width:15px; height:15px; }
+.activity-card-modern .activity-metrics > div strong { font-size:1rem; line-height:1.05; font-weight:850; }
+.activity-card-modern .activity-metrics > div strong small { font-size:.66em; }
+.activity-card-modern .activity-metrics > div > span { font-size:.64rem; line-height:1.1; font-weight:700; opacity:.82; }
+.activity-card-modern .activity-pace-bar { width:min(92px,100%); height:4px; margin-top:.25rem; }
+.activity-card-modern .activity-pace-marker,
+.activity-card-modern .activity-metrics .activity-pace-bar > span { width:8px; height:8px; }
+.activity-card-modern .activity-social-actions { gap:.35rem; padding-top:.42rem; margin-top:.02rem; border-top:1px solid rgba(255,255,255,.10); }
+.activity-card-modern .activity-social-button { width:40px; min-width:40px; height:32px; min-height:32px; padding:.2rem .28rem; border-radius:9px; }
+.activity-card-modern .activity-social-button svg { width:17px; height:17px; }
+.activity-card-modern .activity-social-button span { font-size:.68rem; }
+.activity-card-modern .activity-social-button.is-liked { color:#fff; background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.12); }
+.activity-card-modern .activity-social-button.is-liked svg { color:#ff5f78; fill:#ff5f78; stroke:#ff5f78; }
+.activity-card-modern .activity-manage-button { min-height:32px; margin:0; padding:.25rem .45rem; border-radius:9px; font-size:.68rem; }
+.activity-card-modern .activity-manage-button svg { width:14px; height:14px; }
