@@ -3662,3 +3662,25 @@ html[data-windy="true"] .wind-icon-animated {
     animation: none !important;
   }
 }
+
+
+/* ===== AUDIT SAFETY OVERRIDES ===== */
+/*
+ * Stabilizační pojistka: animace počasí nesmí běžet jako celoobrazovková
+ * vrstva. Zachováme pouze lehké lokální efekty (např. ikonu větru).
+ */
+html[data-animations="true"][data-weather="rain"] body::before,
+html[data-animations="true"][data-weather="rain-wind"] body::before,
+html[data-animations="true"][data-weather="snow"] body::before,
+html[data-animations="true"][data-weather="snow-wind"] body::before {
+  animation: none !important;
+  background-image: none !important;
+  opacity: 0 !important;
+  transform: none !important;
+}
+html[data-windy="true"] .wind-icon-animated {
+  animation: wind-icon-gust 1.35s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-windy="true"] .wind-icon-animated { animation: none !important; }
+}
