@@ -48,7 +48,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "GPX soubor je příliš velký." }, { status: 413 });
     }
 
-    if (!/<(?:\w+:)?gpx[\s>]/i.test(text) || !/<(?:\w+:)?trkpt[\s>]/i.test(text)) {
+    if (!/<(?:\w+:)?gpx[\s>]/i.test(text) || !/<(?:\w+:)?(?:trkpt|rtept)[\s>]/i.test(text)) {
       return NextResponse.json({ error: "Zdroj neobsahuje platnou GPX trasu." }, { status: 422 });
     }
 
