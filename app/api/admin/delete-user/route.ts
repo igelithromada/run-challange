@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { DocumentReference, Firestore, QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { requireAdmin, authErrorResponse } from "../../../lib/apiAuth";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
-import { collectCloudinaryPublicIds, deleteCloudinaryImages } from "../../../lib/cloudinaryAdmin";
+import { collectCloudinaryPublicIds, deleteCloudinaryImages, isUserCloudinaryPublicId  } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,7 +72,7 @@ async function deleteUserData(adminDb: Firestore, uid: string) {
     }
   }
 
-  publicIds.push(...collectCloudinaryPublicIds(imageUrls));
+  publicIds.push(...collectCloudinaryPublicIds(imageUrls), uid);
   const cloudinaryResult = await deleteCloudinaryImages(publicIds);
 
   if (cloudinaryResult.failed.length) {
