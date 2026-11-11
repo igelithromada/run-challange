@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, setDoc, serverTimestamp, type SetOptions } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, serverTimestamp, type SetOptions } from "firebase/firestore";
 import { db } from "../firebase";
 import type { UserData } from "../../types";
 import { getPublicProfiles } from "./publicProfiles";
@@ -35,6 +35,11 @@ export async function getUserProfile(uid: string): Promise<UserData | null> {
 
   userProfileRequests.set(uid, request);
   return request;
+}
+
+export async function updateUserProfile(uid: string, data: Record<string, unknown>): Promise<void> {
+  await updateDoc(doc(db, "users", uid), data);
+  invalidateUserProfileCache(uid);
 }
 
 export async function saveUserSettings(
