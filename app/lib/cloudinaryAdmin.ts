@@ -38,8 +38,17 @@ export function cloudinaryPublicIdFromUrl(url: string | undefined): string | nul
   }
 }
 
-export function collectCloudinaryPublicIds(urls: Array<string | undefined>): string[] {
-  return [...new Set(urls.map(cloudinaryPublicIdFromUrl).filter((id): id is string => Boolean(id)))];
+export function userCloudinaryPrefix(uid: string): string {
+  return `dolni-lhota/users/${uid}/`;
+}
+
+export function isUserCloudinaryPublicId(publicId: string, uid: string): boolean {
+  return publicId.length <= 255 && publicId.startsWith(userCloudinaryPrefix(uid));
+}
+
+export function collectCloudinaryPublicIds(urls: Array<string | undefined>, uid?: string): string[] {
+  const ids = urls.map(cloudinaryPublicIdFromUrl).filter((id): id is string => Boolean(id));
+  return [...new Set(uid ? ids.filter(id => isUserCloudinaryPublicId(id, uid)) : ids)];
 }
 
 export async function deleteCloudinaryImages(publicIds: string[]) {
