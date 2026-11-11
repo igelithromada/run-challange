@@ -155,11 +155,23 @@ export default function SettingsPage() {
   };
 
   const handleNicknameSave = async () => {
-    const value = nickname.trim();
-    if (!value) return;
-    await saveSettings({ nickname: value });
-    setNickname(value);
-    flash("Přezdívka uložena");
+    const value = nickname.trim().replace(/\s+/g, " ");
+    if (!value) {
+      flash("Přezdívka nesmí být prázdná.", "error");
+      return;
+    }
+    if (value.length > 40) {
+      flash("Přezdívka může mít nejvýše 40 znaků.", "error");
+      return;
+    }
+    try {
+      await saveSettings({ nickname: value });
+      setNickname(value);
+      flash("Přezdívka uložena");
+    } catch (error) {
+      console.error("Nepodařilo se uložit přezdívku", error);
+      flash(error instanceof Error ? error.message : "Přezdívku se nepodařilo uložit.", "error");
+    }
   };
 
   const handleAnimationsChange = async (enabled: boolean) => {
@@ -341,7 +353,7 @@ export default function SettingsPage() {
         <section className="tile">
           <div className="settings-section-heading"><Palette size={21}/><div><h2>Profil</h2><p>Nastavení, které se zobrazí u tvých aktivit.</p></div></div>
           <label className="settings-field-label">Uživatelské jméno
-            <input value={nickname} placeholder="Uživatelské jméno" onChange={e => setNickname(e.target.value)} />
+            <input value={nickname} maxLength={40} placeholder="Uživatelské jméno" onChange={e => setNickname(e.target.value)} />
           </label>
           <button type="button" className="tile-button settings-save-button" onClick={handleNicknameSave} disabled={saving}>{saving ? "Ukládám…" : "Uložit přezdívku"}</button>
         </section>
