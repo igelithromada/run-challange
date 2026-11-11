@@ -100,7 +100,7 @@ export default function RoutesPage() {
                 {isOpen && (
                   <div className="routes-list">
                     {group.routes.map(route => (
-                      <article className="route-card" key={route.name}>
+                      <article className={`route-card route-activity-${route.activity === "chůze" ? "walk" : "run"}`} key={route.name}>
                         <div className="route-card-main">
                           <div className="route-card-icon">
                             {route.activity === "běh" ? <Route size={23} /> : <Footprints size={23} />}
