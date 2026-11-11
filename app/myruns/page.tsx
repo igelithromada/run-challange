@@ -14,6 +14,7 @@ import { cloudinaryImageUrl } from "../lib/imageUrl";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
 import { MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
+import { showAppToast } from "../components/AppToast";
 import type { RunData as BaseRunData, ActivityType } from "../types";
 import { fetchOlderRuns, latestUserRunsQuery, updateRun } from "../lib/services/runs";
 import { getUserProfile } from "../lib/services/users";
@@ -141,6 +142,9 @@ export default function MyRunsPage() {
   useEffect(() => {
     if (runsState.error) setError("Chyba při načítání dat.");
   }, [runsState.error]);
+
+  useEffect(() => { if (error) showAppToast(error, "error"); }, [error]);
+  useEffect(() => { if (actionError) showAppToast(actionError, "error"); }, [actionError]);
 
   const filteredRuns = runs.filter(run => {
     if ((run.type || "běh") !== selectedType) return false;
@@ -272,7 +276,7 @@ export default function MyRunsPage() {
         <div className="tile"><Gauge/><span>Prům. tempo</span><strong>{formatTime(avgTempo)} /km</strong></div>
       </div>
       <h2 className="centered-title">Moje záznamy</h2>
-      {actionError && <p className="activity-action-error">{actionError}</p>}
+
       <div className="list-container" style={{ display:"flex", flexDirection:"column", gap:0 }}>
         {filteredRuns.map(run => editingId === run.id ? <section key={run.id} className="run-form-panel activity-edit-form" aria-label="Upravit aktivitu">
           <div className="run-form-heading"><div><span className="run-form-eyebrow">ÚPRAVA AKTIVITY</span><h3>Upravit aktivitu</h3></div><button type="button" className="run-form-close" onClick={() => { setEditingId(null); setFile(null); setActionError(""); }} disabled={busy} aria-label="Zavřít formulář">×</button></div>
@@ -296,7 +300,7 @@ export default function MyRunsPage() {
       </div>}
       {loading && runs.length === 0 && <LoadingSkeleton count={3} />}
       {hasMore && runs.length >= 30 && <button className="activity-load-more" onClick={loadOlderRuns} disabled={loadingOlder}>{loadingOlder ? "Načítám starší záznamy…" : "Načíst starší záznamy"}</button>}
-      {error && <p style={{ color:"red" }}>{error}</p>}
+
       {!loading && filteredRuns.length === 0 && <div className="tile activity-empty-state"><strong>Zatím tu nic není.</strong><p>Pro zvolené období nemáš žádné záznamy. Zkus jiný filtr nebo přidej novou aktivitu.</p></div>}
     </div>
   </>;
