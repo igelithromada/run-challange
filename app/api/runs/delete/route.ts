@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { DocumentReference } from "firebase-admin/firestore";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
-import { collectCloudinaryPublicIds, deleteCloudinaryImages } from "../../../lib/cloudinaryAdmin";
+import { collectCloudinaryPublicIds, deleteCloudinaryImages, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,8 +56,9 @@ export async function DELETE(request: Request) {
       publicIds.push(...data.imagePublicIds.filter((value: unknown): value is string => typeof value === "string"));
     }
 
-    publicIds.push(...collectCloudinaryPublicIds(imageUrls));
-    const cloudinaryResult = await deleteCloudinaryImages(publicIds);
+    publicIds.push(...collectCloudinaryPublicIds(imageUrls, data.uid));
+    const safePublicIds = publicIds.filter(publicId => isUserCloudinaryPublicId(publicId, data.uid));
+    const cloudinaryResult = await deleteCloudinaryImages(safePublicIds);
     if (cloudinaryResult.failed.length) {
       return NextResponse.json(
         { error: `Záznam nebyl smazán, protože se nepodařilo odstranit ${cloudinaryResult.failed.length} fotografii z úložiště. Záznam zůstal zachován.` },
