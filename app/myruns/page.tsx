@@ -262,7 +262,7 @@ export default function MyRunsPage() {
       <ActivityTypeSelector value={selectedType as "běh" | "chůze"} onChange={setSelectedType} />
       <div className="control-caption">Rychlý filtr období</div>
       <div className="activity-quick-filters">
-        {[["all","Vše"],["week","Tento týden"],["month","Tento měsíc"]].map(([value,label]) => <button key={value} className={quickFilter === value ? "active" : ""} onClick={() => setQuickFilter(value)}>{label}</button>)}
+        {[["all","Vše"],["week","Tento týden"],["month","Tento měsíc"]].map(([value,label]) => <button key={value} className={`activity-quick-filter-button${quickFilter === value ? " active" : ""}`} onClick={() => setQuickFilter(value)}>{label}</button>)}
       </div>
       <div className="tile date-filter">
         <label className="date-field"><span>Od data</span><input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setQuickFilter("all"); }} /></label>
