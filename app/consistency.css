@@ -273,9 +273,6 @@
   cursor:pointer;
 }
 
-.admin-action-danger {
-  position:relative;
-}
 .admin-delete-account-button {
   color:#ffd4d4 !important;
   background:rgba(180,55,55,.18) !important;
