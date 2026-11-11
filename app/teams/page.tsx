@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Users, ChevronRight, Pencil, Check, X } from "lucide-react";
+import { Plus, Trash2, Users, ChevronRight, Pencil, Check } from "lucide-react";
 import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -70,6 +70,8 @@ export default function TeamsPage() {
   const visibleTeams = teams.filter(team => (team.type === "chůze" ? "chůze" : "běh") === selectedType);
   const joinedTeamId = teamIdsByType[selectedType];
   const joinedTeam = teams.find(team => team.id === joinedTeamId);
+  const isActuallyJoined = (team: Team) =>
+    !!user && (team.createdBy === user.uid || (Array.isArray(team.memberIds) && team.memberIds.includes(user.uid)));
 
   const teamRequest = async (action: string, payload: Record<string, unknown> = {}): Promise<TeamMutationResponse> => {
     if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
@@ -98,7 +100,7 @@ export default function TeamsPage() {
       if (id) {
         setTeamName("");
         showAppToast("Tým byl vytvořen.", "success");
-        router.push("/teams/" + id);
+        router.push("/teams");
       }
     } catch (error) {
       console.error(error);
@@ -251,7 +253,8 @@ export default function TeamsPage() {
         ) : (
         <section className="teams-grid">
           {visibleTeams.map(team => {
-            const isJoined = joinedTeamId === team.id;
+            const isJoined = isActuallyJoined(team);
+
 
             return (
               <article
@@ -280,18 +283,18 @@ export default function TeamsPage() {
                             }
                           }}
                         />
-                        <button type="button" className="ui-icon-button" aria-label="Uložit název týmu" onClick={() => void saveTeamName(team)}>
-                          <Check size={17} />
+                        <button type="button" className="run-primary-button team-edit-save-button" onClick={() => void saveTeamName(team)}>
+                          <Check size={17} /> Uložit
                         </button>
                         <button
                           type="button"
-                          aria-label="Zrušit úpravu názvu"
+                          className="run-secondary-button team-edit-cancel-button"
                           onClick={() => {
                             setEditingTeamId(null);
                             setEditingTeamName("");
                           }}
                         >
-                          <X size={17} />
+                          Zrušit
                         </button>
                       </div>
                     ) : (
@@ -312,16 +315,19 @@ export default function TeamsPage() {
                   <ChevronRight className="team-card-chevron" size={20} />
                 </div>
 
-                <div className="team-card-actions">
+                {editingTeamId !== team.id && <div className="team-card-actions">
                   <button
-                    className="team-action-button"
+                    className={isJoined ? "team-action-button team-leave-button" : "team-action-button"}
                     onClick={event => {
                       event.stopPropagation();
-                      if (isJoined) router.push("/teams/" + team.id);
-                      else void joinTeam(team);
+                      if (isJoined) {
+                        if (window.confirm("Opravdu chceš odejít z tohoto týmu?")) void leaveTeam();
+                      } else {
+                        void joinTeam(team);
+                      }
                     }}
                   >
-                    {isJoined ? "Otevřít tým" : "Přidat se"}
+                    {isJoined ? "Odejít" : "Přidat se"}
                   </button>
 
                   {user?.uid === team.createdBy && editingTeamId !== team.id && (
@@ -349,7 +355,7 @@ export default function TeamsPage() {
                       <Trash2 size={18} />
                     </button>
                   )}
-                </div>
+                </div>}
               </article>
             );
           })}
