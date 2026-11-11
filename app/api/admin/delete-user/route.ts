@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { DocumentReference, Firestore, QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { requireAdmin, authErrorResponse } from "../../../lib/apiAuth";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
-import { collectCloudinaryPublicIds, deleteCloudinaryImages, isUserCloudinaryPublicId  } from "../../../lib/cloudinaryAdmin";
+import { collectCloudinaryPublicIds, deleteCloudinaryImages, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,7 +59,7 @@ async function deleteUserData(adminDb: Firestore, uid: string) {
   const userData = userSnapshot.exists ? userSnapshot.data() : undefined;
 
   if (typeof userData?.avatarUrl === "string") imageUrls.push(userData.avatarUrl);
-  if (typeof userData?.avatarPublicId === "string" && userData.avatarPublicId) publicIds.push(userData.avatarPublicId);
+  if (typeof userData?.avatarPublicId === "string" && isUserCloudinaryPublicId(userData.avatarPublicId, uid)) publicIds.push(userData.avatarPublicId);
 
   for (const run of runsSnapshot.docs) {
     const data = run.data();
@@ -68,11 +68,11 @@ async function deleteUserData(adminDb: Firestore, uid: string) {
     }
     if (typeof data.imageUrl === "string") imageUrls.push(data.imageUrl);
     if (Array.isArray(data.imagePublicIds)) {
-      publicIds.push(...data.imagePublicIds.filter((value: unknown): value is string => typeof value === "string"));
+      publicIds.push(...data.imagePublicIds.filter((value: unknown): value is string => typeof value === "string" && isUserCloudinaryPublicId(value, uid)));
     }
   }
 
-  publicIds.push(...collectCloudinaryPublicIds(imageUrls), uid);
+  publicIds.push(...collectCloudinaryPublicIds(imageUrls, uid));
   const cloudinaryResult = await deleteCloudinaryImages(publicIds);
 
   if (cloudinaryResult.failed.length) {
