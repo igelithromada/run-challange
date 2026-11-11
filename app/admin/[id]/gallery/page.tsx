@@ -9,6 +9,7 @@ import Sidebar from "../../../components/Sidebar";
 import useAdminGuard from "../../../lib/useAdminGuard";
 import { Camera, X } from "lucide-react";
 import { fetchRuns, userRunsQuery } from "../../../lib/services/runs";
+import { showAppToast } from "../../../components/AppToast";
 
 type GalleryPhoto = { id:string; photoUrl:string; date:string; sortTime:number; runId:string; photoIndex:number };
 
@@ -22,6 +23,8 @@ export default function GalleryPage() {
   const [error,setError] = useState("");
   const [lightbox,setLightbox] = useState<number|null>(null);
   const [deleting,setDeleting] = useState(false);
+
+  useEffect(() => { if (error) showAppToast(error, "error"); }, [error]);
 
   useEffect(() => {
     if (adminAccess !== "allowed" || !id) return;
@@ -88,7 +91,7 @@ export default function GalleryPage() {
     <main className="container admin-gallery-page">
       <div className="admin-page-intro"><span className="admin-eyebrow">ADMINISTRACE</span><h1>Galerie uživatele</h1><p>{photos.length} fotografií · kliknutím otevřeš náhled.</p></div>
       {loading && <div className="tile">Načítám galerii…</div>}
-      {error && <div className="tile form-message-error">{error}</div>}
+
       {!loading && !error && photos.length===0 && <div className="tile empty-state"><Camera size={28}/><strong>Žádné fotografie</strong><span>Uživatel zatím nemá fotografie u svých aktivit.</span></div>}
       <div className="admin-gallery-grid">
         {photos.map((photo,index)=><button type="button" className="admin-gallery-item" key={photo.id} onClick={()=>setLightbox(index)}>
