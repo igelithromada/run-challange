@@ -309,6 +309,12 @@ html[data-weather="rain"] .activity-card-modern,
 html[data-weather="rain-wind"] .activity-card-modern,
 html[data-weather="snow"] .activity-card-modern,
 html[data-weather="snow-wind"] .activity-card-modern {
+  display:flex !important;
+  flex-direction:column !important;
+  width:100% !important;
+  min-width:0 !important;
+  grid-template-columns:none !important;
+  grid-template-rows:none !important;
   background-color: var(--card-background) !important;
 }
 
