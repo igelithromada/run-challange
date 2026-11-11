@@ -84,7 +84,7 @@ export async function GET(request: Request) {
     for (const userDoc of snapshot.docs) {
       const data = { id: userDoc.id, ...userDoc.data() } as UserData;
       const prefs = data.trainerNotifications;
-      if (isToday ? prefs.today !== true : prefs.tomorrow !== true) continue;
+      if (!prefs || (isToday ? prefs.today !== true : prefs.tomorrow !== true)) continue;
 
       const texts = ACTIVITY_TYPES
         .map(type => planFor(data, type, targetKey))
