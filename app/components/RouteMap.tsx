@@ -49,6 +49,7 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
   const mapRef = useRef<MapLibreMap | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [overlayPoints, setOverlayPoints] = useState("");
+  const [showRouteOverlay, setShowRouteOverlay] = useState(true);
 
   useEffect(() => {
     const element = elementRef.current;
@@ -289,7 +290,7 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
       <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name}>
         {overlayPoints && (
           <svg
-            className="route-map-overlay"
+            className={`route-map-overlay ${showRouteOverlay ? "" : "hidden"}`}
             aria-hidden="true"
             focusable="false"
             width="100%"
@@ -313,9 +314,14 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
         </div>
       )}
       {state === "ready" && (
-        <div className="route-map-badge">
-          <MapPinned size={14} /> GPX trasa
-        </div>
+        <>
+          <div className="route-map-badge">
+            <MapPinned size={14} /> GPX trasa
+          </div>
+          <button type="button" className="route-map-toggle" onClick={() => setShowRouteOverlay(value => !value)}>
+            {showRouteOverlay ? "Původní mapa" : "Zobrazit trasu"}
+          </button>
+        </>
       )}
     </div>
   );
