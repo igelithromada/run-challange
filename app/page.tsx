@@ -178,6 +178,7 @@ export default function Page() {
 
             const user = userAvatars[run.uid] || {};
             const nickname = user.nickname || run.nickname || "Anonym";
+            const resolvedAvatarUrl = user.avatarUrl || run.avatarUrl || "";
             return (
               <ActivityCard
                 key={run.id}
