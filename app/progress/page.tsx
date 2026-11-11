@@ -136,7 +136,7 @@ export default function ProgressPage() {
   const monthlyTotals = new Map<string, number>();
   selected.forEach(run => { const d=activityDate(run); if (!Number.isNaN(d.getTime())) { const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; monthlyTotals.set(key,(monthlyTotals.get(key)||0)+asNumber(run.km)); } });
   const bestMonth = Math.max(0, ...Array.from(monthlyTotals.values()));
-  const activityDays = new Set(mine.map(run => dateKey(activityDate(run)))).size;
+  const activityDays = new Set(selected.map(run => dateKey(activityDate(run)))).size;
   const streak = (() => {
     let count=0; const cursor=new Date(now.getFullYear(),now.getMonth(),now.getDate());
     if (!dailyTotals.has(dateKey(cursor))) cursor.setDate(cursor.getDate()-1);
