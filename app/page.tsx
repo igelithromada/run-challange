@@ -187,8 +187,6 @@ export default function Page() {
               <ActivityCard
                 key={run.id}
                 run={run}
-                nickname={nickname}
-                avatarUrl={resolvedAvatarUrl}
                 teamName={teamName}
                 teamAvatarUrl={team?.avatarUrl || ""}
                 activityType={selectedType}
