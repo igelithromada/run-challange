@@ -400,68 +400,6 @@
 
 /* ===== Finální sjednocení UI podle poslední revize ===== */
 
-/* Aktivita: kompaktnější výpočtové dlaždice */
-.activity-card-modern .activity-metrics { gap:.5rem; margin:.7rem 0; }
-.activity-card-modern .activity-metrics > div {
-  min-height:74px;
-  padding:.55rem .45rem;
-  border-radius:13px;
-  gap:.2rem;
-}
-.activity-card-modern .activity-metrics strong { font-size:1.18rem; }
-.activity-card-modern .activity-metrics span { font-size:.72rem; }
-.activity-card-modern .activity-metrics small { font-size:.68em; }
-.activity-card-modern .activity-metrics svg { width:16px; height:16px; }
-
-/* Popis je vlastní oddělená část mezi uživatelem a výpočty */
-.activity-card-modern .activity-description {
-  margin:.7rem 0 0;
-  padding:.7rem .15rem;
-  border-top:1px solid rgba(255,255,255,.10);
-  border-bottom:1px solid rgba(255,255,255,.10);
-  color:rgba(255,255,255,.84);
-  font-size:.86rem;
-  line-height:1.45;
-  white-space:pre-wrap;
-  overflow-wrap:anywhere;
-}
-
-/* Sociální tlačítka menší; při lajku je červené pouze srdce */
-.activity-card-modern .activity-social-actions {
-  gap:.42rem;
-  padding-top:.65rem;
-  border-top:1px solid rgba(255,255,255,.10);
-}
-.activity-card-modern .activity-social-button {
-  width:42px !important;
-  min-width:42px !important;
-  height:34px !important;
-  min-height:34px !important;
-  padding:.25rem .35rem !important;
-  border-radius:10px !important;
-  gap:.2rem;
-}
-.activity-card-modern .activity-social-button svg { width:18px !important; height:18px !important; }
-.activity-card-modern .activity-social-button span { font-size:.72rem; }
-.activity-card-modern .activity-social-button.is-liked {
-  color:#fff !important;
-  background:rgba(255,255,255,.10) !important;
-  border-color:rgba(255,255,255,.12) !important;
-}
-.activity-card-modern .activity-social-button.is-liked svg {
-  color:#ff6278 !important;
-  fill:#ff6278 !important;
-  stroke:#ff6278 !important;
-}
-.activity-card-modern .activity-manage-button {
-  min-height:34px;
-  padding:.3rem .55rem;
-  border-radius:10px;
-  font-size:.72rem;
-  gap:.25rem;
-}
-.activity-card-modern .activity-manage-button svg { width:14px; height:14px; }
-
 /* Komentáře – stejné kompaktní ikonové ovládání jako jinde */
 .social-comment-tools { display:flex; gap:.35rem; margin-top:.35rem; }
 .social-comment-icon-button {
@@ -658,67 +596,6 @@
 .participants-alpha button.active { opacity:1 !important; transform:scale(1.2); }
 
 /* ===== Poslední mobilní doladění ===== */
-
-/* Záznamy: menší výpočty a výrazně menší vertikální mezery. */
-.activity-card-modern { gap:.48rem !important; padding:.72rem !important; }
-.activity-card-modern .activity-card-top { margin-bottom:0 !important; }
-.activity-card-modern .activity-description {
-  margin:.15rem 0 !important;
-  padding:.48rem .1rem !important;
-  font-size:.82rem !important;
-}
-.activity-card-modern .activity-metrics {
-  gap:.28rem !important;
-  margin:.08rem 0 !important;
-}
-.activity-card-modern .activity-metrics > div {
-  min-height:66px !important;
-  padding:.42rem .32rem !important;
-  border-radius:11px !important;
-  gap:.14rem !important;
-}
-.activity-card-modern .activity-metrics svg { width:15px !important; height:15px !important; }
-.activity-card-modern .activity-metrics strong {
-  font-size:1rem !important;
-  line-height:1.05 !important;
-}
-.activity-card-modern .activity-metrics > div > span { font-size:.64rem !important; }
-.activity-card-modern .activity-metrics strong small { font-size:.66em !important; }
-.activity-card-modern .activity-pace-bar { width:min(92px,100%) !important; height:4px !important; margin-top:.25rem !important; }
-.activity-card-modern .activity-pace-marker,
-.activity-card-modern .activity-metrics .activity-pace-bar > span { width:8px !important; height:8px !important; }
-.activity-card-modern .activity-social-actions {
-  gap:.35rem !important;
-  padding-top:.42rem !important;
-  margin-top:.02rem !important;
-}
-.activity-card-modern .activity-social-button {
-  width:40px !important;
-  min-width:40px !important;
-  height:32px !important;
-  min-height:32px !important;
-  padding:.2rem .28rem !important;
-  border-radius:9px !important;
-}
-.activity-card-modern .activity-social-button svg { width:17px !important; height:17px !important; }
-.activity-card-modern .activity-social-button span { font-size:.68rem !important; }
-.activity-card-modern .activity-manage-button {
-  min-height:32px !important;
-  padding:.25rem .45rem !important;
-  font-size:.68rem !important;
-}
-
-/* Lajk: pouze srdce je červené, tlačítko zůstává neutrální. */
-.activity-card-modern .activity-social-button.is-liked {
-  color:#fff !important;
-  background:rgba(255,255,255,.10) !important;
-  border-color:rgba(255,255,255,.12) !important;
-}
-.activity-card-modern .activity-social-button.is-liked svg {
-  color:#ff5f78 !important;
-  fill:#ff5f78 !important;
-  stroke:#ff5f78 !important;
-}
 
 /* Úspěšné uložení záznamu je plovoucí toast, nikdy neposouvá tlačítko. */
 .run-form-toast {
