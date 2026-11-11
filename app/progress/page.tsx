@@ -254,10 +254,10 @@ export default function ProgressPage() {
       <section className="tile progress-records">
         <div className="progress-section-title"><Trophy/><div><h2>Osobní rekordy</h2><p>Nejlepší výkony v kategorii {goalType}.</p></div></div>
         <div className="progress-record-grid">
-          <div><span><Footprints size={20}/></span><small>Nejdelší aktivita</small><strong>{longest?asNumber(longest.km).toFixed(2)+" km":"—"}</strong></div>
-          <div><span><Zap size={20}/></span><small>Nejrychlejší tempo</small><strong>{fastest?formatPace(asNumber(fastest.tempo)):"—"}</strong></div>
-          <div><span><CalendarDays size={20}/></span><small>Nejvíce za měsíc</small><strong>{bestMonth.toFixed(1)} km</strong></div>
-          <div><span><Flame size={20}/></span><small>Aktuální série</small><strong>{streak} {streak===1?"den":"dní"}</strong></div>
+          <div className="progress-record-item"><span className="progress-record-icon"><Footprints size={20}/></span><small>Nejdelší aktivita</small><strong>{longest?asNumber(longest.km).toFixed(2)+" km":"—"}</strong></div>
+          <div className="progress-record-item"><span className="progress-record-icon"><Zap size={20}/></span><small>Nejrychlejší tempo</small><strong>{fastest?formatPace(asNumber(fastest.tempo)):"—"}</strong></div>
+          <div className="progress-record-item"><span className="progress-record-icon"><CalendarDays size={20}/></span><small>Nejvíce za měsíc</small><strong>{bestMonth.toFixed(1)} km</strong></div>
+          <div className="progress-record-item"><span className="progress-record-icon"><Flame size={20}/></span><small>Aktuální série</small><strong>{streak} {streak===1?"den":"dní"}</strong></div>
         </div>
       </section>
 
