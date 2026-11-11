@@ -24,6 +24,10 @@ export default function LoginPage() {
     if (error) showAppToast(error, "error");
   }, [error]);
 
+  useEffect(() => {
+    if (message) showAppToast(message, "success");
+  }, [message]);
+
   const switchView = (next: View) => {
     setError("");
     setMessage("");
@@ -179,7 +183,7 @@ export default function LoginPage() {
         )}
 
 
-        {message && <p className="form-message form-message-success" role="status">{message}</p>}
+
       </section>
     </main>
   );
