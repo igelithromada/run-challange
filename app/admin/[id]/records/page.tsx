@@ -88,7 +88,6 @@ export default function RecordsPage() {
           const images = Array.isArray(run.imageUrls) && run.imageUrls.length ? run.imageUrls : run.imageUrl ? [run.imageUrl] : [];
           return <ActivityCard key={run.id}
             run={{...run, km:run.km??0,minuty:run.minuty??0,tempo:run.tempo??0}}
-            nickname={run.nickname || run.email?.split("@")[0] || "Uživatel"}
             activityType={selectedType}
             teamName={null}
             onPhotosClick={(urls)=>setLightbox({urls,index:0})}
