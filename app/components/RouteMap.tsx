@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { LoaderCircle, MapPinned } from "lucide-react";
+import type { GeoJSONSource } from "maplibre-gl";
 import type { Map as MapLibreMap } from "maplibre-gl";
 
 type Props = {
@@ -109,8 +110,8 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
         };
         map.on("error", onMapError);
 
-        map.once("load", () => {
-          if (!alive || !map) return;
+        const drawRoute = () => {
+          if (!alive || !map || map.getSource("route")) return;
 
           map.addSource("route", {
             type: "geojson",
@@ -194,9 +195,33 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
             maxZoom: 16,
           });
 
+          const source = map.getSource("route") as GeoJSONSource | undefined;
+          if (source) {
+            source.setData({
+              type: "Feature",
+              properties: {},
+              geometry: lapCount === 1
+                ? { type: "LineString", coordinates: basePoints }
+                : { type: "MultiLineString", coordinates: routeLines },
+            });
+          }
+
           window.clearTimeout(timeout);
-          setState("ready");
-        });
+          requestAnimationFrame(() => {
+            if (alive && map) {
+              map.resize();
+              map.fitBounds(bounds, {
+                padding: { top: 34, bottom: 34, left: 34, right: 34 },
+                duration: 0,
+                maxZoom: 16,
+              });
+              setState("ready");
+            }
+          });
+        };
+
+        map.once("load", drawRoute);
+        map.once("idle", drawRoute);
 
       } catch (error) {
         if (alive && (error as Error).name !== "AbortError") {
