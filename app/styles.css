@@ -3967,3 +3967,36 @@ html[data-theme="white"] .theme-color-dot {
 html[data-theme="dark"] {
   color-scheme: dark;
 }
+
+
+/* Audit 2026-11-11 – jednotnější týmy, počasí a návratové ovládání */
+.team-edit-name{display:flex!important;align-items:center!important;gap:.45rem!important;flex-wrap:wrap!important}
+.team-edit-name input{flex:1 1 180px!important;min-width:0!important}
+.team-edit-save-button,.team-edit-cancel-button{min-height:38px!important;padding:.45rem .75rem!important}
+.team-leave-button{border-color:rgba(235,87,87,.45)!important;background:rgba(235,87,87,.10)!important}
+.team-card-actions .team-delete-button{flex:0 0 38px!important}
+.weather-main-icon.weather-condition-rain path:last-child,
+.weather-hour-icon.weather-condition-rain path:last-child,
+.weather-main-icon.weather-condition-storm path:last-child,
+.weather-hour-icon.weather-condition-storm path:last-child,
+.weather-main-icon.weather-condition-drizzle path:last-child,
+.weather-hour-icon.weather-condition-drizzle path:last-child{stroke:#4da3ff}
+.weather-main-icon.weather-condition-partly path:nth-child(-n+5),
+.weather-hour-icon.weather-condition-partly path:nth-child(-n+5){stroke:#ffd166}
+.weather-main-icon.weather-condition-partly path:last-child,
+.weather-hour-icon.weather-condition-partly path:last-child{stroke:currentColor}
+.weather-main-icon.weather-condition-sun,
+.weather-hour-icon.weather-condition-sun{color:#ffd166}
+.weather-main-icon.weather-condition-snow,
+.weather-hour-icon.weather-condition-snow{color:#b9dcff}
+.weather-main-icon.weather-condition-fog,
+.weather-hour-icon.weather-condition-fog{color:#b8c2cc}
+.route-map-toggle{position:absolute;right:.55rem;bottom:.55rem;z-index:5;border:1px solid rgba(0,0,0,.16);border-radius:10px;background:rgba(255,255,255,.94);color:#17212b;padding:.42rem .62rem;font:inherit;font-size:.72rem;font-weight:750;box-shadow:0 3px 12px rgba(0,0,0,.18);cursor:pointer}
+.route-map-overlay.hidden{display:none}
+.progress-record-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:.6rem!important}
+.progress-record-grid > .progress-record-item{display:grid!important;grid-template-columns:38px minmax(0,1fr)!important;grid-template-rows:auto auto!important;column-gap:.6rem!important;align-items:center!important;padding:.75rem!important;border:1px solid var(--ui-border)!important;border-radius:14px!important;background:rgba(255,255,255,.055)!important}
+.progress-record-item .progress-record-icon{grid-row:1 / span 2!important;width:38px!important;height:38px!important;display:grid!important;place-items:center!important;border-radius:11px!important;background:rgba(255,255,255,.09)!important;font-size:1rem!important}
+.progress-record-item small{font-size:.7rem!important;color:var(--ui-muted)!important}
+.progress-record-item strong{font-size:1rem!important}
+.settings-notification-times{margin:.35rem 0 0!important;font-size:.75rem!important;opacity:.68!important}
+@media(max-width:520px){.progress-record-grid{grid-template-columns:1fr 1fr!important}.progress-record-grid > .progress-record-item{grid-template-columns:34px minmax(0,1fr)!important;padding:.65rem!important}.progress-record-item .progress-record-icon{width:34px!important;height:34px!important}.progress-record-item strong{font-size:.88rem!important}}
