@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { DocumentReference } from "firebase-admin/firestore";
 import { requireAdmin, authErrorResponse } from "../../../lib/apiAuth";
-import { collectCloudinaryPublicIds, deleteCloudinaryImages } from "../../../lib/cloudinaryAdmin";
+import { collectCloudinaryPublicIds, deleteCloudinaryImages, isUserCloudinaryPublicId  } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       }
     }
 
-    publicIds.push(...collectCloudinaryPublicIds(imageUrls));
+    publicIds.push(...collectCloudinaryPublicIds(imageUrls), uid);
     const cloudinaryResult = await deleteCloudinaryImages(publicIds);
 
     if (cloudinaryResult.failed.length) {
