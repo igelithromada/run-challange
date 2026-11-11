@@ -1,6 +1,6 @@
 /* =====================================================================
-   SOURCE: app/design-tokens.css
-   Consolidated without semantic changes — original order preserved.
+   CONSOLIDATED SECTION: design tokens
+   Consolidated without semantic changes; section order preserved.
    ===================================================================== */
 :root {
   /* Design tokens – jediný zdroj základního vizuálního systému */
@@ -56,7 +56,7 @@
 
 /* =====================================================================
    SOURCE: app/globals.css
-   Consolidated without semantic changes — original order preserved.
+   Consolidated without semantic changes; section order preserved.
    ===================================================================== */
 html { min-height: 100%; background: #071000; }
 body {
@@ -1269,7 +1269,7 @@ html[data-animations="true"][data-weather="wind"] body::before {
 
 /* =====================================================================
    SOURCE: app/fixes.css
-   Consolidated without semantic changes — original order preserved.
+   Consolidated without semantic changes; section order preserved.
    ===================================================================== */
 
 /* Opravy mobilního rozhraní a vrstvení navigace */
@@ -2317,8 +2317,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 
 /* =====================================================================
-   SOURCE: app/polish.css
-   Consolidated without semantic changes — original order preserved.
+   CONSOLIDATED SECTION: polish
+   Consolidated without semantic changes; section order preserved.
    ===================================================================== */
 /* Final visual polish – Dolní Lhota v pohybu */
 :root { --ui-gap: .65rem; --ui-radius: 16px; }
@@ -2487,8 +2487,8 @@ button { touch-action:manipulation; }
 
 
 /* =====================================================================
-   SOURCE: app/final-polish.css
-   Consolidated without semantic changes — original order preserved.
+   CONSOLIDATED SECTION: final polish
+   Consolidated without semantic changes; section order preserved.
    ===================================================================== */
 /* Final visual refinement — 2026-11-05 */
 .sr-only {
@@ -3206,8 +3206,8 @@ button { touch-action:manipulation; }
 
 
 /* =====================================================================
-   SOURCE: app/consistency.css
-   Consolidated without semantic changes — original order preserved.
+   CONSOLIDATED SECTION: consistency
+   Consolidated without semantic changes; section order preserved.
    ===================================================================== */
 /* Unified visual language and final consistency fixes. */
 .activity-type-selector {
