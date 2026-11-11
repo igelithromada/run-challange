@@ -389,3 +389,40 @@
   line-height: 1.35;
   text-align: center;
 }
+
+
+/* === Audit 2026-11: activity card must remain a vertical full-width layout === */
+.activity-card-modern {
+  display:flex !important;
+  flex-direction:column !important;
+  width:100% !important;
+  min-width:0 !important;
+  grid-template-columns:none !important;
+  grid-template-rows:none !important;
+}
+.activity-card-modern > .activity-card-top,
+.activity-card-modern > .activity-description,
+.activity-card-modern > .activity-metrics,
+.activity-card-modern > .activity-card-actions {
+  width:100% !important;
+  max-width:none !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+}
+.activity-card-modern > .activity-card-top {
+  flex:0 0 auto;
+}
+.activity-card-modern > .activity-description {
+  align-self:stretch !important;
+}
+.activity-card-modern > .activity-metrics {
+  align-self:stretch !important;
+}
+.activity-card-modern > .activity-card-actions {
+  align-self:stretch !important;
+}
+
+/* Stavové hlášky týmů nesmí být globálně skryté. */
+.teams-message {
+  display:block !important;
+}
