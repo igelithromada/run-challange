@@ -86,33 +86,6 @@ export default function Page() {
     }
   };
 
-  useEffect(() => {
-    const userIds = Array.from(new Set(runs.map((run) => run.uid).filter((uid): uid is string => !!uid && !userAvatars[uid])));
-    if (userIds.length === 0) return;
-
-    let cancelled = false;
-    const loadUsers = async () => {
-      try {
-        // Firestore "in" dotaz načte profily dávkově místo jednoho požadavku pro každý záznam.
-        const profileMap = await getPublicProfiles(userIds);
-        if (cancelled) return;
-        setUserAvatars((prev) => {
-          const next = { ...prev };
-          userIds.forEach(uid => {
-            next[uid] = {
-              nickname: profileMap[uid]?.nickname || prev[uid]?.nickname || "",
-              avatarUrl: profileMap[uid]?.avatarUrl || prev[uid]?.avatarUrl || "",
-            };
-          });
-          return next;
-        });
-      } catch (error) {
-        console.error("Nepodařilo se načíst profily uživatelů", error);
-      }
-    };
-    loadUsers();
-    return () => { cancelled = true; };
-  }, [runs]);
 
   const handleSelect = (item: string) => {
     setMenuVisible(false);
