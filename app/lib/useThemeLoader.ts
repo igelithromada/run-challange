@@ -69,7 +69,17 @@ export async function applyTheme(selectedTheme: string, color: string, animation
   root.removeAttribute("data-windy");
   root.setAttribute("data-animations", animationsEnabled ? "true" : "false");
 
-  if (selectedTheme === "man") gradient = "linear-gradient(180deg, #2980b9, #2c3e50)";
+  root.removeAttribute("data-theme");
+  if (selectedTheme === "dark") {
+    gradient = "#071000";
+    root.setAttribute("data-theme", "dark");
+  } else if (selectedTheme === "light") {
+    gradient = "#eef6fb";
+    root.setAttribute("data-theme", "light");
+  } else if (selectedTheme === "white") {
+    gradient = "#ffffff";
+    root.setAttribute("data-theme", "white");
+  } else if (selectedTheme === "man") gradient = "linear-gradient(180deg, #2980b9, #2c3e50)";
   else if (selectedTheme === "woman") gradient = "linear-gradient(180deg, #ff7eb3, #ff758c)";
   else if (selectedTheme === "auto") gradient = `linear-gradient(180deg, ${getColorByHour(new Date().getHours())}, #000000)`;
   else if (selectedTheme === "custom") gradient = `linear-gradient(180deg, ${color}, #000000)`;
