@@ -9,6 +9,7 @@ import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/Sidebar";
 import ActivityCard from "../../../components/ActivityCard";
 import ActivityTypeSelector from "../../../components/ActivityTypeSelector";
+import { showAppToast } from "../../../components/AppToast";
 import type { RunData, ActivityType } from "../../../types";
 import { userRunsQuery } from "../../../lib/services/runs";
 import { useSharedFirestoreQuery } from "../../../lib/useSharedFirestoreQuery";
@@ -52,9 +53,10 @@ export default function RecordsPage() {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Smazání se nepodařilo.");
+      showAppToast("Záznam byl smazán.", "success");
     } catch(error) {
       console.error(error);
-      window.alert(error instanceof Error ? error.message : "Smazání se nepodařilo.");
+      showAppToast(error instanceof Error ? error.message : "Smazání se nepodařilo.", "error");
     }
   };
 
