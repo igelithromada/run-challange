@@ -9,7 +9,7 @@ import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { Activity, Clock3, Medal, Users, Footprints, ArrowDownUp, ListFilter } from "lucide-react";
 import type { RunData } from "../types";
-import { latestRunsQuery } from "../lib/services/runs";
+import { fetchAllRuns } from "../lib/services/runs";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { getUserAvatars } from "../lib/services/users";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
@@ -28,11 +28,11 @@ type RunRecord = RunData;
 export default function ParticipantsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedType, setSelectedType] = useState<ActivityType>("běh");
-  const runsQuery = useMemo(() => latestRunsQuery(500), []);
-  const runsState = useSharedFirestoreQuery<RunRecord>("participants:runs:500", runsQuery);
-  const runs = runsState.data;
+  const [runs, setRuns] = useState<RunRecord[]>([]);
+  const [runsLoading, setRunsLoading] = useState(true);
+  const [runsError, setRunsError] = useState("");
   const [avatars, setAvatars] = useState<Record<string, string>>({});
-  const loading = runsState.loading;
+  const loading = runsLoading;
   const [sortMode, setSortMode] = useState<"km" | "alpha">("km");
   const [activeLetter, setActiveLetter] = useState("");
   const [letterPop, setLetterPop] = useState("");
@@ -53,6 +53,23 @@ export default function ParticipantsPage() {
     }
   }, []);
 
+
+  useEffect(() => {
+    let active = true;
+    setRunsLoading(true);
+    setRunsError("");
+    void fetchAllRuns().then(items => {
+      if (active) setRuns(items);
+    }).catch(error => {
+      if (active) {
+        setRuns([]);
+        setRunsError(error instanceof Error ? error.message : "Výsledky se nepodařilo načíst.");
+      }
+    }).finally(() => {
+      if (active) setRunsLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -132,7 +149,7 @@ export default function ParticipantsPage() {
 
         <section className="tile participants-list-card">
           <div className="results-section-heading"><Medal size={22}/><div><h2>Žebříček účastníků</h2><p>Seřazeno podle celkové vzdálenosti.</p></div></div>
-          {loading ? <p className="admin-muted">Načítám výsledky…</p> : participants.length === 0 ? (
+          {loading ? <p className="admin-muted">Načítám výsledky…</p> : runsError ? <div className="participants-empty">{runsError}</div> : participants.length === 0 ? (
             <div className="participants-empty">Zatím nejsou pro {selectedType === "běh" ? "běh" : "chůzi"} žádné záznamy.</div>
           ) : (
             <div className="participants-scroll-area">
