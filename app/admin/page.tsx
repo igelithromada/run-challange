@@ -9,6 +9,7 @@ import { getAllUserProfiles, updateUserProfile } from "../lib/services/users";
 import useAdminGuard from "../lib/useAdminGuard";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import { showAppToast } from "../components/AppToast";
 
 type AdminUser = { id: string; nickname: string; email: string; role?: string; blocked?: boolean; avatarUrl?: string };
 
@@ -23,6 +24,10 @@ export default function AdminPage() {
   const [registrationCodeBusy, setRegistrationCodeBusy] = useState(false);
   const [registrationCodeMessage, setRegistrationCodeMessage] = useState("");
   const router = useRouter();
+
+  useEffect(() => {
+    if (error) showAppToast(error, "error");
+  }, [error]);
   const adminAccess = useAdminGuard();
 
   const loadUsers = async (isActive: () => boolean = () => true) => {
@@ -206,7 +211,7 @@ export default function AdminPage() {
           <p>Uživatelé, role, přístupy a aktivita na jednom místě.</p>
         </header>
 
-        {error && <p className="form-message form-message-error" role="alert">{error}</p>}
+
 
         <section className="tile admin-registration-code">
           <div className="admin-section-heading"><KeyRound size={21}/><div><h2>Registrační kód</h2><span>Spravuješ kód, který je potřeba pro vytvoření nového účtu.</span></div></div>
