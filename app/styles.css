@@ -3778,13 +3778,15 @@ html[data-windy="true"] .wind-icon-animated {
   transform: none;
 }
 .activity-delete-button,
-.admin-action-button.danger {
+.admin-action-button.danger,
+.admin-action-button.admin-action-danger {
   border-color: rgba(255,130,130,.35);
   background: rgba(170,55,55,.15);
   color: #ffd2d2;
 }
 .activity-delete-button:hover,
-.admin-action-button.danger:hover {
+.admin-action-button.danger:hover,
+.admin-action-button.admin-action-danger:hover {
   background: rgba(190,65,65,.24);
 }
 
