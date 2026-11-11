@@ -121,12 +121,12 @@ export default function WeatherCard() {
               <small>Vítr</small>
             </div>
             <div style={{ background: "rgba(0,0,0,0.12)", borderRadius: "12px", padding: "0.65rem 0.5rem", textAlign: "center" }}>
-              <CloudRain size={19} style={{ margin: "0 auto 0.25rem" }} />
+              <CloudRain className={`weather-stat-icon ${iconColorClass}`} size={19} style={{ margin: "0 auto 0.25rem" }} />
               <strong style={{ display: "block" }}>{rainChance !== undefined ? `${rainChance}%` : "—"}</strong>
               <small>Déšť</small>
             </div>
             <div style={{ background: "rgba(0,0,0,0.12)", borderRadius: "12px", padding: "0.65rem 0.5rem", textAlign: "center" }}>
-              <Droplets size={19} style={{ margin: "0 auto 0.25rem" }} />
+              <Droplets className="weather-humidity-icon" size={19} style={{ margin: "0 auto 0.25rem" }} />
               <strong style={{ display: "block" }}>{current.relativeHumidity !== undefined ? `${current.relativeHumidity}%` : "—"}</strong>
               <small>Vlhkost</small>
             </div>
