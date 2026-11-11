@@ -65,6 +65,7 @@ export default function MyRunsPage() {
   const [uid, setUid] = useState("");
   const [olderRuns, setOlderRuns] = useState<RunData[]>([]);
   const [localUpdates, setLocalUpdates] = useState<Record<string, Partial<RunData>>>({});
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(() => new Set());
   const [olderCursor, setOlderCursor] = useState<import("firebase/firestore").QueryDocumentSnapshot | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -114,7 +115,7 @@ export default function MyRunsPage() {
 
   const runsQuery = useMemo(() => latestUserRunsQuery(uid || "__no_user__", 30), [uid]);
   const runsState = useSharedFirestoreQuery<RunData>("runs:user:" + (uid || "none"), runsQuery);
-  const runs = useMemo(() => Array.from(new Map<string, RunData>([...runsState.data, ...olderRuns].map(run => [run.id, { ...run, ...(localUpdates[run.id] || {}) }] as const)).values()).map(run => ({
+  const runs = useMemo(() => Array.from(new Map<string, RunData>([...runsState.data, ...olderRuns].map(run => [run.id, { ...run, ...(localUpdates[run.id] || {}) }] as const)).values()).filter(run => !deletedIds.has(run.id)).map(run => ({
     ...run, km: Number(run.km) || 0, minuty: Number(run.minuty) || 0, tempo: Number(run.tempo) || 0
   })).sort((a,b) => dateOf(b.timestamp).getTime() - dateOf(a.timestamp).getTime()), [runsState.data, olderRuns, localUpdates]);
   const loading = runsState.loading;
@@ -240,6 +241,16 @@ export default function MyRunsPage() {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Záznam se nepodařilo smazat.");
+      setDeletedIds(previous => {
+        const next = new Set(previous);
+        next.add(id);
+        return next;
+      });
+      setLocalUpdates(previous => {
+        const next = { ...previous };
+        delete next[id];
+        return next;
+      });
     } catch (err) {
       console.error(err);
       setActionError(err instanceof Error ? err.message : "Záznam se nepodařilo smazat.");
