@@ -236,12 +236,13 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
 
   return (
     <>
-      <article className="tile list-tile activity-card activity-card-modern">
+      <article className={`tile list-tile activity-card activity-card-modern activity-type-${activityType === "chůze" ? "walk" : "run"}`}>
         <header className="activity-card-top">
           <button type="button" className="activity-avatar" onClick={onUserClick} disabled={!onUserClick} aria-label={`Profil uživatele ${resolvedNickname}`}>
             {resolvedAvatarUrl ? <img src={cloudinaryImageUrl(resolvedAvatarUrl, 128)} alt="" loading="lazy" decoding="async" /> : resolvedNickname.charAt(0).toUpperCase()}
           </button>
           <div className="activity-person">
+            <small className="activity-type-label">{activityType === "chůze" ? "Chůze" : "Běh"}</small>
             <span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{resolvedNickname}</span>
             {teamName && <small className="activity-team-line"><span className="activity-team-avatar">{teamAvatarUrl ? <img src={cloudinaryImageUrl(teamAvatarUrl, 48)} alt="" /> : "T"}</span><b>Tým</b> · {teamName}</small>}
           </div>
