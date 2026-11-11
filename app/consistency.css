@@ -371,3 +371,13 @@
 .activity-card-modern .activity-social-button.is-liked svg { color:#ff5f78; fill:#ff5f78; stroke:#ff5f78; }
 .activity-card-modern .activity-manage-button { min-height:32px; margin:0; padding:.25rem .45rem; border-radius:9px; font-size:.68rem; }
 .activity-card-modern .activity-manage-button svg { width:14px; height:14px; }
+
+
+/* Sociální modal: informační limity pro velmi dlouhé seznamy. */
+.social-modal-note {
+  margin: .55rem 0 0;
+  color: rgba(255,255,255,.58);
+  font-size: .72rem;
+  line-height: 1.35;
+  text-align: center;
+}
