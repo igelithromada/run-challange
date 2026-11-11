@@ -19,18 +19,34 @@ function parseGpx(text: string): Coordinate[] {
   const doc = new DOMParser().parseFromString(text, "application/xml");
   if (doc.querySelector("parsererror")) throw new Error("Neplatný GPX soubor.");
 
-  // GPX files may contain either a recorded track (<trkpt>) or a planned
-  // route (<rtept>). Prefer the full track when it exists.
-  const trackPoints = Array.from(doc.getElementsByTagNameNS("*", "trkpt"));
-  const routePoints = Array.from(doc.getElementsByTagNameNS("*", "rtept"));
-  const points = trackPoints.length >= 2 ? trackPoints : routePoints;
+  // GPX se v praxi objevuje s různými XML namespace variantami. Proto
+  // používáme namespace dotaz i obyčejný tag jako bezpečný fallback.
+  const byNamespace = (name: "trkpt" | "rtept") =>
+    Array.from(doc.getElementsByTagNameNS("*", name));
 
-  return points
+  const trackPoints = byNamespace("trkpt").length
+    ? byNamespace("trkpt")
+    : Array.from(doc.getElementsByTagName("trkpt"));
+  const routePoints = byNamespace("rtept").length
+    ? byNamespace("rtept")
+    : Array.from(doc.getElementsByTagName("rtept"));
+
+  const points = trackPoints.length >= 2 ? trackPoints : routePoints;
+  const coordinates = points
     .map(point => [
       Number(point.getAttribute("lon")),
       Number(point.getAttribute("lat")),
     ] as Coordinate)
-    .filter(([lon, lat]) => Number.isFinite(lon) && Number.isFinite(lat));
+    .filter(([lon, lat]) =>
+      Number.isFinite(lon) && Number.isFinite(lat) &&
+      lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90
+    );
+
+  if (coordinates.length < 2) {
+    throw new Error("GPX neobsahuje platnou trasu.");
+  }
+
+  return coordinates;
 }
 
 export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
@@ -64,7 +80,10 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
         const basePoints = parseGpx(text);
         if (basePoints.length < 2) throw new Error("GPX neobsahuje dostatek bodů.");
 
-        const lapCount = Math.max(1, Math.floor(laps));
+        const requestedLaps = Number(laps);
+        const lapCount = Number.isFinite(requestedLaps)
+          ? Math.min(10, Math.max(1, Math.floor(requestedLaps)))
+          : 1;
         const routeLines =
           lapCount === 1
             ? [basePoints]
@@ -105,15 +124,17 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
         mapRef.current = map;
 
         const onMapError = (event: { error?: { message?: string } }) => {
-          console.error("Route map error:", event.error?.message || event.error || event);
-          if (alive) setState("error");
+          // Chyba mapových podkladů (např. jednotlivé OSM dlaždice) nesmí
+          // shodit vykreslení samotné GPX geometrie.
+          console.warn("Route map tile/style error:", event.error?.message || event.error || event);
         };
         map.on("error", onMapError);
 
         const drawRoute = () => {
-          if (!alive || !map || map.getSource("route")) return;
+          if (!alive || !map || !map.isStyleLoaded() || map.getSource("route")) return;
 
-          map.addSource("route", {
+          try {
+            map.addSource("route", {
             type: "geojson",
             data: {
               type: "Feature",
@@ -177,40 +198,64 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
             },
           });
 
-          map.addLayer({
-            id: "route-end",
-            type: "circle",
-            source: "route-end",
-            paint: {
-              "circle-radius": 7,
-              "circle-color": "#ff6b78",
-              "circle-stroke-color": "#30171b",
-              "circle-stroke-width": 3,
-            },
-          });
+            map.addLayer({
+              id: "route-end",
+              type: "circle",
+              source: "route-end",
+              paint: {
+                "circle-radius": 7,
+                "circle-color": "#ff6b78",
+                "circle-stroke-color": "#30171b",
+                "circle-stroke-width": 3,
+              },
+            });
 
-          map.fitBounds(bounds, {
+            map.fitBounds(bounds, {
             padding: { top: 34, bottom: 34, left: 34, right: 34 },
             duration: 0,
             maxZoom: 16,
           });
 
-          window.clearTimeout(timeout);
-          requestAnimationFrame(() => {
-            if (alive && map) {
-              map.resize();
-              map.fitBounds(bounds, {
-                padding: { top: 34, bottom: 34, left: 34, right: 34 },
-                duration: 0,
-                maxZoom: 16,
-              });
-              setState("ready");
-            }
-          });
+            window.clearTimeout(timeout);
+            requestAnimationFrame(() => {
+              if (alive && map) {
+                map.resize();
+                map.fitBounds(bounds, {
+                  padding: { top: 34, bottom: 34, left: 34, right: 34 },
+                  duration: 0,
+                  maxZoom: 16,
+                });
+                setState("ready");
+              }
+            });
+          } catch (error) {
+            console.error("Route geometry render failed:", error);
+            if (alive) setState("error");
+          }
         };
 
         map.once("load", drawRoute);
-        map.once("idle", drawRoute);
+
+        // Když je komponenta vložená do karty, její velikost se může změnit
+        // až po prvním renderu. ResizeObserver zabrání mapě pracovat s 0×0
+        // viewportem a znovu přepočítá bounds po změně velikosti.
+        const resizeObserver = new ResizeObserver(() => {
+          if (!map || !alive) return;
+          map.resize();
+        });
+        resizeObserver.observe(element);
+
+        const settleTimer = window.setTimeout(() => {
+          if (alive && map && map.isStyleLoaded()) {
+            drawRoute();
+            map.resize();
+          }
+        }, 300);
+
+        return () => {
+          resizeObserver.disconnect();
+          window.clearTimeout(settleTimer);
+        };
 
       } catch (error) {
         if (alive && (error as Error).name !== "AbortError") {
