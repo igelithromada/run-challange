@@ -3859,14 +3859,13 @@ html[data-theme="white"] {
   --control-background-hover:rgba(23,33,43,.09);
   --control-background-active:rgba(23,33,43,.13);
 }
-html[data-theme="light"] body {
-  background:#eef6fb !important;
-  color:#17212b;
-}
+html[data-theme="dark"] body,
+html[data-theme="light"] body,
 html[data-theme="white"] body {
-  background:#fff !important;
-  color:#17212b;
+  background:var(--main-gradient) !important;
 }
+html[data-theme="light"] body,
+html[data-theme="white"] body { color:#17212b; }
 html[data-theme="light"] .tile,
 html[data-theme="white"] .tile,
 html[data-theme="light"] .theme-option,
@@ -4000,3 +3999,21 @@ html[data-theme="dark"] {
 .progress-record-item strong{font-size:1rem!important}
 .settings-notification-times{margin:.35rem 0 0!important;font-size:.75rem!important;opacity:.68!important}
 @media(max-width:520px){.progress-record-grid{grid-template-columns:1fr 1fr!important}.progress-record-grid > .progress-record-item{grid-template-columns:34px minmax(0,1fr)!important;padding:.65rem!important}.progress-record-item .progress-record-icon{width:34px!important;height:34px!important}.progress-record-item strong{font-size:.88rem!important}}
+
+
+/* Audit: barvit jen části ikon, které nesou meteorologický význam */
+.weather-main-icon.weather-condition-rain path:not(:first-child),
+.weather-main-icon.weather-condition-drizzle path:not(:first-child),
+.weather-main-icon.weather-condition-storm path:not(:first-child),
+.weather-hour-icon.weather-condition-rain path:not(:first-child),
+.weather-hour-icon.weather-condition-drizzle path:not(:first-child),
+.weather-hour-icon.weather-condition-storm path:not(:first-child),
+.weather-stat-icon.weather-condition-rain path:not(:first-child),
+.weather-stat-icon.weather-condition-drizzle path:not(:first-child),
+.weather-stat-icon.weather-condition-storm path:not(:first-child){stroke:#4da3ff}
+.weather-humidity-icon{color:#4da3ff!important}
+.weather-main-icon.weather-condition-partly path:nth-child(2),
+.weather-hour-icon.weather-condition-partly path:nth-child(2){stroke:#ffd166}
+.route-map-mapy{position:absolute;inset:0;z-index:2;background:#fff}
+.route-map-mapy iframe{display:block;width:100%;height:100%;border:0}
+.route-map-toggle{z-index:6!important}
