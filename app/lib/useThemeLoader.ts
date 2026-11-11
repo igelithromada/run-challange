@@ -71,7 +71,7 @@ export async function applyTheme(selectedTheme: string, color: string, animation
 
   root.removeAttribute("data-theme");
   if (selectedTheme === "dark") {
-    gradient = "#071000";
+    gradient = "#000000";
     root.setAttribute("data-theme", "dark");
   } else if (selectedTheme === "light") {
     gradient = "#eef6fb";
