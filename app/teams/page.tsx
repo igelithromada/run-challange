@@ -69,9 +69,9 @@ export default function TeamsPage() {
   const teams = teamsState.data;
   const visibleTeams = teams.filter(team => (team.type === "chůze" ? "chůze" : "běh") === selectedType);
   const joinedTeamId = teamIdsByType[selectedType];
-  const joinedTeam = teams.find(team => team.id === joinedTeamId);
   const isActuallyJoined = (team: Team) =>
     !!user && (team.createdBy === user.uid || (Array.isArray(team.memberIds) && team.memberIds.includes(user.uid)));
+  const joinedTeam = visibleTeams.find(isActuallyJoined) || teams.find(team => team.id === joinedTeamId && isActuallyJoined(team));
 
   const teamRequest = async (action: string, payload: Record<string, unknown> = {}): Promise<TeamMutationResponse> => {
     if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
@@ -157,7 +157,7 @@ export default function TeamsPage() {
 
     try {
       await teamRequest("delete", { teamId: team.id });
-      if (joinedTeamId === team.id) {
+      if (joinedTeam?.id === team.id) {
         setTeamIdsByType(current => ({ ...current, [selectedType]: null }));
       }
       showAppToast("Tým byl smazán.");
