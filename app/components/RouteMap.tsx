@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { LoaderCircle, MapPinned } from "lucide-react";
-
 import type { Map as MapLibreMap } from "maplibre-gl";
 
 type Props = {
@@ -19,19 +18,15 @@ function parseGpx(text: string): Coordinate[] {
   const doc = new DOMParser().parseFromString(text, "application/xml");
   if (doc.querySelector("parsererror")) throw new Error("Neplatný GPX soubor.");
 
-  // GPX se v praxi objevuje s různými XML namespace variantami. Proto
-  // používáme namespace dotaz i obyčejný tag jako bezpečný fallback.
-  const byNamespace = (name: "trkpt" | "rtept") =>
-    Array.from(doc.getElementsByTagNameNS("*", name));
+  const getPoints = (tag: "trkpt" | "rtept") => {
+    const namespaced = Array.from(doc.getElementsByTagNameNS("*", tag));
+    return namespaced.length ? namespaced : Array.from(doc.getElementsByTagName(tag));
+  };
 
-  const trackPoints = byNamespace("trkpt").length
-    ? byNamespace("trkpt")
-    : Array.from(doc.getElementsByTagName("trkpt"));
-  const routePoints = byNamespace("rtept").length
-    ? byNamespace("rtept")
-    : Array.from(doc.getElementsByTagName("rtept"));
-
+  const trackPoints = getPoints("trkpt");
+  const routePoints = getPoints("rtept");
   const points = trackPoints.length >= 2 ? trackPoints : routePoints;
+
   const coordinates = points
     .map(point => [
       Number(point.getAttribute("lon")),
@@ -60,9 +55,10 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
 
     let alive = true;
     let map: MapLibreMap | null = null;
+    let drawRoute: (() => void) | null = null;
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), CLIENT_TIMEOUT_MS);
-    let settleTimer: number | null = null;
+
     const handleResize = () => {
       if (alive && map) map.resize();
     };
@@ -83,8 +79,6 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
         if (!alive) return;
 
         const basePoints = parseGpx(text);
-        if (basePoints.length < 2) throw new Error("GPX neobsahuje dostatek bodů.");
-
         const requestedLaps = Number(laps);
         const lapCount = Number.isFinite(requestedLaps)
           ? Math.min(10, Math.max(1, Math.floor(requestedLaps)))
@@ -93,8 +87,8 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
           lapCount === 1
             ? [basePoints]
             : Array.from({ length: lapCount }, () => basePoints);
-
         const routePoints = routeLines.flat();
+
         const bounds = new ml.LngLatBounds(routePoints[0], routePoints[0]);
         routePoints.forEach(point => bounds.extend(point));
 
@@ -110,15 +104,13 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
                 attribution: "© OpenStreetMap contributors",
               },
             },
-            layers: [
-              {
-                id: "osm",
-                type: "raster",
-                source: "osm",
-                minzoom: 0,
-                maxzoom: 19,
-              },
-            ],
+            layers: [{
+              id: "osm",
+              type: "raster",
+              source: "osm",
+              minzoom: 0,
+              maxzoom: 19,
+            }],
           },
           center: [bounds.getCenter().lng, bounds.getCenter().lat],
           zoom: 13,
@@ -129,79 +121,83 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
         mapRef.current = map;
 
         const onMapError = (event: { error?: { message?: string } }) => {
-          // Chyba mapových podkladů (např. jednotlivé OSM dlaždice) nesmí
-          // shodit vykreslení samotné GPX geometrie.
-          console.warn("Route map tile/style error:", event.error?.message || event.error || event);
+          console.warn(
+            "Route map tile/style error:",
+            event.error?.message || event.error || event
+          );
         };
         map.on("error", onMapError);
 
-        const drawRoute = () => {
+        drawRoute = () => {
           if (!alive || !map || !map.isStyleLoaded() || map.getSource("route")) return;
 
           try {
             map.addSource("route", {
-            type: "geojson",
-            data: {
-              type: "Feature",
-              properties: {},
-              geometry: lapCount === 1
-                ? { type: "LineString", coordinates: basePoints }
-                : { type: "MultiLineString", coordinates: routeLines },
-            },
-          });
+              type: "geojson",
+              data: {
+                type: "Feature",
+                properties: {},
+                geometry: lapCount === 1
+                  ? { type: "LineString", coordinates: basePoints }
+                  : { type: "MultiLineString", coordinates: routeLines },
+              },
+            });
 
-          map.addLayer({
-            id: "route-glow",
-            type: "line",
-            source: "route",
-            paint: {
-              "line-color": "#64d9ff",
-              "line-width": 9,
-              "line-opacity": 0.18,
-              "line-blur": 3,
-            },
-          });
+            map.addLayer({
+              id: "route-glow",
+              type: "line",
+              source: "route",
+              paint: {
+                "line-color": "#64d9ff",
+                "line-width": 10,
+                "line-opacity": 0.22,
+                "line-blur": 2,
+              },
+            });
 
-          map.addLayer({
-            id: "route-line",
-            type: "line",
-            source: "route",
-            paint: {
-              "line-color": "#69e6a3",
-              "line-width": 4,
-              "line-opacity": 0.98,
-            },
-          });
+            map.addLayer({
+              id: "route-line",
+              type: "line",
+              source: "route",
+              paint: {
+                "line-color": "#69e6a3",
+                "line-width": 5,
+                "line-opacity": 1,
+              },
+            });
 
-          map.addSource("route-start", {
-            type: "geojson",
-            data: {
-              type: "Feature",
-              properties: {},
-              geometry: { type: "Point", coordinates: routePoints[0] },
-            },
-          });
+            map.addSource("route-start", {
+              type: "geojson",
+              data: {
+                type: "Feature",
+                properties: {},
+                geometry: { type: "Point", coordinates: routePoints[0] },
+              },
+            });
 
-          map.addSource("route-end", {
-            type: "geojson",
-            data: {
-              type: "Feature",
-              properties: {},
-              geometry: { type: "Point", coordinates: routePoints[routePoints.length - 1] },
-            },
-          });
+            map.addSource("route-end", {
+              type: "geojson",
+              data: {
+                type: "Feature",
+                properties: {},
+                geometry: {
+                  type: "Point",
+                  coordinates: routePoints[routePoints.length - 1],
+                },
+              },
+            });
 
-          map.addLayer({
-            id: "route-start",
-            type: "circle",
-            source: "route-start",
-            paint: {
-              "circle-radius": 7,
-              "circle-color": "#69e6a3",
-              "circle-stroke-color": "#10231d",
-              "circle-stroke-width": 3,
-            },
-          });
+            map.addLayer({
+              id: "route-start",
+              type: "circle",
+              source: "route-start",
+              paint: {
+                "circle-radius": 7,
+                "circle-color": "#69e6a3",
+                "circle-stroke-color": "#10231d",
+                "circle-stroke-width": 3,
+              },
+            });
 
             map.addLayer({
               id: "route-end",
@@ -215,41 +211,38 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
               },
             });
 
-            map.fitBounds(bounds, {
-            padding: { top: 34, bottom: 34, left: 34, right: 34 },
-            duration: 0,
-            maxZoom: 16,
-          });
+            const fit = () => {
+              if (!alive || !map) return;
+              map.resize();
+              map.fitBounds(bounds, {
+                padding: { top: 34, bottom: 34, left: 34, right: 34 },
+                duration: 0,
+                maxZoom: 16,
+              });
+              setState("ready");
+              window.clearTimeout(timeout);
+            };
 
-            window.clearTimeout(timeout);
-            requestAnimationFrame(() => {
-              if (alive && map) {
-                map.resize();
-                map.fitBounds(bounds, {
-                  padding: { top: 34, bottom: 34, left: 34, right: 34 },
-                  duration: 0,
-                  maxZoom: 16,
-                });
-                setState("ready");
-              }
-            });
+            fit();
+            requestAnimationFrame(fit);
           } catch (error) {
             console.error("Route geometry render failed:", error);
             if (alive) setState("error");
           }
         };
 
-        map.once("load", drawRoute);
+        // Některé MapLibre verze mohou vyvolat load dříve, než je style
+        // plně připravený pro přidání vlastních vrstev. Zkusíme proto
+        // vykreslení při více bezpečných událostech; první úspěšné volání
+        // vytvoří source a další se díky guardu už nic nesnaží duplikovat.
+        map.on("load", () => drawRoute?.());
+        map.on("styledata", () => drawRoute?.());
+        map.on("idle", () => drawRoute?.());
 
-        settleTimer = window.setTimeout(() => {
-          if (alive && map && map.isStyleLoaded()) {
-            drawRoute();
-            map.resize();
-          }
-        }, 300);
-
+        window.setTimeout(() => drawRoute?.(), 500);
       } catch (error) {
         if (alive && (error as Error).name !== "AbortError") {
+          console.error("Route map load failed:", error);
           setState("error");
         }
       }
@@ -261,9 +254,8 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
       alive = false;
       controller.abort();
       window.clearTimeout(timeout);
-      if (settleTimer !== null) window.clearTimeout(settleTimer);
       window.removeEventListener("resize", handleResize);
-      mapRef.current?.remove();
+      map?.remove();
       mapRef.current = null;
     };
   }, [gpxUrl, laps]);
