@@ -164,6 +164,3 @@ button { touch-action:manipulation; }
 .admin-lightbox-next { right:1rem; }
 .admin-lightbox-count { position:absolute; left:50%; bottom:1rem; transform:translateX(-50%); padding:.35rem .6rem; border-radius:999px; background:rgba(0,0,0,.55); font-size:.75rem; }
 @media(max-width:520px) { .admin-gallery-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:.5rem; } .admin-page-intro h1 { font-size:1.5rem; } }
-
-.progress-record-grid > div > span { font-size:inherit !important; }
-.progress-record-grid > div > span::before { content:none !important; }
