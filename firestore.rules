@@ -32,6 +32,7 @@ service cloud.firestore {
             .hasOnly([
               "nickname",
               "avatarUrl",
+              "avatarPublicId",
               "theme",
               "customColor",
               "themeUpdatedAt",
