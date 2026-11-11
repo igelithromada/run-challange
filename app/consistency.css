@@ -320,6 +320,14 @@
 .activity-card-modern .activity-person {
   min-width: 0;
 }
+.activity-card-modern .activity-description,
+.activity-card-modern .activity-metrics,
+.activity-card-modern .activity-social-actions {
+  width: 100%;
+  max-width: none;
+  align-self: stretch;
+  box-sizing: border-box;
+}
 .activity-card-modern .activity-person > span {
   display: block;
   min-width: 0;
