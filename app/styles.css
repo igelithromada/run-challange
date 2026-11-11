@@ -3840,72 +3840,63 @@ html[data-windy="true"] .wind-icon-animated {
 
 
 /* ============================================================
-   POČASÍ – jemné barevné rozlišení podle typu podmínek.
-   Rozložení a obsah WeatherCard zůstávají beze změny.
+   POČASÍ – jasné, ale stále minimalistické rozlišení stavu.
    ============================================================ */
 .weather-card {
   transition: background .22s ease, border-color .22s ease, box-shadow .22s ease;
 }
 
-/* Slunce – teplý žlutý akcent. */
+/* Slunečno – teplý žlutý akcent. */
 .weather-card.weather-condition-sun {
-  background: linear-gradient(135deg, rgba(255, 193, 7, .18), rgba(255, 224, 130, .06)) !important;
-  border-color: rgba(255, 205, 70, .34);
+  background: linear-gradient(135deg, rgba(255,193,7,.34), rgba(255,224,130,.12)) !important;
+  border-color: rgba(255,211,75,.62) !important;
+  box-shadow: inset 5px 0 0 rgba(255,196,40,.9), 0 0 0 1px rgba(255,193,7,.08);
 }
-.weather-card.weather-condition-sun > div:first-child svg,
-.weather-card.weather-condition-sun > div:nth-of-type(2) svg {
-  color: #ffd45a;
-}
+.weather-card.weather-condition-sun svg { color: #ffd45a; }
 
-/* Polojasno – slunce + oblačnost, méně výrazné než čisté slunce. */
+/* Polojasno – žlutá + chladnější obloha. */
 .weather-card.weather-condition-partly {
-  background: linear-gradient(135deg, rgba(255, 193, 7, .13), rgba(150, 180, 205, .10)) !important;
-  border-color: rgba(255, 210, 100, .25);
+  background: linear-gradient(135deg, rgba(255,193,7,.27), rgba(110,155,190,.16)) !important;
+  border-color: rgba(255,211,100,.52) !important;
+  box-shadow: inset 5px 0 0 rgba(255,202,70,.78), 0 0 0 1px rgba(255,193,7,.06);
 }
-.weather-card.weather-condition-partly > div:first-child svg,
-.weather-card.weather-condition-partly > div:nth-of-type(2) svg {
-  color: #f6cf68;
-}
+.weather-card.weather-condition-partly svg { color: #f6cf68; }
 
-/* Zataženo / mlha – chladný neutrální odstín. */
+/* Zataženo / mlha – jasně rozpoznatelný studený šedomodrý tón. */
 .weather-card.weather-condition-cloudy,
 .weather-card.weather-condition-fog {
-  background: linear-gradient(135deg, rgba(150, 170, 185, .14), rgba(90, 110, 125, .08)) !important;
-  border-color: rgba(190, 205, 215, .24);
+  background: linear-gradient(135deg, rgba(125,155,175,.27), rgba(65,85,100,.16)) !important;
+  border-color: rgba(185,215,230,.48) !important;
+  box-shadow: inset 5px 0 0 rgba(170,205,220,.72), 0 0 0 1px rgba(180,210,225,.05);
 }
-.weather-card.weather-condition-cloudy > div:nth-of-type(2) svg,
-.weather-card.weather-condition-fog > div:nth-of-type(2) svg {
-  color: #c4d0d8;
-}
+.weather-card.weather-condition-cloudy svg,
+.weather-card.weather-condition-fog svg { color: #d5e5ee; }
 
-/* Déšť / přeháňky – modrý akcent. */
+/* Déšť / přeháňky – výrazný modrý akcent. */
 .weather-card.weather-condition-rain {
-  background: linear-gradient(135deg, rgba(45, 150, 225, .20), rgba(75, 110, 180, .08)) !important;
-  border-color: rgba(90, 180, 245, .34);
+  background: linear-gradient(135deg, rgba(35,145,225,.38), rgba(55,90,170,.18)) !important;
+  border-color: rgba(85,190,255,.62) !important;
+  box-shadow: inset 5px 0 0 rgba(70,180,255,.95), 0 0 0 1px rgba(60,170,240,.08);
 }
-.weather-card.weather-condition-rain > div:nth-of-type(2) svg {
-  color: #63c5ff;
-}
+.weather-card.weather-condition-rain svg { color: #70ceff; }
 
-/* Sníh – světlý ledový akcent. */
+/* Sníh – ledově světlý akcent. */
 .weather-card.weather-condition-snow {
-  background: linear-gradient(135deg, rgba(150, 215, 255, .18), rgba(225, 245, 255, .07)) !important;
-  border-color: rgba(190, 230, 255, .38);
+  background: linear-gradient(135deg, rgba(125,205,250,.30), rgba(220,245,255,.16)) !important;
+  border-color: rgba(195,235,255,.68) !important;
+  box-shadow: inset 5px 0 0 rgba(180,230,255,.95), 0 0 0 1px rgba(190,230,255,.08);
 }
-.weather-card.weather-condition-snow > div:nth-of-type(2) svg {
-  color: #d8f2ff;
-}
+.weather-card.weather-condition-snow svg { color: #e3f7ff; }
 
-/* Bouřka – výraznější fialový akcent. */
+/* Bouřka – fialový akcent. */
 .weather-card.weather-condition-storm {
-  background: linear-gradient(135deg, rgba(125, 85, 205, .20), rgba(55, 75, 125, .09)) !important;
-  border-color: rgba(170, 135, 235, .34);
+  background: linear-gradient(135deg, rgba(125,75,210,.36), rgba(55,65,130,.18)) !important;
+  border-color: rgba(175,135,240,.64) !important;
+  box-shadow: inset 5px 0 0 rgba(165,115,235,.95), 0 0 0 1px rgba(150,100,220,.08);
 }
-.weather-card.weather-condition-storm > div:nth-of-type(2) svg {
-  color: #c8a8ff;
-}
+.weather-card.weather-condition-storm svg { color: #d2b8ff; }
 
-/* Neznámý stav – původní minimalistický vzhled. */
+/* Neznámý stav – neutrální vzhled. */
 .weather-card.weather-condition-neutral {
   background: var(--card-background);
 }
