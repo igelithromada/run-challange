@@ -76,7 +76,7 @@ export async function GET(request: Request) {
     const local = dateParts(now);
     const isToday = local.hour < 12;
     const targetKey = isToday ? dateKey(now) : addLocalDays(now, 1);
-    const snapshot = await adminDb.collection("users").get();
+    const snapshot = await adminDb.collection("users").where("trainerNotifications.enabled", "==", true).get();
 
     let sent = 0;
     let failed = 0;
@@ -84,7 +84,6 @@ export async function GET(request: Request) {
     for (const userDoc of snapshot.docs) {
       const data = { id: userDoc.id, ...userDoc.data() } as UserData;
       const prefs = data.trainerNotifications;
-      if (prefs?.enabled !== true) continue;
       if (isToday ? prefs.today !== true : prefs.tomorrow !== true) continue;
 
       const texts = ACTIVITY_TYPES
