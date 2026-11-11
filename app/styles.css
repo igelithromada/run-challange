@@ -3837,3 +3837,133 @@ html[data-windy="true"] .wind-icon-animated {
   transition: transform .16s ease, background .16s ease, border-color .16s ease, box-shadow .16s ease;
 }
 .tile-button:active { transform: scale(.985); }
+
+
+/* ============================================================
+   REŽIMY VZHLEDU – tmavý / světlý / čistě bílý
+   ============================================================ */
+html[data-theme="light"],
+html[data-theme="white"] {
+  color-scheme: light;
+  --ui-text:#17212b;
+  --ui-muted:rgba(23,33,43,.62);
+  --ui-muted-strong:rgba(23,33,43,.82);
+  --ui-bg:rgba(255,255,255,.82);
+  --ui-bg-soft:rgba(23,33,43,.045);
+  --ui-bg-hover:rgba(23,33,43,.075);
+  --ui-border:rgba(23,33,43,.12);
+  --ui-border-strong:rgba(23,33,43,.2);
+  --card-background:rgba(255,255,255,.9);
+  --card-border:1px solid rgba(23,33,43,.1);
+  --control-background:rgba(23,33,43,.055);
+  --control-background-hover:rgba(23,33,43,.09);
+  --control-background-active:rgba(23,33,43,.13);
+}
+html[data-theme="light"] body {
+  background:#eef6fb !important;
+  color:#17212b;
+}
+html[data-theme="white"] body {
+  background:#fff !important;
+  color:#17212b;
+}
+html[data-theme="light"] .tile,
+html[data-theme="white"] .tile,
+html[data-theme="light"] .theme-option,
+html[data-theme="white"] .theme-option,
+html[data-theme="light"] .custom-theme-box,
+html[data-theme="white"] .custom-theme-box {
+  background:rgba(255,255,255,.94) !important;
+  border-color:rgba(23,33,43,.1) !important;
+  color:#17212b !important;
+  box-shadow:0 8px 24px rgba(23,33,43,.06) !important;
+}
+html[data-theme="light"] .theme-option.active,
+html[data-theme="white"] .theme-option.active,
+html[data-theme="light"] .custom-theme-box.active,
+html[data-theme="white"] .custom-theme-box.active {
+  background:#edf4f8 !important;
+  border-color:rgba(23,33,43,.24) !important;
+}
+html[data-theme="light"] .settings-section-heading p,
+html[data-theme="white"] .settings-section-heading p,
+html[data-theme="light"] .theme-option small,
+html[data-theme="white"] .theme-option small {
+  color:rgba(23,33,43,.62) !important;
+}
+html[data-theme="light"] input,
+html[data-theme="white"] input,
+html[data-theme="light"] textarea,
+html[data-theme="white"] textarea,
+html[data-theme="light"] select,
+html[data-theme="white"] select {
+  background:#fff !important;
+  color:#17212b !important;
+  border-color:rgba(23,33,43,.14) !important;
+}
+html[data-theme="light"] .run-secondary-button,
+html[data-theme="white"] .run-secondary-button,
+html[data-theme="light"] .trainer-secondary-button,
+html[data-theme="white"] .trainer-secondary-button,
+html[data-theme="light"] .admin-back-button,
+html[data-theme="white"] .admin-back-button,
+html[data-theme="light"] .ui-icon-button,
+html[data-theme="white"] .ui-icon-button {
+  background:rgba(23,33,43,.055) !important;
+  color:#17212b !important;
+  border-color:rgba(23,33,43,.14) !important;
+}
+html[data-theme="light"] .run-primary-button,
+html[data-theme="white"] .run-primary-button,
+html[data-theme="light"] .settings-save-button,
+html[data-theme="white"] .settings-save-button,
+html[data-theme="light"] .progress-save,
+html[data-theme="white"] .progress-save,
+html[data-theme="light"] .team-save-button,
+html[data-theme="white"] .team-save-button {
+  background:#17212b !important;
+  color:#fff !important;
+  border-color:#17212b !important;
+}
+html[data-theme="light"] .activity-card-modern .activity-description,
+html[data-theme="white"] .activity-card-modern .activity-description {
+  color:rgba(23,33,43,.82) !important;
+  border-color:rgba(23,33,43,.1) !important;
+}
+html[data-theme="light"] .activity-card-modern .activity-social-actions,
+html[data-theme="white"] .activity-card-modern .activity-social-actions {
+  border-color:rgba(23,33,43,.1) !important;
+}
+html[data-theme="light"] .activity-card-modern .activity-metrics > div,
+html[data-theme="white"] .activity-card-modern .activity-metrics > div {
+  background:rgba(23,33,43,.045) !important;
+}
+html[data-theme="light"] .settings-animation-toggle,
+html[data-theme="white"] .settings-animation-toggle {
+  background:rgba(23,33,43,.035) !important;
+  border-color:rgba(23,33,43,.1) !important;
+}
+html[data-theme="light"] .site-sidebar-panel,
+html[data-theme="white"] .site-sidebar-panel {
+  background:#fff !important;
+  color:#17212b !important;
+  border-color:rgba(23,33,43,.12) !important;
+}
+html[data-theme="light"] .site-sidebar-item,
+html[data-theme="white"] .site-sidebar-item {
+  background:rgba(23,33,43,.045) !important;
+  color:#17212b !important;
+  border-color:rgba(23,33,43,.1) !important;
+}
+html[data-theme="light"] .custom-picker,
+html[data-theme="white"] .custom-picker {
+  background:#f6f9fb !important;
+  border-color:rgba(23,33,43,.1) !important;
+}
+html[data-theme="light"] .theme-color-dot,
+html[data-theme="white"] .theme-color-dot {
+  border-color:rgba(23,33,43,.14) !important;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
