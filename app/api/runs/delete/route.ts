@@ -58,12 +58,12 @@ export async function DELETE(request: Request) {
 
     publicIds.push(...collectCloudinaryPublicIds(imageUrls, data.uid));
     const safePublicIds = publicIds.filter(publicId => isUserCloudinaryPublicId(publicId, data.uid));
-    let cloudinaryResult = { deleted: [] as string[], failed: [] as string[] };
+    let cloudinaryResult = { deleted: 0, failed: [] as string[] };
     try {
       cloudinaryResult = await deleteCloudinaryImages(safePublicIds);
     } catch (error) {
       console.error("Cloudinary cleanup failed while deleting run:", error);
-      cloudinaryResult = { deleted: [], failed: safePublicIds };
+      cloudinaryResult = { deleted: 0, failed: safePublicIds };
     }
 
     // The activity itself is authoritative data. Never leave it undeletable
