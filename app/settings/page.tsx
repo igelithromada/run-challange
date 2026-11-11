@@ -13,7 +13,7 @@ import { registerTrainerPush, removeTrainerPush } from "../lib/pushNotifications
 import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { setHapticsEnabled } from "../lib/haptics";
-import { mergePublicProfile } from "../lib/services/publicProfiles";
+import { invalidatePublicProfileCache, mergePublicProfile } from "../lib/services/publicProfiles";
 import { getUserProfile, saveUserSettings } from "../lib/services/users";
 
 const DEFAULT_COLOR = "#36D1DC";
@@ -178,7 +178,9 @@ export default function SettingsPage() {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Přezdívku se nepodařilo uložit.");
-      setNickname(typeof result.nickname === "string" ? result.nickname : value);
+      const savedNickname = typeof result.nickname === "string" ? result.nickname : value;
+      setNickname(savedNickname);
+      invalidatePublicProfileCache(currentUser.uid);
       flash("Přezdívka uložena");
     } catch (error) {
       console.error("Nepodařilo se uložit přezdívku", error);
