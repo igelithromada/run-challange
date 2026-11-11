@@ -5,6 +5,7 @@ import { auth } from "../lib/firebase";
 import { Camera, Clock3, Gauge, Heart, MapPin, MessageCircle, Pencil, Trash2, X, Send } from "lucide-react";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { getPublicProfiles } from "../lib/services/publicProfiles";
+import { showAppToast } from "./AppToast";
 
 export type ActivityCardRun = {
   id: string; uid?: string; nickname?: string; email?: string; avatarUrl?: string;
@@ -62,6 +63,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
   const likeLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const likeLongPressTriggered = useRef(false);
   const [socialError, setSocialError] = useState("");
+  useEffect(() => { if (socialError) showAppToast(socialError, "error"); }, [socialError]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [resolvedNickname, setResolvedNickname] = useState(nickname || run.nickname || run.email?.split("@")[0] || "Uživatel");
   const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState(avatarUrl || run.avatarUrl || "");
@@ -289,7 +291,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
               <button type="button" className="social-modal-close" onClick={() => setSocialOpen(null)} aria-label="Zavřít"><X size={20}/></button>
             </header>
 
-            {socialLoading ? <p className="social-modal-empty">Načítám…</p> : socialError ? <p className="form-message form-message-error">{socialError}</p> : socialOpen === "likes" ? (
+            {socialLoading ? <p className="social-modal-empty">Načítám…</p> : socialOpen === "likes" ? (
               likeUsers.length ? (
                 <>
                   <div className="social-user-list">
