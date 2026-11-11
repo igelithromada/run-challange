@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { normalizeActivityType } from "../../../lib/validation";
+import { cloudinaryPublicIdFromUrl, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -64,8 +65,21 @@ export async function POST(request: Request) {
       km, minuty, tempo: tempo.toFixed(2), type,
       description: typeof data.description === "string" ? data.description.trim().slice(0, 500) : "",
       timestamp: Number.isNaN(timestamp.getTime()) ? new Date() : timestamp,
-      imageUrls: Array.isArray(data.imageUrls) ? data.imageUrls.filter((x): x is string => typeof x === "string").slice(0, 6) : [],
-      imagePublicIds: Array.isArray(data.imagePublicIds) ? data.imagePublicIds.filter((x): x is string => typeof x === "string").slice(0, 6) : [],
+      imageUrls: Array.isArray(data.imageUrls)
+        ? data.imageUrls
+            .filter((x): x is string => typeof x === "string")
+            .filter(url => {
+              const publicId = cloudinaryPublicIdFromUrl(url);
+              return !!publicId && isUserCloudinaryPublicId(publicId, decoded.uid);
+            })
+            .slice(0, 6)
+        : [],
+      imagePublicIds: Array.isArray(data.imagePublicIds)
+        ? data.imagePublicIds
+            .filter((x): x is string => typeof x === "string")
+            .filter(publicId => isUserCloudinaryPublicId(publicId, decoded.uid))
+            .slice(0, 6)
+        : [],
       teamId,
       activityType: type, likedBy: [], likeCount: 0, commentCount: 0,
     };
