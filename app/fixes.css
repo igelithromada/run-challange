@@ -178,38 +178,7 @@ html[data-animations="false"] .site-sidebar-panel::before { display:none !import
 }
 
 
-/* Karty aktivit – přehledné rozložení bez vnořené hlavičkové karty. */
-.activity-card-modern { display:flex !important; flex-direction:column !important; align-items:stretch !important; gap:.85rem !important; min-height:0 !important; padding:1rem !important; }
-.activity-card-top { display:grid; grid-template-columns:46px minmax(0,1fr) auto; align-items:center; gap:.7rem; min-width:0; }
-.activity-card-top .activity-avatar { width:46px; height:46px; min-width:46px; grid-column:auto; grid-row:auto; }
-.activity-card-top .activity-person { min-width:0; }
-.activity-card-top .activity-person > span { line-height:1.25; }
-.activity-date { max-width:130px; color:rgba(255,255,255,.72); font-size:.72rem; line-height:1.35; text-align:right; white-space:normal; font-variant-numeric:tabular-nums; }
-.activity-card-modern .activity-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); gap:.55rem; margin:0; }
-.activity-card-modern .activity-metrics > div { min-height:88px; justify-content:center; gap:.28rem; padding:.7rem .65rem; border:1px solid rgba(255,255,255,.07); border-radius:13px; background:rgba(0,0,0,.17); }
-.activity-card-modern .activity-metrics svg { width:17px; height:17px; opacity:.8; }
-.activity-card-modern .activity-metrics strong { font-size:clamp(.88rem,2.5vw,1.05rem); line-height:1.2; font-variant-numeric:tabular-nums; }
-.activity-card-modern .activity-metrics strong small { font-size:.72em; font-weight:600; }
-.activity-card-modern .activity-metrics > div > span { font-size:.7rem; opacity:.7; }
-.activity-card-modern .activity-card-actions { display:flex; align-items:center; flex-wrap:wrap; gap:.45rem; padding-top:.7rem; border-top:1px solid rgba(255,255,255,.1); }
 .activity-actions-spacer { flex:1 1 auto; }
-.activity-card-modern .activity-photos-button,.activity-card-modern .activity-manage-button { margin:0; min-height:36px; padding:.42rem .65rem; }
-@media(max-width:520px) {
- .activity-card-modern { gap:.7rem !important; padding:.85rem !important; }
- .activity-card-top { grid-template-columns:42px minmax(0,1fr) auto; gap:.55rem; }
- .activity-card-top .activity-avatar { width:42px; height:42px; min-width:42px; }
- .activity-date { max-width:105px; font-size:.66rem; }
- .activity-card-modern .activity-metrics { gap:.35rem; }
- .activity-card-modern .activity-metrics > div { min-height:82px; padding:.55rem .35rem; }
- .activity-card-modern .activity-metrics strong { font-size:.82rem; }
-}
-@media(max-width:360px) {
- .activity-card-top { grid-template-columns:38px minmax(0,1fr); }
- .activity-card-top .activity-avatar { width:38px; height:38px; min-width:38px; }
- .activity-date { grid-column:2; max-width:none; text-align:left; }
- .activity-card-modern .activity-metrics > div { padding-inline:.25rem; }
- .activity-card-modern .activity-metrics strong { font-size:.76rem; }
-}
 
 /* ===== Finální design systém a přístupnost ===== */
 :root {
