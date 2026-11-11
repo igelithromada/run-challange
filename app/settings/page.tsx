@@ -8,7 +8,7 @@ import Sidebar from "../components/Sidebar";
 import { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
-import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, ShieldCheck, KeyRound, Smartphone, Bell } from "lucide-react";
+import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, ShieldCheck, KeyRound, Smartphone, Bell, Moon, Sun, Square } from "lucide-react";
 import { registerTrainerPush, removeTrainerPush } from "../lib/pushNotifications";
 import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
@@ -392,6 +392,9 @@ export default function SettingsPage() {
           </label>
 
           <div className="theme-options">
+            <ThemeItem icon={<Moon size={19}/>} color="linear-gradient(180deg,#101820,#25364a)" active={theme === "dark"} onClick={() => void handleThemeChange("dark")} text="Tmavý režim" />
+            <ThemeItem icon={<Sun size={19}/>} color="linear-gradient(180deg,#f7fbff,#dbeafe)" active={theme === "light"} onClick={() => void handleThemeChange("light")} text="Světlý režim" />
+            <ThemeItem icon={<Square size={19}/>} color="#ffffff" active={theme === "white"} onClick={() => void handleThemeChange("white")} text="Čistý světlý" />
             <ThemeItem icon={<Palette size={19}/>} color="linear-gradient(180deg,#36D1DC,#5B86E5)" active={theme === "default"} onClick={() => void handleThemeChange("default")} text="Výchozí vzhled" />
             <ThemeItem color="linear-gradient(180deg,#2980b9,#2c3e50)" active={theme === "man"} onClick={() => void handleThemeChange("man")} text="Muž" />
             <ThemeItem color="linear-gradient(180deg,#ff7eb3,#ff758c)" active={theme === "woman"} onClick={() => void handleThemeChange("woman")} text="Žena" />
