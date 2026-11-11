@@ -15,7 +15,6 @@ import { RunData } from "./types";
 import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
 import { latestRunsQuery, fetchOlderRuns } from "./lib/services/runs";
 import { getUserProfile } from "./lib/services/users";
-import { getPublicProfiles } from "./lib/services/publicProfiles";
 import { allTeamsQuery } from "./lib/services/teams";
 import type { TeamData } from "./types";
 
@@ -28,7 +27,6 @@ export default function Page() {
   const [selectedType, setSelectedType] = useState<"běh" | "chůze">("běh");
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
-  const [userAvatars, setUserAvatars] = useState<{ [key: string]: { avatarUrl: string; nickname: string } }>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -180,9 +178,6 @@ export default function Page() {
             const team = run.teamId ? teams.find(t => t.id === run.teamId) : null;
             const teamName = team?.name || (run.teamId ? "?" : null);
 
-            const user = userAvatars[run.uid] || {};
-            const nickname = user.nickname || run.nickname || "Anonym";
-            const resolvedAvatarUrl = user.avatarUrl || run.avatarUrl || "";
             return (
               <ActivityCard
                 key={run.id}
