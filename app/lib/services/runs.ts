@@ -37,6 +37,10 @@ export function userRunsQuery(uid: string): Query {
   return query(runsCollection(), where("uid", "==", uid), orderBy("timestamp", "desc"));
 }
 
+export function latestUserRunsQuery(uid: string, pageSize = 30): Query {
+  return query(runsCollection(), where("uid", "==", uid), orderBy("timestamp", "desc"), limit(pageSize));
+}
+
 export function teamRunsQuery(teamId: string): Query {
   return query(runsCollection(), where("teamId", "==", teamId));
 }
