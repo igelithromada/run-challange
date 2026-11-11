@@ -81,7 +81,14 @@ export async function applyTheme(selectedTheme: string, color: string, animation
 
   if (animationsEnabled || selectedTheme === "weather") {
     try {
-      const response = await fetch("/api/weather");
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 8_000);
+      let response: Response;
+      try {
+        response = await fetch("/api/weather", { signal: controller.signal, cache: "no-store" });
+      } finally {
+        window.clearTimeout(timeout);
+      }
       if (!response.ok) throw new Error("Počasí není dostupné");
       const data = await response.json();
       const current = data.current;
