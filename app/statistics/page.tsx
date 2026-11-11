@@ -72,8 +72,10 @@ export default function StatisticsPage() {
     const name = run.nickname || run.email?.split("@")[0] || "Anonym";
     const km = Number(run.km) || 0;
     const min = Number(run.minuty) || 0;
-    if (!userMap[uid]) userMap[uid] = { name, km: 0, min: 0 };
-    userMap[uid].name = name; userMap[uid].km += km; userMap[uid].min += min;
+    if (!userMap[uid]) userMap[uid] = { name, km: 0, min: 0, avatarUrl: run.avatarUrl || "" };
+    userMap[uid].name = name;
+    if (!userMap[uid].avatarUrl && run.avatarUrl) userMap[uid].avatarUrl = run.avatarUrl;
+    userMap[uid].km += km; userMap[uid].min += min;
     if (run.teamId) {
       const teamId = run.teamId;
       const teamName = teams.find(t => t.id === teamId)?.name || "Smazaný tým";
@@ -84,7 +86,7 @@ export default function StatisticsPage() {
     }
   });
 
-  const userList = Object.entries(userMap).map(([uid, data]) => ({ uid, name: data.name, avatarUrl: avatars[uid] || "", km: data.km, tempo: data.km ? data.min / data.km : 0 })).sort((a,b) => metric === "tempo" ? a.tempo-b.tempo : b.km-a.km);
+  const userList = Object.entries(userMap).map(([uid, data]) => ({ uid, name: data.name, avatarUrl: avatars[uid] || data.avatarUrl || "", km: data.km, tempo: data.km ? data.min / data.km : 0 })).sort((a,b) => metric === "tempo" ? a.tempo-b.tempo : b.km-a.km);
   const teamList = Object.entries(teamMap).map(([id,data]) => ({ id, team:data.team, km:data.km, tempo:data.km ? data.min/data.km : 0, members:data.members })).sort((a,b) => metric === "tempo" ? a.tempo-b.tempo : b.km-a.km);
 
   let myTeamName: string | null = null;
