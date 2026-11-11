@@ -240,7 +240,7 @@ export default function AdminPage() {
           </section>
         ) : (
           <section className="tile admin-detail">
-            <button type="button" className="admin-back-button" onClick={() => setSelectedUser(null)}><ArrowLeft size={17}/> Zpět na seznam</button>
+            <button type="button" className="ui-icon-button admin-back-button" onClick={() => setSelectedUser(null)} aria-label="Zpět na seznam" title="Zpět na seznam"><ArrowLeft size={17}/></button>
             <div className="admin-detail-heading">
               <span className="admin-user-avatar large">{selectedUser.avatarUrl ? <img src={selectedUser.avatarUrl} alt="" /> : <User size={25}/>}</span>
               <div><h2>{selectedUser.nickname || "Beze jména"}</h2><p>{selectedUser.email}</p><div className="admin-detail-status">{selectedUser.blocked ? <span className="admin-status-badge blocked">BLOKOVÁN</span> : <span className="admin-status-badge">AKTIVNÍ</span>}</div></div>
