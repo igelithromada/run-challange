@@ -12,6 +12,7 @@ import { cloudinaryImageUrl } from "../../lib/imageUrl";
 import type { TeamData, PublicProfileData } from "../../types";
 import { getPublicProfiles } from "../../lib/services/publicProfiles";
 import { getTeam, mergeTeam } from "../../lib/services/teams";
+import { showAppToast } from "../../components/AppToast";
 
 type Member = PublicProfileData;
 
@@ -74,6 +75,8 @@ export default function TeamDetailPage() {
       unsubscribe();
     };
   }, [id, router]);
+
+  useEffect(() => { if (!message) return; const lower=message.toLowerCase(); const isError=lower.includes("nepodařilo") || lower.includes("platný") || lower.includes("nejsi přihlášen"); showAppToast(message,isError?"error":"success"); }, [message]);
 
   const isOwner=team?.createdBy===user?.uid;
   const teamType:ActivityType=team?.type==="chůze"?"chůze":"běh";
@@ -147,7 +150,7 @@ export default function TeamDetailPage() {
       <>
         <Navbar title="Tým" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")} />
         <main className="container">
-          <div className="tile form-message-error" role="alert">
+          <div className="tile">
             <strong>Tým se nepodařilo načíst</strong>
             <p>{message || "Tým nebyl nalezen nebo k němu nemáš přístup."}</p>
             <button type="button" className="run-primary-button" onClick={() => router.replace("/teams")}>Zpět na týmy</button>
@@ -172,10 +175,10 @@ export default function TeamDetailPage() {
         <label className="team-detail-field">Cíl měsíční týmové výzvy (km)<input type="number" min="0.1" step="1" value={goal} onChange={e=>setGoal(e.target.value)}/></label>
         <label className="team-avatar-upload"><Camera size={18}/><span>{avatarUrl?"Změnit avatar týmu":"Přidat avatar týmu"}</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadAvatar}/></label>
         <button className="run-primary-button team-save-button" onClick={()=>void save()} disabled={saving}><Save size={18}/>{saving?"Ukládám…":"Uložit nastavení"}</button>
-        {message&&<p className="teams-message">{message}</p>}
+
       </section>}
 
-      {!isOwner && message&&<p className="teams-message">{message}</p>}
+
       {isMember && <button type="button" className="trainer-secondary-button team-leave-button" onClick={()=>void leave()}>Odejít z týmu</button>}
 
       <section className="tile team-members-card">
