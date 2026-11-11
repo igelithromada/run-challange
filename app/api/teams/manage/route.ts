@@ -56,7 +56,13 @@ export async function POST(request: Request) {
 
     if (action === "join" || action === "leave") {
       const result = await adminDb.runTransaction(async transaction => {
-        const userSnap = await transaction.get(userRef);
+        const [userSnap, targetTeamSnap] = await Promise.all([
+          transaction.get(userRef),
+          transaction.get(teamRef),
+        ]);
+        if (!targetTeamSnap.exists) {
+          throw new Error("TEAM_NOT_FOUND");
+        }
         const data = userSnap.exists ? userSnap.data() || {} : {};
         const stored = data.teamIdsByType && typeof data.teamIdsByType === "object"
           ? data.teamIdsByType as Record<string, unknown>
@@ -75,7 +81,10 @@ export async function POST(request: Request) {
           ? adminDb.collection("teams").doc(currentTeamId)
           : null;
         if (oldTeamRef) {
-          transaction.update(oldTeamRef, { memberIds: FieldValue.arrayRemove(decoded.uid) });
+          const oldTeamSnap = await transaction.get(oldTeamRef);
+          if (oldTeamSnap.exists) {
+            transaction.update(oldTeamRef, { memberIds: FieldValue.arrayRemove(decoded.uid) });
+          }
         }
 
         if (action === "join") {
@@ -128,7 +137,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Neznámá operace." }, { status: 400 });
   } catch (error) {
     console.error("POST /api/teams/manage:", error);
-    const message = error instanceof Error && error.message === "UNAUTHORIZED" ? "Nejsi přihlášen." : "Operaci týmu se nepodařilo dokončit.";
+    const errorMessage = error instanceof Error ? error.message : "";
+    const message =
+      errorMessage === "UNAUTHORIZED"
+        ? "Nejsi přihlášen."
+        : errorMessage === "TEAM_NOT_FOUND"
+          ? "Tým už neexistuje."
+          : "Operaci týmu se nepodařilo dokončit.";
     return NextResponse.json({ error: message }, { status: message === "Nejsi přihlášen." ? 401 : 500 });
   }
 }
