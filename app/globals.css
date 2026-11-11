@@ -1180,3 +1180,16 @@ html[data-animations="true"][data-weather="wind"] body::before {
   border:1px dashed rgba(255,255,255,.13); background:rgba(255,255,255,.035);
   color:rgba(255,255,255,.6); font-size:.76rem; text-align:center;
 }
+
+
+/* Audit: počasí na pozadí je vždy ve viditelné vrstvě pod obsahem */
+html[data-animations="true"][data-weather="rain"] body::before,
+html[data-animations="true"][data-weather="rain-wind"] body::before,
+html[data-animations="true"][data-weather="snow"] body::before,
+html[data-animations="true"][data-weather="snow-wind"] body::before{
+  z-index:0!important;
+  display:block!important;
+  pointer-events:none!important;
+}
+.route-map-shell{background:#e9eef2!important}
+.route-map{background:#e9eef2!important}
