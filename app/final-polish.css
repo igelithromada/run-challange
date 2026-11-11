@@ -565,29 +565,6 @@
 
 /* ===== Poslední mobilní doladění ===== */
 
-/* Úspěšné uložení záznamu je plovoucí toast, nikdy neposouvá tlačítko. */
-.run-form-toast {
-  position:fixed;
-  left:50%;
-  bottom:max(22px,calc(env(safe-area-inset-bottom) + 18px));
-  transform:translateX(-50%);
-  z-index:2147483640;
-  width:min(92vw,520px);
-  box-sizing:border-box;
-  padding:.8rem 1rem;
-  border-radius:14px;
-  text-align:center;
-  font-size:.86rem;
-  line-height:1.35;
-  box-shadow:0 12px 35px rgba(0,0,0,.35);
-  backdrop-filter:blur(12px);
-}
-.run-form-toast-success {
-  color:#dcffed;
-  background:rgba(30,135,94,.94);
-  border:1px solid rgba(150,255,205,.25);
-}
-
 /* Týmy: kompaktní úprava názvu + ikony akcí. */
 .team-edit-button,.team-delete-button {
   width:38px !important;
