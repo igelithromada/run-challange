@@ -46,6 +46,7 @@ service cloud.firestore {
               "progressGoals",
               "progressGoalsByType",
               "personalTrainerPlan",
+              "personalTrainerPlans",
               "personalTrainerHistory",
               "trainerNotifications"
             ]));
