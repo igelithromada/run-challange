@@ -25,6 +25,3 @@ export async function mergeTeam(
   await setDoc(teamRef(teamId), data, options);
 }
 
-export function mapTeamSnapshot(data: { id: string; data(): Record<string, unknown> }): TeamData {
-  return { id: data.id, ...data.data() } as TeamData;
-}
