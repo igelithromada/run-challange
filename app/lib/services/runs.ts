@@ -3,6 +3,7 @@ import {
   getDocs,
   addDoc,
   doc,
+  updateDoc,
   limit,
   orderBy,
   query,
@@ -85,6 +86,10 @@ export async function fetchAllRuns(pageSize = 500): Promise<RunData[]> {
 export async function createRun(data: NewRunData): Promise<string> {
   const snapshot = await addDoc(runsCollection(), data);
   return snapshot.id;
+}
+
+export async function updateRun(id: string, data: Partial<RunData>): Promise<void> {
+  await updateDoc(doc(db, "runs", id), data);
 }
 
 export async function fetchOlderRuns(
