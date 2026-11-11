@@ -93,6 +93,10 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
     return () => window.clearTimeout(timer);
   }, [success]);
 
+  useEffect(() => {
+    if (error) showAppToast(error, "error");
+  }, [error]);
+
   const handleSubmit = async () => {
     if (saving) return;
 
@@ -290,7 +294,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
           )}
 
           {uploadStatus && <p className="run-form-status" role="status">{uploadStatus}</p>}
-          {error && <p className="form-message form-message-error" role="alert">{error}</p>}
+
 
           <div className="run-form-actions run-form-actions-single">
             <button type="button" className="run-primary-button" onClick={handleSubmit} disabled={saving}>
