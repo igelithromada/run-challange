@@ -73,6 +73,7 @@ export default function WeatherCard() {
   const current = weather?.current;
   const condition = current?.weatherCondition;
   const Icon = conditionIcon(condition?.type);
+  const iconColorClass = weatherColorClass(condition?.type);
   const hours: WeatherHour[] = (weather?.hourly || []).slice(0, 8);
   const temperature = current?.temperature?.degrees;
   const feelsLike = current?.feelsLikeTemperature?.degrees;
@@ -105,7 +106,7 @@ export default function WeatherCard() {
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem", margin: "1.25rem 0" }}>
-            <Icon size={54} strokeWidth={1.5} />
+            <Icon className={`weather-main-icon ${iconColorClass}`} size={54} strokeWidth={1.5} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: "2.6rem", lineHeight: 1, fontWeight: 700 }}>{Math.round(temperature ?? 0)}°C</div>
               <div style={{ marginTop: "0.35rem", fontWeight: 600 }}>{condition?.description?.text || "Aktuální počasí"}</div>
@@ -140,7 +141,7 @@ export default function WeatherCard() {
                   return (
                     <div key={item?.interval?.startTime || index} style={{ textAlign: "center", padding: "0.6rem 0.25rem", borderRadius: "12px", background: "rgba(0,0,0,0.12)" }}>
                       <small>{hourLabel(item)}</small>
-                      <HourIcon size={23} style={{ display: "block", margin: "0.35rem auto" }} />
+                      <HourIcon className={`weather-hour-icon ${weatherColorClass(item?.weatherCondition?.type)}`} size={23} style={{ display: "block", margin: "0.35rem auto" }} />
                       <strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong>
                       <small style={{ display: "block", opacity: 0.8 }}>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}%` : "—"} déšť</small>
                     </div>
