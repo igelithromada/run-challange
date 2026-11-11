@@ -76,7 +76,7 @@ export default function WeatherCard() {
           <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Počasí pro pohyb</h2>
           <p style={{ margin: "0.2rem 0 0", opacity: 0.78, fontSize: "0.85rem" }}>Dolní Lhota u Ostravy</p>
         </div>
-        <button type="button" className="weather-refresh-button" onClick={() => void loadWeather(true)} aria-label="Obnovit počasí" title="Obnovit počasí" style={{ background: "rgba(255,255,255,0.16)", border: "1px solid rgba(255,255,255,.18)", borderRadius: "13px", color: "inherit", width: "42px", height: "42px", display: "grid", placeItems: "center", padding: 0, cursor: "pointer" }}>
+        <button type="button" className="ui-icon-button weather-refresh-button" onClick={() => void loadWeather(true)} aria-label="Obnovit počasí" title="Obnovit počasí">
           <RefreshCw size={18} />
         </button>
       </div>
