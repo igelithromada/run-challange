@@ -118,8 +118,8 @@ export default function ParticipantsPage() {
         <div className="participants-toolbar">
           <span className="control-caption">Řazení</span>
           <div className="participant-sort" role="group" aria-label="Řazení účastníků">
-            <button type="button" className={sortMode === "km" ? "active" : ""} onClick={() => setSortMode("km")}><ArrowDownUp size={17} /> Kilometry</button>
-            <button type="button" className={sortMode === "alpha" ? "active" : ""} onClick={() => setSortMode("alpha")}><ListFilter size={17} /> Abeceda</button>
+            <button type="button" className={`participant-sort-button${sortMode === "km" ? " active" : ""}`} onClick={() => setSortMode("km")}><ArrowDownUp size={17} /> Kilometry</button>
+            <button type="button" className={`participant-sort-button${sortMode === "alpha" ? " active" : ""}`} onClick={() => setSortMode("alpha")}><ListFilter size={17} /> Abeceda</button>
           </div>
         </div>
 
