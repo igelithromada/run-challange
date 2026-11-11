@@ -119,11 +119,11 @@ export default function TeamsPage() {
     }
   };
 
-  const leaveTeam = async () => {
-    if (!joinedTeamId || !user) return;
+  const leaveTeam = async (teamId: string) => {
+    if (!teamId || !user) return;
 
     try {
-      const result = await teamRequest("leave", { teamId: joinedTeamId });
+      const result = await teamRequest("leave", { teamId });
       const next = result.teamIdsByType || {};
       setTeamIdsByType({ běh: next.běh ?? teamIdsByType.běh, chůze: next.chůze ?? teamIdsByType.chůze });
       showAppToast("Z týmu ses odhlásil.");
@@ -321,7 +321,7 @@ export default function TeamsPage() {
                     onClick={event => {
                       event.stopPropagation();
                       if (isJoined) {
-                        if (window.confirm("Opravdu chceš odejít z tohoto týmu?")) void leaveTeam();
+                        if (window.confirm("Opravdu chceš odejít z tohoto týmu?")) void leaveTeam(team.id);
                       } else {
                         void joinTeam(team);
                       }
