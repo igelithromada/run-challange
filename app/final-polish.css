@@ -746,15 +746,6 @@
   to { opacity:1; transform:translate(-50%,0); }
 }
 
-/* Aktivita – ještě kompaktnější vertikální rytmus. */
-.activity-card-modern { gap:.52rem !important; }
-.activity-card-modern .activity-description { margin:.28rem 0 0 !important; padding:.5rem .1rem !important; }
-.activity-card-modern .activity-metrics { gap:.32rem !important; margin:.35rem 0 !important; }
-.activity-card-modern .activity-metrics > div { min-height:68px !important; padding:.42rem .3rem !important; border-radius:11px !important; }
-.activity-card-modern .activity-metrics strong { font-size:1.02rem !important; }
-.activity-card-modern .activity-metrics > div > span { font-size:.64rem !important; }
-.activity-card-modern .activity-card-actions { padding-top:.42rem !important; gap:.32rem !important; }
-
 /* Osobní rekordy – žádná dlaždice v dlaždici. */
 .progress-record-grid {
   gap:0 !important;
