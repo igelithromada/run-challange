@@ -69,7 +69,7 @@ export async function fetchAllRuns(pageSize = 500): Promise<RunData[]> {
   let cursor: QueryDocumentSnapshot<DocumentData, DocumentData> | null = null;
 
   while (true) {
-    const nextQuery = cursor
+    const nextQuery: Query<DocumentData, DocumentData> = cursor
       ? olderRunsQuery(cursor, pageSize)
       : latestRunsQuery(pageSize);
     const snapshot = await getDocs(nextQuery);
