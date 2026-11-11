@@ -241,6 +241,37 @@
 }
 .site-sidebar-logout span { font-size:.92rem !important; }
 .site-sidebar-panel { gap:.55rem !important; }
+.site-sidebar-grid {
+  grid-column:1 / -1;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:.55rem;
+  min-width:0;
+}
+.site-sidebar-grid .site-sidebar-item {
+  min-width:0;
+  min-height:76px;
+}
+.site-sidebar-header {
+  grid-column:1 / -1;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.75rem;
+  min-width:0;
+}
+.site-sidebar-icon-button {
+  display:grid;
+  place-items:center;
+  width:40px;
+  height:40px;
+  padding:0;
+  border:1px solid var(--ui-border);
+  border-radius:11px;
+  background:rgba(255,255,255,.08);
+  color:inherit;
+  cursor:pointer;
+}
 
 .admin-action-danger {
   position:relative;
