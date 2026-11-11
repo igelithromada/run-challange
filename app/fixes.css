@@ -2,7 +2,6 @@
 /* Opravy mobilního rozhraní a vrstvení navigace */
 #app, body > div { isolation: isolate; }
 .site-sidebar-overlay { position: fixed !important; inset: 0 !important; z-index: 30000 !important; }
-.site-sidebar-panel { width: min(94vw, 720px) !important; max-width: 720px !important; max-height: calc(100dvh - 32px); overflow-y: auto; padding: clamp(1rem, 4vw, 1.5rem) !important; display: grid !important; grid-template-columns: repeat(3, minmax(0,1fr)) !important; gap: .7rem !important; align-content: start; background: var(--card-background, rgba(0,0,0,.32)) !important; border: var(--card-border, 1px solid rgba(255,255,255,.07)) !important; border-radius: var(--card-radius,18px) !important; box-shadow: var(--card-shadow,0 18px 50px rgba(0,0,0,.3)) !important; }
 .site-sidebar-panel > * { min-width: 0; }
 .site-sidebar-panel .sidebar-close { grid-column: 1 / -1; }
 .activity-card-heading { min-width: 0; }
@@ -21,11 +20,6 @@
 .run-profile-icon { width:26px; height:26px; flex:0 0 auto; }
 .run-profile-icon path { stroke-linecap:round; stroke-linejoin:round; }
 .progress-goal-inputs { grid-template-columns:repeat(2,minmax(0,1fr)); }
-@media(max-width:520px) {
-  .site-sidebar-panel { grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
-  .site-sidebar-panel button, .site-sidebar-panel [role="button"] { min-height:64px; padding:.75rem .5rem !important; font-size:.92rem !important; }
-}
-@media(max-width:360px) { .site-sidebar-panel { grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:.4rem !important; padding:.65rem !important; } .site-sidebar-panel .sidebar-close { grid-column:1/-1 !important; } }
 html[data-animations="false"] body::before { display:none !important; animation:none !important; }
 html[data-animations="true"][data-weather="rain"] body::before,
 html[data-animations="true"][data-weather="rain-wind"] body::before,
