@@ -3770,8 +3770,7 @@ html[data-windy="true"] .wind-icon-animated {
 .activity-delete-button,
 .admin-action-button.danger,
 .admin-action-button.activity-delete-button:hover,
-.admin-action-button.danger:hover,
-.admin-action-button.admin-action-danger:hover {
+.admin-action-button.danger:hover {
   background: rgba(190,65,65,.24);
 }
 
