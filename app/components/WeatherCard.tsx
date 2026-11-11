@@ -21,6 +21,18 @@ function conditionIcon(type = "") {
   return CloudSun;
 }
 
+function weatherColorClass(type = "") {
+  const value = type.toUpperCase();
+  if (value.includes("THUNDER")) return "weather-condition-storm";
+  if (value.includes("SNOW") || value.includes("SLEET") || value.includes("HAIL")) return "weather-condition-snow";
+  if (value.includes("RAIN") || value.includes("DRIZZLE")) return "weather-condition-rain";
+  if (value.includes("FOG") || value.includes("HAZE")) return "weather-condition-fog";
+  if (value.includes("PARTLY") || value.includes("MOSTLY")) return "weather-condition-partly";
+  if (value.includes("CLOUD")) return "weather-condition-cloudy";
+  if (value.includes("CLEAR") || value.includes("SUN")) return "weather-condition-sun";
+  return "weather-condition-neutral";
+}
+
 function hourLabel(item: WeatherHour) {
   const raw = item?.displayDateTime;
   if (raw?.hours !== undefined) return `${String(raw.hours).padStart(2, "0")}:00`;
@@ -70,7 +82,7 @@ export default function WeatherCard() {
   const rainChance = rainValues.length ? Math.max(...rainValues) : undefined;
 
   return (
-    <section className="tile weather-card" style={{ marginBottom: "1.25rem", overflow: "hidden" }} aria-label="Předpověď počasí">
+    <section className={`tile weather-card ${weatherColorClass(condition?.type)}`} style={{ marginBottom: "1.25rem", overflow: "hidden" }} aria-label="Předpověď počasí">
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
         <div>
           <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Počasí pro pohyb</h2>
