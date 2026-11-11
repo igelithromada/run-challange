@@ -48,6 +48,7 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
   const elementRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const [overlayPoints, setOverlayPoints] = useState("");
 
   useEffect(() => {
     const element = elementRef.current;
@@ -119,6 +120,27 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
         });
 
         mapRef.current = map;
+
+        // Vykreslíme GPX ještě jako SVG nad mapou. Je to záměrná druhá
+        // vrstva: pokud MapLibre z nějakého důvodu nepřijme vlastní GeoJSON
+        // vrstvu, trasa zůstane viditelná a přitom se přesně promítá do mapy.
+        const updateOverlay = () => {
+          if (!alive || !map) return;
+          const points = routePoints
+            .map(point => {
+              const projected = map!.project(point);
+              return `${projected.x.toFixed(1)},${projected.y.toFixed(1)}`;
+            })
+            .join(" ");
+          setOverlayPoints(points);
+        };
+
+        map.on("move", updateOverlay);
+        map.on("zoom", updateOverlay);
+        map.on("resize", updateOverlay);
+        map.on("rotate", updateOverlay);
+        map.on("pitch", updateOverlay);
+        updateOverlay();
 
         const onMapError = (event: { error?: { message?: string } }) => {
           console.warn(
@@ -219,6 +241,8 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
                 duration: 0,
                 maxZoom: 16,
               });
+              updateOverlay();
+              requestAnimationFrame(updateOverlay);
               setState("ready");
               window.clearTimeout(timeout);
             };
@@ -262,7 +286,20 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
 
   return (
     <div className="route-map-shell">
-      <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name} />
+      <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name}>
+        {overlayPoints && (
+          <svg
+            className="route-map-overlay"
+            aria-hidden="true"
+            focusable="false"
+            width="100%"
+            height="100%"
+          >
+            <polyline className="route-map-overlay-glow" points={overlayPoints} />
+            <polyline className="route-map-overlay-line" points={overlayPoints} />
+          </svg>
+        )}
+      </div>
       {state === "loading" && (
         <div className="route-map-state">
           <LoaderCircle className="route-map-spin" size={20} />
