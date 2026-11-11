@@ -14,7 +14,8 @@ import ActivityTypeSelector from "./components/ActivityTypeSelector";
 import { RunData } from "./types";
 import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
 import { latestRunsQuery, fetchOlderRuns } from "./lib/services/runs";
-import { getUserAvatars, getUserProfile } from "./lib/services/users";
+import { getUserProfile } from "./lib/services/users";
+import { getPublicProfiles } from "./lib/services/publicProfiles";
 import { allTeamsQuery } from "./lib/services/teams";
 import type { TeamData } from "./types";
 
@@ -95,12 +96,15 @@ export default function Page() {
     const loadUsers = async () => {
       try {
         // Firestore "in" dotaz načte profily dávkově místo jednoho požadavku pro každý záznam.
-        const avatarMap = await getUserAvatars(userIds);
+        const profileMap = await getPublicProfiles(userIds);
         if (cancelled) return;
         setUserAvatars((prev) => {
           const next = { ...prev };
           userIds.forEach(uid => {
-            next[uid] = { ...(prev[uid] || { nickname: "" }), avatarUrl: avatarMap[uid] || "" };
+            next[uid] = {
+              nickname: profileMap[uid]?.nickname || prev[uid]?.nickname || "",
+              avatarUrl: profileMap[uid]?.avatarUrl || prev[uid]?.avatarUrl || "",
+            };
           });
           return next;
         });
