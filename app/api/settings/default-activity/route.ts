@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "../../../lib/apiAuth";
+import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,11 +18,9 @@ export async function POST(request: Request) {
     await adminDb.collection("publicProfiles").doc(decoded.uid).set({ activityType: defaultActivity }, { merge: true });
     return NextResponse.json({ ok: true, defaultActivity });
   } catch (error) {
+    const authError = authErrorResponse(error);
+    if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
     console.error("POST /api/settings/default-activity:", error);
-    const message = error instanceof Error ? error.message : "";
-    return NextResponse.json(
-      { error: message.includes("verify") || message.includes("token") ? "Přihlášení vypršelo. Přihlas se znovu." : "Výchozí aktivitu se nepodařilo uložit." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Výchozí aktivitu se nepodařilo uložit." }, { status: 500 });
   }
 }
