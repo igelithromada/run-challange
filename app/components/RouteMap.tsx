@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { LoaderCircle, MapPinned } from "lucide-react";
-import type { GeoJSONSource } from "maplibre-gl";
+
 import type { Map as MapLibreMap } from "maplibre-gl";
 
 type Props = {
@@ -194,17 +194,6 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
             duration: 0,
             maxZoom: 16,
           });
-
-          const source = map.getSource("route") as GeoJSONSource | undefined;
-          if (source) {
-            source.setData({
-              type: "Feature",
-              properties: {},
-              geometry: lapCount === 1
-                ? { type: "LineString", coordinates: basePoints }
-                : { type: "MultiLineString", coordinates: routeLines },
-            });
-          }
 
           window.clearTimeout(timeout);
           requestAnimationFrame(() => {
