@@ -6,6 +6,7 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 
 type Props = {
   gpxUrl: string;
+  mapUrl?: string;
   name: string;
   laps?: number;
 };
@@ -44,7 +45,7 @@ function parseGpx(text: string): Coordinate[] {
   return coordinates;
 }
 
-export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
+export default function RouteMap({ gpxUrl, mapUrl, name, laps = 1 }: Props) {
   const elementRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
@@ -287,7 +288,12 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
 
   return (
     <div className="route-map-shell">
-      <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name}>
+      {mapUrl && !showRouteOverlay && (
+        <div className="route-map-mapy">
+          <iframe src={mapUrl} title={"Interaktivní mapa trasy " + name} loading="lazy" allowFullScreen />
+        </div>
+      )}
+      <div ref={elementRef} className={`route-map ${mapUrl && !showRouteOverlay ? "hidden" : ""}`} aria-label={"Mapa trasy " + name}>
         {overlayPoints && (
           <svg
             className={`route-map-overlay ${showRouteOverlay ? "" : "hidden"}`}
@@ -315,12 +321,11 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
       )}
       {state === "ready" && (
         <>
-          <div className="route-map-badge">
-            <MapPinned size={14} /> GPX trasa
-          </div>
-          <button type="button" className="route-map-toggle" onClick={() => setShowRouteOverlay(value => !value)}>
-            {showRouteOverlay ? "Původní mapa" : "Zobrazit trasu"}
-          </button>
+          {mapUrl && (
+            <button type="button" className="route-map-toggle" onClick={() => setShowRouteOverlay(value => !value)}>
+              {showRouteOverlay ? "Mapy.com" : "Naše mapa"}
+            </button>
+          )}
         </>
       )}
     </div>
