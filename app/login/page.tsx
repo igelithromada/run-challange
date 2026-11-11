@@ -1,10 +1,11 @@
 "use client";
 
-import React, { FormEvent, useState } from "react";
+import React, { FormEvent, useEffect, useState } from "react";
 import { ArrowLeft, KeyRound, LogIn, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { sendPasswordResetEmail, signInWithCustomToken, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../lib/firebase";
+import { showAppToast } from "../components/AppToast";
 
 type View = "login" | "reset" | "code" | "register";
 
@@ -18,6 +19,10 @@ export default function LoginPage() {
   const [view, setView] = useState<View>("login");
   const [busy, setBusy] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (error) showAppToast(error, "error");
+  }, [error]);
 
   const switchView = (next: View) => {
     setError("");
@@ -173,7 +178,7 @@ export default function LoginPage() {
           </form>
         )}
 
-        {error && <p className="form-message form-message-error" role="alert">{error}</p>}
+
         {message && <p className="form-message form-message-success" role="status">{message}</p>}
       </section>
     </main>
