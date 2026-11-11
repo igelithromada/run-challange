@@ -128,7 +128,6 @@ button { touch-action:manipulation; }
 .custom-picker { padding:.75rem; display:grid; gap:.75rem; border-top:1px solid rgba(255,255,255,.1); }
 .custom-picker .react-colorful { width:100% !important; height:180px !important; }
 .custom-picker .tile-button { width:100%; }
-.settings-notice { margin-top:.75rem; padding:.65rem .8rem; border-radius:12px; background:rgba(100,220,150,.14); border:1px solid rgba(120,230,165,.2); font-weight:700; font-size:.85rem; }
 
 .results-section, .results-other { margin-top:1.25rem; }
 .results-section-heading { display:flex; align-items:flex-start; gap:.7rem; margin-bottom:.75rem; }
