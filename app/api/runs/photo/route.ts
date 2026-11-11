@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
-import { deleteCloudinaryImages, collectCloudinaryPublicIds } from "../../../lib/cloudinaryAdmin";
+import { deleteCloudinaryImages, collectCloudinaryPublicIds, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,7 +35,9 @@ export async function DELETE(request: Request) {
       ? data.imagePublicIds.filter((value: unknown): value is string => typeof value === "string")
       : [];
     const imagePublicId = publicIds[index];
-    const idsToDelete = imagePublicId ? [imagePublicId] : collectCloudinaryPublicIds([images[index]]);
+    const idsToDelete = imagePublicId && isUserCloudinaryPublicId(imagePublicId, data.uid)
+      ? [imagePublicId]
+      : collectCloudinaryPublicIds([images[index]], data.uid);
     if (idsToDelete.length) {
       const cloudinaryResult = await deleteCloudinaryImages(idsToDelete);
       if (cloudinaryResult.failed.length) {
