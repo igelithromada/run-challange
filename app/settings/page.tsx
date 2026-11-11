@@ -425,7 +425,7 @@ export default function SettingsPage() {
         </section>
 
         <section className="tile">
-          <div className="settings-section-heading"><Bell size={21}/><div><h2>Notifikace osobního trenéra</h2><p>Dostávej upozornění na dnešní nebo zítřejší naplánovaný trénink.</p></div></div>
+          <div className="settings-section-heading"><Bell size={21}/><div><h2>Notifikace osobního trenéra</h2><p>Dostávej upozornění na dnešní nebo zítřejší naplánovaný trénink.</p><p className="settings-notification-times">Dnešní plán: kolem 7:00 · Zítřejší plán: kolem 18:00 (časové pásmo ČR)</p></div></div>
           {!trainerNotifications.enabled ? (
             <button type="button" className="tile-button settings-save-button" onClick={() => void enableTrainerNotifications()} disabled={notificationBusy}>
               {notificationBusy ? "Zapínám…" : "Povolit notifikace"}
