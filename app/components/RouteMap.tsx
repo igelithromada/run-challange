@@ -62,6 +62,7 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
     let map: MapLibreMap | null = null;
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), CLIENT_TIMEOUT_MS);
+    let settleTimer: number | null = null;
     const handleResize = () => {
       if (alive && map) map.resize();
     };
@@ -240,14 +241,12 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
 
         map.once("load", drawRoute);
 
-        const settleTimer = window.setTimeout(() => {
+        settleTimer = window.setTimeout(() => {
           if (alive && map && map.isStyleLoaded()) {
             drawRoute();
             map.resize();
           }
         }, 300);
-
-        void settleTimer;
 
       } catch (error) {
         if (alive && (error as Error).name !== "AbortError") {
@@ -262,6 +261,7 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
       alive = false;
       controller.abort();
       window.clearTimeout(timeout);
+      if (settleTimer !== null) window.clearTimeout(settleTimer);
       window.removeEventListener("resize", handleResize);
       mapRef.current?.remove();
       mapRef.current = null;
