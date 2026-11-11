@@ -62,6 +62,10 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
     let map: MapLibreMap | null = null;
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), CLIENT_TIMEOUT_MS);
+    const handleResize = () => {
+      if (alive && map) map.resize();
+    };
+    window.addEventListener("resize", handleResize);
 
     const load = async () => {
       try {
@@ -236,15 +240,6 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
 
         map.once("load", drawRoute);
 
-        // Když je komponenta vložená do karty, její velikost se může změnit
-        // až po prvním renderu. ResizeObserver zabrání mapě pracovat s 0×0
-        // viewportem a znovu přepočítá bounds po změně velikosti.
-        const resizeObserver = new ResizeObserver(() => {
-          if (!map || !alive) return;
-          map.resize();
-        });
-        resizeObserver.observe(element);
-
         const settleTimer = window.setTimeout(() => {
           if (alive && map && map.isStyleLoaded()) {
             drawRoute();
@@ -252,10 +247,7 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
           }
         }, 300);
 
-        return () => {
-          resizeObserver.disconnect();
-          window.clearTimeout(settleTimer);
-        };
+        void settleTimer;
 
       } catch (error) {
         if (alive && (error as Error).name !== "AbortError") {
@@ -270,6 +262,7 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
       alive = false;
       controller.abort();
       window.clearTimeout(timeout);
+      window.removeEventListener("resize", handleResize);
       mapRef.current?.remove();
       mapRef.current = null;
     };
