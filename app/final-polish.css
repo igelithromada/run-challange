@@ -644,23 +644,6 @@
 .participants-alpha-fixed button.active { opacity:1 !important; transform:scale(1.18); }
 
 /* Hlášky v nastavení jsou také plovoucí a nepřerovnávají obsah. */
-.settings-notice {
-  position:fixed !important;
-  left:50% !important;
-  bottom:max(22px,calc(env(safe-area-inset-bottom) + 18px)) !important;
-  transform:translateX(-50%) !important;
-  z-index:2147483640 !important;
-  width:min(92vw,520px) !important;
-  box-sizing:border-box !important;
-  margin:0 !important;
-  padding:.8rem 1rem !important;
-  border-radius:14px !important;
-  background:rgba(18,31,42,.96) !important;
-  border:1px solid rgba(255,255,255,.16) !important;
-  color:#fff !important;
-  box-shadow:0 12px 35px rgba(0,0,0,.35) !important;
-  text-align:center;
-}
 
 
 /* Globální plovoucí hlášky – nikdy nezabírají místo v layoutu. */
