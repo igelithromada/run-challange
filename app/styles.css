@@ -60,6 +60,7 @@
    ===================================================================== */
 html { min-height: 100%; background: var(--main-gradient, #000000); }
 body {
+  position: relative;
   font-family: 'Poppins', sans-serif;
   background: var(--main-gradient, linear-gradient(180deg, #36D1DC 0%, #5B86E5 100%));
   background-repeat: no-repeat; background-attachment: scroll; background-size: cover;
@@ -288,10 +289,10 @@ body {
 
 /* Jemné animace počasí na pozadí – pouze při zvoleném vzhledu podle počasí */
 body::before {
-  content: ""; position: fixed; inset: -20%; z-index: 0; pointer-events: none;
+  content: ""; position: fixed; inset: -20%; z-index: 2; pointer-events: none;
   opacity: 0; transition: opacity .6s ease;
 }
-body > * { position: relative; z-index: 1; }
+body > * { position: relative; z-index: 3; }
 html[data-animations="true"][data-weather="rain"] body::before,
 html[data-animations="true"][data-weather="rain-wind"] body::before {
   opacity: .72;
