@@ -24,7 +24,10 @@ html[data-animations="false"] body::before { display:none !important; animation:
 html[data-animations="true"][data-weather="rain"] body::before,
 html[data-animations="true"][data-weather="rain-wind"] body::before,
 html[data-animations="true"][data-weather="snow"] body::before,
-html[data-animations="true"][data-weather="snow-wind"] body::before { z-index:0; pointer-events:none; }
+html[data-animations="true"][data-weather="snow-wind"] body::before { z-index:1; pointer-events:none; }
+
+/* Počasí je nad pozadím stránky, ale vždy pod obsahem aplikace. */
+body > * { position:relative; z-index:2; }
 
 .site-sidebar-item { appearance:none; border:1px solid rgba(255,255,255,.13); background:rgba(0,0,0,.22); color:#fff; border-radius:16px; min-height:76px; padding:.8rem .5rem; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:.45rem; font:600 1rem/1.25 'Poppins',sans-serif; text-align:center; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,.14); }
 .site-sidebar-item:active { background:rgba(255,255,255,.28); transform:scale(.98); }
