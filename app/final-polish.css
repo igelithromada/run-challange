@@ -539,38 +539,6 @@
   .trainer-week-summary { grid-template-columns:1fr 1fr; }
 }
 
-/* Můj progres – osobní rekordy jako standardní karty */
-.progress-record-grid {
-  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-  gap:.6rem !important;
-}
-.progress-record-grid > div {
-  min-height:92px;
-  padding:.75rem !important;
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:15px !important;
-  background:var(--card-background) !important;
-  display:grid !important;
-  grid-template-columns:40px minmax(0,1fr);
-  grid-template-rows:auto auto;
-  column-gap:.6rem;
-  align-content:center;
-}
-.progress-record-grid > div > span {
-  grid-row:1 / span 2;
-  width:40px !important;
-  height:40px !important;
-  border-radius:12px !important;
-  background:rgba(255,255,255,.09) !important;
-}
-.progress-record-grid small { align-self:end; font-size:.7rem !important; }
-.progress-record-grid strong { font-size:.98rem !important; }
-@media(max-width:390px) {
-  .progress-record-grid { gap:.45rem !important; }
-  .progress-record-grid > div { grid-template-columns:34px minmax(0,1fr); min-height:82px; padding:.6rem !important; }
-  .progress-record-grid > div > span { width:34px !important; height:34px !important; }
-}
-
 /* Účastníci – abeceda vždy pevně u samotného okraje obrazovky */
 .participants-scroll-area { position:relative; }
 .participants-alpha {
