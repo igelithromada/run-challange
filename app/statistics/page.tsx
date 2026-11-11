@@ -64,7 +64,7 @@ export default function StatisticsPage() {
     return true;
   });
 
-  const userMap: Record<string, { name: string; km: number; min: number }> = {};
+  const userMap: Record<string, { name: string; km: number; min: number; avatarUrl?: string }> = {};
   const teamMap: Record<string, { team: string; km: number; min: number; members: Record<string, { name: string; km: number; min: number }> }> = {};
   filtered.forEach(run => {
     const uid = typeof run.uid === "string" ? run.uid : "";
