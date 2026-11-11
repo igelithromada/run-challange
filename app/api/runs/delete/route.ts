@@ -58,20 +58,25 @@ export async function DELETE(request: Request) {
 
     publicIds.push(...collectCloudinaryPublicIds(imageUrls, data.uid));
     const safePublicIds = publicIds.filter(publicId => isUserCloudinaryPublicId(publicId, data.uid));
-    const cloudinaryResult = await deleteCloudinaryImages(safePublicIds);
-    if (cloudinaryResult.failed.length) {
-      return NextResponse.json(
-        { error: `Záznam nebyl smazán, protože se nepodařilo odstranit ${cloudinaryResult.failed.length} fotografii z úložiště. Záznam zůstal zachován.` },
-        { status: 502 }
-      );
+    let cloudinaryResult = { deleted: [] as string[], failed: [] as string[] };
+    try {
+      cloudinaryResult = await deleteCloudinaryImages(safePublicIds);
+    } catch (error) {
+      console.error("Cloudinary cleanup failed while deleting run:", error);
+      cloudinaryResult = { deleted: [], failed: safePublicIds };
     }
 
+    // The activity itself is authoritative data. Never leave it undeletable
+    // because a remote image cleanup failed.
     await deleteRunComments(runRef);
     await runRef.delete();
 
     return NextResponse.json({
       ok: true,
       deletedImages: cloudinaryResult.deleted,
+      cleanupWarnings: cloudinaryResult.failed.length
+        ? [`Nepodařilo se automaticky odstranit ${cloudinaryResult.failed.length} fotografii z Cloudinary.`]
+        : [],
     });
   } catch (error) {
     console.error("Delete run failed:", error);
