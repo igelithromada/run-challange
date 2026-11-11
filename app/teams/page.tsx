@@ -244,7 +244,7 @@ export default function TeamsPage() {
         {teamsState.loading ? (
           <LoadingSkeleton count={3} />
         ) : teamsState.error ? (
-          <div className="tile teams-empty" role="alert">
+          <div className="tile teams-empty">
             <strong>Týmy se nepodařilo načíst</strong>
             <p>Zkus stránku obnovit. Pokud problém přetrvá, zkontroluj připojení.</p>
           </div>
