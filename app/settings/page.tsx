@@ -165,8 +165,20 @@ export default function SettingsPage() {
       return;
     }
     try {
-      await saveSettings({ nickname: value });
-      setNickname(value);
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const token = await currentUser.getIdToken(true);
+      const response = await fetch("/api/settings/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ nickname: value }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Přezdívku se nepodařilo uložit.");
+      setNickname(typeof result.nickname === "string" ? result.nickname : value);
       flash("Přezdívka uložena");
     } catch (error) {
       console.error("Nepodařilo se uložit přezdívku", error);
