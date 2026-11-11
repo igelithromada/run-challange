@@ -34,6 +34,7 @@ service cloud.firestore {
               "avatarUrl",
               "theme",
               "customColor",
+              "themeUpdatedAt",
               "animationsEnabled",
               "hapticsEnabled",
               "defaultActivity",
