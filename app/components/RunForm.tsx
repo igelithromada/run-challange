@@ -213,7 +213,6 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
       console.error(err);
       const message=translateSaveError(err);
       setError(message);
-      showAppToast(message,"error");
     } finally {
       setSaving(false);
       setUploadStatus("");
@@ -304,7 +303,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
         </section>
       )}
 
-      {!showForm && error && <p className="form-message form-message-error" role="alert">{error}</p>}
+      
     </div>
   );
 }
