@@ -25,11 +25,11 @@ export function cloudinaryPublicIdFromUrl(url: string | undefined): string | nul
 
     // Stored application URLs are original upload URLs. If a version segment is
     // present, it is metadata and not part of the public ID.
-    if (/^v\\d+$/.test(parts[0])) parts.shift();
+    if (/^v\d+$/.test(parts[0])) parts.shift();
     if (!parts.length) return null;
 
     const last = parts[parts.length - 1];
-    parts[parts.length - 1] = last.replace(/\\.[a-z0-9]+$/i, "");
+    parts[parts.length - 1] = last.replace(/\.[a-z0-9]+$/i, "");
     const publicId = decodeURIComponent(parts.join("/")).trim();
 
     return publicId || null;
