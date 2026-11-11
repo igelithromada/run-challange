@@ -271,6 +271,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
                 <div className="social-user-list">
                   {likeUsers.map(user => <button key={user.uid} type="button" className="social-user-row" onClick={() => routerSafeUser(user.uid)}><span className="activity-avatar">{user.avatarUrl ? <img src={cloudinaryImageUrl(user.avatarUrl, 64)} alt="" /> : user.nickname.charAt(0).toUpperCase()}</span><strong>{user.nickname}</strong></button>)}
                 </div>
+                {likesTruncated && <p className="social-modal-note">Zobrazeno je prvních 100 reakcí.</p>}
               ) : <p className="social-modal-empty">Zatím nikdo nelajknul tento záznam.</p>
             ) : (
               <>
