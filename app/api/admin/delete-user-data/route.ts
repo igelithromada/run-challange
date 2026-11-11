@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { DocumentReference } from "firebase-admin/firestore";
 import { requireAdmin, authErrorResponse } from "../../../lib/apiAuth";
-import { collectCloudinaryPublicIds, deleteCloudinaryImages, isUserCloudinaryPublicId  } from "../../../lib/cloudinaryAdmin";
+import { collectCloudinaryPublicIds, deleteCloudinaryImages, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,11 +42,11 @@ export async function POST(request: Request) {
       }
       if (typeof data.imageUrl === "string") imageUrls.push(data.imageUrl);
       if (Array.isArray(data.imagePublicIds)) {
-        publicIds.push(...data.imagePublicIds.filter((value: unknown): value is string => typeof value === "string"));
+        publicIds.push(...data.imagePublicIds.filter((value: unknown): value is string => typeof value === "string" && isUserCloudinaryPublicId(value, uid)));
       }
     }
 
-    publicIds.push(...collectCloudinaryPublicIds(imageUrls), uid);
+    publicIds.push(...collectCloudinaryPublicIds(imageUrls, uid));
     const cloudinaryResult = await deleteCloudinaryImages(publicIds);
 
     if (cloudinaryResult.failed.length) {
