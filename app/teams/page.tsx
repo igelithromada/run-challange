@@ -164,6 +164,10 @@ export default function TeamsPage() {
     }
   };
 
+  useEffect(() => {
+    if (teamsState.error) showAppToast("Týmy se nepodařilo načíst. Zkus stránku obnovit.", "error");
+  }, [teamsState.error]);
+
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
     if (item === "logout") {
