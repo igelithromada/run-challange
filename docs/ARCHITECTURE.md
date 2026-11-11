@@ -12,7 +12,7 @@
 - **Validace:** `app/lib/validation.ts`
 - **Serverová autentizace API:** `app/lib/apiAuth.ts`
 - **Serverové Firebase služby:** `app/lib/firebaseAdmin.ts`
-- **Design tokeny:** `app/design-tokens.css`
+- **Centrální styly a design tokeny:** `app/styles.css`
 - **Firebase pravidla:** `firestore.rules`
 
 ## Zásady
@@ -54,7 +54,7 @@
 
 ### 5. Design
 - centrální design tokeny
-- postupné odstranění historických CSS override vrstev
+- historické CSS vrstvy jsou sloučené do `app/styles.css`; nové úpravy se dělají pouze v tomto souboru
 
 ### 6. Testy
 Po stabilizaci architektury přidat automatické testy kritických toků: registrace, přihlášení, aktivita, úprava/smazání, týmy, trenér a administrace.
