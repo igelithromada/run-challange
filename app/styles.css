@@ -3639,3 +3639,26 @@ button { touch-action:manipulation; }
 .teams-message {
   display:block !important;
 }
+
+
+/* =====================================================================
+   AUDIT SAFETY OVERRIDES
+   Zachování chování aplikace bez celoplošných nekonečných animací.
+   ===================================================================== */
+html[data-weather="rain"] body::before,
+html[data-weather="rain-wind"] body::before,
+html[data-weather="snow"] body::before,
+html[data-weather="snow-wind"] body::before {
+  animation: none !important;
+  background-image: none !important;
+  opacity: 0 !important;
+  transform: none !important;
+}
+html[data-windy="true"] .wind-icon-animated {
+  animation: wind-icon-gust 1.35s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-windy="true"] .wind-icon-animated {
+    animation: none !important;
+  }
+}
