@@ -119,7 +119,7 @@ export default function RoutesPage() {
                         </div>
 
                         {route.gpxUrl ? (
-                          <RouteMap gpxUrl={route.gpxUrl} name={route.name} laps={route.laps} />
+                          <RouteMap gpxUrl={route.gpxUrl} mapUrl={route.mapUrl} name={route.name} laps={route.laps} />
                         ) : (
                           <div className="route-map-unavailable">
                             <MapPinned size={18} />
@@ -129,12 +129,12 @@ export default function RoutesPage() {
 
                         <div className="route-card-actions">
                           <a className="route-primary-action" href={route.mapUrl} target="_blank" rel="noopener noreferrer">
-                            <Map size={18} /> Zobrazit trasu
+                            <Map size={18} /> Mapy.com
                             <ExternalLink size={15} />
                           </a>
                           {route.gpxUrl && (
                             <a className="route-secondary-action" href={route.gpxUrl} target="_blank" rel="noopener noreferrer">
-                              <Download size={17} /> GPX
+                              <Download size={17} /> Stáhnout GPX
                             </a>
                           )}
                         </div>
