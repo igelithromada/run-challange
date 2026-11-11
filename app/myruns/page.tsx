@@ -293,7 +293,7 @@ export default function MyRunsPage() {
         <div className="activity-lightbox-actions" onClick={e => e.stopPropagation()}>
           {showImageUrls.length > 1 && <button onClick={() => setCurrentImageIndex(i => (i - 1 + showImageUrls.length) % showImageUrls.length)} aria-label="Předchozí fotografie">❮</button>}
           <button onClick={() => void handleDeletePhoto()} disabled={deletingPhoto} aria-label="Smazat fotografii">{deletingPhoto ? "Mažu…" : "Smazat"}</button>
-          <button onClick={() => { setShowImageUrls(null); setShowImageRunId(null); setCurrentImageIndex(0); }}>Zavřít</button>
+          <button type="button" className="run-secondary-button" onClick={() => { setShowImageUrls(null); setShowImageRunId(null); setCurrentImageIndex(0); }}>Zavřít</button>
           {showImageUrls.length > 1 && <button onClick={() => setCurrentImageIndex(i => (i + 1) % showImageUrls.length)} aria-label="Další fotografie">❯</button>}
         </div>
         {showImageUrls.length > 1 && <p>{currentImageIndex + 1} / {showImageUrls.length}</p>}
