@@ -15,7 +15,7 @@ import ActivityTypeSelector from "../components/ActivityTypeSelector";
 import { MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
 import type { RunData as BaseRunData, ActivityType } from "../types";
-import { fetchOlderRuns, updateRun, userRunsQuery } from "../lib/services/runs";
+import { fetchOlderRuns, latestUserRunsQuery, updateRun } from "../lib/services/runs";
 import { getUserProfile } from "../lib/services/users";
 
 type RunData = BaseRunData;
@@ -111,7 +111,7 @@ export default function MyRunsPage() {
     return () => { active = false; unsubAuth(); };
   }, [router]);
 
-  const runsQuery = useMemo(() => userRunsQuery(uid || "__no_user__"), [uid]);
+  const runsQuery = useMemo(() => latestUserRunsQuery(uid || "__no_user__", 30), [uid]);
   const runsState = useSharedFirestoreQuery<RunData>("runs:user:" + (uid || "none"), runsQuery);
   const runs = useMemo(() => Array.from(new Map<string, RunData>([...runsState.data, ...olderRuns].map(run => [run.id, { ...run, ...(localUpdates[run.id] || {}) }] as const)).values()).map(run => ({
     ...run, km: Number(run.km) || 0, minuty: Number(run.minuty) || 0, tempo: Number(run.tempo) || 0
