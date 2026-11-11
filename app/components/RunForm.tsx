@@ -55,7 +55,6 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
   const activityLabel = type === "chůze" ? "chůzi" : "běh";
@@ -83,15 +82,8 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
     setDescription("");
     setActivityDate(localDateTime());
     setError("");
-    setSuccess("");
     setUploadStatus("");
   };
-
-  useEffect(() => {
-    if (!success) return;
-    const timer = window.setTimeout(() => setSuccess(""), 3200);
-    return () => window.clearTimeout(timer);
-  }, [success]);
 
   useEffect(() => {
     if (error) showAppToast(error, "error");
@@ -126,7 +118,6 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
 
     setSaving(true);
     setError("");
-    setSuccess("");
 
     try {
       const imageUrls: string[] = [];
