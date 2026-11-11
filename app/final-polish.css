@@ -744,7 +744,6 @@
 .participants-alpha-fixed button { width:20px !important; }
 
 /* Týmové chybové/success stavy už nejsou součástí karty. */
-.teams-message { display:none !important; }
 
 @media(max-width:520px) {
   .activity-card-modern { gap:.45rem !important; }
