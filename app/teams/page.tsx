@@ -280,7 +280,7 @@ export default function TeamsPage() {
                             }
                           }}
                         />
-                        <button type="button" aria-label="Uložit název týmu" onClick={() => void saveTeamName(team)}>
+                        <button type="button" className="ui-icon-button" aria-label="Uložit název týmu" onClick={() => void saveTeamName(team)}>
                           <Check size={17} />
                         </button>
                         <button
