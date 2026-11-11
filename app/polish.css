@@ -77,7 +77,6 @@
 .admin-user-avatar img, .admin-detail-avatar img { width:100%; height:100%; object-fit:cover; border-radius:inherit; }
 .admin-status-badge { padding:.25rem .5rem; border-radius:999px; font-size:.68rem; font-weight:800; background:rgba(255,255,255,.1); }
 .admin-status-badge.blocked { color:#ffd0d0; background:rgba(190,65,65,.2); border:1px solid rgba(255,130,130,.25); }
-.admin-action-danger { color:#ffd4d4 !important; background:rgba(180,55,55,.15) !important; border-color:rgba(255,130,130,.25) !important; }
 .admin-action-warning { color:#ffe5a8 !important; background:rgba(180,130,45,.14) !important; border-color:rgba(255,210,100,.25) !important; }
 
 /* Consistent controls */
