@@ -16,6 +16,7 @@ import type { RunData, TeamData, ActivityType } from "../types";
 import { allTeamsQuery } from "../lib/services/teams";
 import { getUserAvatars } from "../lib/services/users";
 import { filteredRunsQuery } from "../lib/services/runs";
+import { showAppToast } from "../components/AppToast";
 
 export default function StatisticsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -116,6 +117,10 @@ export default function StatisticsPage() {
   const podiumData = view === "jednotlivci" ? userList : teamList;
   const count = view === "já" ? filtered.filter(r => r.uid === user?.uid).length : view === "jednotlivci" ? userList.length : teamList.length;
 
+  useEffect(() => {
+    if (runsState.error || teamsState.error) showAppToast("Výsledky se nepodařilo načíst. Zkus stránku obnovit.", "error");
+  }, [runsState.error, teamsState.error]);
+
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
     if (item === "logout") { await signOut(auth); router.push("/login"); return; }
@@ -141,7 +146,7 @@ export default function StatisticsPage() {
       <Navbar title="Výsledky" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
       <main className="container statistics-page">
-        {(runsState.error || teamsState.error) && <div className="tile form-message-error" role="alert">Výsledky se nepodařilo načíst. Zkus stránku obnovit.</div>}
+        {(runsState.error || teamsState.error) && <div className="tile form-message-error">Výsledky se nepodařilo načíst. Zkus stránku obnovit.</div>}
 
         <div className="control-caption">Typ aktivity</div>
         <ActivityTypeSelector value={selectedType} onChange={setSelectedType} />
