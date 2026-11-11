@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "../../../lib/apiAuth";
+import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,8 +17,10 @@ export async function POST(request: Request) {
     };
     await adminDb.collection("users").doc(decoded.uid).set({trainerNotifications},{merge:true});
     return NextResponse.json({ok:true,trainerNotifications});
-  } catch(error) {
-    console.error("POST /api/settings/trainer-notifications:",error);
-    return NextResponse.json({error:"Nastavení notifikací se nepodařilo uložit."},{status:500});
+  } catch (error) {
+    const authError = authErrorResponse(error);
+    if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
+    console.error("POST /api/settings/trainer-notifications:", error);
+    return NextResponse.json({ error: "Nastavení notifikací se nepodařilo uložit." }, { status: 500 });
   }
 }
