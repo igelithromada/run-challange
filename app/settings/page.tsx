@@ -33,7 +33,6 @@ export default function SettingsPage() {
   const [hapticsEnabled, setHapticsEnabledState] = useState(true);
   const [defaultActivity, setDefaultActivity] = useState<"běh" | "chůze">("běh");
   const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
@@ -111,9 +110,7 @@ export default function SettingsPage() {
   }, [router]);
 
   const flash = (message: string, type: "success" | "error" | "info" = "success") => {
-    setNotice(message);
     showAppToast(message, type);
-    window.setTimeout(() => setNotice(""), 2200);
   };
 
   const saveSettings = async (patch: Record<string, unknown>) => {
@@ -334,7 +331,6 @@ export default function SettingsPage() {
   };
 
   const handlePasswordChange = async () => {
-    setNotice("");
     if (newPassword.length < 6) { flash("Nové heslo musí mít alespoň 6 znaků."); return; }
     if (newPassword !== newPasswordConfirm) { flash("Nová hesla se neshodují."); return; }
     if (!auth.currentUser) { flash("Nejsi přihlášen."); return; }
