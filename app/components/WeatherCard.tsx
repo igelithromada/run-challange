@@ -81,6 +81,7 @@ export default function WeatherCard() {
   const windUnit = current?.wind?.speed?.unit === "KILOMETERS_PER_HOUR" ? "km/h" : "m/s";
   const rainValues = [current?.precipitation?.probability?.percent, ...hours.slice(0, 6).map(item => item?.precipitation?.probability?.percent)].filter(value => typeof value === "number");
   const rainChance = rainValues.length ? Math.max(...rainValues) : undefined;
+  const rainLevelClass = rainChance === undefined ? "" : rainChance >= 70 ? "weather-risk-high" : rainChance >= 40 ? "weather-risk-medium" : "weather-risk-low";
 
   return (
     <section className={`tile weather-card ${weatherColorClass(condition?.type)}`} style={{ marginBottom: "1.25rem", overflow: "hidden" }} aria-label="Předpověď počasí">
@@ -122,7 +123,7 @@ export default function WeatherCard() {
             </div>
             <div style={{ background: "rgba(0,0,0,0.12)", borderRadius: "12px", padding: "0.65rem 0.5rem", textAlign: "center" }}>
               <CloudRain className={`weather-stat-icon ${iconColorClass}`} size={19} style={{ margin: "0 auto 0.25rem" }} />
-              <strong style={{ display: "block" }}>{rainChance !== undefined ? `${rainChance}%` : "—"}</strong>
+              <strong className={rainLevelClass} style={{ display: "block" }}>{rainChance !== undefined ? `${rainChance}%` : "—"}</strong>
               <small>Déšť</small>
             </div>
             <div style={{ background: "rgba(0,0,0,0.12)", borderRadius: "12px", padding: "0.65rem 0.5rem", textAlign: "center" }}>
