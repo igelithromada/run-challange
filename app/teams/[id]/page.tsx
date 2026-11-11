@@ -27,7 +27,6 @@ export default function TeamDetailPage() {
   const [avatarUrl,setAvatarUrl]=useState("");
   const [avatarPublicId,setAvatarPublicId]=useState("");
   const [saving,setSaving]=useState(false);
-  const [message,setMessage]=useState("");
   const [loading,setLoading]=useState(true);
   const [isMember,setIsMember]=useState(false);
 
@@ -65,7 +64,7 @@ export default function TeamDetailPage() {
       } catch (error) {
         if (active) {
           console.error("Nepodařilo se načíst tým", error);
-          setMessage("Tým se nepodařilo načíst.");
+          showAppToast("Tým se nepodařilo načíst.","error");
           setLoading(false);
         }
       }
@@ -75,8 +74,6 @@ export default function TeamDetailPage() {
       unsubscribe();
     };
   }, [id, router]);
-
-  useEffect(() => { if (!message) return; const lower=message.toLowerCase(); const isError=lower.includes("nepodařilo") || lower.includes("platný") || lower.includes("nejsi přihlášen"); showAppToast(message,isError?"error":"success"); }, [message]);
 
   const isOwner=team?.createdBy===user?.uid;
   const teamType:ActivityType=team?.type==="chůze"?"chůze":"běh";
@@ -94,27 +91,27 @@ export default function TeamDetailPage() {
       setIsMember(false);
       setTeam(previous => previous ? { ...previous, memberIds: (previous.memberIds || []).filter(memberId => memberId !== user.uid) } : previous);
       setMembers(previous => previous.filter(member => member.id !== user.uid));
-      setMessage("Z týmu jsi odešel.");
+      showAppToast("Z týmu jsi odešel.","success");
     } catch {
-      setMessage("Z týmu se nepodařilo odejít.");
+      showAppToast("Z týmu se nepodařilo odejít.","error");
     }
   };
 
   const save=async()=>{
     if(!isOwner) return;
     const value=Number(goal.replace(",","."));
-    if(!Number.isFinite(value)||value<=0){setMessage("Zadej platný cíl.");return;}
-    setSaving(true); setMessage("");
+    if(!Number.isFinite(value)||value<=0){showAppToast("Zadej platný cíl.","error");return;}
+    setSaving(true);
     try{
       await mergeTeam(id,{challengeGoalKm:value,avatarUrl,avatarPublicId});
-      setMessage("Nastavení týmu bylo uloženo.");
-    }catch(e){console.error(e);setMessage("Nastavení se nepodařilo uložit.");}
+      showAppToast("Nastavení týmu bylo uloženo.","success");
+    }catch(e){console.error(e);showAppToast("Nastavení se nepodařilo uložit.","error");}
     finally{setSaving(false);}
   };
 
   const uploadAvatar=async(e:React.ChangeEvent<HTMLInputElement>)=>{
     const file=e.target.files?.[0]; if(!file||!isOwner)return;
-    if(!file.type.startsWith("image/")||file.size>5*1024*1024){setMessage("Vyber obrázek do 5 MB.");e.target.value="";return;}
+    if(!file.type.startsWith("image/")||file.size>5*1024*1024){showAppToast("Vyber obrázek do 5 MB.","error");e.target.value="";return;}
     try{
       if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
       const token = await auth.currentUser.getIdToken();
@@ -131,8 +128,8 @@ export default function TeamDetailPage() {
       }
       setAvatarUrl(result.secureUrl);
       setAvatarPublicId(typeof result.publicId === "string" ? result.publicId : "");
-      setMessage("Avatar je připravený. Ulož nastavení týmu.");
-    }catch(e){console.error(e);setMessage("Avatar se nepodařilo nahrát.");}
+      showAppToast("Avatar je připravený. Ulož nastavení týmu.","success");
+    }catch(e){console.error(e);showAppToast("Avatar se nepodařilo nahrát.","error");}
     finally{e.target.value="";}
   };
 
@@ -152,7 +149,7 @@ export default function TeamDetailPage() {
         <main className="container">
           <div className="tile">
             <strong>Tým se nepodařilo načíst</strong>
-            <p>{message || "Tým nebyl nalezen nebo k němu nemáš přístup."}</p>
+            <p>Tým nebyl nalezen nebo k němu nemáš přístup.</p>
             <button type="button" className="run-primary-button" onClick={() => router.replace("/teams")}>Zpět na týmy</button>
           </div>
         </main>
