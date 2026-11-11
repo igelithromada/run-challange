@@ -18,8 +18,13 @@ function parseGpx(text: string): Coordinate[] {
   const doc = new DOMParser().parseFromString(text, "application/xml");
   if (doc.querySelector("parsererror")) throw new Error("Neplatný GPX soubor.");
 
-  const points = doc.getElementsByTagNameNS("*", "trkpt");
-  return Array.from(points)
+  // GPX files may contain either a recorded track (<trkpt>) or a planned
+  // route (<rtept>). Prefer the full track when it exists.
+  const trackPoints = Array.from(doc.getElementsByTagNameNS("*", "trkpt"));
+  const routePoints = Array.from(doc.getElementsByTagNameNS("*", "rtept"));
+  const points = trackPoints.length >= 2 ? trackPoints : routePoints;
+
+  return points
     .map(point => [
       Number(point.getAttribute("lon")),
       Number(point.getAttribute("lat")),
@@ -97,6 +102,12 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
         });
 
         mapRef.current = map;
+
+        const onMapError = (event: { error?: { message?: string } }) => {
+          console.error("Route map error:", event.error?.message || event.error || event);
+          if (alive) setState("error");
+        };
+        map.on("error", onMapError);
 
         map.once("load", () => {
           if (!alive || !map) return;
