@@ -1570,9 +1570,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .run-form-upload { position:relative; color:white; }
 .run-form-upload input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
 .run-form-status { margin:.7rem 0 0; color:var(--ui-muted); font-size:.82rem; }
-.form-message { margin:.75rem 0 0; padding:.7rem .8rem; border-radius:12px; font-size:.84rem; line-height:1.45; }
-.form-message-error { color:#ffd5d5; background:rgba(160,48,64,.24); border:1px solid rgba(255,150,160,.18); }
-.form-message-success { color:#d8ffe9; background:rgba(42,145,100,.2); border:1px solid rgba(130,240,185,.16); }
 @media(max-width:520px) { .run-form-panel { padding:.85rem; } .run-primary-button { width:100%; } }
 
 .auth-page { min-height:100dvh; display:grid; place-items:center; padding:1.25rem; background:var(--main-gradient,linear-gradient(180deg,#36D1DC,#5B86E5)); }
@@ -1697,7 +1694,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .user-page-header p { margin:.2rem 0 0; color:var(--ui-muted); font-size:.8rem; }
 .user-page-eyebrow { font-size:.62rem; letter-spacing:.12em; font-weight:800; color:var(--ui-muted); }
 
-.teams-message { margin:.7rem 0 0; padding:.7rem .8rem; border-radius:12px; background:rgba(80,200,150,.12); border:1px solid rgba(130,240,185,.14); color:#dcffed; font-size:.84rem; }
 .teams-create, .teams-current, .teams-challenge-settings { overflow:hidden; }
 .teams-grid { align-items:stretch; }
 .team-card { min-width:0; }
@@ -3207,7 +3203,6 @@ button { touch-action:manipulation; }
 .participants-alpha-fixed button { width:20px !important; }
 
 /* Týmové chybové/success stavy už nejsou součástí karty. */
-.teams-message { display:none !important; }
 
 @media(max-width:520px) {
   .activity-card-modern { gap:.45rem !important; }
@@ -3646,9 +3641,6 @@ button { touch-action:manipulation; }
 }
 
 /* Stavové hlášky týmů nesmí být globálně skryté. */
-.teams-message {
-  display:block !important;
-}
 
 
 /* ===== AUDIT SAFETY OVERRIDES ===== */
