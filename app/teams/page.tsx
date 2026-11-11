@@ -312,7 +312,7 @@ export default function TeamsPage() {
                     </div>
                   </div>
 
-                  <ChevronRight className="team-card-chevron" size={20} />
+                  {editingTeamId !== team.id && <ChevronRight className="team-card-chevron" size={20} />}
                 </div>
 
                 {editingTeamId !== team.id && <div className="team-card-actions">
