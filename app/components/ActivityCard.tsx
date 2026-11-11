@@ -15,7 +15,7 @@ export type ActivityCardRun = {
 type SocialComment = { id: string; uid: string; nickname: string; avatarUrl?: string; text: string; createdAt?: string | null; mine?: boolean };
 type SocialUser = { uid: string; nickname: string; avatarUrl?: string };
 type Props = {
-  run: ActivityCardRun; nickname: string; avatarUrl?: string; teamName?: string | null; teamAvatarUrl?: string;
+  run: ActivityCardRun; nickname?: string; avatarUrl?: string; teamName?: string | null; teamAvatarUrl?: string;
   activityType: string; onUserClick?: () => void; onPhotosClick: (images: string[], fallback: string) => void;
   onEdit?: () => void; onDelete?: () => void;
 };
@@ -63,8 +63,8 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
   const likeLongPressTriggered = useRef(false);
   const [socialError, setSocialError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
-  const [resolvedNickname, setResolvedNickname] = useState(nickname || "Uživatel");
-  const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState(avatarUrl || "");
+  const [resolvedNickname, setResolvedNickname] = useState(nickname || run.nickname || run.email?.split("@")[0] || "Uživatel");
+  const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState(avatarUrl || run.avatarUrl || "");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] = useState("");
 
