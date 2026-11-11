@@ -12,6 +12,7 @@ import {
   type Query,
   type QueryConstraint,
   type QueryDocumentSnapshot,
+  type DocumentData,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
@@ -21,26 +22,26 @@ export type NewRunData = Omit<RunData, "id">;
 
 export const runsCollection = () => collection(db, "runs");
 
-export function latestRunsQuery(pageSize = 30): Query {
+export function latestRunsQuery(pageSize = 30): Query<DocumentData, DocumentData> {
   return query(runsCollection(), orderBy("timestamp", "desc"), limit(pageSize));
 }
 
-export function filteredRunsQuery(startDate?: string, endDate?: string): Query {
+export function filteredRunsQuery(startDate?: string, endDate?: string): Query<DocumentData, DocumentData> {
   const constraints: QueryConstraint[] = [orderBy("timestamp", "desc")];
   if (startDate) constraints.unshift(where("timestamp", ">=", Timestamp.fromDate(new Date(startDate + "T00:00:00"))));
   if (endDate) constraints.unshift(where("timestamp", "<=", Timestamp.fromDate(new Date(endDate + "T23:59:59.999"))));
   return query(runsCollection(), ...constraints);
 }
 
-export function userRunsQuery(uid: string): Query {
+export function userRunsQuery(uid: string): Query<DocumentData, DocumentData> {
   return query(runsCollection(), where("uid", "==", uid), orderBy("timestamp", "desc"));
 }
 
-export function latestUserRunsQuery(uid: string, pageSize = 30): Query {
+export function latestUserRunsQuery(uid: string, pageSize = 30): Query<DocumentData, DocumentData> {
   return query(runsCollection(), where("uid", "==", uid), orderBy("timestamp", "desc"), limit(pageSize));
 }
 
-export function userRunsForDateRangeQuery(uid: string, start: Date, end: Date): Query {
+export function userRunsForDateRangeQuery(uid: string, start: Date, end: Date): Query<DocumentData, DocumentData> {
   return query(
     runsCollection(),
     where("uid", "==", uid),
@@ -50,28 +51,28 @@ export function userRunsForDateRangeQuery(uid: string, start: Date, end: Date): 
   );
 }
 
-export function teamRunsQuery(teamId: string): Query {
+export function teamRunsQuery(teamId: string): Query<DocumentData, DocumentData> {
   return query(runsCollection(), where("teamId", "==", teamId));
 }
 
-export function olderRunsQuery(cursor: QueryDocumentSnapshot, pageSize = 20): Query {
+export function olderRunsQuery(cursor: QueryDocumentSnapshot<DocumentData, DocumentData>, pageSize = 20): Query<DocumentData, DocumentData> {
   return query(runsCollection(), orderBy("timestamp", "desc"), startAfter(cursor), limit(pageSize));
 }
 
-export async function fetchRuns(runQuery: Query): Promise<RunData[]> {
+export async function fetchRuns(runQuery: Query<DocumentData, DocumentData>): Promise<RunData[]> {
   const snapshot = await getDocs(runQuery);
   return snapshot.docs.map(mapRunSnapshot);
 }
 
 export async function fetchAllRuns(pageSize = 500): Promise<RunData[]> {
   const items: RunData[] = [];
-  let cursor: QueryDocumentSnapshot | null = null;
+  let cursor: QueryDocumentSnapshot<DocumentData, DocumentData> | null = null;
 
   while (true) {
-    const nextQuery: Query = cursor
+    const nextQuery = cursor
       ? olderRunsQuery(cursor, pageSize)
       : latestRunsQuery(pageSize);
-    const snapshot: Awaited<ReturnType<typeof getDocs>> = await getDocs(nextQuery);
+    const snapshot = await getDocs(nextQuery);
     if (!snapshot.docs.length) break;
 
     items.push(...snapshot.docs.map(mapRunSnapshot));
@@ -93,9 +94,9 @@ export async function updateRun(id: string, data: Partial<RunData>): Promise<voi
 }
 
 export async function fetchOlderRuns(
-  cursor: QueryDocumentSnapshot,
+  cursor: QueryDocumentSnapshot<DocumentData, DocumentData>,
   pageSize = 20
-): Promise<{ items: RunData[]; lastDocument: QueryDocumentSnapshot | null }> {
+): Promise<{ items: RunData[]; lastDocument: QueryDocumentSnapshot<DocumentData, DocumentData> | null }> {
   const snapshot = await getDocs(olderRunsQuery(cursor, pageSize));
   return {
     items: snapshot.docs.map(mapRunSnapshot),
