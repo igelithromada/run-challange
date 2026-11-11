@@ -1,7 +1,6 @@
 import {
   collection,
   getDocs,
-  updateDoc,
   addDoc,
   doc,
   limit,
@@ -17,7 +16,6 @@ import {
 import { db } from "../firebase";
 import type { RunData } from "../../types";
 
-export type RunUpdate = Partial<Omit<RunData, "id">>;
 export type NewRunData = Omit<RunData, "id">;
 
 export const runsCollection = () => collection(db, "runs");
@@ -67,10 +65,6 @@ export async function fetchRuns(runQuery: Query): Promise<RunData[]> {
 export async function createRun(data: NewRunData): Promise<string> {
   const snapshot = await addDoc(runsCollection(), data);
   return snapshot.id;
-}
-
-export async function updateRun(runId: string, data: RunUpdate): Promise<void> {
-  await updateDoc(doc(db, "runs", runId), data);
 }
 
 export async function fetchOlderRuns(
