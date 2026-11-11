@@ -161,7 +161,7 @@ export default function TeamDetailPage() {
     <Navbar title={team?.name||"Tým"} onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
     <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/>
     <main className="container team-detail-page">
-      <button className="ui-icon-button team-back-button" type="button" onClick={()=>router.push("/teams")} aria-label="Zpět na týmy"><ArrowLeft size={19}/></button>
+      <button className="ui-icon-button team-back-button" type="button" onClick={()=>router.push("/teams")} aria-label="Zpět na týmy" title="Zpět na týmy"><ArrowLeft size={19}/></button>
       <header className="team-detail-header">
         <div className="team-detail-avatar">{avatarUrl?<img src={cloudinaryImageUrl(avatarUrl,160)} alt="Avatar týmu"/>:<Users size={30}/>}</div>
         <div><span className="progress-eyebrow">TÝM PRO {teamType==="běh"?"BĚH":"CHŮZI"}</span><h1>{team?.name}</h1><p>{members.length} {members.length===1?"účastník":"účastníků"} · cíl {Number(team?.challengeGoalKm)||500} km</p></div>
