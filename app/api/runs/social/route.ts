@@ -5,6 +5,9 @@ import { requireUser as requireApiUser, authErrorResponse } from "../../../lib/a
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const MAX_SOCIAL_COMMENTS = 100;
+const MAX_SOCIAL_LIKE_USERS = 100;
+
 async function isAdminUser(adminDb: Firestore, uid: string, claim: boolean): Promise<boolean> {
   if (claim) return true;
   const profile = await adminDb.collection("users").doc(uid).get();
@@ -26,9 +29,12 @@ export async function GET(request: Request) {
     const commentsSnapshot = await adminDb
       .collection("runs").doc(runId).collection("comments")
       .orderBy("createdAt", "asc")
+      .limit(MAX_SOCIAL_COMMENTS + 1)
       .get();
 
-    const comments = commentsSnapshot.docs.map(comment => {
+    const commentsTruncated = commentsSnapshot.docs.length > MAX_SOCIAL_COMMENTS;
+    const commentDocs = commentsTruncated ? commentsSnapshot.docs.slice(0, MAX_SOCIAL_COMMENTS) : commentsSnapshot.docs;
+    const comments = commentDocs.map(comment => {
       const item = comment.data();
       return {
         id: comment.id,
@@ -42,9 +48,11 @@ export async function GET(request: Request) {
     });
 
     const uniqueLikeIds = [...new Set(likedBy)];
+    const likesTruncated = uniqueLikeIds.length > MAX_SOCIAL_LIKE_USERS;
+    const visibleLikeIds = uniqueLikeIds.slice(0, MAX_SOCIAL_LIKE_USERS);
     const likeUsers: Array<{ uid: string; nickname: string; avatarUrl: string }> = [];
-    for (let i = 0; i < uniqueLikeIds.length; i += 30) {
-      const chunk = uniqueLikeIds.slice(i, i + 30);
+    for (let i = 0; i < visibleLikeIds.length; i += 30) {
+      const chunk = visibleLikeIds.slice(i, i + 30);
       if (!chunk.length) continue;
       const snapshots = await adminDb.collection("publicProfiles").where(FieldPath.documentId(), "in", chunk).get();
       snapshots.docs.forEach(profile => {
@@ -65,6 +73,8 @@ export async function GET(request: Request) {
       commentCount: Number(data.commentCount) || comments.length,
       likes: likeUsers,
       comments,
+      commentsTruncated,
+      likesTruncated,
       isAdmin,
     });
   } catch (error) {
