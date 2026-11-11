@@ -10,7 +10,6 @@ import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSe
 import { Activity, Clock3, Medal, Users, Footprints, ArrowDownUp, ListFilter } from "lucide-react";
 import type { RunData } from "../types";
 import { fetchAllRuns } from "../lib/services/runs";
-import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { getUserAvatars } from "../lib/services/users";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 
