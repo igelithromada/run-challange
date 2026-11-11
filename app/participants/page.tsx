@@ -68,8 +68,9 @@ export default function ParticipantsPage() {
       const uid = typeof run.uid === "string" ? run.uid : "";
       if (!uid) return;
       const name = run.nickname || run.email?.split("@")[0] || "Anonym";
-      if (!map[uid]) map[uid] = { uid, name, avatarUrl: avatars[uid] || "", km: 0, minutes: 0, activities: 0 };
+      if (!map[uid]) map[uid] = { uid, name, avatarUrl: avatars[uid] || run.avatarUrl || "", km: 0, minutes: 0, activities: 0 };
       map[uid].name = name;
+      if (avatars[uid] || !map[uid].avatarUrl) map[uid].avatarUrl = avatars[uid] || run.avatarUrl || "";
       map[uid].km += Number(run.km) || 0;
       map[uid].minutes += Number(run.minuty) || 0;
       map[uid].activities += 1;
