@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { auth } from "../lib/firebase";
 import { Camera, Clock3, Gauge, Heart, MapPin, MessageCircle, Pencil, Trash2, X, Send } from "lucide-react";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
+import { getPublicProfiles } from "../lib/services/publicProfiles";
 
 export type ActivityCardRun = {
   id: string; uid?: string; nickname?: string; email?: string;
@@ -62,8 +63,30 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
   const likeLongPressTriggered = useRef(false);
   const [socialError, setSocialError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [resolvedNickname, setResolvedNickname] = useState(nickname || "Uživatel");
+  const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState(avatarUrl || "");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] = useState("");
+
+  useEffect(() => {
+    setResolvedNickname(nickname || run.nickname || run.email?.split("@")[0] || "Uživatel");
+    setResolvedAvatarUrl(avatarUrl || run.avatarUrl || "");
+  }, [nickname, avatarUrl, run.nickname, run.avatarUrl, run.email]);
+
+  useEffect(() => {
+    const uid = run.uid;
+    if (!uid) return;
+    let cancelled = false;
+    getPublicProfiles([uid]).then(profiles => {
+      if (cancelled) return;
+      const profile = profiles[uid];
+      if (profile?.nickname) setResolvedNickname(profile.nickname);
+      if (profile?.avatarUrl) setResolvedAvatarUrl(profile.avatarUrl);
+    }).catch(error => {
+      console.warn("Nepodařilo se načíst veřejný profil aktivity", error);
+    });
+    return () => { cancelled = true; };
+  }, [run.uid]);
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -213,11 +236,11 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
     <>
       <article className="tile list-tile activity-card activity-card-modern">
         <header className="activity-card-top">
-          <button type="button" className="activity-avatar" onClick={onUserClick} disabled={!onUserClick} aria-label={`Profil uživatele ${nickname}`}>
-            {avatarUrl ? <img src={cloudinaryImageUrl(avatarUrl, 128)} alt="" loading="lazy" decoding="async" /> : nickname.charAt(0).toUpperCase()}
+          <button type="button" className="activity-avatar" onClick={onUserClick} disabled={!onUserClick} aria-label={`Profil uživatele ${resolvedNickname}`}>
+            {resolvedAvatarUrl ? <img src={cloudinaryImageUrl(resolvedAvatarUrl, 128)} alt="" loading="lazy" decoding="async" /> : resolvedNickname.charAt(0).toUpperCase()}
           </button>
           <div className="activity-person">
-            <span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{nickname}</span>
+            <span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{resolvedNickname}</span>
             {teamName && <small className="activity-team-line"><span className="activity-team-avatar">{teamAvatarUrl ? <img src={cloudinaryImageUrl(teamAvatarUrl, 48)} alt="" /> : "T"}</span><b>Tým</b> · {teamName}</small>}
           </div>
           {date && <time className="activity-date" dateTime={date.toISOString()}>{date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}
