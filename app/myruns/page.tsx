@@ -141,8 +141,14 @@ export default function MyRunsPage() {
     }
   };
   useEffect(() => {
-    if (runsState.error) setError("Chyba při načítání dat.");
-  }, [runsState.error]);
+    // Krátký Firestore výpadek nesmí rušit už načtený seznam aktivit.
+    // Chybu zobrazíme jen tehdy, když se nepodařilo načíst vůbec žádná data.
+    if (runsState.error && !runsState.loading && runsState.data.length === 0 && olderRuns.length === 0) {
+      setError("Chyba při načítání dat.");
+    } else if (!runsState.error) {
+      setError("");
+    }
+  }, [runsState.error, runsState.loading, runsState.data.length, olderRuns.length]);
 
   useEffect(() => { if (error) showAppToast(error, "error"); }, [error]);
   useEffect(() => { if (actionError) showAppToast(actionError, "error"); }, [actionError]);
