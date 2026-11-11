@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const password = typeof body?.password === "string" ? body.password : "";
     const code = typeof body?.code === "string" ? body.code.trim() : "";
 
-    if (!email || !email.includes("@") || password.length < 6 || code.length < 4) {
+    if (!email || email.length > 254 || !email.includes("@") || password.length < 6 || password.length > 128 || code.length < 4 || code.length > 128) {
       return NextResponse.json({ error: "Zkontroluj email, heslo a registrační kód." }, { status: 400 });
     }
 
