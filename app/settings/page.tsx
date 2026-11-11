@@ -392,7 +392,7 @@ export default function SettingsPage() {
           </label>
 
           <div className="theme-options">
-            <ThemeItem icon={<Moon size={19}/>} color="linear-gradient(180deg,#101820,#25364a)" active={theme === "dark"} onClick={() => void handleThemeChange("dark")} text="Tmavý režim" />
+            <ThemeItem icon={<Moon size={19}/>} color="#000000" active={theme === "dark"} onClick={() => void handleThemeChange("dark")} text="Čistý černý" />
             <ThemeItem icon={<Sun size={19}/>} color="linear-gradient(180deg,#f7fbff,#dbeafe)" active={theme === "light"} onClick={() => void handleThemeChange("light")} text="Světlý režim" />
             <ThemeItem icon={<Square size={19}/>} color="#ffffff" active={theme === "white"} onClick={() => void handleThemeChange("white")} text="Čistý světlý" />
             <ThemeItem icon={<Palette size={19}/>} color="linear-gradient(180deg,#36D1DC,#5B86E5)" active={theme === "default"} onClick={() => void handleThemeChange("default")} text="Výchozí vzhled" />
