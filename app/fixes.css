@@ -442,18 +442,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .admin-registration-form .admin-action-button { width:100%; }
 }
 
-/* Sociální akce – jednotná velikost ikonových tlačítek */
-.activity-card-modern .activity-social-actions { align-items:center; }
-.activity-card-modern .activity-social-button {
-  display:inline-flex; align-items:center; justify-content:center; gap:.38rem;
-  width:44px; min-width:44px; height:38px; min-height:38px; padding:.35rem .5rem;
-  margin:0; box-sizing:border-box; border:1px solid var(--ui-border);
-  border-radius:11px; background:rgba(255,255,255,.1); color:white; font:inherit; cursor:pointer;
-}
-.activity-card-modern .activity-social-button:hover { background:rgba(255,255,255,.16); }
-.activity-card-modern .activity-social-button.is-liked { color:#ff8b9b; border-color:rgba(255,139,155,.35); background:rgba(255,100,125,.12); }
-.activity-card-modern .activity-social-button:disabled { opacity:.55; }
-
 .activity-lightbox-actions button:first-child {
   background:rgba(160,55,65,.78);
   color:#fff;
@@ -465,25 +453,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   font-size:inherit;
 }
 
-
-/* ===== Stabilizace a sjednocení UI ===== */
-.activity-card-modern .activity-social-actions {
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-  gap:.55rem;
-  padding-inline:.1rem;
-}
-.activity-card-modern .activity-social-button {
-  width:52px;
-  min-width:52px;
-  height:42px;
-  min-height:42px;
-  padding:.3rem .45rem;
-  gap:.25rem;
-}
-.activity-card-modern .activity-social-button svg { width:20px; height:20px; }
-.activity-card-modern .activity-social-button span { font-size:.78rem; font-weight:750; }
 
 .run-form-actions-single { grid-template-columns:1fr !important; }
 .run-form-actions-single .run-primary-button { width:100%; }
