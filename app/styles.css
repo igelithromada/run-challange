@@ -4013,8 +4013,10 @@ html[data-theme="dark"] {
 .weather-stat-icon.weather-condition-drizzle path:not(:first-child),
 .weather-stat-icon.weather-condition-storm path:not(:first-child){stroke:#4da3ff}
 .weather-humidity-icon{color:#4da3ff!important}
-.weather-main-icon.weather-condition-partly path:nth-child(2),
-.weather-hour-icon.weather-condition-partly path:nth-child(2){stroke:#ffd166}
+.weather-main-icon.weather-condition-partly,
+.weather-hour-icon.weather-condition-partly{color:#ffd166}
+.weather-main-icon.weather-condition-partly path:last-child,
+.weather-hour-icon.weather-condition-partly path:last-child{stroke:var(--ui-text,#fff)}
 .route-map-mapy{position:absolute;inset:0;z-index:2;background:#fff}
 .route-map-mapy iframe{display:block;width:100%;height:100%;border:0}
 .route-map-toggle{z-index:6!important}
