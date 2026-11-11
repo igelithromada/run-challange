@@ -47,13 +47,12 @@ export async function POST(request: Request) {
     }
 
     publicIds.push(...collectCloudinaryPublicIds(imageUrls, uid));
-    const cloudinaryResult = await deleteCloudinaryImages(publicIds);
-
-    if (cloudinaryResult.failed.length) {
-      return NextResponse.json(
-        { error: "Aktivity nebyly smazány, protože se nepodařilo bezpečně odstranit všechny fotografie z Cloudinary. Zkontroluj Cloudinary API klíč a oprávnění." },
-        { status: 502 }
-      );
+    let cloudinaryResult = { deleted: [] as string[], failed: [] as string[] };
+    try {
+      cloudinaryResult = await deleteCloudinaryImages(publicIds);
+    } catch (error) {
+      console.error("Cloudinary cleanup failed during admin data reset:", error);
+      cloudinaryResult = { deleted: [], failed: publicIds };
     }
 
     const refs = runsSnapshot.docs.map((item) => item.ref);
@@ -76,6 +75,9 @@ export async function POST(request: Request) {
       ok: true,
       deletedRuns: refs.length,
       deletedImages: cloudinaryResult.deleted,
+      cleanupWarnings: cloudinaryResult.failed.length
+        ? ["Některé fotografie se nepodařilo automaticky odstranit z Cloudinary."]
+        : [],
     });
   } catch (error) {
     const authError = authErrorResponse(error);
