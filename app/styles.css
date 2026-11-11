@@ -940,16 +940,20 @@ html[data-animations="false"] .wind-icon-animated { animation: none !important; 
 .activity-load-more {
   display: block;
   width: min(100%, 340px);
+  min-height: 44px;
   margin: 1rem auto 1.5rem;
-  padding: .8rem 1rem;
-  border: 1px solid rgba(255,255,255,.28);
-  border-radius: 12px;
-  background: rgba(255,255,255,.14);
+  padding: .65rem .9rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 13px;
+  background: rgba(255,255,255,.08);
   color: white;
   font: inherit;
-  font-weight: 600;
+  font-weight: 750;
   cursor: pointer;
+  transition: transform .16s ease, background .16s ease, border-color .16s ease;
 }
+.activity-load-more:hover { background:rgba(255,255,255,.15); transform:translateY(-1px); }
+.activity-load-more:active { transform:scale(.985); }
 .activity-load-more:disabled { opacity: .6; cursor: wait; }
 
 
@@ -1141,13 +1145,15 @@ html[data-animations="true"][data-weather="wind"] body::before {
 .routes-filter::-webkit-scrollbar { display:none; }
 .routes-filter button {
   display:inline-flex; align-items:center; justify-content:center; gap:.4rem;
-  flex:0 0 auto; min-height:44px; padding:.55rem .85rem;
-  border:1px solid rgba(255,255,255,.14); border-radius:14px;
-  background:rgba(255,255,255,.1); color:white; font:inherit; font-weight:700; cursor:pointer;
+  flex:0 0 auto; min-height:44px; padding:.65rem .9rem;
+  border:1px solid var(--ui-border); border-radius:13px;
+  background:rgba(255,255,255,.08); color:white; font:inherit; font-weight:750; cursor:pointer;
+  transition:transform .16s ease,background .16s ease,border-color .16s ease;
 }
+.routes-filter button:hover { background:rgba(255,255,255,.15); transform:translateY(-1px); }
+.routes-filter button:active { transform:scale(.985); }
 .routes-filter button.active {
-  background:rgba(255,255,255,.25); border-color:rgba(255,255,255,.3);
-  box-shadow:0 5px 18px rgba(0,0,0,.16);
+  background:rgba(255,255,255,.2); border-color:rgba(255,255,255,.3);
 }
 
 .routes-groups { display:flex; flex-direction:column; gap:.75rem; }
@@ -1155,7 +1161,10 @@ html[data-animations="true"][data-weather="wind"] body::before {
 .routes-group-heading {
   width:100%; display:flex; align-items:center; gap:.75rem; padding:.35rem;
   border:0; background:transparent; color:white; text-align:left; cursor:pointer;
+  border-radius:13px; transition:background .16s ease;
 }
+.routes-group-heading:hover { background:rgba(255,255,255,.06); }
+.routes-group-heading:focus-visible { outline:2px solid rgba(100,217,255,.85); outline-offset:2px; }
 .routes-group-icon {
   display:grid; place-items:center; flex:0 0 48px; width:48px; height:48px;
   border-radius:15px; background:rgba(255,255,255,.14);
@@ -1510,7 +1519,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   border-color:rgba(255,255,255,.38); background:rgba(0,0,0,.28);
 }
 .site-sidebar-header { display:flex; align-items:center; justify-content:space-between; grid-column:1/-1; min-height:42px; font-weight:750; }
-.site-sidebar-icon-button { width:40px; height:40px; display:grid; place-items:center; border:1px solid var(--ui-border); border-radius:12px; background:rgba(255,255,255,.08); color:white; cursor:pointer; }
+.site-sidebar-icon-button { width:42px; min-width:42px; height:42px; display:grid; place-items:center; border:1px solid var(--ui-border); border-radius:13px; background:rgba(255,255,255,.10); color:white; cursor:pointer; transition:background .16s ease,transform .16s ease,border-color .16s ease; }
+.site-sidebar-icon-button:hover { background:rgba(255,255,255,.16); border-color:rgba(255,255,255,.24); }
+.site-sidebar-icon-button:active { transform:scale(.985); }
 .site-sidebar-grid { grid-column:1/-1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:inherit; min-width:0; }
 .site-sidebar-panel > .site-sidebar-item { height:auto !important; min-height:78px !important; }
 .site-sidebar-panel > .site-sidebar-logout { grid-column:1/-1; min-height:50px !important; flex-direction:row !important; background:rgba(185,60,85,.28); }
@@ -2259,7 +2270,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 /* Trenér – rychlý přehled a hromadné plánování */
 .trainer-calendar-toolbar{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin:.65rem 0 .35rem}
-.trainer-bulk-toggle{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:rgba(255,255,255,.82);border-radius:12px;padding:.55rem .8rem;font-weight:800;font-size:.8rem}
+.trainer-bulk-toggle{min-height:44px;border:1px solid var(--ui-border);background:rgba(255,255,255,.08);color:rgba(255,255,255,.86);border-radius:13px;padding:.65rem .9rem;font:inherit;font-size:.8rem;font-weight:750;cursor:pointer;transition:transform .16s ease,background .16s ease,border-color .16s ease}
+.trainer-bulk-toggle:hover{background:rgba(255,255,255,.15);transform:translateY(-1px)}
+.trainer-bulk-toggle:active{transform:scale(.985)}
 .trainer-bulk-toggle.active{background:rgba(109,153,189,.2);border-color:rgba(109,153,189,.7);color:#dcecf8}
 .trainer-calendar-toolbar span{font-size:.72rem;color:rgba(255,255,255,.62)}
 .trainer-calendar-day{touch-action:manipulation;-webkit-user-select:none;user-select:none}
