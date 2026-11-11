@@ -18,7 +18,8 @@ function parseGpx(text: string): Coordinate[] {
   const doc = new DOMParser().parseFromString(text, "application/xml");
   if (doc.querySelector("parsererror")) throw new Error("Neplatný GPX soubor.");
 
-  return Array.from(doc.querySelectorAll("trkpt"))
+  const points = doc.getElementsByTagNameNS("*", "trkpt");
+  return Array.from(points)
     .map(point => [
       Number(point.getAttribute("lon")),
       Number(point.getAttribute("lat")),
@@ -186,9 +187,6 @@ export default function RouteMap({ gpxUrl, name, laps = 1 }: Props) {
           setState("ready");
         });
 
-        map.once("error", () => {
-          if (alive) setState("error");
-        });
       } catch (error) {
         if (alive && (error as Error).name !== "AbortError") {
           setState("error");
