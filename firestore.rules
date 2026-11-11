@@ -73,10 +73,23 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasAll(["uid", "km", "minuty", "tempo", "timestamp"]);
 
+      // Vlastník může upravovat pouze skutečně editovatelná pole aktivity.
+      // Sociální počítadla, autora, vlastníka a tým spravuje aplikace/server.
       allow update: if isAdmin()
         || (signedIn()
           && resource.data.uid == request.auth.uid
-          && request.resource.data.uid == request.auth.uid);
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              "km",
+              "minuty",
+              "tempo",
+              "timestamp",
+              "description",
+              "imageUrl",
+              "imageUrls",
+              "imagePublicIds"
+            ]));
 
       allow delete: if isAdmin()
         || (signedIn() && resource.data.uid == request.auth.uid);
