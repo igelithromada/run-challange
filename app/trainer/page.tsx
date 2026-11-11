@@ -11,7 +11,7 @@ import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { getUserProfile } from "../lib/services/users";
 import type { RunData, LegacyTrainerPlan } from "../types";
-import { userRunsQuery } from "../lib/services/runs";
+import { userRunsForDateRangeQuery } from "../lib/services/runs";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 
 type Activity = Pick<RunData, "id" | "uid" | "km" | "type" | "timestamp">;
@@ -105,8 +105,12 @@ export default function TrainerPage(){
    return()=>{active=false;unsubscribe();};
  },[router]);
 
- const runsQuery = useMemo(() => userRunsQuery(uid || "__no_user__"), [uid]);
- const runsState = useSharedFirestoreQuery<Activity>("trainer:runs:" + (uid || "none"), runsQuery);
+ const runsQuery = useMemo(() => {
+   const start = new Date(month.getFullYear(), month.getMonth(), 1);
+   const end = new Date(month.getFullYear(), month.getMonth() + 1, 0, 23, 59, 59, 999);
+   return userRunsForDateRangeQuery(uid || "__no_user__", start, end);
+ }, [uid, month]);
+ const runsState = useSharedFirestoreQuery<Activity>(`trainer:runs:${uid || "none"}:${currentMonth}`, runsQuery);
  const runs = runsState.data;
  const loading = profileLoading || runsState.loading;
 
