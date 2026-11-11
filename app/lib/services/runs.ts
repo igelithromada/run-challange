@@ -62,6 +62,26 @@ export async function fetchRuns(runQuery: Query): Promise<RunData[]> {
   return snapshot.docs.map(mapRunSnapshot);
 }
 
+export async function fetchAllRuns(pageSize = 500): Promise<RunData[]> {
+  const items: RunData[] = [];
+  let cursor: QueryDocumentSnapshot | null = null;
+
+  while (true) {
+    const nextQuery = cursor
+      ? olderRunsQuery(cursor, pageSize)
+      : latestRunsQuery(pageSize);
+    const snapshot = await getDocs(nextQuery);
+    if (!snapshot.docs.length) break;
+
+    items.push(...snapshot.docs.map(mapRunSnapshot));
+    cursor = snapshot.docs[snapshot.docs.length - 1];
+
+    if (snapshot.docs.length < pageSize) break;
+  }
+
+  return items;
+}
+
 export async function createRun(data: NewRunData): Promise<string> {
   const snapshot = await addDoc(runsCollection(), data);
   return snapshot.id;
