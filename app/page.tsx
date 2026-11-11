@@ -184,7 +184,7 @@ export default function Page() {
                 key={run.id}
                 run={run}
                 nickname={nickname}
-                avatarUrl={user.avatarUrl}
+                avatarUrl={resolvedAvatarUrl}
                 teamName={teamName}
                 teamAvatarUrl={team?.avatarUrl || ""}
                 activityType={selectedType}
