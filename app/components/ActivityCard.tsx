@@ -7,7 +7,7 @@ import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { getPublicProfiles } from "../lib/services/publicProfiles";
 
 export type ActivityCardRun = {
-  id: string; uid?: string; nickname?: string; email?: string;
+  id: string; uid?: string; nickname?: string; email?: string; avatarUrl?: string;
   km: number | string; minuty: number | string; tempo: number | string;
   timestamp?: { seconds: number } | Date; imageUrl?: string; imageUrls?: string[]; teamId?: string;
   likedBy?: string[]; likeCount?: number; commentCount?: number; description?: string;
