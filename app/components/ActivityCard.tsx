@@ -53,6 +53,8 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
   const [socialOpen, setSocialOpen] = useState<"likes" | "comments" | null>(null);
   const [comments, setComments] = useState<SocialComment[]>([]);
   const [likeUsers, setLikeUsers] = useState<SocialUser[]>([]);
+  const [likesTruncated, setLikesTruncated] = useState(false);
+  const [commentsTruncated, setCommentsTruncated] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [socialLoading, setSocialLoading] = useState(false);
   const [socialBusy, setSocialBusy] = useState(false);
@@ -90,6 +92,8 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
       setCommentCount(Number(result.commentCount) || 0);
       setLikeUsers(Array.isArray(result.likes) ? result.likes : []);
       setComments(Array.isArray(result.comments) ? result.comments : []);
+      setLikesTruncated(result.likesTruncated === true);
+      setCommentsTruncated(result.commentsTruncated === true);
       setIsAdmin(result.isAdmin === true);
     } catch (error) {
       setSocialError(error instanceof Error ? error.message : "Data se nepodařilo načíst.");
@@ -289,7 +293,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
                       </div>
                     </article>
                   )) : <p className="social-modal-empty">Zatím tu není žádný komentář.</p>}
-                </div>
+                {commentsTruncated && <p className="social-modal-note">Zobrazeno je prvních 100 komentářů.</p>}
                 <div className="social-comment-form">
                   <textarea value={commentText} maxLength={500} placeholder="Napiš komentář…" onChange={e => setCommentText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submitComment(); } }} />
                   <button type="button" onClick={() => void submitComment()} disabled={!commentText.trim() || socialBusy} aria-label="Odeslat komentář"><Send size={18}/></button>
