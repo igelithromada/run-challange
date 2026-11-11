@@ -765,9 +765,6 @@ html[data-animations="false"] .wind-icon-animated { animation: none !important; 
 .run-form-previews img { width:100%; height:100%; object-fit:cover; border-radius:12px; border:1px solid rgba(255,255,255,.12); }
 .run-form-previews button { position:absolute; top:-6px; right:-6px; width:26px; height:26px; border:1px solid rgba(255,255,255,.4); border-radius:50%; background:#24313a; color:white; font-size:1rem; cursor:pointer; }
 .run-form-status { margin:.1rem 0; font-size:.8rem; opacity:.85; text-align:center; }
-.
-.run-form-actions button { min-height:52px; }
-.run-form-actions button:disabled { cursor:wait; opacity:.65; }
 .run-primary-button {
   display:inline-flex;
   align-items:center;
@@ -825,8 +822,6 @@ html[data-animations="false"] .wind-icon-animated { animation: none !important; 
  .run-form-panel { padding:.9rem; border-radius:20px; }
  .run-form-heading h3 { font-size:1.45rem; }
  .run-form-previews { grid-template-columns:repeat(3,minmax(0,1fr)); }
- .run-form-actions { grid-template-columns:1fr; }
- .run-form-actions .run-primary-button { order:-1; }
  .activity-quick-filters { gap:.35rem; }
  .activity-quick-filters button { flex:1; padding:.55rem .4rem; font-size:.76rem; }
  .activity-card-actions { gap:.3rem; }
