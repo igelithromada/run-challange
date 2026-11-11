@@ -112,7 +112,7 @@ export default function UserPage() {
         <div className="activity-lightbox" role="dialog" aria-modal="true" aria-label="Galerie fotografií" onClick={() => setShowImages(null)}>
           <div className="activity-lightbox-top" onClick={e => e.stopPropagation()}>
             <span>{currentImageIndex + 1} / {showImages.length}</span>
-            <button type="button" onClick={() => setShowImages(null)} aria-label="Zavřít galerii">×</button>
+            <button type="button" className="ui-icon-button" onClick={() => setShowImages(null)} aria-label="Zavřít galerii">×</button>
           </div>
           <img src={cloudinaryImageUrl(showImages[currentImageIndex], 1600)} alt={`Fotografie ${currentImageIndex + 1}`} onClick={e => e.stopPropagation()} />
           <div className="activity-lightbox-actions" onClick={e => e.stopPropagation()}>
