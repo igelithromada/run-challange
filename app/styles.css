@@ -4020,3 +4020,84 @@ html[data-theme="dark"] {
 .route-map-mapy{position:absolute;inset:0;z-index:2;background:#fff}
 .route-map-mapy iframe{display:block;width:100%;height:100%;border:0}
 .route-map-toggle{z-index:6!important}
+
+
+/* === TEST: barevná sémantika napříč aplikací ===
+   Barva pouze jako orientační signál; karty, ikony a layout zůstávají stejné. */
+:root {
+  --accent-info:#4da3ff;
+  --accent-good:#42c987;
+  --accent-caution:#f0b84b;
+  --accent-danger:#ed6b62;
+  --accent-sun:#ffd166;
+  --accent-snow:#b9dcff;
+}
+
+/* Aktivity: rozlišení běhu/chůze jedním malým akcentem. */
+.activity-type-label{
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+  margin-bottom:.12rem;
+  font-size:.62rem;
+  line-height:1;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  opacity:.9;
+}
+.activity-type-run .activity-type-label,
+.activity-type-run .activity-person > span:first-of-type { color:var(--accent-info); }
+.activity-type-walk .activity-type-label,
+.activity-type-walk .activity-person > span:first-of-type { color:#63c9a0; }
+
+/* Počasí: významové části ikon, nikoliv celé ikony. */
+.weather-main-icon.weather-condition-rain path:not(:first-child),
+.weather-hour-icon.weather-condition-rain path:not(:first-child),
+.weather-stat-icon.weather-condition-rain path:not(:first-child),
+.weather-main-icon.weather-condition-drizzle path:not(:first-child),
+.weather-hour-icon.weather-condition-drizzle path:not(:first-child),
+.weather-stat-icon.weather-condition-drizzle path:not(:first-child){stroke:var(--accent-info)}
+.weather-main-icon.weather-condition-storm path:last-child,
+.weather-hour-icon.weather-condition-storm path:last-child{stroke:var(--accent-caution)}
+.weather-main-icon.weather-condition-snow,
+.weather-hour-icon.weather-condition-snow{color:var(--accent-snow)}
+.weather-main-icon.weather-condition-sun,
+.weather-hour-icon.weather-condition-sun{color:var(--accent-sun)}
+.weather-humidity-icon{color:var(--accent-info)!important}
+.weather-risk-low{color:var(--accent-info)}
+.weather-risk-medium{color:var(--accent-caution)}
+.weather-risk-high{color:var(--accent-danger)}
+
+/* Doporučení počasí: zelená = vhodné, oranžová = opatrnost, červená = nevhodné. */
+.run-weather-good .run-weather-icon{color:var(--accent-good)!important}
+.run-weather-caution .run-weather-icon{color:var(--accent-caution)!important}
+.run-weather-warning .run-weather-icon{color:var(--accent-danger)!important}
+.run-weather-good strong{color:var(--accent-good)}
+.run-weather-caution strong{color:var(--accent-caution)}
+.run-weather-warning strong{color:var(--accent-danger)}
+
+/* Týmy: členství je pozitivní stav, odchod je destruktivní akce. */
+.team-card-joined{border-color:rgba(66,201,135,.32)!important}
+.team-card-joined .team-member-label{color:var(--accent-good)!important}
+.team-card-joined .team-avatar{box-shadow:0 0 0 2px rgba(66,201,135,.22)}
+.team-leave-button{color:#f08a84!important;border-color:rgba(237,107,98,.38)!important}
+.team-action-button:not(.team-leave-button):hover{border-color:rgba(77,163,255,.42)!important;color:var(--accent-info)!important}
+
+/* Trasy: stejný layout, pouze barevný akcent podle aktivity. */
+.route-activity-run .route-card-icon{color:var(--accent-info)}
+.route-activity-walk .route-card-icon{color:#63c9a0}
+.route-card-title span{border-color:var(--ui-border)!important}
+
+/* Progres: význam jednotlivých rekordů. */
+.progress-record-distance .progress-record-icon{color:var(--accent-info)!important;background:rgba(77,163,255,.11)!important}
+.progress-record-pace .progress-record-icon{color:var(--accent-sun)!important;background:rgba(255,209,102,.11)!important}
+.progress-record-month .progress-record-icon{color:#9d8cff!important;background:rgba(157,140,255,.11)!important}
+.progress-record-streak .progress-record-icon{color:#ff8b52!important;background:rgba(255,139,82,.11)!important}
+.progress-badge.earned > span{color:var(--accent-good)}
+.progress-badge.earned > svg{color:var(--accent-good)}
+.progress-badge.locked{opacity:.62}
+
+/* Cíle: dosažení cíle dostane zelený signál bez obarvení celé dlaždice. */
+.progress-track i{background:var(--accent-info)!important}
+.progress-goal-bars > div:has(.progress-track i[style*="100%"]) .progress-track i{background:var(--accent-good)!important}
