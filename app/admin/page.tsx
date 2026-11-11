@@ -251,8 +251,8 @@ export default function AdminPage() {
               <button type="button" className={`admin-action-button ${selectedUser.blocked ? "" : "admin-action-warning"}`} onClick={() => void handleBlock(selectedUser)} disabled={busy}>{selectedUser.blocked ? <UserCheck size={18}/> : <Ban size={18}/>} {selectedUser.blocked ? "Odblokovat uživatele" : "Zablokovat uživatele"}</button>
               <button type="button" className="admin-action-button" onClick={() => router.push(`/admin/${selectedUser.id}/records`)}><Footprints size={18}/> Zobrazit záznamy</button>
               <button type="button" className="admin-action-button" onClick={() => router.push(`/admin/${selectedUser.id}/gallery`)}><Camera size={18}/> Zobrazit galerii</button>
-              <button type="button" className="admin-action-button admin-action-danger" onClick={() => void handleDeleteData(selectedUser)} disabled={busy}><Trash2 size={18}/> Smazat data aktivit</button>
-              <button type="button" className="admin-action-button admin-action-danger admin-delete-account-button" onClick={() => void handleDeleteAccount(selectedUser)} disabled={busy}><Trash2 size={18}/> Smazat účet a všechna data</button>
+              <button type="button" className="admin-action-button danger" onClick={() => void handleDeleteData(selectedUser)} disabled={busy}><Trash2 size={18}/> Smazat data aktivit</button>
+              <button type="button" className="admin-action-button danger admin-delete-account-button" onClick={() => void handleDeleteAccount(selectedUser)} disabled={busy}><Trash2 size={18}/> Smazat účet a všechna data</button>
             </div>
 
             <p className="admin-muted admin-note">Úplné smazání používá Firebase Admin a Cloudinary API. Odstraní přihlášení, profil, aktivity i fotografie uživatele. Pokud Cloudinary odmítne mazání, účet se z bezpečnostních důvodů nesmaže.</p>
