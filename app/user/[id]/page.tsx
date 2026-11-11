@@ -97,8 +97,6 @@ export default function UserPage() {
               <ActivityCard
                 key={run.id}
                 run={run}
-                nickname={profileName}
-                avatarUrl={userInfo.avatarUrl || run.avatarUrl || ""}
                 teamName={teamName}
                 activityType={selectedType}
                 onPhotosClick={showRunImages}
