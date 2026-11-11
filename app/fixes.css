@@ -923,19 +923,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .team-leave-button{margin-top:1rem}
 
 
-/* ===== UI polish 2 ===== */
-/* Aktivita: více využít prostor uvnitř metrik, nikoli zvětšovat samotnou kartu. */
-.activity-card-modern .activity-metrics>div{min-height:76px;padding:.55rem .35rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.18rem}
-.activity-card-modern .activity-metrics>div svg{width:22px;height:22px;margin-bottom:.1rem}
-.activity-card-modern .activity-metrics>div strong{font-size:1.5rem;line-height:1.05;font-weight:850}
-.activity-card-modern .activity-metrics>div strong small{font-size:.72rem}
-.activity-card-modern .activity-metrics>div span{font-size:.82rem;line-height:1.1;font-weight:700;opacity:.82}
-.activity-card-modern .activity-metrics .activity-pace-bar{margin-top:.35rem;width:min(100%,118px)}
-.activity-card-modern .activity-social-button{width:42px;min-width:42px;height:38px;border-radius:10px}
-.activity-card-modern .activity-social-button svg{width:19px;height:19px}
-.activity-card-modern .activity-manage-button{min-height:36px;padding:.35rem .62rem;border-radius:10px}
-.activity-card-modern .activity-manage-button svg{width:18px;height:18px}
-
 /* Týmy: čistý seznam místo karet uvnitř karet. */
 .teams-grid{display:grid!important;grid-template-columns:1fr!important;gap:.55rem!important}
 .team-card{min-height:0!important;padding:.8rem .9rem!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:.65rem 1rem!important;align-items:center!important}
