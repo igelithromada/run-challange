@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, LogOut, X, CloudSun, TrendingUp, ListOrdered, Dumbbell, Map } from "lucide-react";
+import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, X, CloudSun, TrendingUp, ListOrdered, Dumbbell, Map, UserRound } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { getUserProfile } from "../lib/services/users";
@@ -24,9 +24,16 @@ const items = [
 
 export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [nickname, setNickname] = useState("");
+  const [email, setEmail] = useState("");
   const router = useRouter();
 
   const handleNavigation = (id: string) => {
+    if (id === "profile") {
+      onClose();
+      router.push("/profile");
+      return;
+    }
     if (id === "routes") {
       onClose();
       router.push("/routes");
@@ -39,14 +46,26 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
     let active = true;
     const unsubscribe = onAuthStateChanged(auth, async user => {
       if (!user) {
-        if (active) setIsAdmin(false);
+        if (active) {
+          setIsAdmin(false);
+          setNickname("");
+          setEmail("");
+        }
         return;
       }
       try {
         const profile = await getUserProfile(user.uid);
-        if (active) setIsAdmin(profile?.role === "admin");
+        if (active) {
+          setIsAdmin(profile?.role === "admin");
+          setNickname(profile?.nickname || "");
+          setEmail(user.email || "");
+        }
       } catch {
-        if (active) setIsAdmin(false);
+        if (active) {
+          setIsAdmin(false);
+          setNickname("");
+          setEmail(user.email || "");
+        }
       }
     });
     return () => {
@@ -90,6 +109,13 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
             <X size={20} aria-hidden="true" />
           </button>
         </div>
+        <button type="button" className="site-sidebar-profile" onClick={() => handleNavigation("profile")}>
+          <span className="site-sidebar-profile-icon"><UserRound size={22} aria-hidden="true" /></span>
+          <span className="site-sidebar-profile-copy">
+            <strong>{nickname || "Můj účet"}</strong>
+            <small>{email || "Profil, heslo a odhlášení"}</small>
+          </span>
+        </button>
         <div className="site-sidebar-grid">
           {navigationItems.map(({ id, label, Icon }) => (
             <button key={id} type="button" className="site-sidebar-item" onClick={() => handleNavigation(id)}>
@@ -98,10 +124,6 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
             </button>
           ))}
         </div>
-        <button type="button" className="site-sidebar-item site-sidebar-logout" onClick={() => onSelect("logout")}>
-          <LogOut size={22} aria-hidden="true" />
-          <span>Odhlásit</span>
-        </button>
         <button type="button" className="site-sidebar-item sidebar-close" onClick={onClose}>
           <X size={20} aria-hidden="true" />
           <span>Zavřít</span>
