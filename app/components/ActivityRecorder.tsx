@@ -94,9 +94,10 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
       setRequestingLocation(false);
       if(err.code===2){
         gpsLostRef.current=true;
-        if(running && !paused){
-          pausedAtRef.current=Date.now();
-          setElapsed(Math.max(0,Math.round((Date.now()-(startedAtRef.current||Date.now())-pausedTotalRef.current)/1000)));
+        if(startedAtRef.current !== null && !pausedAtRef.current){
+          const now=Date.now();
+          pausedAtRef.current=now;
+          setElapsed(Math.max(0,Math.round((now-startedAtRef.current-pausedTotalRef.current)/1000)));
           setPaused(true);
         }
         setGpsUnavailable(true);
@@ -106,9 +107,10 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
       if(err.code===1){
         setGpsUnavailable(true);
         setGpsError("Přístup k poloze není povolen. Povol polohu pro aplikaci a zkus to znovu.");
-        if(running && !paused){
-          pausedAtRef.current=Date.now();
-          setElapsed(Math.max(0,Math.round((Date.now()-(startedAtRef.current||Date.now())-pausedTotalRef.current)/1000)));
+        if(startedAtRef.current !== null && !pausedAtRef.current){
+          const now=Date.now();
+          pausedAtRef.current=now;
+          setElapsed(Math.max(0,Math.round((now-startedAtRef.current-pausedTotalRef.current)/1000)));
           setPaused(true);
         }
         return;
