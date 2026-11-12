@@ -26,7 +26,11 @@ type RouteStats = {
 };
 
 const CLIENT_TIMEOUT_MS = 12_000;
-const OPEN_FREE_MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+const OPEN_STREET_MAP_STYLE = {
+  version: 8,
+  sources: { osm: { type: "raster", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256, attribution: "© OpenStreetMap contributors" } },
+  layers: [{ id: "osm", type: "raster", source: "osm", minzoom: 0, maxzoom: 19 }],
+};
 
 function parseGpx(text: string): ParsedGpx {
   const doc = new DOMParser().parseFromString(text, "application/xml");
@@ -154,7 +158,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Pr
 
         map = new ml.Map({
           container: element,
-          style: OPEN_FREE_MAP_STYLE,
+          style: OPEN_STREET_MAP_STYLE as any,
           center: [bounds.getCenter().lng, bounds.getCenter().lat],
           zoom: 13,
           maxZoom: 19,
