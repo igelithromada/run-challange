@@ -119,8 +119,6 @@ export default function SettingsPage() {
         theme, customColor, animationsEnabled, ...patch,
       }, themeChanged);
       await mergePublicProfile(activeUserId, {
-        nickname: typeof patch.nickname === "string" ? patch.nickname : nickname,
-        avatarUrl: typeof patch.avatarUrl === "string" ? patch.avatarUrl : avatarUrl,
         activityType: defaultActivity,
       });
     } finally {
