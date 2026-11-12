@@ -28,8 +28,6 @@ export default function AdminPage() {
   const [routeActivity, setRouteActivity] = useState<"běh" | "chůze">("běh");
   const [routeDescription, setRouteDescription] = useState("");
   const [routeBadge, setRouteBadge] = useState("");
-  const [routeGroupTitle, setRouteGroupTitle] = useState("Moje doporučené trasy");
-  const [routeGroupSubtitle, setRouteGroupSubtitle] = useState("Trasy doporučené pro naši aplikaci");
   const [routeSourceUrl, setRouteSourceUrl] = useState("");
   const [routeBusy, setRouteBusy] = useState(false);
   const [adminRoutes, setAdminRoutes] = useState<Array<{id:string;name:string;activity:string;description?:string}>>([]);
@@ -144,9 +142,9 @@ export default function AdminPage() {
       form.append("activity", routeActivity);
       form.append("description", routeDescription);
       form.append("badge", routeBadge);
-      form.append("groupId", "moje-trasy");
-      form.append("groupTitle", routeGroupTitle);
-      form.append("groupSubtitle", routeGroupSubtitle);
+      form.append("groupId", "vlastni-trasy");
+      form.append("groupTitle", "Vlastní doporučené trasy");
+      form.append("groupSubtitle", "");
       form.append("sourceUrl", routeSourceUrl);
       const response = await fetch("/api/admin/routes", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
       const result = await response.json().catch(() => ({}));
