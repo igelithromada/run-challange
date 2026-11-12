@@ -2,10 +2,11 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { auth } from "../lib/firebase";
-import { ImagePlus, Plus, Save, X } from "lucide-react";
+import { ImagePlus, MapPin, Plus, Save, X } from "lucide-react";
 import { showAppToast } from "./AppToast";
 import { createRun } from "../lib/services/runs";
 import { getUserProfile } from "../lib/services/users";
+import ActivityRecorder from "./ActivityRecorder";
 
 const uploadToCloudinary = async (file: File) => {
   const user = auth.currentUser;
@@ -48,10 +49,9 @@ const translateSaveError = (error: unknown) => {
 
 export default function RunForm({ type, gpsDraft, onGpsDraftConsumed }: {
   type: "běh" | "chůze";
-  gpsDraft?: { type: "běh" | "chůze"; km: number; seconds: number } | null;
-  onGpsDraftConsumed?: () => void;
 }) {
   const [showForm, setShowForm] = useState(false);
+  const [showGpsRecorder, setShowGpsRecorder] = useState(false);
   const [km, setKm] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
   const [durationSeconds, setDurationSeconds] = useState("");
@@ -64,20 +64,6 @@ export default function RunForm({ type, gpsDraft, onGpsDraftConsumed }: {
   const formPanelRef = useRef<HTMLElement | null>(null);
   const activityLabel = type === "chůze" ? "chůzi" : "běh";
   const activityPast = type === "chůze" ? "Chůze byla" : "Běh byl";
-
-  useEffect(() => {
-    if (!gpsDraft) return;
-    setKm(gpsDraft.km.toFixed(2));
-    setDurationMinutes(String(Math.floor(gpsDraft.seconds / 60)));
-    setDurationSeconds(String(gpsDraft.seconds % 60).padStart(2, "0"));
-    setFiles([]);
-    setDescription("");
-    setActivityDate(localDateTime());
-    setError("");
-    setUploadStatus("");
-    setShowForm(true);
-    onGpsDraftConsumed?.();
-  }, [gpsDraft, onGpsDraftConsumed]);
 
   const previews = useMemo(() => files.map(file => ({ file, url: URL.createObjectURL(file) })), [files]);
   useEffect(() => () => previews.forEach(item => URL.revokeObjectURL(item.url)), [previews]);
@@ -93,6 +79,19 @@ export default function RunForm({ type, gpsDraft, onGpsDraftConsumed }: {
   const distanceValue = Number(km.replace(",", "."));
   const pace = distanceValue > 0 && parsedDuration !== null ? parsedDuration / distanceValue : null;
 
+  const handleGpsFinished = (draft: { type: "běh" | "chůze"; km: number; seconds: number }) => {
+    setKm(draft.km.toFixed(2));
+    setDurationMinutes(String(Math.floor(draft.seconds / 60)));
+    setDurationSeconds(String(draft.seconds % 60).padStart(2, "0"));
+    setFiles([]);
+    setDescription("");
+    setActivityDate(localDateTime());
+    setError("");
+    setUploadStatus("");
+    setShowGpsRecorder(false);
+    setShowForm(true);
+  };
+
   const reset = () => {
     setKm("");
     setDurationMinutes("");
@@ -102,6 +101,7 @@ export default function RunForm({ type, gpsDraft, onGpsDraftConsumed }: {
     setActivityDate(localDateTime());
     setError("");
     setUploadStatus("");
+    setShowGpsRecorder(false);
   };
 
   const scrollFieldIntoView = (element: HTMLElement | null) => {
@@ -265,7 +265,7 @@ export default function RunForm({ type, gpsDraft, onGpsDraftConsumed }: {
     <div className="run-form-shell">
       {!showForm && (
         <button type="button" className="run-primary-button" onClick={() => { reset(); setShowForm(true); }}>
-          <Plus size={19} aria-hidden="true" /> Přidat {activityLabel}
+          <Plus size={19} aria-hidden="true" /> Přidat záznam
         </button>
       )}
 
@@ -276,12 +276,24 @@ export default function RunForm({ type, gpsDraft, onGpsDraftConsumed }: {
               <span className="run-form-eyebrow">NOVÁ AKTIVITA</span>
               <h3>Přidat {activityLabel}</h3>
             </div>
-            <button type="button" className="run-form-close" onClick={() => { setShowForm(false); reset(); }} disabled={saving} aria-label="Zavřít formulář">
+            <button type="button" className="run-form-close" onClick={() => { setShowForm(false); setShowGpsRecorder(false); reset(); }} disabled={saving} aria-label="Zavřít formulář">
               <X size={19} aria-hidden="true" />
             </button>
           </div>
 
-          <label className="run-form-field">
+          {!showGpsRecorder && (
+            <button type="button" className="run-secondary-button gps-form-launch" onClick={() => setShowGpsRecorder(true)} disabled={saving}>
+              <MapPin size={18} aria-hidden="true" /> Změřit trasu pomocí GPS
+            </button>
+          )}
+
+          {showGpsRecorder && (
+            <div className="run-form-gps-recorder">
+              <ActivityRecorder type={type} onFinished={handleGpsFinished} />
+            </div>
+          )}
+
+          {!showGpsRecorder && <label className="run-form-field">
             <span>Vzdálenost <small>km</small></span>
             <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label="Vzdálenost v kilometrech" type="number" min="0.1" step="0.01" inputMode="decimal" placeholder="Např. 5,2" value={km} onChange={e => setKm(e.target.value)} />
           </label>
