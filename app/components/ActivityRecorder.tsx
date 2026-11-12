@@ -46,6 +46,7 @@ export default function ActivityRecorder({ type, onFinished }:{
   const runningRef=useRef(false);
   const pausedRef=useRef(false);
   const gpsUnavailableRef=useRef(false);
+  const acquiringFixRef=useRef(false);
 
   const activityName=type==="chůze"?"Chůze":"Běh";
   const icon=type==="chůze"?<Footprints size={20}/>:<Activity size={20}/>;
@@ -70,6 +71,7 @@ export default function ActivityRecorder({ type, onFinished }:{
     runningRef.current=false;
     pausedRef.current=false;
     gpsUnavailableRef.current=false;
+    acquiringFixRef.current=false;
     startedAtRef.current=null;
     pausedAtRef.current=null;
     pausedTotalRef.current=0;
@@ -130,9 +132,10 @@ export default function ActivityRecorder({ type, onFinished }:{
           timestamp:pos.timestamp
         };
         setAccuracy(Math.round(p.accuracy));
-        if (requestingLocation && !runningRef.current) {
+        if (acquiringFixRef.current) {
           if (p.accuracy <= 75) {
             lastPointRef.current = p;
+            acquiringFixRef.current = false;
             onFirstFix?.();
           }
           return;
@@ -184,6 +187,8 @@ export default function ActivityRecorder({ type, onFinished }:{
     setGpsUnavailable(false);
     gpsUnavailableRef.current=false;
     setRequestingLocation(true);
+    setInitialGpsState("checking");
+    acquiringFixRef.current=true;
     setElapsed(0);
     setDistance(0);
     setPaused(false);
@@ -204,6 +209,7 @@ export default function ActivityRecorder({ type, onFinished }:{
       setRequestingLocation(false);
       setRunning(true);
       setGpsUnavailable(false);
+      setInitialGpsState("ready");
       void acquireWakeLock();
     });
 
@@ -238,8 +244,10 @@ export default function ActivityRecorder({ type, onFinished }:{
     if(!runningRef.current) return;
     stopGps();
     setRequestingLocation(true);
+    setInitialGpsState("checking");
     setGpsUnavailable(false);
     gpsUnavailableRef.current=false;
+    acquiringFixRef.current=true;
     setGpsError("");
     startGps(()=>{
       const now=Date.now();
@@ -251,6 +259,7 @@ export default function ActivityRecorder({ type, onFinished }:{
       setGpsUnavailable(false);
       gpsUnavailableRef.current=false;
       setGpsError("");
+      setInitialGpsState("ready");
       lastPointRef.current=null;
       void acquireWakeLock();
     });
