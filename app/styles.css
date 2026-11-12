@@ -1141,20 +1141,32 @@ html[data-animations="true"][data-weather="wind"] body::before {
 .routes-header p { margin:0; max-width:620px; line-height:1.45; opacity:.78; }
 
 .routes-filter {
-  display:flex; gap:.45rem; margin:1rem 0 1.1rem; overflow-x:auto; scrollbar-width:none;
+  display:flex;
+  flex-wrap:wrap;
+  gap:.5rem;
+  margin:.65rem 0 1.1rem;
 }
-.routes-filter::-webkit-scrollbar { display:none; }
 .routes-filter button {
-  display:inline-flex; align-items:center; justify-content:center; gap:.4rem;
-  flex:0 0 auto; min-height:44px; padding:.65rem .9rem;
-  border:1px solid var(--ui-border); border-radius:13px;
-  background:rgba(255,255,255,.08); color:white; font:inherit; font-weight:750; cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.4rem;
+  min-height:44px;
+  padding:.65rem .9rem;
+  border:1px solid var(--ui-border,rgba(255,255,255,.18));
+  border-radius:13px;
+  background:rgba(255,255,255,.08);
+  color:inherit;
+  font:inherit;
+  font-weight:750;
+  cursor:pointer;
   transition:transform .16s ease,background .16s ease,border-color .16s ease;
 }
 .routes-filter button:hover { background:rgba(255,255,255,.15); transform:translateY(-1px); }
 .routes-filter button:active { transform:scale(.985); }
 .routes-filter button.active {
-  background:rgba(255,255,255,.2); border-color:rgba(255,255,255,.3);
+  background:rgba(255,255,255,.28);
+  border-color:rgba(255,255,255,.55);
 }
 
 .routes-groups { display:flex; flex-direction:column; gap:.75rem; }
