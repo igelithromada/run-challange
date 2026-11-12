@@ -4738,3 +4738,100 @@ html[data-theme="white"] .route-map-minimal .maplibregl-canvas {
   .route-elevation-header span { text-align: left; }
   .route-elevation-profile svg { height: 56px; }
 }
+
+
+/* ===== Trasy – finální oddělení informací, výškového profilu a mapy ===== */
+.route-map-preview-button {
+  border-top: 1px solid rgba(255,255,255,.13);
+  margin-top: .8rem;
+  padding-top: .8rem;
+  border-radius: 0;
+  overflow: visible;
+}
+.route-visualization {
+  display:flex;
+  flex-direction:column;
+  gap:.7rem;
+  width:100%;
+}
+.route-elevation-profile {
+  position:relative;
+  order:0;
+  width:100%;
+  box-sizing:border-box;
+  margin:0;
+  padding:.72rem .8rem .6rem;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  background:rgba(255,255,255,.055);
+  color:rgba(255,255,255,.92);
+  overflow:hidden;
+}
+.route-elevation-header {
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:.7rem;
+  margin-bottom:.35rem;
+}
+.route-elevation-header strong {
+  color:rgba(255,255,255,.96);
+  font-size:.78rem;
+  font-weight:800;
+}
+.route-elevation-header span {
+  color:rgba(255,255,255,.68);
+  font-size:.65rem;
+  text-align:right;
+}
+.route-elevation-profile svg {
+  display:block;
+  width:100%;
+  height:74px;
+  color:#69e6a3;
+}
+.route-elevation-axis {
+  display:flex;
+  justify-content:space-between;
+  gap:.25rem;
+  margin-top:.15rem;
+  color:rgba(255,255,255,.52);
+  font-size:.57rem;
+}
+.route-elevation-axis span { white-space:nowrap; }
+.route-visualization-minimal .route-elevation-profile {
+  background:rgba(255,255,255,.055);
+}
+.route-visualization-standard .route-elevation-profile {
+  background:rgba(255,255,255,.075);
+}
+.route-map-shell {
+  order:1;
+  margin-top:0;
+  background:var(--card-background,rgba(10,21,31,.55));
+}
+.route-map-minimal .maplibregl-canvas {
+  filter:grayscale(1) contrast(.94) brightness(.86);
+}
+.route-map-standard .maplibregl-canvas {
+  filter:none;
+}
+.route-map-shell .maplibregl-control-container {
+  z-index:5;
+}
+.route-detail-description {
+  padding-bottom:.8rem;
+  border-bottom:1px solid rgba(255,255,255,.13);
+}
+.route-detail-map .route-visualization {
+  margin-top:.8rem;
+}
+.route-detail-map .route-elevation-profile {
+  margin:0;
+}
+@media(max-width:520px) {
+  .route-elevation-profile { padding:.65rem .7rem .55rem; }
+  .route-elevation-profile svg { height:68px; }
+  .route-elevation-header { align-items:flex-start; }
+  .route-elevation-header span { font-size:.6rem; }
+}
