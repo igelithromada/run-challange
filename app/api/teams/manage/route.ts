@@ -70,7 +70,7 @@ export async function POST(request: Request) {
         const currentTeamId = typeof stored[type] === "string" ? String(stored[type]) : "";
 
         const targetMemberIds = Array.isArray(targetTeamSnap.data()?.memberIds)
-          ? targetTeamSnap.data()?.memberIds.filter((value): value is string => typeof value === "string")
+          ? (targetTeamSnap.data()?.memberIds as unknown[]).filter((value): value is string => typeof value === "string")
           : [];
         const isTargetMember = targetMemberIds.includes(decoded.uid);
 
