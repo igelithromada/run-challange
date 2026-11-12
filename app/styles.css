@@ -4453,3 +4453,8 @@ form select,
 .weather-rain-combo{position:relative;display:inline-block;vertical-align:middle;color:inherit;line-height:1}
 .weather-rain-combo>svg:first-child{position:absolute;inset:0;color:currentColor}
 .weather-rain-combo .weather-rain-drops{position:absolute;right:-1px;bottom:-3px;color:#4da3ff}
+
+.admin-route-form-actions,.admin-route-row-actions{display:flex;flex-wrap:wrap;gap:.5rem}
+.admin-route-row{gap:.75rem}
+.admin-route-row-actions{margin-left:auto}
+@media(max-width:620px){.admin-route-row{align-items:flex-start;flex-direction:column}.admin-route-row-actions{margin-left:0;width:100%}.admin-route-row-actions .admin-action-button{flex:1}}
