@@ -102,7 +102,9 @@ export default function WeatherCard() {
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem", margin: "1.25rem 0" }}>
-            <Icon size={54} strokeWidth={1.5} />
+            {((condition?.type || "").toUpperCase().includes("RAIN") || (condition?.type || "").toUpperCase().includes("DRIZZLE") || (condition?.type || "").toUpperCase().includes("THUNDER"))
+              ? <RainIcon size={68} className="weather-main-icon weather-condition-rain" />
+              : <Icon size={54} strokeWidth={1.5} className="weather-main-icon" />}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: "2.6rem", lineHeight: 1, fontWeight: 700 }}>{Math.round(temperature ?? 0)}°C</div>
               <div style={{ marginTop: "0.35rem", fontWeight: 600 }}>{condition?.description?.text || "Aktuální počasí"}</div>
