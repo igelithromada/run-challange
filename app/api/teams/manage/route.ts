@@ -69,12 +69,18 @@ export async function POST(request: Request) {
           : {};
         const currentTeamId = typeof stored[type] === "string" ? String(stored[type]) : "";
 
-        if (action === "join" && currentTeamId === teamId) {
+        const targetMemberIds = Array.isArray(targetTeamSnap.data()?.memberIds)
+          ? targetTeamSnap.data()?.memberIds.filter((value): value is string => typeof value === "string")
+          : [];
+        const isTargetMember = targetMemberIds.includes(decoded.uid);
+
+        if (action === "join" && isTargetMember) {
           return { next: { ...stored, [type]: teamId }, changed: false };
         }
 
-        if (action === "leave" && currentTeamId !== teamId) {
-          return { next: { ...stored, [type]: currentTeamId || null }, changed: false };
+        if (action === "leave" && !isTargetMember) {
+          const next = { ...stored, [type]: currentTeamId === teamId ? null : (currentTeamId || null) };
+          return { next, changed: currentTeamId === teamId };
         }
 
         const oldTeamRef = currentTeamId && currentTeamId !== teamId
