@@ -63,7 +63,21 @@ export default function RunForm({ type, gpsDraft, onGpsDraftConsumed }: {
   const [uploadStatus, setUploadStatus] = useState("");
   const formPanelRef = useRef<HTMLElement | null>(null);
   const activityLabel = type === "chůze" ? "chůzi" : "běh";
-  const activityPast = type === "chůze" ? "Chůze byla" : "Běh byl";\n\n  useEffect(() => {\n    if (!gpsDraft) return;\n    setKm(gpsDraft.km.toFixed(2));\n    setDurationMinutes(String(Math.floor(gpsDraft.seconds / 60)));\n    setDurationSeconds(String(gpsDraft.seconds % 60).padStart(2, "0"));\n    setFiles([]);\n    setDescription("");\n    setActivityDate(localDateTime());\n    setError("");\n    setUploadStatus("");\n    setShowForm(true);\n    onGpsDraftConsumed?.();\n  }, [gpsDraft, onGpsDraftConsumed]);
+  const activityPast = type === "chůze" ? "Chůze byla" : "Běh byl";
+
+  useEffect(() => {
+    if (!gpsDraft) return;
+    setKm(gpsDraft.km.toFixed(2));
+    setDurationMinutes(String(Math.floor(gpsDraft.seconds / 60)));
+    setDurationSeconds(String(gpsDraft.seconds % 60).padStart(2, "0"));
+    setFiles([]);
+    setDescription("");
+    setActivityDate(localDateTime());
+    setError("");
+    setUploadStatus("");
+    setShowForm(true);
+    onGpsDraftConsumed?.();
+  }, [gpsDraft, onGpsDraftConsumed]);
 
   const previews = useMemo(() => files.map(file => ({ file, url: URL.createObjectURL(file) })), [files]);
   useEffect(() => () => previews.forEach(item => URL.revokeObjectURL(item.url)), [previews]);
