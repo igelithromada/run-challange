@@ -4437,7 +4437,7 @@ form select,
 }
 @media(prefers-reduced-motion:reduce){.activity-recorder *,.pwa-install-prompt *{transition:none!important}}
 
-/* Náhled a minimalistické zobrazení doporučených tras */
+/* Náhled a minimalistické zobrazení doporučených tras – finální UI */
 .route-map-preview { cursor: pointer; }
 .route-map-preview .route-map,
 .route-map-preview .maplibregl-canvas { pointer-events: none !important; }
