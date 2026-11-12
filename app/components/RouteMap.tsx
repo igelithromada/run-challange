@@ -29,19 +29,15 @@ const CLIENT_TIMEOUT_MS = 12_000;
 const ROUTE_MAP_STYLE = {
   version: 8,
   sources: {
-    carto: {
+    osm: {
       type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        "https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-      ],
+      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
       tileSize: 256,
-      attribution: "© OpenStreetMap contributors © CARTO",
+      maxzoom: 19,
+      attribution: "© OpenStreetMap contributors",
     },
   },
-  layers: [{ id: "carto", type: "raster", source: "carto", minzoom: 0, maxzoom: 19 }],
+  layers: [{ id: "osm", type: "raster", source: "osm", minzoom: 0, maxzoom: 19 }],
 };
 
 function parseGpx(text: string): ParsedGpx {
