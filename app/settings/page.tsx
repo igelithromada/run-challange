@@ -116,7 +116,7 @@ export default function SettingsPage() {
     try {
       const themeChanged = "theme" in patch || "customColor" in patch || "animationsEnabled" in patch;
       await saveUserSettings(activeUserId, {
-        nickname, avatarUrl, theme, customColor, animationsEnabled, ...patch,
+        theme, customColor, animationsEnabled, ...patch,
       }, themeChanged);
       await mergePublicProfile(activeUserId, {
         nickname: typeof patch.nickname === "string" ? patch.nickname : nickname,
