@@ -108,5 +108,12 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  return <><NetworkStatus /><AppToast />{children}</>;
+  return (
+    <>
+      <div className="weather-animation-overlay" aria-hidden="true" />
+      <NetworkStatus />
+      <AppToast />
+      {children}
+    </>
+  );
 }
