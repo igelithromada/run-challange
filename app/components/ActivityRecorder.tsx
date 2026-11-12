@@ -2,9 +2,6 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Activity, Footprints, Gauge, MapPin, Pause, Play, Square, Smartphone } from "lucide-react";
-import { auth } from "../lib/firebase";
-import { createRun } from "../lib/services/runs";
-import { getUserProfile } from "../lib/services/users";
 import type { ActivityType } from "../types";
 import InstallPwaPrompt from "./InstallPwaPrompt";
 
@@ -24,17 +21,15 @@ const formatPace=(seconds:number,km:number)=>{
   return `${Math.floor(pace/60)}:${String(pace%60).padStart(2,"0")} min/km`;
 };
 
-export default function ActivityRecorder({ type }:{type:ActivityType}) {
+export default function ActivityRecorder({ type, onFinished }:{type:ActivityType; onFinished?: (draft:{type:ActivityType; km:number; seconds:number}) => void}) {
   const [running,setRunning]=useState(false);
   const [paused,setPaused]=useState(false);
   const [elapsed,setElapsed]=useState(0);
   const [distance,setDistance]=useState(0);
   const [accuracy,setAccuracy]=useState<number|null>(null);
   const [gpsError,setGpsError]=useState("");
-  const [saveError,setSaveError]=useState("");
-  const [saved,setSaved]=useState(false);
+  const [requestingLocation,setRequestingLocation]=useState(false);
   const [backgrounded,setBackgrounded]=useState(false);
-  const [saving,setSaving]=useState(false);
   const startedAtRef=useRef<number|null>(null);
   const pausedAtRef=useRef<number|null>(null);
   const pausedTotalRef=useRef(0);
@@ -48,7 +43,7 @@ export default function ActivityRecorder({ type }:{type:ActivityType}) {
 
   const reset=()=>{
     setRunning(false); setPaused(false); setElapsed(0); setDistance(0); setAccuracy(null);
-    setGpsError(""); setSaveError(""); setSaved(false); setBackgrounded(false); setSaving(false);
+    setGpsError(""); setBackgrounded(false); setRequestingLocation(false);
     startedAtRef.current=null; pausedAtRef.current=null; pausedTotalRef.current=0; lastPointRef.current=null;
     distanceRef.current=0;
   };
@@ -71,7 +66,7 @@ export default function ActivityRecorder({ type }:{type:ActivityType}) {
     lastPointRef.current=null;
   };
 
-  const startGps=()=>{
+  const startGps=(onFirstFix?:()=>void)=>{
     if(!("geolocation" in navigator)){ setGpsError("Tento prohlížeč nepodporuje GPS."); return false; }
     setGpsError("");
     watchIdRef.current=navigator.geolocation.watchPosition(pos=>{
@@ -79,7 +74,7 @@ export default function ActivityRecorder({ type }:{type:ActivityType}) {
       setAccuracy(Math.round(p.accuracy));
       if(paused || p.accuracy>50) return;
       const previous=lastPointRef.current;
-      if(!previous){ lastPointRef.current=p; return; }
+      if(!previous){ lastPointRef.current=p; onFirstFix?.(); return; }
       const delta=distanceBetween(previous,p);
       const timeDelta=Math.max(0,(p.timestamp-previous.timestamp)/1000);
       // Ignoruj zjevné GPS skoky. Při chůzi/běhu je 45 m/s bezpečná horní mez.
@@ -89,23 +84,28 @@ export default function ActivityRecorder({ type }:{type:ActivityType}) {
       setDistance(distanceRef.current);
       lastPointRef.current=p;
     },err=>{
+      setRequestingLocation(false);
       setGpsError(err.code===1?"Povol přístup k poloze pro měření.":err.code===2?"GPS signál není dostupný.":"GPS měření se nepodařilo načíst.");
     },{enableHighAccuracy:true,maximumAge:3000,timeout:15000});
     return true;
   };
 
   const start=()=>{
-    setSaved(false); setSaveError("");
     if(!("geolocation" in navigator)){setGpsError("Tento prohlížeč nepodporuje GPS.");return;}
-    startedAtRef.current=Date.now();
+    setGpsError("");
+    setRequestingLocation(true);
+    startedAtRef.current=null;
     pausedAtRef.current=null;
     pausedTotalRef.current=0;
     distanceRef.current=0;
     lastPointRef.current=null;
-    setElapsed(0); setDistance(0); setPaused(false);
-    if(!startGps()){return;}
-    setRunning(true);
-    void acquireWakeLock();
+    setElapsed(0); setDistance(0); setPaused(false); setRunning(false);
+    if(!startGps(()=>{
+      startedAtRef.current=Date.now();
+      setRequestingLocation(false);
+      setRunning(true);
+      void acquireWakeLock();
+    })){ setRequestingLocation(false); }
   };
 
   const pause=()=>{
@@ -150,37 +150,23 @@ export default function ActivityRecorder({ type }:{type:ActivityType}) {
 
   useEffect(()=>()=>{stopGps();releaseWakeLock();},[]);
 
-  const save=async()=>{
-    const user=auth.currentUser;
-    if(!user){setSaveError("Pro uložení se nejprve přihlas.");return;}
-    if(distanceRef.current<=0.01 || elapsed<=0){setSaveError("Nejdřív naměř alespoň malou vzdálenost.");return;}
-    setSaving(true);setSaveError("");
-    try{
-      const profile=await getUserProfile(user.uid);
-      const teamIds=profile?.teamIdsByType||{};
-      const teamId=typeof teamIds[type]==="string"?teamIds[type]||undefined:(type==="běh"&&typeof profile?.teamId==="string"?profile.teamId:undefined);
-      await createRun({
-        uid:user.uid,email:user.email||undefined,nickname:profile?.nickname||"",avatarUrl:profile?.avatarUrl||"",
-        km:Number(distanceRef.current.toFixed(3)),minuty:elapsed/60,tempo:(elapsed/60/distanceRef.current).toFixed(2),
-        type,activityType:type,timestamp:new Date(),description:"",imageUrls:[],imagePublicIds:[],teamId,
-        likedBy:[],likeCount:0,commentCount:0
-      });
-      setSaved(true);
-    }catch(e){setSaveError(e instanceof Error?e.message:"Aktivitu se nepodařilo uložit.");}
-    finally{setSaving(false);}
+  const finishDraft=()=>{
+    if(distanceRef.current<=0.01 || elapsed<=0){setGpsError("Nejdřív naměř alespoň malou vzdálenost.");return;}
+    onFinished?.({ type, km:Number((distanceRef.current/1000).toFixed(3)), seconds:elapsed });
+    reset();
   };
 
-  const status=paused?"Pozastaveno":backgrounded?"Aplikace byla na pozadí":"GPS aktivní";
+  const status=requestingLocation?"Čekám na polohu":paused?"Pozastaveno":backgrounded?"Aplikace byla na pozadí":"GPS aktivní";
   const distanceKm=distance/1000;
-  const canSave=!running && distanceKm>0.01 && elapsed>0 && !saved;
+  const canContinue=!running && !requestingLocation && distanceKm>0.01 && elapsed>0;
 
   return <section className="activity-recorder" aria-label={`Měření ${activityName.toLowerCase()}`}>
-    {!running && elapsed===0 && <InstallPwaPrompt compact />}
+    {!running && elapsed===0 && !requestingLocation && <InstallPwaPrompt compact />}
     <div className="activity-recorder-header">
       <div><span className="activity-recorder-eyebrow">{icon} MĚŘENÍ GPS</span><h2>{activityName} v reálném čase</h2></div>
       <span className={`activity-recorder-status ${paused?"is-paused":backgrounded?"is-background":""}`}>{status}</span>
     </div>
-    {!running && elapsed===0 ? <p className="activity-recorder-help">Telefon změří vzdálenost a čas pomocí GPS. Po skončení můžeš výsledek uložit jako nový záznam.</p> : null}
+    {!running && elapsed===0 ? <p className="activity-recorder-help">Telefon změří vzdálenost a čas pomocí GPS. Po skončení můžeš výsledek doplnit o popis a fotografie a teprve potom uložit jako záznam.</p> : null}
     <div className="activity-recorder-metrics">
       <div><MapPin size={18}/><strong>{distanceKm.toFixed(2)}</strong><small>km</small></div>
       <div><Gauge size={18}/><strong>{formatTime(elapsed)}</strong><small>čas</small></div>
@@ -189,13 +175,12 @@ export default function ActivityRecorder({ type }:{type:ActivityType}) {
     {accuracy!==null && <div className="activity-recorder-gps">Přesnost GPS přibližně {accuracy} m{paused?" · měření pozastaveno":""}</div>}
     {gpsError && <div className="activity-recorder-error">{gpsError}</div>}
     {backgrounded && <div className="activity-recorder-warning"><Smartphone size={18}/> Telefon je zamčený nebo aplikace běží na pozadí. Prohlížeč může GPS omezit; po návratu zkontroluj výsledek.</div>}
-    {saveError && <div className="activity-recorder-error">{saveError}</div>}
-    {saved && <div className="activity-recorder-success">✓ Aktivita byla uložena do Moje aktivity.</div>}
     <div className="activity-recorder-actions">
-      {!running && elapsed===0 && <button type="button" className="run-primary-button" onClick={start}><Play size={18}/> Spustit {activityName.toLowerCase()}</button>}
+      {!running && elapsed===0 && !requestingLocation && <button type="button" className="run-primary-button" onClick={start}><Play size={18}/> Spustit {activityName.toLowerCase()}</button>}
+      {requestingLocation && <button type="button" className="run-primary-button" disabled><MapPin size={18}/> Získávám polohu…</button>}
       {running && <button type="button" className="run-secondary-button" onClick={pause}>{paused?<Play size={18}/>:<Pause size={18}/>} {paused?"Pokračovat":"Pozastavit"}</button>}
       {running && <button type="button" className="run-primary-button" onClick={stop}><Square size={17}/> Ukončit</button>}
-      {canSave && <button type="button" className="run-primary-button" onClick={save} disabled={saving}>{saving?"Ukládám…":"Uložit jako nový záznam"}</button>}
+      {canContinue && <button type="button" className="run-primary-button" onClick={finishDraft}>Pokračovat k vytvoření záznamu</button>}
       {!running && elapsed>0 && !saved && <button type="button" className="run-secondary-button" onClick={reset}>Zahodit měření</button>}
     </div>
   </section>;
