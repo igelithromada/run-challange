@@ -84,13 +84,31 @@ export default function RoutesPage() {
           ))}
         </div>
 
+        <style>{`
+          .route-map-preview-button{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;border-radius:16px;overflow:hidden}
+          .route-map-preview-button:focus-visible{outline:2px solid rgba(255,255,255,.9);outline-offset:3px}
+          .route-detail-backdrop{position:fixed;inset:0;z-index:5000;display:flex;align-items:stretch;justify-content:center;padding:0;background:rgba(8,16,22,.72);backdrop-filter:blur(10px)}
+          .route-detail-modal{width:min(900px,100%);height:100%;overflow:auto;box-sizing:border-box;padding:1rem; background:linear-gradient(180deg,rgba(40,62,73,.98),rgba(28,44,54,.99));color:white}
+          .route-detail-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.8rem}
+          .route-detail-header span{font-size:.72rem;opacity:.7}
+          .route-detail-header h2{margin:.15rem 0;font-size:1.45rem}
+          .route-detail-header p{margin:0;opacity:.75}
+          .route-detail-header>button{flex:0 0 44px;width:44px;height:44px;border:1px solid rgba(255,255,255,.18);border-radius:14px;background:rgba(255,255,255,.12);color:white;font-size:1.8rem;line-height:1;cursor:pointer}
+          .route-detail-description{margin:.8rem 0;line-height:1.5;opacity:.86}
+          .route-detail-map .route-map-shell{height:calc(100vh - 270px);min-height:360px;margin-top:.8rem;border-radius:18px}
+          .route-detail-actions{margin-top:.8rem;padding-bottom:.4rem}
+          .route-detail-actions a{min-height:48px}
+          @media(max-width:520px){.route-detail-modal{padding:.75rem}.route-detail-map .route-map-shell{height:calc(100vh - 250px);min-height:300px}.route-detail-header h2{font-size:1.25rem}}
+        `}</style>
         <div className="routes-groups">
           {visibleRoutes.map(({ route, groupTitle }) => (
             <article className="route-card tile" key={route.name + groupTitle}>
-              <button
-                type="button"
+              <div
                 className="route-map-preview-button"
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelectedRoute({ route, groupTitle })}
+                onKeyDown={e => { if(e.key === "Enter" || e.key === " ") setSelectedRoute({ route, groupTitle }); }}
                 aria-label={`Otevřít podrobnosti trasy ${route.name}`}
               >
                 {route.gpxUrl ? (
@@ -101,7 +119,7 @@ export default function RoutesPage() {
                     <span>Náhled mapy není k dispozici.</span>
                   </div>
                 )}
-              </button>
+              </div>
               <div className="route-card-main">
                 <div className="route-card-icon">
                   {route.activity === "běh" ? <Route size={23} /> : <Footprints size={23} />}
