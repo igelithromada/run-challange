@@ -9,6 +9,9 @@ type Props = {
   mapUrl?: string;
   name: string;
   laps?: number;
+  interactive?: boolean;
+  mapStyle?: "standard" | "minimal";
+  showInfo?: boolean;
 };
 
 type Coordinate = [number, number];
@@ -110,7 +113,7 @@ function formatKm(value: number) {
   return value >= 10 ? value.toFixed(0) : value.toFixed(1);
 }
 
-export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Props) {
+export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, interactive = true, mapStyle = "standard", showInfo = true }: Props) {
   const elementRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const routeSvgRef = useRef<SVGSVGElement | null>(null);
@@ -175,8 +178,10 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Pr
         });
 
         mapRef.current = map;
-        map.addControl(new ml.NavigationControl({ showCompass: false }), "top-right");
-        map.addControl(new ml.ScaleControl({ unit: "metric" }), "bottom-left");
+        if (interactive) {
+          map.addControl(new ml.NavigationControl({ showCompass: false }), "top-right");
+          map.addControl(new ml.ScaleControl({ unit: "metric" }), "bottom-left");
+        }
 
         const onMapError = (event: { error?: { message?: string } }) => {
           console.warn("Route map error:", event.error?.message || event.error || event);
@@ -294,8 +299,8 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Pr
               layout: {
                 "text-field": ["get", "label"],
                 "text-size": 11,
-                "text-offset": [0, 1.5],
-                "text-anchor": "top",
+                "text-offset": [-1.1, -0.2],
+                "text-anchor": "right",
                 "text-font": ["Noto Sans Regular"],
               },
               paint: {
@@ -312,8 +317,8 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Pr
               layout: {
                 "text-field": ["get", "label"],
                 "text-size": 11,
-                "text-offset": [0, 1.5],
-                "text-anchor": "top",
+                "text-offset": [1.1, 0.2],
+                "text-anchor": "left",
                 "text-font": ["Noto Sans Regular"],
               },
               paint: {
@@ -372,7 +377,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Pr
     };
   }, [gpxUrl, laps]);
   return (
-    <div className="route-map-shell">
+    <div className={`route-map-shell route-map-${mapStyle} ${interactive ? "route-map-interactive" : "route-map-preview"}`}>
       <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name}>
         <svg ref={routeSvgRef} className="route-map-route-overlay" aria-hidden="true">
           <polyline className="route-overlay-line" fill="none" stroke="#35d69a" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
@@ -384,7 +389,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Pr
         </svg>
       </div>
 
-      {stats && (
+      {showInfo && stats && (
         <div className="route-map-info" aria-label="Informace o trase">
           <strong>{name}</strong>
           <div className="route-map-stats">
