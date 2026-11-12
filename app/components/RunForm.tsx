@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { auth } from "../lib/firebase";
 import { ImagePlus, Plus, Save, X } from "lucide-react";
 import { showAppToast } from "./AppToast";
@@ -57,6 +57,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
+  const formPanelRef = useRef<HTMLElement | null>(null);
   const activityLabel = type === "chůze" ? "chůzi" : "běh";
   const activityPast = type === "chůze" ? "Chůze byla" : "Běh byl";
 
@@ -85,9 +86,41 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
     setUploadStatus("");
   };
 
+  const scrollFieldIntoView = (element: HTMLElement | null) => {
+    if (!element) return;
+    window.setTimeout(() => {
+      element.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    }, 80);
+  };
+
   useEffect(() => {
     if (error) showAppToast(error, "error");
   }, [error]);
+
+  useEffect(() => {
+    if (!showForm) return;
+    const frame = window.requestAnimationFrame(() => {
+      formPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [showForm]);
+
+  useEffect(() => {
+    if (!showForm || typeof window === "undefined" || !window.visualViewport) return;
+    const viewport = window.visualViewport;
+    const handleViewportChange = () => {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && formPanelRef.current?.contains(active)) {
+        scrollFieldIntoView(active);
+      }
+    };
+    viewport.addEventListener("resize", handleViewportChange);
+    viewport.addEventListener("scroll", handleViewportChange);
+    return () => {
+      viewport.removeEventListener("resize", handleViewportChange);
+      viewport.removeEventListener("scroll", handleViewportChange);
+    };
+  }, [showForm]);
 
   const handleSubmit = async () => {
     if (saving) return;
@@ -219,7 +252,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
       )}
 
       {showForm && (
-        <section className="run-form-panel" aria-label={`Nový záznam: ${type}`}>
+        <section ref={formPanelRef} className="run-form-panel" aria-label={`Nový záznam: ${type}`}>
           <div className="run-form-heading">
             <div>
               <span className="run-form-eyebrow">NOVÁ AKTIVITA</span>
@@ -232,17 +265,17 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
 
           <label className="run-form-field">
             <span>Vzdálenost <small>km</small></span>
-            <input aria-label="Vzdálenost v kilometrech" type="number" min="0.1" step="0.01" inputMode="decimal" placeholder="Např. 5,2" value={km} onChange={e => setKm(e.target.value)} />
+            <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label="Vzdálenost v kilometrech" type="number" min="0.1" step="0.01" inputMode="decimal" placeholder="Např. 5,2" value={km} onChange={e => setKm(e.target.value)} />
           </label>
 
           <div className="run-form-field">
             <span>Celkový čas <small>minuty a sekundy</small></span>
             <div className="run-form-time-fields">
               <label className="run-form-unit-field">
-                <input aria-label="Minuty" type="number" min="0" max="9999" step="1" inputMode="numeric" placeholder="min" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} />
+                <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label="Minuty" type="number" min="0" max="9999" step="1" inputMode="numeric" placeholder="min" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} />
               </label>
               <label className="run-form-unit-field">
-                <input aria-label="Sekundy" type="number" min="0" max="59" step="1" inputMode="numeric" placeholder="s" value={durationSeconds} onChange={e => setDurationSeconds(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} />
+                <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label="Sekundy" type="number" min="0" max="59" step="1" inputMode="numeric" placeholder="s" value={durationSeconds} onChange={e => setDurationSeconds(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} />
               </label>
             </div>
           </div>
@@ -256,12 +289,12 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
 
           <label className="run-form-field">
             <span>Popis <small>volitelné</small></span>
-            <textarea className="run-form-description" maxLength={500} placeholder="Jaký byl dnešní běh nebo chůze?" value={description} onChange={e => setDescription(e.target.value)} />
+            <textarea onFocus={e => scrollFieldIntoView(e.currentTarget)} className="run-form-description" maxLength={500} placeholder="Jaký byl dnešní běh nebo chůze?" value={description} onChange={e => setDescription(e.target.value)} />
           </label>
 
           <label className="run-form-field">
             <span>Datum a čas aktivity</span>
-            <input type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} />
+            <input onFocus={e => scrollFieldIntoView(e.currentTarget)} type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} />
           </label>
 
           <label className="run-form-upload">
