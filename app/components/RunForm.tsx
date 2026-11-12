@@ -287,73 +287,74 @@ export default function RunForm({ type }: {
             </button>
           )}
 
-          {showGpsRecorder && (
+          {showGpsRecorder ? (
             <div className="run-form-gps-recorder">
               <ActivityRecorder type={type} onFinished={handleGpsFinished} />
             </div>
-          )}
-
-          {!showGpsRecorder && <label className="run-form-field">
-            <span>Vzdálenost <small>km</small></span>
-            <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label="Vzdálenost v kilometrech" type="number" min="0.1" step="0.01" inputMode="decimal" placeholder="Např. 5,2" value={km} onChange={e => setKm(e.target.value)} />
-          </label>
-
-          <div className="run-form-field">
-            <span>Celkový čas <small>minuty a sekundy</small></span>
-            <div className="run-form-time-fields">
-              <label className="run-form-unit-field">
-                <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label="Minuty" type="number" min="0" max="9999" step="1" inputMode="numeric" placeholder="min" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} />
+          ) : (
+            <>
+              <label className="run-form-field">
+                <span>Vzdálenost <small>km</small></span>
+                <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label="Vzdálenost v kilometrech" type="number" min="0.1" step="0.01" inputMode="decimal" placeholder="Např. 5,2" value={km} onChange={e => setKm(e.target.value)} />
               </label>
-              <label className="run-form-unit-field">
-                <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label="Sekundy" type="number" min="0" max="59" step="1" inputMode="numeric" placeholder="s" value={durationSeconds} onChange={e => setDurationSeconds(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} />
-              </label>
-            </div>
-          </div>
 
-          {pace !== null && pace > 0 && (
-            <div className="run-form-pace" role="status">
-              <span>Vypočítané tempo</span>
-              <strong>{formatDuration(Math.round(pace))} /km</strong>
-            </div>
-          )}
-
-          <label className="run-form-field">
-            <span>Popis <small>volitelné</small></span>
-            <textarea onFocus={e => scrollFieldIntoView(e.currentTarget)} className="run-form-description" maxLength={500} placeholder="Jaký byl dnešní běh nebo chůze?" value={description} onChange={e => setDescription(e.target.value)} />
-          </label>
-
-          <label className="run-form-field">
-            <span>Datum a čas aktivity</span>
-            <input onFocus={e => scrollFieldIntoView(e.currentTarget)} type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} />
-          </label>
-
-          <label className="run-form-upload">
-            <ImagePlus size={19} aria-hidden="true" />
-            <span>{files.length ? `Vybráno fotografií: ${files.length}` : "Přidat fotografie (max. 6)"}</span>
-            <input type="file" accept="image/*" multiple onChange={e => setFiles(Array.from(e.target.files || []).slice(0, 6))} />
-          </label>
-
-          {previews.length > 0 && (
-            <div className="run-form-previews">
-              {previews.map((item, index) => (
-                <div key={item.url}>
-                  <img src={item.url} alt={`Náhled fotografie ${index + 1}`} />
-                  <button type="button" onClick={() => setFiles(current => current.filter(file => file !== item.file))} aria-label={`Odebrat fotografii ${index + 1}`}>
-                    ×
-                  </button>
+              <div className="run-form-field">
+                <span>Celkový čas <small>minuty a sekundy</small></span>
+                <div className="run-form-time-fields">
+                  <label className="run-form-unit-field">
+                    <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label="Minuty" type="number" min="0" max="9999" step="1" inputMode="numeric" placeholder="min" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} />
+                  </label>
+                  <label className="run-form-unit-field">
+                    <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label="Sekundy" type="number" min="0" max="59" step="1" inputMode="numeric" placeholder="s" value={durationSeconds} onChange={e => setDurationSeconds(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} />
+                  </label>
                 </div>
-              ))}
-            </div>
+              </div>
+
+              {pace !== null && pace > 0 && (
+                <div className="run-form-pace" role="status">
+                  <span>Vypočítané tempo</span>
+                  <strong>{formatDuration(Math.round(pace))} /km</strong>
+                </div>
+              )}
+
+              <label className="run-form-field">
+                <span>Popis <small>volitelné</small></span>
+                <textarea onFocus={e => scrollFieldIntoView(e.currentTarget)} className="run-form-description" maxLength={500} placeholder="Jaký byl dnešní běh nebo chůze?" value={description} onChange={e => setDescription(e.target.value)} />
+              </label>
+
+              <label className="run-form-field">
+                <span>Datum a čas aktivity</span>
+                <input onFocus={e => scrollFieldIntoView(e.currentTarget)} type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} />
+              </label>
+
+              <label className="run-form-upload">
+                <ImagePlus size={19} aria-hidden="true" />
+                <span>{files.length ? `Vybráno fotografií: ${files.length}` : "Přidat fotografie (max. 6)"}</span>
+                <input type="file" accept="image/*" multiple onChange={e => setFiles(Array.from(e.target.files || []).slice(0, 6))} />
+              </label>
+
+              {previews.length > 0 && (
+                <div className="run-form-previews">
+                  {previews.map((item, index) => (
+                    <div key={item.url}>
+                      <img src={item.url} alt={`Náhled fotografie ${index + 1}`} />
+                      <button type="button" onClick={() => setFiles(current => current.filter(file => file !== item.file))} aria-label={`Odebrat fotografii ${index + 1}`}>
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {uploadStatus && <p className="run-form-status" role="status">{uploadStatus}</p>}
+
+              <div className="run-form-actions run-form-actions-single">
+                <button type="button" className="run-primary-button" onClick={handleSubmit} disabled={saving}>
+                  <Save size={18} aria-hidden="true" /> {saving ? "Ukládám…" : "Uložit aktivitu"}
+                </button>
+              </div>
+            </>
           )}
-
-          {uploadStatus && <p className="run-form-status" role="status">{uploadStatus}</p>}
-
-
-          <div className="run-form-actions run-form-actions-single">
-            <button type="button" className="run-primary-button" onClick={handleSubmit} disabled={saving}>
-              <Save size={18} aria-hidden="true" /> {saving ? "Ukládám…" : "Uložit aktivitu"}
-            </button>
-          </div>
         </section>
       )}
 
