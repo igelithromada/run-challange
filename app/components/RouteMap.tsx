@@ -388,6 +388,8 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
           </div>
         </div>
       )}
+      {stats && <ElevationProfile elevations={profileElevations} gain={stats.elevationGain} min={stats.minElevation} max={stats.maxElevation} />}
+
       <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name}>
         <svg ref={routeSvgRef} className="route-map-route-overlay" aria-hidden="true">
           <polyline className="route-overlay-line" fill="none" stroke={routeColor} strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
@@ -406,8 +408,6 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
           <span>Načítám trasu…</span>
         </div>
       )}
-
-      {stats && <ElevationProfile elevations={profileElevations} gain={stats.elevationGain} min={stats.minElevation} max={stats.maxElevation} />}
 
       {state === "error" && (
         <div className="route-map-state">
