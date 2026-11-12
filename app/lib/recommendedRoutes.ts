@@ -16,7 +16,7 @@ export async function getRecommendedRouteGroups(): Promise<RouteGroup[]> {
         title: typeof item.groupTitle === "string" && item.groupTitle ? item.groupTitle : "Moje doporučené trasy",
         subtitle: typeof item.groupSubtitle === "string" ? item.groupSubtitle : "",
         sourceUrl: typeof item.sourceUrl === "string" ? item.sourceUrl : "",
-        routes: [],
+        routes: [] as RouteItem[],
       };
       const route: RouteItem = {
         name: item.name,
