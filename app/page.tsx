@@ -26,6 +26,7 @@ export default function Page() {
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [selectedType, setSelectedType] = useState<"běh" | "chůze">("běh");
+  const [gpsDraft, setGpsDraft] = useState<{ type: "běh" | "chůze"; km: number; seconds: number } | null>(null);
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const router = useRouter();
@@ -142,10 +143,10 @@ export default function Page() {
 
         <ActivityTypeSelector value={selectedType} onChange={(value) => { setSelectedType(value); try { localStorage.setItem("dolni-lhota-default-activity-v1", value); } catch {} }} />
 
-        <ActivityRecorder type={selectedType} />
+        <ActivityRecorder type={selectedType} onFinished={(draft) => { setSelectedType(draft.type); setGpsDraft(draft); }} />
 
         <div className="run-form-wrap">
-          <RunForm type={selectedType} />
+          <RunForm type={selectedType} gpsDraft={gpsDraft} onGpsDraftConsumed={() => setGpsDraft(null)} />
         </div>
 
         <h2 className="centered-title">Poslední záznamy</h2>
