@@ -371,9 +371,6 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Pr
       mapRef.current = null;
     };
   }, [gpxUrl, laps]);
-
-  const mapyGpxUrl = "https://mapy.com/fnc/v1/gpx?url=" + encodeURIComponent(gpxUrl);
-
   return (
     <div className="route-map-shell">
       <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name}>
@@ -410,17 +407,6 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Pr
           <MapPinned size={20} />
           <span>Interaktivní mapa se nepodařila načíst. Trasu můžeš stále otevřít v Mapy.com.</span>
         </div>
-      )}
-
-      {state === "ready" && (
-        <a
-          className="route-map-open-mapy"
-          href={mapyGpxUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Mapy.com
-        </a>
       )}
     </div>
   );
