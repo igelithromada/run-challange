@@ -4436,3 +4436,16 @@ form select,
  .pwa-install-prompt .run-secondary-button{width:100%}
 }
 @media(prefers-reduced-motion:reduce){.activity-recorder *,.pwa-install-prompt *{transition:none!important}}
+
+/* Náhled a minimalistické zobrazení doporučených tras */
+.route-map-preview { cursor: pointer; }
+.route-map-preview .route-map,
+.route-map-preview .maplibregl-canvas { pointer-events: none !important; }
+.route-map-minimal .maplibregl-canvas-container,
+.route-map-minimal .maplibregl-canvas { filter: grayscale(.78) saturate(.55) contrast(.9) brightness(1.08); }
+.route-map-minimal .route-map-route-overlay { filter: none; }
+.route-map-standard .route-map-route-overlay { opacity: .95; }
+.route-map-shell .maplibregl-ctrl-top-right { z-index: 4; }
+.route-card-main-button { color: inherit; }
+.route-card-main-button .route-card-info { min-width: 0; }
+.route-card-main-button p { margin-bottom: 0; }
