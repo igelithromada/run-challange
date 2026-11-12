@@ -13,7 +13,7 @@ type SidebarProps = { visible: boolean; onClose: () => void; onSelect: (item: st
 const items = [
   { id: "myrun", label: "Moje aktivity", Icon: Footprints },
   { id: "teams", label: "Týmy", Icon: Users },
-  { id: "progress", label: "Můj progres", Icon: TrendingUp },
+  { id: "progress", label: "Můj pokrok", Icon: TrendingUp },
   { id: "trainer", label: "Osobní trenér", Icon: Dumbbell },
   { id: "statistics", label: "Výsledky", Icon: Trophy },
   { id: "participants", label: "Účastníci", Icon: ListOrdered },
