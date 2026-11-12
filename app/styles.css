@@ -4615,6 +4615,19 @@ html[data-theme="white"] .route-map-minimal .maplibregl-canvas {
   z-index: 5;
 }
 
+/* Informace o trase patří nad mapový náhled, nikdy přes něj. */
+.route-map-info {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: auto !important;
+  width: 100%;
+  max-width: none !important;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
 /* Výškový profil je součástí informací o trase, ne překrytí mapy. */
 .route-elevation-profile {
   position: relative;
