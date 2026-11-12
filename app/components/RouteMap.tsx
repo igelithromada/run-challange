@@ -119,6 +119,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
   const routeSvgRef = useRef<SVGSVGElement | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [stats, setStats] = useState<RouteStats | null>(null);
+  const routeColor = mapStyle === "minimal" ? "#35d69a" : "#4da3ff";
 
   useEffect(() => {
     const element = elementRef.current;
@@ -232,7 +233,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
               type: "line",
               source: "route",
               paint: {
-                "line-color": "#64d9ff",
+                "line-color": mapStyle === "minimal" ? "#64d9ff" : "#8fc8ff",
                 "line-width": 10,
                 "line-opacity": 0.22,
                 "line-blur": 2,
@@ -244,7 +245,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
               type: "line",
               source: "route",
               paint: {
-                "line-color": "#35d69a",
+                "line-color": routeColor,
                 "line-width": 5,
                 "line-opacity": 1,
               },
@@ -380,8 +381,8 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
     <div className={`route-map-shell route-map-${mapStyle} ${interactive ? "route-map-interactive" : "route-map-preview"}`}>
       <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name}>
         <svg ref={routeSvgRef} className="route-map-route-overlay" aria-hidden="true">
-          <polyline className="route-overlay-line" fill="none" stroke="#35d69a" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-          <polyline className="route-overlay-line route-overlay-line-inner" fill="none" stroke="#a7ffe4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          <polyline className="route-overlay-line" fill="none" stroke={routeColor} strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          <polyline className="route-overlay-line route-overlay-line-inner" fill="none" stroke={mapStyle === "minimal" ? "#a7ffe4" : "#d7eaff"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
           <circle className="route-overlay-start" r="7" fill="#35d69a" stroke="#fff" strokeWidth="2" vectorEffect="non-scaling-stroke" />
           <circle className="route-overlay-end" r="7" fill="#ff6b78" stroke="#fff" strokeWidth="2" vectorEffect="non-scaling-stroke" />
           <text className="route-overlay-start-label" textAnchor="middle">START</text>
