@@ -7,6 +7,7 @@ import Navbar from "./components/Navbar";
 import { Footprints } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import RunForm from "./components/RunForm";
+import ActivityRecorder from "./components/ActivityRecorder";
 import ActivityCard from "./components/ActivityCard";
 import LoadingSkeleton from "./components/LoadingSkeleton";
 import RunWeatherRecommendation from "./components/RunWeatherRecommendation";
@@ -140,6 +141,8 @@ export default function Page() {
         <RunWeatherRecommendation type={selectedType} />
 
         <ActivityTypeSelector value={selectedType} onChange={(value) => { setSelectedType(value); try { localStorage.setItem("dolni-lhota-default-activity-v1", value); } catch {} }} />
+
+        <ActivityRecorder type={selectedType} />
 
         <div className="run-form-wrap">
           <RunForm type={selectedType} />
