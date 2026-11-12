@@ -291,8 +291,6 @@ export default function AdminPage() {
             </select>
             <input type="text" value={routeBadge} onChange={e => setRouteBadge(e.target.value)} placeholder="Štítek, např. Výzva" />
             <textarea value={routeDescription} onChange={e => setRouteDescription(e.target.value)} placeholder="Krátký popis trasy" rows={3} />
-            <input type="text" value={routeGroupTitle} onChange={e => setRouteGroupTitle(e.target.value)} placeholder="Název skupiny" />
-            <input type="text" value={routeGroupSubtitle} onChange={e => setRouteGroupSubtitle(e.target.value)} placeholder="Podnadpis skupiny" />
             <input type="url" value={routeSourceUrl} onChange={e => setRouteSourceUrl(e.target.value)} placeholder="Volitelný odkaz na zdroj" />
             <button type="button" className="admin-action-button" onClick={() => void uploadRoute()} disabled={routeBusy}><Upload size={18}/>{routeBusy ? "Nahrávám…" : "Nahrát GPX"}</button>
           </div>
