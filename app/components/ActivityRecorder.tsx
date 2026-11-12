@@ -30,6 +30,7 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
   const [gpsError,setGpsError]=useState("");
   const [requestingLocation,setRequestingLocation]=useState(false);
   const [backgrounded,setBackgrounded]=useState(false);
+  const [gpsUnavailable,setGpsUnavailable]=useState(false);
   const startedAtRef=useRef<number|null>(null);
   const pausedAtRef=useRef<number|null>(null);
   const pausedTotalRef=useRef(0);
@@ -37,13 +38,15 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
   const watchIdRef=useRef<number|null>(null);
   const distanceRef=useRef(0);
   const wakeLockRef=useRef<WakeLockSentinel|null>(null);
+  const gpsLostRef=useRef(false);
 
   const activityName=type==="chůze"?"Chůze":"Běh";
   const icon=type==="chůze"?<Footprints size={20}/>:<Activity size={20}/>;
 
   const reset=()=>{
     setRunning(false); setPaused(false); setElapsed(0); setDistance(0); setAccuracy(null);
-    setGpsError(""); setBackgrounded(false); setRequestingLocation(false);
+    setGpsError(""); setBackgrounded(false); setRequestingLocation(false); setGpsUnavailable(false);
+    gpsLostRef.current=false;
     startedAtRef.current=null; pausedAtRef.current=null; pausedTotalRef.current=0; lastPointRef.current=null;
     distanceRef.current=0;
   };
@@ -74,7 +77,11 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
       setAccuracy(Math.round(p.accuracy));
       if(paused || p.accuracy>50) return;
       const previous=lastPointRef.current;
-      if(!previous){ lastPointRef.current=p; onFirstFix?.(); return; }
+      if(!previous){
+        lastPointRef.current=p;
+        onFirstFix?.();
+        return;
+      }
       const delta=distanceBetween(previous,p);
       const timeDelta=Math.max(0,(p.timestamp-previous.timestamp)/1000);
       // Ignoruj zjevné GPS skoky. Při chůzi/běhu je 45 m/s bezpečná horní mez.
@@ -85,7 +92,28 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
       lastPointRef.current=p;
     },err=>{
       setRequestingLocation(false);
-      setGpsError(err.code===1?"Povol přístup k poloze pro měření.":err.code===2?"GPS signál není dostupný.":"GPS měření se nepodařilo načíst.");
+      if(err.code===2){
+        gpsLostRef.current=true;
+        if(running && !paused){
+          pausedAtRef.current=Date.now();
+          setElapsed(Math.max(0,Math.round((Date.now()-(startedAtRef.current||Date.now())-pausedTotalRef.current)/1000)));
+          setPaused(true);
+        }
+        setGpsUnavailable(true);
+        setGpsError("GPS není dostupné. Zapni polohu v telefonu a potom měření obnov.");
+        return;
+      }
+      if(err.code===1){
+        setGpsUnavailable(true);
+        setGpsError("Přístup k poloze není povolen. Povol polohu pro aplikaci a zkus to znovu.");
+        if(running && !paused){
+          pausedAtRef.current=Date.now();
+          setElapsed(Math.max(0,Math.round((Date.now()-(startedAtRef.current||Date.now())-pausedTotalRef.current)/1000)));
+          setPaused(true);
+        }
+        return;
+      }
+      setGpsError("GPS signál se nepodařilo získat. Zkus to znovu.");
     },{enableHighAccuracy:true,maximumAge:3000,timeout:15000});
     return true;
   };
@@ -110,11 +138,41 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
 
   const pause=()=>{
     if(!running) return;
-    if(!paused){ pausedAtRef.current=Date.now(); setPaused(true); lastPointRef.current=null; }
-    else {
+    if(!paused){
+      const now=Date.now();
+      pausedAtRef.current=now;
+      setElapsed(Math.max(0,Math.round((now-(startedAtRef.current||now)-pausedTotalRef.current)/1000)));
+      setPaused(true);
+      lastPointRef.current=null;
+    } else {
       if(pausedAtRef.current) pausedTotalRef.current+=Date.now()-pausedAtRef.current;
-      pausedAtRef.current=null; setPaused(false); lastPointRef.current=null;
+      pausedAtRef.current=null;
+      setPaused(false);
+      setGpsError("");
+      setGpsUnavailable(false);
+      gpsLostRef.current=false;
+      lastPointRef.current=null;
     }
+  };
+
+  const retryGps=()=>{
+    if(!running) return;
+    stopGps();
+    setRequestingLocation(true);
+    setGpsUnavailable(false);
+    setGpsError("");
+    startGps(()=>{
+      const now=Date.now();
+      if(pausedAtRef.current) pausedTotalRef.current+=now-pausedAtRef.current;
+      pausedAtRef.current=null;
+      gpsLostRef.current=false;
+      setPaused(false);
+      setRequestingLocation(false);
+      setGpsUnavailable(false);
+      setGpsError("");
+      lastPointRef.current=null;
+      void acquireWakeLock();
+    });
   };
 
   const stop=()=>{
@@ -139,6 +197,30 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
   },[running]);
 
   useEffect(()=>{
+    if(!running) return;
+    const watchdog=window.setInterval(()=>{
+      navigator.geolocation.getCurrentPosition(
+        ()=>{},
+        err=>{
+          if(err.code===2){
+            gpsLostRef.current=true;
+            if(!paused && !pausedAtRef.current){
+              const now=Date.now();
+              pausedAtRef.current=now;
+              setElapsed(Math.max(0,Math.round((now-(startedAtRef.current||now)-pausedTotalRef.current)/1000)));
+              setPaused(true);
+            }
+            setGpsUnavailable(true);
+            setGpsError("GPS není dostupné. Zapni polohu v telefonu a potom měření obnov.");
+          }
+        },
+        {enableHighAccuracy:true,maximumAge:0,timeout:5000}
+      );
+    },8000);
+    return()=>window.clearInterval(watchdog);
+  },[running,paused]);
+
+  useEffect(()=>{
     const onVisibility=()=>{
       const hidden=document.visibilityState==="hidden";
       if(running) setBackgrounded(hidden);
@@ -156,7 +238,7 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
     reset();
   };
 
-  const status=requestingLocation?"Čekám na polohu":paused?"Pozastaveno":backgrounded?"Aplikace byla na pozadí":"GPS aktivní";
+  const status=requestingLocation?"Čekám na polohu":gpsUnavailable?"GPS nedostupné":running?(paused?"Pozastaveno":backgrounded?"Aplikace byla na pozadí":"GPS aktivní"):elapsed>0?"Měření dokončeno":"Připraveno";
   const distanceKm=distance/1000;
   const canContinue=!running && !requestingLocation && distanceKm>0.01 && elapsed>0;
 
@@ -178,10 +260,11 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
     <div className="activity-recorder-actions">
       {!running && elapsed===0 && !requestingLocation && <button type="button" className="run-primary-button" onClick={start}><Play size={18}/> Spustit {activityName.toLowerCase()}</button>}
       {requestingLocation && <button type="button" className="run-primary-button" disabled><MapPin size={18}/> Získávám polohu…</button>}
-      {running && <button type="button" className="run-secondary-button" onClick={pause}>{paused?<Play size={18}/>:<Pause size={18}/>} {paused?"Pokračovat":"Pozastavit"}</button>}
+      {running && !gpsUnavailable && <button type="button" className="run-secondary-button" onClick={pause}>{paused?<Play size={18}/>:<Pause size={18}/>} {paused?"Pokračovat":"Pozastavit"}</button>}
+      {running && gpsUnavailable && <button type="button" className="run-secondary-button" onClick={retryGps}><MapPin size={18}/> Zkusit GPS znovu</button>}
       {running && <button type="button" className="run-primary-button" onClick={stop}><Square size={17}/> Ukončit</button>}
-      {canContinue && <button type="button" className="run-primary-button" onClick={finishDraft}>Pokračovat k vytvoření záznamu</button>}
-      {!running && elapsed>0 && <button type="button" className="run-secondary-button" onClick={reset}>Zahodit měření</button>}
+      {canContinue && <button type="button" className="run-primary-button gps-finished-primary" onClick={finishDraft}>Pokračovat k vytvoření záznamu</button>}
+      {!running && elapsed>0 && <button type="button" className="run-secondary-button gps-finished-secondary" onClick={reset}>Zahodit měření</button>}
     </div>
   </section>;
 }
