@@ -47,7 +47,7 @@ const translateSaveError = (error: unknown) => {
   return error instanceof Error ? error.message : "Aktivitu se nepodařilo uložit. Zkus to prosím znovu.";
 };
 
-export default function RunForm({ type, gpsDraft, onGpsDraftConsumed }: {
+export default function RunForm({ type }: {
   type: "běh" | "chůze";
 }) {
   const [showForm, setShowForm] = useState(false);
