@@ -4128,3 +4128,93 @@ form select,
   .run-form-field input,.run-form-field textarea,.run-form-unit-field input,.run-form-upload { scroll-margin-top:5rem; scroll-margin-bottom:12rem; }
 }
 @media(prefers-reduced-motion:reduce) { .weather-animation-overlay { animation:none!important; } }
+
+
+/* Finální úpravy map, rozestupů a dotykového chování */
+.app-content-layer {
+  position: relative !important;
+  z-index: 1 !important;
+  min-height: 100vh;
+}
+.weather-animation-overlay {
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+.weather-animation-overlay ~ * {
+  z-index: 1 !important;
+}
+.container {
+  margin-top: 0 !important;
+  padding-top: 4.9rem !important;
+}
+.site-navbar-button:focus {
+  background: transparent !important;
+  outline: none !important;
+}
+.site-navbar-button:focus-visible {
+  outline: 3px solid rgba(255,255,255,.72) !important;
+  outline-offset: 2px;
+}
+@media (hover:hover) {
+  .site-navbar-button:hover { background: rgba(255,255,255,.11); }
+}
+.weather-stat-icon {
+  color: #4da3ff !important;
+}
+.route-map-info {
+  position: absolute;
+  left: .65rem;
+  top: .65rem;
+  z-index: 7;
+  max-width: calc(100% - 5.5rem);
+  padding: .55rem .7rem;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 13px;
+  background: rgba(12,25,35,.82);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 7px 22px rgba(0,0,0,.24);
+  color: #fff;
+  pointer-events: none;
+}
+.route-map-info strong {
+  display: block;
+  font-size: .78rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.route-map-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem .65rem;
+  margin-top: .25rem;
+  font-size: .67rem;
+  color: rgba(255,255,255,.78);
+}
+.route-map-stats b { color: #fff; }
+.route-map-open-mapy {
+  position: absolute;
+  right: .65rem;
+  top: .65rem;
+  z-index: 8;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: .35rem .6rem;
+  border: 1px solid rgba(0,0,0,.16);
+  border-radius: 10px;
+  background: rgba(255,255,255,.94);
+  color: #17212b;
+  text-decoration: none;
+  font-size: .7rem;
+  font-weight: 800;
+  box-shadow: 0 3px 12px rgba(0,0,0,.18);
+}
+.route-map-open-mapy:hover { background: #fff; }
+@media(max-width:520px) {
+  .container { padding-top: 4.65rem !important; }
+  .route-map-info { max-width: calc(100% - 4.9rem); }
+  .route-map-stats { gap: .2rem .45rem; }
+}
