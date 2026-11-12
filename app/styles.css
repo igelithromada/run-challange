@@ -4218,3 +4218,15 @@ form select,
   .route-map-info { max-width: calc(100% - 4.9rem); }
   .route-map-stats { gap: .2rem .45rem; }
 }
+
+/* Administrace doporučených GPX tras */
+.admin-route-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; }
+.admin-route-form input,.admin-route-form select,.admin-route-form textarea { width:100%; min-width:0; padding:.7rem .75rem; border:1px solid rgba(255,255,255,.24); border-radius:10px; background:rgba(0,0,0,.16); color:#fff; font:inherit; }
+.admin-route-form input[type=file] { grid-column:1/-1; }
+.admin-route-form textarea { resize:vertical; }
+.admin-route-form button { justify-self:start; }
+.admin-route-list { display:grid; gap:.45rem; margin-top:.8rem; }
+.admin-route-row { display:flex; align-items:center; justify-content:space-between; gap:.7rem; padding:.65rem .75rem; border-radius:11px; background:rgba(0,0,0,.12); }
+.admin-route-row span { display:flex; flex-direction:column; min-width:0; }
+.admin-route-row small { opacity:.72; margin-top:.12rem; }
+@media(max-width:620px){ .admin-route-form { grid-template-columns:1fr; } .admin-route-form input[type=file] { grid-column:auto; } }
