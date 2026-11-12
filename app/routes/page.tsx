@@ -155,7 +155,7 @@ export default function RoutesPage() {
           <Map size={21} />
           <div>
             <strong>Trasu můžeš otevřít přímo v Mapy.com</strong>
-            <p>Na telefonu se odkaz může otevřít v aplikaci Mapy.com. GPX soubor lze použít i v jiné navigaci nebo sportovní aplikaci, která GPX podporuje.</p>
+            <p>GPX se otevře v Mapy.com jako trasa. Mapy.com může při importu vyžadovat přihlášení.</p>
           </div>
         </section>
 
