@@ -35,6 +35,73 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("click", handleInteraction, true);
   }, []);
 
+  // Globální chování formulářů na mobilu: aktivní pole se při otevření
+  // klávesnice automaticky přesune do viditelné části obrazovky. Platí
+  // pro RunForm i ostatní formuláře v aplikaci.
+  useEffect(() => {
+    const scrollActiveFieldIntoView = () => {
+      const active = document.activeElement as HTMLElement | null;
+      if (!active || !active.matches("input, textarea, select")) return;
+
+      const scrollParent = (() => {
+        let node = active.parentElement;
+        while (node && node !== document.body) {
+          const style = window.getComputedStyle(node);
+          const canScroll = /(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 4;
+          if (canScroll) return node;
+          node = node.parentElement;
+        }
+        return null;
+      })();
+
+      const viewport = window.visualViewport;
+      const topInset = 72;
+      const bottomInset = 20;
+      const viewportTop = viewport?.offsetTop ?? 0;
+      const viewportBottom = viewport
+        ? viewport.offsetTop + viewport.height
+        : window.innerHeight;
+
+      const rect = active.getBoundingClientRect();
+      let delta = 0;
+      if (rect.bottom > viewportBottom - bottomInset) {
+        delta = rect.bottom - (viewportBottom - bottomInset);
+      } else if (rect.top < viewportTop + topInset) {
+        delta = rect.top - (viewportTop + topInset);
+      }
+
+      if (Math.abs(delta) < 4) return;
+
+      if (scrollParent) {
+        scrollParent.scrollBy({ top: delta, behavior: "smooth" });
+      } else {
+        window.scrollBy({ top: delta, behavior: "smooth" });
+      }
+    };
+
+    const handleFocus = () => {
+      window.setTimeout(scrollActiveFieldIntoView, 80);
+      window.setTimeout(scrollActiveFieldIntoView, 260);
+    };
+
+    const handleViewportChange = () => {
+      if (document.activeElement?.matches("input, textarea, select")) {
+        window.setTimeout(scrollActiveFieldIntoView, 30);
+      }
+    };
+
+    document.addEventListener("focusin", handleFocus);
+    const viewport = window.visualViewport;
+    viewport?.addEventListener("resize", handleViewportChange);
+    viewport?.addEventListener("scroll", handleViewportChange);
+
+    return () => {
+      document.removeEventListener("focusin", handleFocus);
+      viewport?.removeEventListener("resize", handleViewportChange);
+      viewport?.removeEventListener("scroll", handleViewportChange);
+    };
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) return;
