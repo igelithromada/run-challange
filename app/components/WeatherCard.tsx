@@ -77,6 +77,8 @@ export default function WeatherCard() {
   const windUnit = current?.wind?.speed?.unit === "KILOMETERS_PER_HOUR" ? "km/h" : "m/s";
   const rainValues = [current?.precipitation?.probability?.percent, ...hours.slice(0, 6).map(item => item?.precipitation?.probability?.percent)].filter(value => typeof value === "number");
   const rainChance = rainValues.length ? Math.max(...rainValues) : undefined;
+  const currentRainMm = current?.precipitation?.amount;
+  const formatMm = (value?: number | null) => value !== undefined && value !== null ? `${value.toFixed(value >= 10 ? 0 : 1)} mm` : "—";
 
   return (
     <section className="tile weather-card" style={{ marginBottom: "1.25rem", overflow: "hidden" }} aria-label="Předpověď počasí">
@@ -121,7 +123,7 @@ export default function WeatherCard() {
             <div style={{ background: "rgba(0,0,0,0.12)", borderRadius: "12px", padding: "0.65rem 0.5rem", textAlign: "center" }}>
               <RainIcon size={19} className="weather-stat-icon" />
               <strong style={{ display: "block" }}>{rainChance !== undefined ? `${rainChance}%` : "—"}</strong>
-              <small>Déšť</small>
+              <small>{formatMm(currentRainMm)} · Déšť</small>
             </div>
             <div style={{ background: "rgba(0,0,0,0.12)", borderRadius: "12px", padding: "0.65rem 0.5rem", textAlign: "center" }}>
               <Droplets className="weather-humidity-icon" size={19} style={{ margin: "0 auto 0.25rem" }} />
@@ -141,7 +143,10 @@ export default function WeatherCard() {
                       <small>{hourLabel(item)}</small>
                       {(item?.weatherCondition?.type || "").toUpperCase().includes("RAIN") || (item?.weatherCondition?.type || "").toUpperCase().includes("DRIZZLE") ? <RainIcon size={23} className="weather-hour-icon" /> : <HourIcon className="weather-hour-icon" size={23} style={{ display: "block", margin: "0.35rem auto" }} />}
                       <strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong>
-                      <small style={{ display: "block", opacity: 0.8 }}>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}%` : "—"} déšť</small>
+                      <small style={{ display: "block", opacity: 0.8 }}>
+                        {item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}%` : "—"} déšť
+                        {item?.precipitation?.amount !== undefined && item?.precipitation?.amount !== null ? ` · ${formatMm(item.precipitation.amount)}` : ""}
+                      </small>
                     </div>
                   );
                 })}
