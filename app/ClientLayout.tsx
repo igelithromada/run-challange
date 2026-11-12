@@ -178,9 +178,11 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <div className="weather-animation-overlay" aria-hidden="true" />
-      <NetworkStatus />
-      <AppToast />
-      {children}
+      <div className="app-content-layer">
+        <NetworkStatus />
+        <AppToast />
+        {children}
+      </div>
     </>
   );
 }
