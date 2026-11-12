@@ -21,7 +21,10 @@ const formatPace=(seconds:number,km:number)=>{
   return `${Math.floor(pace/60)}:${String(pace%60).padStart(2,"0")} min/km`;
 };
 
-export default function ActivityRecorder({ type, onFinished }:{type:ActivityType; onFinished?: (draft:{type:ActivityType; km:number; seconds:number}) => void}) {
+export default function ActivityRecorder({ type, onFinished }:{
+  type:ActivityType;
+  onFinished?: (draft:{type:ActivityType; km:number; seconds:number}) => void;
+}) {
   const [running,setRunning]=useState(false);
   const [paused,setPaused]=useState(false);
   const [elapsed,setElapsed]=useState(0);
@@ -31,6 +34,7 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
   const [requestingLocation,setRequestingLocation]=useState(false);
   const [backgrounded,setBackgrounded]=useState(false);
   const [gpsUnavailable,setGpsUnavailable]=useState(false);
+
   const startedAtRef=useRef<number|null>(null);
   const pausedAtRef=useRef<number|null>(null);
   const pausedTotalRef=useRef(0);
@@ -38,16 +42,37 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
   const watchIdRef=useRef<number|null>(null);
   const distanceRef=useRef(0);
   const wakeLockRef=useRef<WakeLockSentinel|null>(null);
-  const gpsLostRef=useRef(false);
+  const runningRef=useRef(false);
+  const pausedRef=useRef(false);
+  const gpsUnavailableRef=useRef(false);
 
   const activityName=type==="chůze"?"Chůze":"Běh";
   const icon=type==="chůze"?<Footprints size={20}/>:<Activity size={20}/>;
 
+  const activeSecondsAt = (now:number) => {
+    const start=startedAtRef.current;
+    if(start===null) return 0;
+    const currentPause=pausedAtRef.current ? now-pausedAtRef.current : 0;
+    return Math.max(0,Math.round((now-start-pausedTotalRef.current-currentPause)/1000));
+  };
+
   const reset=()=>{
-    setRunning(false); setPaused(false); setElapsed(0); setDistance(0); setAccuracy(null);
-    setGpsError(""); setBackgrounded(false); setRequestingLocation(false); setGpsUnavailable(false);
-    gpsLostRef.current=false;
-    startedAtRef.current=null; pausedAtRef.current=null; pausedTotalRef.current=0; lastPointRef.current=null;
+    setRunning(false);
+    setPaused(false);
+    setElapsed(0);
+    setDistance(0);
+    setAccuracy(null);
+    setGpsError("");
+    setBackgrounded(false);
+    setRequestingLocation(false);
+    setGpsUnavailable(false);
+    runningRef.current=false;
+    pausedRef.current=false;
+    gpsUnavailableRef.current=false;
+    startedAtRef.current=null;
+    pausedAtRef.current=null;
+    pausedTotalRef.current=0;
+    lastPointRef.current=null;
     distanceRef.current=0;
   };
 
@@ -58,6 +83,7 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
       }
     } catch {}
   };
+
   const releaseWakeLock=()=>{
     wakeLockRef.current?.release().catch(()=>{});
     wakeLockRef.current=null;
@@ -69,108 +95,150 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
     lastPointRef.current=null;
   };
 
+  const markGpsUnavailable=(message:string)=>{
+    if(!runningRef.current) {
+      setGpsUnavailable(true);
+      setGpsError(message);
+      return;
+    }
+    gpsUnavailableRef.current=true;
+    setGpsUnavailable(true);
+    setGpsError(message);
+    if(!pausedRef.current) {
+      pausedAtRef.current=Date.now();
+      pausedRef.current=true;
+      setElapsed(activeSecondsAt(Date.now()));
+      setPaused(true);
+    }
+    stopGps();
+    releaseWakeLock();
+  };
+
   const startGps=(onFirstFix?:()=>void)=>{
-    if(!("geolocation" in navigator)){ setGpsError("Tento prohlížeč nepodporuje GPS."); return false; }
+    if(!("geolocation" in navigator)){
+      setGpsError("Tento prohlížeč nepodporuje GPS.");
+      return false;
+    }
     setGpsError("");
-    watchIdRef.current=navigator.geolocation.watchPosition(pos=>{
-      const p:Point={lat:pos.coords.latitude,lon:pos.coords.longitude,accuracy:pos.coords.accuracy,timestamp:pos.timestamp};
-      setAccuracy(Math.round(p.accuracy));
-      if(paused || p.accuracy>50) return;
-      const previous=lastPointRef.current;
-      if(!previous){
+    try {
+      watchIdRef.current=navigator.geolocation.watchPosition(pos=>{
+        const p:Point={
+          lat:pos.coords.latitude,
+          lon:pos.coords.longitude,
+          accuracy:pos.coords.accuracy,
+          timestamp:pos.timestamp
+        };
+        setAccuracy(Math.round(p.accuracy));
+        if(!runningRef.current || pausedRef.current || gpsUnavailableRef.current || p.accuracy>50) return;
+
+        const previous=lastPointRef.current;
+        if(!previous){
+          lastPointRef.current=p;
+          onFirstFix?.();
+          return;
+        }
+
+        const delta=distanceBetween(previous,p);
+        const timeDelta=Math.max(0,(p.timestamp-previous.timestamp)/1000);
+        if(delta>250 || (timeDelta>0 && delta/timeDelta>45)) return;
+        if(delta<2 && timeDelta<8) return;
+
+        distanceRef.current+=delta;
+        setDistance(distanceRef.current);
         lastPointRef.current=p;
-        onFirstFix?.();
-        return;
-      }
-      const delta=distanceBetween(previous,p);
-      const timeDelta=Math.max(0,(p.timestamp-previous.timestamp)/1000);
-      // Ignoruj zjevné GPS skoky. Při chůzi/běhu je 45 m/s bezpečná horní mez.
-      if(delta>250 || (timeDelta>0 && delta/timeDelta>45)){ return; }
-      if(delta<2 && timeDelta<8){ return; }
-      distanceRef.current+=delta;
-      setDistance(distanceRef.current);
-      lastPointRef.current=p;
-    },err=>{
-      setRequestingLocation(false);
-      if(err.code===2){
-        gpsLostRef.current=true;
-        if(startedAtRef.current !== null && !pausedAtRef.current){
-          const now=Date.now();
-          pausedAtRef.current=now;
-          setElapsed(Math.max(0,Math.round((now-startedAtRef.current-pausedTotalRef.current)/1000)));
-          setPaused(true);
+      },err=>{
+        if(err.code===1) {
+          markGpsUnavailable("Přístup k poloze není povolen. Zapni polohu v telefonu a měření bude pozastaveno.");
+        } else if(err.code===2) {
+          markGpsUnavailable("GPS není dostupné. Zapni polohu v telefonu a měření je pozastaveno.");
+        } else {
+          setGpsError("GPS signál se nepodařilo získat. Zkontroluj polohu v telefonu.");
         }
-        setGpsUnavailable(true);
-        setGpsError("GPS není dostupné. Zapni polohu v telefonu a potom měření obnov.");
-        return;
-      }
-      if(err.code===1){
-        setGpsUnavailable(true);
-        setGpsError("Přístup k poloze není povolen. Povol polohu pro aplikaci a zkus to znovu.");
-        if(startedAtRef.current !== null && !pausedAtRef.current){
-          const now=Date.now();
-          pausedAtRef.current=now;
-          setElapsed(Math.max(0,Math.round((now-startedAtRef.current-pausedTotalRef.current)/1000)));
-          setPaused(true);
-        }
-        return;
-      }
-      setGpsError("GPS signál se nepodařilo získat. Zkus to znovu.");
-    },{enableHighAccuracy:true,maximumAge:3000,timeout:15000});
+        setRequestingLocation(false);
+      },{enableHighAccuracy:true,maximumAge:2000,timeout:10000});
+    } catch {
+      setGpsError("GPS se nepodařilo spustit.");
+      return false;
+    }
     return true;
   };
 
   const start=()=>{
-    if(!("geolocation" in navigator)){setGpsError("Tento prohlížeč nepodporuje GPS.");return;}
+    if(!("geolocation" in navigator)){
+      setGpsError("Tento prohlížeč nepodporuje GPS.");
+      return;
+    }
+
     setGpsError("");
+    setGpsUnavailable(false);
+    gpsUnavailableRef.current=false;
     setRequestingLocation(true);
+    setElapsed(0);
+    setDistance(0);
+    setPaused(false);
+    setRunning(false);
+    runningRef.current=false;
+    pausedRef.current=false;
     startedAtRef.current=null;
     pausedAtRef.current=null;
     pausedTotalRef.current=0;
     distanceRef.current=0;
     lastPointRef.current=null;
-    setElapsed(0); setDistance(0); setPaused(false); setRunning(false);
-    if(!startGps(()=>{
+
+    const started=startGps(()=>{
+      if(runningRef.current) return;
       startedAtRef.current=Date.now();
+      runningRef.current=true;
+      pausedRef.current=false;
       setRequestingLocation(false);
       setRunning(true);
+      setGpsUnavailable(false);
       void acquireWakeLock();
-    })){ setRequestingLocation(false); }
+    });
+
+    if(!started) setRequestingLocation(false);
   };
 
   const pause=()=>{
-    if(!running) return;
-    if(!paused){
-      const now=Date.now();
-      pausedAtRef.current=now;
-      setElapsed(Math.max(0,Math.round((now-(startedAtRef.current||now)-pausedTotalRef.current)/1000)));
+    if(!runningRef.current) return;
+
+    if(!pausedRef.current){
+      pausedAtRef.current=Date.now();
+      pausedRef.current=true;
+      setElapsed(activeSecondsAt(Date.now()));
       setPaused(true);
       lastPointRef.current=null;
-    } else {
-      if(pausedAtRef.current) pausedTotalRef.current+=Date.now()-pausedAtRef.current;
-      pausedAtRef.current=null;
-      setPaused(false);
-      setGpsError("");
-      setGpsUnavailable(false);
-      gpsLostRef.current=false;
-      lastPointRef.current=null;
+      return;
     }
+
+    const now=Date.now();
+    if(pausedAtRef.current) pausedTotalRef.current+=now-pausedAtRef.current;
+    pausedAtRef.current=null;
+    pausedRef.current=false;
+    gpsUnavailableRef.current=false;
+    setPaused(false);
+    setGpsUnavailable(false);
+    setGpsError("");
+    lastPointRef.current=null;
+    void acquireWakeLock();
   };
 
   const retryGps=()=>{
-    if(!running) return;
+    if(!runningRef.current) return;
     stopGps();
     setRequestingLocation(true);
     setGpsUnavailable(false);
+    gpsUnavailableRef.current=false;
     setGpsError("");
     startGps(()=>{
       const now=Date.now();
       if(pausedAtRef.current) pausedTotalRef.current+=now-pausedAtRef.current;
       pausedAtRef.current=null;
-      gpsLostRef.current=false;
+      pausedRef.current=false;
       setPaused(false);
       setRequestingLocation(false);
       setGpsUnavailable(false);
+      gpsUnavailableRef.current=false;
       setGpsError("");
       lastPointRef.current=null;
       void acquireWakeLock();
@@ -178,95 +246,135 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
   };
 
   const stop=()=>{
-    if(!running) return;
-    stopGps(); releaseWakeLock();
+    if(!runningRef.current) return;
+    stopGps();
+    releaseWakeLock();
     const end=Date.now();
     if(pausedAtRef.current) pausedTotalRef.current+=end-pausedAtRef.current;
-    const startMs=startedAtRef.current||end;
-    const activeSeconds=Math.max(1,Math.round((end-startMs-pausedTotalRef.current)/1000));
-    setElapsed(activeSeconds); setRunning(false); setPaused(false);
+    const finalSeconds=Math.max(1,activeSecondsAt(end));
+    setElapsed(finalSeconds);
+    setRunning(false);
+    setPaused(false);
+    runningRef.current=false;
+    pausedRef.current=false;
     pausedAtRef.current=null;
+    setRequestingLocation(false);
   };
 
   useEffect(()=>{
     if(!running) return;
     const timer=window.setInterval(()=>{
-      const startMs=startedAtRef.current||Date.now();
-      const pauseNow=pausedAtRef.current ? Date.now()-pausedAtRef.current : 0;
-      setElapsed(Math.max(0,Math.round((Date.now()-startMs-pausedTotalRef.current-pauseNow)/1000)));
+      setElapsed(activeSecondsAt(Date.now()));
     },1000);
     return()=>window.clearInterval(timer);
   },[running]);
 
   useEffect(()=>{
     if(!running) return;
+
     const watchdog=window.setInterval(()=>{
       navigator.geolocation.getCurrentPosition(
-        ()=>{},
-        err=>{
-          if(err.code===2){
-            gpsLostRef.current=true;
-            if(!paused && !pausedAtRef.current){
-              const now=Date.now();
-              pausedAtRef.current=now;
-              setElapsed(Math.max(0,Math.round((now-(startedAtRef.current||now)-pausedTotalRef.current)/1000)));
-              setPaused(true);
-            }
-            setGpsUnavailable(true);
-            setGpsError("GPS není dostupné. Zapni polohu v telefonu a potom měření obnov.");
+        pos=>{
+          if(!runningRef.current || pausedRef.current) return;
+          setAccuracy(Math.round(pos.coords.accuracy));
+          if(pos.coords.accuracy>50) return;
+          if(gpsUnavailableRef.current) {
+            setGpsUnavailable(false);
+            gpsUnavailableRef.current=false;
+            setGpsError("");
           }
         },
-        {enableHighAccuracy:true,maximumAge:0,timeout:5000}
+        err=>{
+          if(err.code===1 || err.code===2) {
+            markGpsUnavailable(err.code===1
+              ? "Přístup k poloze není povolen. Zapni polohu v telefonu a měření je pozastaveno."
+              : "GPS není dostupné. Zapni polohu v telefonu a měření je pozastaveno.");
+          }
+        },
+        {enableHighAccuracy:true,maximumAge:0,timeout:4000}
       );
-    },8000);
+    },3000);
+
     return()=>window.clearInterval(watchdog);
-  },[running,paused]);
+  },[running]);
 
   useEffect(()=>{
     const onVisibility=()=>{
       const hidden=document.visibilityState==="hidden";
-      if(running) setBackgrounded(hidden);
-      if(!hidden && running) void acquireWakeLock();
+      if(runningRef.current) setBackgrounded(hidden);
+      if(!hidden && runningRef.current) void acquireWakeLock();
     };
     document.addEventListener("visibilitychange",onVisibility);
     return()=>document.removeEventListener("visibilitychange",onVisibility);
-  },[running]);
+  },[]);
 
   useEffect(()=>()=>{stopGps();releaseWakeLock();},[]);
 
   const finishDraft=()=>{
-    if(distanceRef.current<=0.01 || elapsed<=0){setGpsError("Nejdřív naměř alespoň malou vzdálenost.");return;}
-    onFinished?.({ type, km:Number((distanceRef.current/1000).toFixed(3)), seconds:elapsed });
+    if(distanceRef.current<=0.01 || elapsed<=0){
+      setGpsError("Nejdřív naměř alespoň malou vzdálenost.");
+      return;
+    }
+    onFinished?.({
+      type,
+      km:Number((distanceRef.current/1000).toFixed(3)),
+      seconds:elapsed
+    });
     reset();
   };
 
-  const status=requestingLocation?"Čekám na polohu":gpsUnavailable?"GPS nedostupné":running?(paused?"Pozastaveno":backgrounded?"Aplikace byla na pozadí":"GPS aktivní"):elapsed>0?"Měření dokončeno":"Připraveno";
+  const status=requestingLocation
+    ? "Získávám polohu…"
+    : gpsUnavailable
+      ? "GPS nedostupné"
+      : running
+        ? paused
+          ? "Pozastaveno"
+          : backgrounded
+            ? "Aplikace na pozadí"
+            : "GPS aktivní"
+        : elapsed>0
+          ? "Měření dokončeno"
+          : "Připraveno";
+
   const distanceKm=distance/1000;
   const canContinue=!running && !requestingLocation && distanceKm>0.01 && elapsed>0;
 
   return <section className="activity-recorder" aria-label={`Měření ${activityName.toLowerCase()}`}>
     {!running && elapsed===0 && !requestingLocation && <InstallPwaPrompt compact />}
+
     <div className="activity-recorder-header">
-      <div><span className="activity-recorder-eyebrow">{icon} MĚŘENÍ GPS</span><h2>{activityName} v reálném čase</h2></div>
-      <span className={`activity-recorder-status ${paused?"is-paused":backgrounded?"is-background":""}`}>{status}</span>
+      <div>
+        <span className="activity-recorder-eyebrow">{icon} MĚŘENÍ GPS</span>
+        <h2>{activityName} v reálném čase</h2>
+      </div>
+      <span className={`activity-recorder-status ${paused?"is-paused":gpsUnavailable?"is-error":backgrounded?"is-background":""}`}>{status}</span>
     </div>
-    {!running && elapsed===0 ? <p className="activity-recorder-help">Telefon změří vzdálenost a čas pomocí GPS. Po skončení můžeš výsledek doplnit o popis a fotografie a teprve potom uložit jako záznam.</p> : null}
+
+    {!running && elapsed===0 ? (
+      <p className="activity-recorder-help">
+        Telefon změří vzdálenost a čas pomocí GPS. Po skončení můžeš výsledek doplnit o popis a fotografie a teprve potom uložit jako záznam.
+      </p>
+    ) : null}
+
     <div className="activity-recorder-metrics">
       <div><MapPin size={18}/><strong>{distanceKm.toFixed(2)}</strong><small>km</small></div>
       <div><Gauge size={18}/><strong>{formatTime(elapsed)}</strong><small>čas</small></div>
       <div><Activity size={18}/><strong>{formatPace(elapsed,distanceKm)}</strong><small>tempo</small></div>
     </div>
+
     {accuracy!==null && <div className="activity-recorder-gps">Přesnost GPS přibližně {accuracy} m{paused?" · měření pozastaveno":""}</div>}
     {gpsError && <div className="activity-recorder-error">{gpsError}</div>}
     {backgrounded && <div className="activity-recorder-warning"><Smartphone size={18}/> Telefon je zamčený nebo aplikace běží na pozadí. Prohlížeč může GPS omezit; po návratu zkontroluj výsledek.</div>}
+
     <div className="activity-recorder-actions">
-      {!running && elapsed===0 && !requestingLocation && <button type="button" className="run-primary-button" onClick={start}><Play size={18}/> Spustit {activityName.toLowerCase()}</button>}
-      {requestingLocation && <button type="button" className="run-primary-button" disabled><MapPin size={18}/> Získávám polohu…</button>}
-      {running && !gpsUnavailable && <button type="button" className="run-secondary-button" onClick={pause}>{paused?<Play size={18}/>:<Pause size={18}/>} {paused?"Pokračovat":"Pozastavit"}</button>}
-      {running && gpsUnavailable && <button type="button" className="run-secondary-button" onClick={retryGps}><MapPin size={18}/> Zkusit GPS znovu</button>}
-      {running && <button type="button" className="run-primary-button" onClick={stop}><Square size={17}/> Ukončit</button>}
-      {canContinue && <button type="button" className="run-primary-button gps-finished-primary" onClick={finishDraft}>Pokračovat k vytvoření záznamu</button>}
-      {!running && elapsed>0 && <button type="button" className="run-secondary-button gps-finished-secondary" onClick={reset}>Zahodit měření</button>}
+      {!running && elapsed===0 && !requestingLocation && <button type="button" className="run-primary-button gps-action-full" onClick={start}><Play size={18}/> Spustit {activityName.toLowerCase()}</button>}
+      {requestingLocation && <button type="button" className="run-primary-button gps-action-full" disabled><MapPin size={18}/> Získávám polohu…</button>}
+      {running && !gpsUnavailable && <button type="button" className="run-secondary-button gps-action" onClick={pause}>{paused?<Play size={18}/>:<Pause size={18}/>} {paused?"Pokračovat":"Pozastavit"}</button>}
+      {running && gpsUnavailable && <button type="button" className="run-secondary-button gps-action" onClick={retryGps}><MapPin size={18}/> Zkusit GPS znovu</button>}
+      {running && <button type="button" className="run-primary-button gps-action" onClick={stop}><Square size={17}/> Ukončit</button>}
+      {canContinue && <button type="button" className="run-primary-button gps-action" onClick={finishDraft}>Pokračovat k vytvoření záznamu</button>}
+      {!running && elapsed>0 && <button type="button" className="run-secondary-button gps-action" onClick={reset}>Zahodit měření</button>}
     </div>
   </section>;
 }
