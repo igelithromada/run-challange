@@ -46,7 +46,7 @@ const translateSaveError = (error: unknown) => {
   return error instanceof Error ? error.message : "Aktivitu se nepodařilo uložit. Zkus to prosím znovu.";
 };
 
-export default function RunForm({ type }: { type: "běh" | "chůze" }) {
+export default function RunForm({ type, gpsDraft, onGpsDraftConsumed }: {\n  type: "běh" | "chůze";\n  gpsDraft?: { type: "běh" | "chůze"; km: number; seconds: number } | null;\n  onGpsDraftConsumed?: () => void;\n}) {
   const [showForm, setShowForm] = useState(false);
   const [km, setKm] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
@@ -59,7 +59,7 @@ export default function RunForm({ type }: { type: "běh" | "chůze" }) {
   const [uploadStatus, setUploadStatus] = useState("");
   const formPanelRef = useRef<HTMLElement | null>(null);
   const activityLabel = type === "chůze" ? "chůzi" : "běh";
-  const activityPast = type === "chůze" ? "Chůze byla" : "Běh byl";
+  const activityPast = type === "chůze" ? "Chůze byla" : "Běh byl";\n\n  useEffect(() => {\n    if (!gpsDraft) return;\n    setKm(gpsDraft.km.toFixed(2));\n    setDurationMinutes(String(Math.floor(gpsDraft.seconds / 60)));\n    setDurationSeconds(String(gpsDraft.seconds % 60).padStart(2, "0"));\n    setFiles([]);\n    setDescription("");\n    setActivityDate(localDateTime());\n    setError("");\n    setUploadStatus("");\n    setShowForm(true);\n    onGpsDraftConsumed?.();\n  }, [gpsDraft, onGpsDraftConsumed]);
 
   const previews = useMemo(() => files.map(file => ({ file, url: URL.createObjectURL(file) })), [files]);
   useEffect(() => () => previews.forEach(item => URL.revokeObjectURL(item.url)), [previews]);
