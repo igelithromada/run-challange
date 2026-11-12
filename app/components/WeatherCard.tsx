@@ -21,18 +21,6 @@ function conditionIcon(type = "") {
   return CloudSun;
 }
 
-function weatherColorClass(type = "") {
-  const value = type.toUpperCase();
-  if (value.includes("THUNDER")) return "weather-condition-storm";
-  if (value.includes("SNOW") || value.includes("SLEET") || value.includes("HAIL")) return "weather-condition-snow";
-  if (value.includes("RAIN") || value.includes("DRIZZLE")) return "weather-condition-rain";
-  if (value.includes("FOG") || value.includes("HAZE")) return "weather-condition-fog";
-  if (value.includes("PARTLY") || value.includes("MOSTLY")) return "weather-condition-partly";
-  if (value.includes("CLOUD")) return "weather-condition-cloudy";
-  if (value.includes("CLEAR") || value.includes("SUN")) return "weather-condition-sun";
-  return "weather-condition-neutral";
-}
-
 function RainIcon({ size = 22, className = "" }: { size?: number; className?: string }) {
   return (
     <span className={`weather-rain-combo ${className}`} style={{ width: size, height: size }}>
@@ -82,7 +70,6 @@ export default function WeatherCard() {
   const current = weather?.current;
   const condition = current?.weatherCondition;
   const Icon = conditionIcon(condition?.type);
-  const iconColorClass = weatherColorClass(condition?.type);
   const hours: WeatherHour[] = (weather?.hourly || []).slice(0, 8);
   const temperature = current?.temperature?.degrees;
   const feelsLike = current?.feelsLikeTemperature?.degrees;
@@ -90,10 +77,9 @@ export default function WeatherCard() {
   const windUnit = current?.wind?.speed?.unit === "KILOMETERS_PER_HOUR" ? "km/h" : "m/s";
   const rainValues = [current?.precipitation?.probability?.percent, ...hours.slice(0, 6).map(item => item?.precipitation?.probability?.percent)].filter(value => typeof value === "number");
   const rainChance = rainValues.length ? Math.max(...rainValues) : undefined;
-  const rainLevelClass = rainChance === undefined ? "" : rainChance >= 70 ? "weather-risk-high" : rainChance >= 40 ? "weather-risk-medium" : "weather-risk-low";
 
   return (
-    <section className={`tile weather-card ${weatherColorClass(condition?.type)}`} style={{ marginBottom: "1.25rem", overflow: "hidden" }} aria-label="Předpověď počasí">
+    <section className="tile weather-card" style={{ marginBottom: "1.25rem", overflow: "hidden" }} aria-label="Předpověď počasí">
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
         <div>
           <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Počasí pro pohyb</h2>
@@ -116,7 +102,7 @@ export default function WeatherCard() {
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem", margin: "1.25rem 0" }}>
-            <Icon className={`weather-main-icon ${iconColorClass}`} size={54} strokeWidth={1.5} />
+            <Icon size={54} strokeWidth={1.5} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: "2.6rem", lineHeight: 1, fontWeight: 700 }}>{Math.round(temperature ?? 0)}°C</div>
               <div style={{ marginTop: "0.35rem", fontWeight: 600 }}>{condition?.description?.text || "Aktuální počasí"}</div>
@@ -132,7 +118,7 @@ export default function WeatherCard() {
             </div>
             <div style={{ background: "rgba(0,0,0,0.12)", borderRadius: "12px", padding: "0.65rem 0.5rem", textAlign: "center" }}>
               <RainIcon size={19} className="weather-stat-icon" />
-              <strong className={rainLevelClass} style={{ display: "block" }}>{rainChance !== undefined ? `${rainChance}%` : "—"}</strong>
+              <strong style={{ display: "block" }}>{rainChance !== undefined ? `${rainChance}%` : "—"}</strong>
               <small>Déšť</small>
             </div>
             <div style={{ background: "rgba(0,0,0,0.12)", borderRadius: "12px", padding: "0.65rem 0.5rem", textAlign: "center" }}>
@@ -151,7 +137,7 @@ export default function WeatherCard() {
                   return (
                     <div key={item?.interval?.startTime || index} style={{ textAlign: "center", padding: "0.6rem 0.25rem", borderRadius: "12px", background: "rgba(0,0,0,0.12)" }}>
                       <small>{hourLabel(item)}</small>
-                      {(item?.weatherCondition?.type || "").toUpperCase().includes("RAIN") || (item?.weatherCondition?.type || "").toUpperCase().includes("DRIZZLE") ? <RainIcon size={23} className="weather-hour-icon" /> : <HourIcon className={`weather-hour-icon ${weatherColorClass(item?.weatherCondition?.type)}`} size={23} style={{ display: "block", margin: "0.35rem auto" }} />}
+                      {(item?.weatherCondition?.type || "").toUpperCase().includes("RAIN") || (item?.weatherCondition?.type || "").toUpperCase().includes("DRIZZLE") ? <RainIcon size={23} className="weather-hour-icon" /> : <HourIcon className="weather-hour-icon" size={23} style={{ display: "block", margin: "0.35rem auto" }} />}
                       <strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong>
                       <small style={{ display: "block", opacity: 0.8 }}>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}%` : "—"} déšť</small>
                     </div>

@@ -34,7 +34,7 @@ export default function ActivityRecorder({ type, onFinished }:{
   const [requestingLocation,setRequestingLocation]=useState(false);
   const [backgrounded,setBackgrounded]=useState(false);
   const [gpsUnavailable,setGpsUnavailable]=useState(false);
-  const [initialGpsState,setInitialGpsState]=useState<"checking"|"ready"|"off">("checking");
+  const [initialGpsState,setInitialGpsState]=useState<"checking"|"ready"|"off">("off");
 
   const startedAtRef=useRef<number|null>(null);
   const pausedAtRef=useRef<number|null>(null);
@@ -47,6 +47,8 @@ export default function ActivityRecorder({ type, onFinished }:{
   const pausedRef=useRef(false);
   const gpsUnavailableRef=useRef(false);
   const acquiringFixRef=useRef(false);
+  const gpsWatchdogFailuresRef=useRef(0);
+  const lastGpsSuccessAtRef=useRef<number|null>(null);
 
   const activityName=type==="chůze"?"Chůze":"Běh";
   const icon=type==="chůze"?<Footprints size={20}/>:<Activity size={20}/>;
@@ -72,6 +74,8 @@ export default function ActivityRecorder({ type, onFinished }:{
     pausedRef.current=false;
     gpsUnavailableRef.current=false;
     acquiringFixRef.current=false;
+    gpsWatchdogFailuresRef.current=0;
+    lastGpsSuccessAtRef.current=null;
     startedAtRef.current=null;
     pausedAtRef.current=null;
     pausedTotalRef.current=0;
@@ -132,6 +136,8 @@ export default function ActivityRecorder({ type, onFinished }:{
           timestamp:pos.timestamp
         };
         setAccuracy(Math.round(p.accuracy));
+        lastGpsSuccessAtRef.current = Date.now();
+        gpsWatchdogFailuresRef.current = 0;
         if (acquiringFixRef.current) {
           if (p.accuracy <= 75) {
             lastPointRef.current = p;
@@ -189,6 +195,8 @@ export default function ActivityRecorder({ type, onFinished }:{
     setRequestingLocation(true);
     setInitialGpsState("checking");
     acquiringFixRef.current=true;
+    gpsWatchdogFailuresRef.current=0;
+    lastGpsSuccessAtRef.current=null;
     setElapsed(0);
     setDistance(0);
     setPaused(false);
@@ -248,6 +256,8 @@ export default function ActivityRecorder({ type, onFinished }:{
     setGpsUnavailable(false);
     gpsUnavailableRef.current=false;
     acquiringFixRef.current=true;
+    gpsWatchdogFailuresRef.current=0;
+    lastGpsSuccessAtRef.current=null;
     setGpsError("");
     startGps(()=>{
       const now=Date.now();
@@ -331,24 +341,47 @@ export default function ActivityRecorder({ type, onFinished }:{
       navigator.geolocation.getCurrentPosition(
         pos=>{
           if(!runningRef.current || pausedRef.current) return;
+          lastGpsSuccessAtRef.current = Date.now();
+          gpsWatchdogFailuresRef.current = 0;
           setAccuracy(Math.round(pos.coords.accuracy));
-          if(pos.coords.accuracy>50) return;
-          if(gpsUnavailableRef.current) {
+          if(gpsUnavailableRef.current && pos.coords.accuracy <= 75) {
             setGpsUnavailable(false);
             gpsUnavailableRef.current=false;
             setGpsError("");
+            setPaused(false);
+            pausedRef.current=false;
+            if (pausedAtRef.current) {
+              pausedTotalRef.current += Date.now() - pausedAtRef.current;
+              pausedAtRef.current = null;
+            }
+            lastPointRef.current = null;
+            void acquireWakeLock();
           }
         },
         err=>{
+          if(!runningRef.current || pausedRef.current) return;
+          gpsWatchdogFailuresRef.current += 1;
+          const lastSuccessAge = lastGpsSuccessAtRef.current === null
+            ? Infinity
+            : Date.now() - lastGpsSuccessAtRef.current;
+
           if(err.code===1 || err.code===2) {
             markGpsUnavailable(err.code===1
               ? "Přístup k poloze není povolen. Zapni polohu v telefonu a měření je pozastaveno."
               : "GPS není dostupné. Zapni polohu v telefonu a měření je pozastaveno.");
+            return;
+          }
+
+          // Některé telefony po vypnutí systémové polohy vrátí nejprve timeout
+          // místo chyby 2. Teprve několik po sobě jdoucích timeoutů označí GPS
+          // jako nedostupné, aby krátký výpadek signálu nezastavil měření.
+          if(err.code===3 && gpsWatchdogFailuresRef.current >= 3 && lastSuccessAge > 8000) {
+            markGpsUnavailable("GPS není dostupné. Zapni polohu v telefonu a měření je pozastaveno.");
           }
         },
-        {enableHighAccuracy:true,maximumAge:0,timeout:4000}
+        {enableHighAccuracy:true,maximumAge:0,timeout:2000}
       );
-    },3000);
+    },2500);
 
     return()=>window.clearInterval(watchdog);
   },[running]);
@@ -410,7 +443,7 @@ export default function ActivityRecorder({ type, onFinished }:{
 
     {!running && elapsed===0 ? (
       <p className="activity-recorder-help">
-        Telefon změří vzdálenost a čas pomocí GPS. Po skončení můžeš výsledek doplnit o popis a fotografie a teprve potom uložit jako záznam.
+        Nemáš hodinky? Nevadí. Telefon změří vzdálenost a čas pomocí GPS. Po skončení můžeš výsledek doplnit o popis a fotografie a teprve potom uložit jako záznam.
       </p>
     ) : null}
 

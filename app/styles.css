@@ -4462,3 +4462,104 @@ form select,
 .gps-form-launch{width:100%;margin:0 0 1rem;justify-content:center}
 .run-form-gps-recorder .activity-recorder{margin:0}
 .run-form-gps-recorder .activity-recorder .install-pwa-prompt{margin-top:0}
+
+
+/* Oprava GPS, počasí a náhledů doporučených tras – 12. 11. 2026 */
+.activity-recorder-metrics > div {
+  min-width: 0;
+  overflow: hidden;
+  flex-wrap: wrap;
+  align-content: center;
+}
+.activity-recorder-metrics > div > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.activity-recorder-metrics > div > small {
+  display: block;
+  flex: 0 0 auto;
+}
+.activity-recorder-metrics > div:nth-child(3) {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+.activity-recorder-metrics > div:nth-child(3) > svg {
+  margin-bottom: .1rem;
+}
+.activity-recorder-metrics > div:nth-child(3) > strong {
+  font-size: clamp(.72rem, 2.9vw, .98rem);
+  line-height: 1.15;
+}
+.activity-recorder-metrics > div:nth-child(3) > small {
+  opacity: .65;
+  line-height: 1.1;
+}
+
+.weather-card {
+  background: var(--ui-bg, rgba(10,21,31,.46)) !important;
+}
+.weather-card .weather-stat-icon { color:#4da3ff !important; stroke:#4da3ff !important; }
+.weather-card .weather-stat-icon .weather-rain-drops { color:#4da3ff !important; stroke:#4da3ff !important; }
+.weather-card .weather-rain-combo > svg:first-child { color:rgba(255,255,255,.92); stroke:rgba(255,255,255,.92); }
+html[data-weather] body::before { display:none !important; animation:none !important; }
+.weather-animation-overlay { display:none !important; }
+
+.route-card-main-button,
+.route-card-main-button:hover,
+.route-card-main-button:focus {
+  background: transparent !important;
+  color: inherit !important;
+}
+.route-map-preview .maplibregl-control-container {
+  display:none !important;
+}
+.route-map-preview .maplibregl-canvas,
+.route-map-preview .maplibregl-canvas-container {
+  pointer-events:none !important;
+}
+.route-map-info {
+  display:flex;
+  flex-direction:column;
+  gap:.25rem;
+  margin:0 0 .55rem;
+  padding:.55rem .7rem;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;
+  background:rgba(0,0,0,.18);
+}
+.route-map-info strong { font-size:.78rem; line-height:1.2; }
+.route-map-stats {
+  display:flex;
+  flex-wrap:wrap;
+  gap:.55rem;
+  font-size:.7rem;
+  color:rgba(255,255,255,.74);
+}
+.route-map-stats b { color:#fff; }
+.route-elevation-profile {
+  margin:.55rem 0 0;
+  padding:.55rem .65rem .45rem;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;
+  background:rgba(0,0,0,.13);
+  color:var(--ui-info,#64d9ff);
+}
+.route-elevation-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.5rem;
+  margin-bottom:.3rem;
+}
+.route-elevation-header strong { color:#fff; font-size:.72rem; }
+.route-elevation-header span { color:rgba(255,255,255,.65); font-size:.62rem; text-align:right; }
+.route-elevation-profile svg {
+  display:block;
+  width:100%;
+  height:64px;
+  overflow:visible;
+}
+.route-map-preview .route-elevation-profile svg { height:52px; }
+.route-map-interactive .route-elevation-profile svg { height:96px; }

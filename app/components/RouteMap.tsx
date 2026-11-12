@@ -113,12 +113,40 @@ function formatKm(value: number) {
   return value >= 10 ? value.toFixed(0) : value.toFixed(1);
 }
 
+function ElevationProfile({ elevations, gain, min, max }: { elevations: (number | null)[]; gain: number | null; min: number | null; max: number | null }) {
+  const valid = elevations.filter((value): value is number => typeof value === "number");
+  if (valid.length < 2 || min === null || max === null) return null;
+  const range = Math.max(1, max - min);
+  const points = elevations
+    .map((value, index) => {
+      if (value === null) return null;
+      const x = (index / Math.max(1, elevations.length - 1)) * 100;
+      const y = 88 - ((value - min) / range) * 68;
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .filter((value): value is string => value !== null)
+    .join(" ");
+  if (!points) return null;
+  return (
+    <div className="route-elevation-profile" aria-label="Výškový profil trasy">
+      <div className="route-elevation-header">
+        <strong>Výškový profil</strong>
+        <span>{Math.round(min)}–{Math.round(max)} m n. m.{gain !== null ? ` · ↑ ${Math.round(gain)} m` : ""}</span>
+      </div>
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <polyline points={points} fill="none" stroke="currentColor" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  );
+}
+
 export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, interactive = true, mapStyle = "standard", showInfo = true }: Props) {
   const elementRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const routeSvgRef = useRef<SVGSVGElement | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [stats, setStats] = useState<RouteStats | null>(null);
+  const [profileElevations, setProfileElevations] = useState<(number | null)[]>([]);
   const routeColor = mapStyle === "minimal" ? "#35d69a" : "#4da3ff";
 
   useEffect(() => {
@@ -159,6 +187,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
           ? [parsed.coordinates]
           : Array.from({ length: lapCount }, () => parsed.coordinates);
         const routePoints = routeLines.flat();
+        setProfileElevations(parsed.elevations);
         const routeStats = calculateStats(parsed.coordinates, parsed.elevations);
         setStats({
           ...routeStats,
@@ -206,8 +235,14 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
           const endLabel = svg.querySelector<SVGTextElement>(".route-overlay-end-label");
           if (start) { start.setAttribute("cx", String(first.x)); start.setAttribute("cy", String(first.y)); }
           if (end) { end.setAttribute("cx", String(last.x)); end.setAttribute("cy", String(last.y)); }
-          if (startLabel) { startLabel.setAttribute("x", String(first.x)); startLabel.setAttribute("y", String(first.y - 12)); }
-          if (endLabel) { endLabel.setAttribute("x", String(last.x)); endLabel.setAttribute("y", String(last.y - 12)); }
+          if (startLabel) {
+            startLabel.setAttribute("x", String(first.x - 14));
+            startLabel.setAttribute("y", String(first.y - 12));
+          }
+          if (endLabel) {
+            endLabel.setAttribute("x", String(last.x + 14));
+            endLabel.setAttribute("y", String(last.y + 16));
+          }
         };
 
         drawRoute = () => {
@@ -293,42 +328,6 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
               },
             });
 
-            map.addLayer({
-              id: "route-labels",
-              type: "symbol",
-              source: "route-start",
-              layout: {
-                "text-field": ["get", "label"],
-                "text-size": 11,
-                "text-offset": [-1.1, -0.2],
-                "text-anchor": "right",
-                "text-font": ["Noto Sans Regular"],
-              },
-              paint: {
-                "text-color": "#ffffff",
-                "text-halo-color": "#17232d",
-                "text-halo-width": 1.5,
-              },
-            });
-
-            map.addLayer({
-              id: "route-end-label",
-              type: "symbol",
-              source: "route-end",
-              layout: {
-                "text-field": ["get", "label"],
-                "text-size": 11,
-                "text-offset": [1.1, 0.2],
-                "text-anchor": "left",
-                "text-font": ["Noto Sans Regular"],
-              },
-              paint: {
-                "text-color": "#ffffff",
-                "text-halo-color": "#17232d",
-                "text-halo-width": 1.5,
-              },
-            });
-
             const fit = () => {
               if (!alive || !map) return;
               map.resize();
@@ -379,6 +378,16 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
   }, [gpxUrl, laps, interactive, mapStyle]);
   return (
     <div className={`route-map-shell route-map-${mapStyle} ${interactive ? "route-map-interactive" : "route-map-preview"}`}>
+      {showInfo && stats && (
+        <div className="route-map-info" aria-label="Informace o trase">
+          <strong>{name}</strong>
+          <div className="route-map-stats">
+            <span><b>{formatKm(stats.distanceKm)}</b> km</span>
+            {stats.elevationGain !== null && <span><b>↑ {Math.round(stats.elevationGain)}</b> m</span>}
+            {stats.maxElevation !== null && <span><b>{Math.round(stats.minElevation ?? 0)}–{Math.round(stats.maxElevation)}</b> m n. m.</span>}
+          </div>
+        </div>
+      )}
       <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name}>
         <svg ref={routeSvgRef} className="route-map-route-overlay" aria-hidden="true">
           <polyline className="route-overlay-line" fill="none" stroke={routeColor} strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
@@ -390,16 +399,6 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
         </svg>
       </div>
 
-      {showInfo && stats && (
-        <div className="route-map-info" aria-label="Informace o trase">
-          <strong>{name}</strong>
-          <div className="route-map-stats">
-            <span><b>{formatKm(stats.distanceKm)}</b> km</span>
-            {stats.elevationGain !== null && <span><b>↑ {Math.round(stats.elevationGain)}</b> m</span>}
-            {stats.maxElevation !== null && <span><b>{Math.round(stats.minElevation ?? 0)}–{Math.round(stats.maxElevation)}</b> m n. m.</span>}
-          </div>
-        </div>
-      )}
 
       {state === "loading" && (
         <div className="route-map-state">
@@ -407,6 +406,8 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
           <span>Načítám trasu…</span>
         </div>
       )}
+
+      {stats && <ElevationProfile elevations={profileElevations} gain={stats.elevationGain} min={stats.minElevation} max={stats.maxElevation} />}
 
       {state === "error" && (
         <div className="route-map-state">

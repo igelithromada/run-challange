@@ -104,7 +104,7 @@ export default function RoutesPage() {
 
         <style>{`
           .route-map-preview-button{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;border-radius:16px;overflow:hidden}
-          .route-card-main-button{display:flex;width:100%;box-sizing:border-box;cursor:pointer;border:0;text-align:left}
+          .route-card-main-button{display:flex;width:100%;box-sizing:border-box;cursor:pointer;border:0;background:transparent;color:inherit;padding:0;text-align:left;font:inherit}
           .route-card-main-button:hover{background:rgba(255,255,255,.04)}
           .routes-view-toggle{display:flex;gap:.45rem;margin:-.45rem 0 1rem}
           .routes-view-toggle button{display:inline-flex;align-items:center;gap:.4rem;min-height:40px;padding:.55rem .8rem;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(255,255,255,.07);color:inherit;font:inherit;font-weight:750;cursor:pointer}
@@ -154,7 +154,7 @@ export default function RoutesPage() {
                 aria-label={`Otevřít detail trasy ${route.name}`}
               >
                 {route.gpxUrl ? (
-                  <RouteMap gpxUrl={route.gpxUrl} mapUrl={route.mapUrl} name={route.name} laps={route.laps} interactive={false} mapStyle={mapStyle} showInfo={false} />
+                  <RouteMap gpxUrl={route.gpxUrl} mapUrl={route.mapUrl} name={route.name} laps={route.laps} interactive={false} mapStyle={mapStyle} showInfo />
                 ) : (
                   <div className="route-map-unavailable">
                     <MapPinned size={18} />
@@ -180,7 +180,7 @@ export default function RoutesPage() {
               <p className="route-detail-description">{selectedRoute.route.description}</p>
               {selectedRoute.route.gpxUrl && (
                 <div className="route-detail-map">
-                  <RouteMap gpxUrl={selectedRoute.route.gpxUrl} mapUrl={selectedRoute.route.mapUrl} name={selectedRoute.route.name} laps={selectedRoute.route.laps} interactive mapStyle={mapStyle} showInfo={false} />
+                  <RouteMap gpxUrl={selectedRoute.route.gpxUrl} mapUrl={selectedRoute.route.mapUrl} name={selectedRoute.route.name} laps={selectedRoute.route.laps} interactive mapStyle={mapStyle} showInfo />
                 </div>
               )}
               <div className="route-card-actions route-detail-actions">
