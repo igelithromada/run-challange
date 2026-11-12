@@ -70,7 +70,7 @@ export default function TeamsPage() {
   const visibleTeams = teams.filter(team => (team.type === "chůze" ? "chůze" : "běh") === selectedType);
   const joinedTeamId = teamIdsByType[selectedType];
   const isActuallyJoined = (team: Team) =>
-    !!user && (team.createdBy === user.uid || (Array.isArray(team.memberIds) && team.memberIds.includes(user.uid)));
+    !!user && Array.isArray(team.memberIds) && team.memberIds.includes(user.uid);
   const joinedTeam = visibleTeams.find(isActuallyJoined) || teams.find(team => team.id === joinedTeamId && isActuallyJoined(team));
 
   const teamRequest = async (action: string, payload: Record<string, unknown> = {}): Promise<TeamMutationResponse> => {
