@@ -6,17 +6,28 @@ import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import RouteMap from "../components/RouteMap";
-import { routeGroups } from "../lib/routes";
+import { routeGroups, type RouteGroup } from "../lib/routes";
+import { getRecommendedRouteGroups } from "../lib/recommendedRoutes";
 
 export default function RoutesPage() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const [filter, setFilter] = useState<"vše" | "běh" | "chůze">("vše");
   const [openGroup, setOpenGroup] = useState<string | null>("skrpal");
+  const [allGroups, setAllGroups] = useState<RouteGroup[]>(routeGroups);
+
+  React.useEffect(() => {
+    let active = true;
+    void getRecommendedRouteGroups().then(groups => {
+      if (!active || !groups.length) return;
+      setAllGroups(prev => [...prev, ...groups]);
+    });
+    return () => { active = false; };
+  }, []);
 
   const visibleGroups = useMemo(
     () =>
-      routeGroups
+      allGroups
         .map(group => ({
           ...group,
           routes: group.routes.filter(route => filter === "vše" || route.activity === filter),
