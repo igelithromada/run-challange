@@ -11,7 +11,6 @@ type Props = {
   laps?: number;
   interactive?: boolean;
   mapStyle?: "standard" | "minimal";
-  showInfo?: boolean;
 };
 
 type Coordinate = [number, number];
@@ -164,7 +163,7 @@ function ElevationProfile({
   );
 }
 
-export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, interactive = true, mapStyle = "standard", showInfo = true }: Props) {
+export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, interactive = true, mapStyle = "standard" }: Props) {
   const elementRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const routeSvgRef = useRef<SVGSVGElement | null>(null);
@@ -401,44 +400,43 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
     };
   }, [gpxUrl, laps, interactive, mapStyle]);
   return (
-    <div className={`route-map-shell route-map-${mapStyle} ${interactive ? "route-map-interactive" : "route-map-preview"}`}>
-      {showInfo && stats && (
-        <div className="route-map-info" aria-label="Informace o trase">
-          <strong>{name}</strong>
-          <div className="route-map-stats">
-            <span><b>{formatKm(stats.distanceKm)}</b> km</span>
-            {stats.elevationGain !== null && <span><b>↑ {Math.round(stats.elevationGain)}</b> m</span>}
-            {stats.maxElevation !== null && <span><b>{Math.round(stats.minElevation ?? 0)}–{Math.round(stats.maxElevation)}</b> m n. m.</span>}
+    <div className={`route-visualization route-visualization-${mapStyle} ${interactive ? "route-visualization-interactive" : "route-visualization-preview"}`}>
+      {stats && (
+        <ElevationProfile
+          elevations={profileElevations}
+          gain={stats.elevationGain}
+          min={stats.minElevation}
+          max={stats.maxElevation}
+          distanceKm={stats.distanceKm}
+        />
+      )}
+
+      <div className={`route-map-shell route-map-${mapStyle} ${interactive ? "route-map-interactive" : "route-map-preview"}`}>
+        <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name}>
+          <svg ref={routeSvgRef} className="route-map-route-overlay" aria-hidden="true">
+            <polyline className="route-overlay-line" fill="none" stroke={routeColor} strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            <polyline className="route-overlay-line route-overlay-line-inner" fill="none" stroke={mapStyle === "minimal" ? "#a7ffe4" : "#d7eaff"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            <circle className="route-overlay-start" r="7" fill="#35d69a" stroke="#fff" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+            <circle className="route-overlay-end" r="7" fill="#ff6b78" stroke="#fff" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+            <text className="route-overlay-start-label" textAnchor="middle">START</text>
+            <text className="route-overlay-end-label" textAnchor="middle">CÍL</text>
+          </svg>
+        </div>
+
+        {state === "loading" && (
+          <div className="route-map-state">
+            <LoaderCircle className="route-map-spin" size={20} />
+            <span>Načítám trasu…</span>
           </div>
-        </div>
-      )}
-      {stats && <ElevationProfile elevations={profileElevations} gain={stats.elevationGain} min={stats.minElevation} max={stats.maxElevation} distanceKm={stats.distanceKm} />}
+        )}
 
-      <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name}>
-        <svg ref={routeSvgRef} className="route-map-route-overlay" aria-hidden="true">
-          <polyline className="route-overlay-line" fill="none" stroke={routeColor} strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-          <polyline className="route-overlay-line route-overlay-line-inner" fill="none" stroke={mapStyle === "minimal" ? "#a7ffe4" : "#d7eaff"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-          <circle className="route-overlay-start" r="7" fill="#35d69a" stroke="#fff" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-          <circle className="route-overlay-end" r="7" fill="#ff6b78" stroke="#fff" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-          <text className="route-overlay-start-label" textAnchor="middle">START</text>
-          <text className="route-overlay-end-label" textAnchor="middle">CÍL</text>
-        </svg>
+        {state === "error" && (
+          <div className="route-map-state">
+            <MapPinned size={20} />
+            <span>Interaktivní mapa se nepodařila načíst. Trasu můžeš stále otevřít v Mapy.com.</span>
+          </div>
+        )}
       </div>
-
-
-      {state === "loading" && (
-        <div className="route-map-state">
-          <LoaderCircle className="route-map-spin" size={20} />
-          <span>Načítám trasu…</span>
-        </div>
-      )}
-
-      {state === "error" && (
-        <div className="route-map-state">
-          <MapPinned size={20} />
-          <span>Interaktivní mapa se nepodařila načíst. Trasu můžeš stále otevřít v Mapy.com.</span>
-        </div>
-      )}
     </div>
   );
 }
