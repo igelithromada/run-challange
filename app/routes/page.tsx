@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { ExternalLink, Map, Download, MapPinned, Sparkles, FileUp, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
@@ -9,7 +9,6 @@ import RouteMap from "../components/RouteMap";
 import { routeGroups, type RouteGroup, type RouteItem } from "../lib/routes";
 import { getRecommendedRouteGroups } from "../lib/recommendedRoutes";
 import { ActivityTypeIcon } from "../components/ActivityTypeSelector";
-import type { ActivityType } from "../types";
 import { auth } from "../lib/firebase";
 import useAdminGuard from "../lib/useAdminGuard";
 import { showAppToast } from "../components/AppToast";
@@ -17,7 +16,6 @@ import { showAppToast } from "../components/AppToast";
 export default function RoutesPage() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [filter, setFilter] = useState<"vše" | "běh" | "chůze">("vše");
   const [allGroups, setAllGroups] = useState<RouteGroup[]>(routeGroups);
   const [selectedRoute, setSelectedRoute] = useState<{ route: RouteItem; groupTitle: string } | null>(null);
   const [mapStyle, setMapStyle] = useState<"standard" | "minimal">("minimal");
@@ -126,13 +124,8 @@ export default function RoutesPage() {
     }
   };
 
-  const visibleRoutes = useMemo(
-    () => allGroups.flatMap(group =>
-      group.routes
-        .filter(route => filter === "vše" || route.activity === filter)
-        .map(route => ({ route, groupTitle: group.title }))
-    ),
-    [allGroups, filter]
+  const visibleRoutes = allGroups.flatMap(group =>
+    group.routes.map(route => ({ route, groupTitle: group.title }))
   );
 
   const handleSelect = async (item: string) => {
@@ -166,30 +159,6 @@ export default function RoutesPage() {
         <header className="routes-header">
           <h1>Doporučené trasy</h1>
         </header>
-
-        <div className="routes-filter" role="group" aria-label="Filtr tras">
-          <button
-            type="button"
-            className={`activity-quick-filter-button${filter === "vše" ? " active" : ""}`}
-            onClick={() => setFilter("vše")}
-          >
-            <Map size={20} aria-hidden="true" /> Vše
-          </button>
-          <button
-            type="button"
-            className={`activity-quick-filter-button${filter === "běh" ? " active" : ""}`}
-            onClick={() => setFilter("běh")}
-          >
-            <ActivityTypeIcon type={"běh" as ActivityType} size={20} /> Běh
-          </button>
-          <button
-            type="button"
-            className={`activity-quick-filter-button${filter === "chůze" ? " active" : ""}`}
-            onClick={() => setFilter("chůze")}
-          >
-            <ActivityTypeIcon type={"chůze" as ActivityType} size={20} /> Chůze
-          </button>
-        </div>
 
         <div className="routes-view-toggle" role="group" aria-label="Styl mapy">
           <button type="button" className={mapStyle === "minimal" ? "active" : ""} onClick={() => setMapStyle("minimal")}>
@@ -270,7 +239,7 @@ export default function RoutesPage() {
                 aria-label={`Otevřít podrobnosti trasy ${route.name}`}
               >
                 <div className="route-card-icon">
-                  <ActivityTypeIcon type={route.activity} size={23} />
+                  <MapPinned size={23} />
                 </div>
                 <div className="route-card-info">
                   <div className="route-card-title">
@@ -279,7 +248,7 @@ export default function RoutesPage() {
                   </div>
                   <div className="route-card-meta">
                     <strong>{route.distance}</strong>
-                    <span>{route.activity === "běh" ? "Běh" : "Chůze"}</span>
+                    <span>Běh i chůze</span>
                   </div>
                   <p><strong>{groupTitle}</strong> · {route.description}</p>
                 </div>
@@ -291,7 +260,7 @@ export default function RoutesPage() {
                 aria-label={`Otevřít detail trasy ${route.name}`}
               >
                 {route.gpxUrl ? (
-                  <RouteMap gpxUrl={route.gpxUrl} mapUrl={route.mapUrl} name={route.name} laps={route.laps} interactive={false} mapStyle={mapStyle} showInfo />
+                  <RouteMap gpxUrl={route.gpxUrl} mapUrl={route.mapUrl} name={route.name} laps={route.laps} interactive={false} mapStyle={mapStyle} />
                 ) : (
                   <div className="route-map-unavailable">
                     <MapPinned size={18} />
@@ -310,14 +279,14 @@ export default function RoutesPage() {
                 <div>
                   <span>{selectedRoute.groupTitle}</span>
                   <h2>{selectedRoute.route.name}</h2>
-                  <p>{selectedRoute.route.distance} · {selectedRoute.route.activity === "běh" ? "Běh" : "Chůze"}{selectedRoute.route.badge ? ` · ${selectedRoute.route.badge}` : ""}</p>
+                  <p>{selectedRoute.route.distance} · Běh i chůze{selectedRoute.route.badge ? ` · ${selectedRoute.route.badge}` : ""}</p>
                 </div>
                 <button type="button" onClick={() => setSelectedRoute(null)} aria-label="Zavřít podrobnosti">×</button>
               </div>
               <p className="route-detail-description">{selectedRoute.route.description}</p>
               {selectedRoute.route.gpxUrl && (
                 <div className="route-detail-map">
-                  <RouteMap gpxUrl={selectedRoute.route.gpxUrl} mapUrl={selectedRoute.route.mapUrl} name={selectedRoute.route.name} laps={selectedRoute.route.laps} interactive mapStyle={mapStyle} showInfo />
+                  <RouteMap gpxUrl={selectedRoute.route.gpxUrl} mapUrl={selectedRoute.route.mapUrl} name={selectedRoute.route.name} laps={selectedRoute.route.laps} interactive mapStyle={mapStyle} />
                 </div>
               )}
               <div className="route-card-actions route-detail-actions">
