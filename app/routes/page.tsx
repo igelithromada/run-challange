@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { ExternalLink, Footprints, Map, Mountain, Route, Download, ChevronDown, MapPinned } from "lucide-react";
+import { ExternalLink, Map, Download, MapPinned } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import RouteMap from "../components/RouteMap";
 import { routeGroups, type RouteGroup, type RouteItem } from "../lib/routes";
 import { getRecommendedRouteGroups } from "../lib/recommendedRoutes";
+import { ActivityTypeIcon } from "../components/ActivityTypeSelector";
+import type { ActivityType } from "../types";
 
 export default function RoutesPage() {
   const router = useRouter();
@@ -66,22 +68,28 @@ export default function RoutesPage() {
           <h1>Doporučené trasy</h1>
         </header>
 
-        <div className="routes-filter" role="tablist" aria-label="Filtr tras">
-          {[
-            ["vše", "Vše"],
-            ["běh", "Běh"],
-            ["chůze", "Chůze"],
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={filter === value ? "active" : ""}
-              onClick={() => setFilter(value as "vše" | "běh" | "chůze")}
-            >
-              {value === "běh" ? <Route size={18} /> : value === "chůze" ? <Footprints size={18} /> : <Map size={18} />}
-              {label}
-            </button>
-          ))}
+        <div className="routes-filter" role="group" aria-label="Filtr tras">
+          <button
+            type="button"
+            className={`activity-quick-filter-button${filter === "vše" ? " active" : ""}`}
+            onClick={() => setFilter("vše")}
+          >
+            <Map size={20} aria-hidden="true" /> Vše
+          </button>
+          <button
+            type="button"
+            className={`activity-quick-filter-button${filter === "běh" ? " active" : ""}`}
+            onClick={() => setFilter("běh")}
+          >
+            <ActivityTypeIcon type={"běh" as ActivityType} size={20} /> Běh
+          </button>
+          <button
+            type="button"
+            className={`activity-quick-filter-button${filter === "chůze" ? " active" : ""}`}
+            onClick={() => setFilter("chůze")}
+          >
+            <ActivityTypeIcon type={"chůze" as ActivityType} size={20} /> Chůze
+          </button>
         </div>
 
         <style>{`
