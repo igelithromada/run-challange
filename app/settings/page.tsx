@@ -8,7 +8,7 @@ import Sidebar from "../components/Sidebar";
 import { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
-import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, ShieldCheck, KeyRound, Smartphone, Bell, Moon, Sun, Square } from "lucide-react";
+import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, Smartphone, Bell, Moon, Sun, Square } from "lucide-react";
 import { registerTrainerPush, removeTrainerPush } from "../lib/pushNotifications";
 import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
@@ -455,22 +455,6 @@ export default function SettingsPage() {
           </label>
         </section>
 
-        <section className="tile settings-password-section">
-          <div className="settings-section-heading"><KeyRound size={21}/><div><h2>Změna hesla</h2><p>Nastav nové heslo minimálně o 6 znacích.</p></div></div>
-          <div className="settings-password-grid">
-            <label>Nové heslo<input type="password" autoComplete="new-password" minLength={6} value={newPassword} onChange={e => setNewPassword(e.target.value)} /></label>
-            <label>Potvrzení nového hesla<input type="password" autoComplete="new-password" minLength={6} value={newPasswordConfirm} onChange={e => setNewPasswordConfirm(e.target.value)} /></label>
-          </div>
-          <button type="button" className="tile-button settings-save-button" onClick={() => void handlePasswordChange()} disabled={passwordSaving}>{passwordSaving ? "Měním heslo…" : "Změnit heslo"}</button>
-        </section>
-
-        <section className="tile">
-          <div className="settings-section-heading"><ShieldCheck size={21}/><div><h2>Účet a data</h2><p>Přihlášení zůstává oddělené od vzhledu a preferencí.</p></div></div>
-          <div className="settings-account-row">
-            <div className="settings-avatar-preview">{(nickname || email).charAt(0).toUpperCase() || "?"}</div>
-            <div><strong>{nickname || "Uživatel"}</strong><small>{email}</small></div>
-          </div>
-        </section>
       </main>
     </>
   );
