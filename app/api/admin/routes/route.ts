@@ -21,6 +21,19 @@ function clean(value: unknown, max = 300) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
+
+async function deleteCloudinaryRaw(publicId: string) {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
+  const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
+  const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
+  if (!cloudName || !apiKey || !apiSecret || !publicId) return;
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const signature = signUpload({ public_id: publicId, timestamp }, apiSecret);
+  const form = new URLSearchParams({ public_id: publicId, timestamp, api_key: apiKey, signature });
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/raw/destroy`, { method: "POST", body: form });
+  if (!response.ok) console.warn("Cloudinary GPX delete failed:", response.status);
+}
+
 async function uploadGpx(file: File, uid: string) {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
   const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
@@ -115,7 +128,11 @@ export async function DELETE(request: Request) {
     const body = await request.json().catch(() => ({}));
     const id = clean(body?.id, 128);
     if (!id) return NextResponse.json({ error: "Chybí ID trasy." }, { status: 400 });
-    await adminDb.collection("recommendedRoutes").doc(id).delete();
+    const ref = adminDb.collection("recommendedRoutes").doc(id);
+    const snapshot = await ref.get();
+    const publicId = typeof snapshot.data()?.gpxPublicId === "string" ? snapshot.data()?.gpxPublicId : "";
+    await ref.delete();
+    if (publicId) await deleteCloudinaryRaw(publicId);
     return NextResponse.json({ ok: true });
   } catch (error) {
     const auth = authErrorResponse(error);
