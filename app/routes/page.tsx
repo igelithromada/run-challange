@@ -6,15 +6,15 @@ import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import RouteMap from "../components/RouteMap";
-import { routeGroups, type RouteGroup } from "../lib/routes";
+import { routeGroups, type RouteGroup, type RouteItem } from "../lib/routes";
 import { getRecommendedRouteGroups } from "../lib/recommendedRoutes";
 
 export default function RoutesPage() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const [filter, setFilter] = useState<"vše" | "běh" | "chůze">("vše");
-  const [openGroup, setOpenGroup] = useState<string | null>("skrpal");
   const [allGroups, setAllGroups] = useState<RouteGroup[]>(routeGroups);
+  const [selectedRoute, setSelectedRoute] = useState<{ route: RouteItem; groupTitle: string } | null>(null);
 
   React.useEffect(() => {
     let active = true;
@@ -25,15 +25,13 @@ export default function RoutesPage() {
     return () => { active = false; };
   }, []);
 
-  const visibleGroups = useMemo(
-    () =>
-      allGroups
-        .map(group => ({
-          ...group,
-          routes: group.routes.filter(route => filter === "vše" || route.activity === filter),
-        }))
-        .filter(group => group.routes.length > 0),
-    [filter]
+  const visibleRoutes = useMemo(
+    () => allGroups.flatMap(group =>
+      group.routes
+        .filter(route => filter === "vše" || route.activity === filter)
+        .map(route => ({ route, groupTitle: group.title }))
+    ),
+    [allGroups, filter]
   );
 
   const handleSelect = async (item: string) => {
@@ -65,9 +63,7 @@ export default function RoutesPage() {
 
       <main className="container routes-page">
         <header className="routes-header">
-          <span className="routes-eyebrow">POHYB V OKOLÍ DOLNÍ LHOTY</span>
           <h1>Doporučené trasy</h1>
-          <p>Trasy z místních sportovních akcí převedené do vzhledu naší aplikace.</p>
         </header>
 
         <div className="routes-filter" role="tablist" aria-label="Filtr tras">
@@ -89,90 +85,73 @@ export default function RoutesPage() {
         </div>
 
         <div className="routes-groups">
-          {visibleGroups.map(group => {
-            const Icon = group.id === "obora" ? Mountain : Footprints;
-            const isOpen = openGroup === group.id;
-            return (
-              <section className="routes-group tile" key={group.id}>
-                <button
-                  type="button"
-                  className="routes-group-heading"
-                  onClick={() => setOpenGroup(isOpen ? null : group.id)}
-                  aria-expanded={isOpen}
-                >
-                  <span className="routes-group-icon"><Icon size={25} /></span>
-                  <span className="routes-group-copy">
-                    <strong>{group.title}</strong>
-                    <small>{group.subtitle}</small>
-                  </span>
-                  <ChevronDown className={isOpen ? "routes-chevron open" : "routes-chevron"} size={22} />
-                </button>
-
-                {isOpen && (
-                  <div className="routes-list">
-                    {group.routes.map(route => (
-                      <article className="route-card" key={route.name}>
-                        <div className="route-card-main">
-                          <div className="route-card-icon">
-                            {route.activity === "běh" ? <Route size={23} /> : <Footprints size={23} />}
-                          </div>
-                          <div className="route-card-info">
-                            <div className="route-card-title">
-                              <h2>{route.name}</h2>
-                              {route.badge && <span>{route.badge}</span>}
-                            </div>
-                            <div className="route-card-meta">
-                              <strong>{route.distance}</strong>
-                              <span>{route.activity === "běh" ? "Běh" : "Chůze"}</span>
-                            </div>
-                            <p>{route.description}</p>
-                          </div>
-                        </div>
-
-                        {route.gpxUrl ? (
-                          <RouteMap gpxUrl={route.gpxUrl} mapUrl={route.mapUrl} name={route.name} laps={route.laps} />
-                        ) : (
-                          <div className="route-map-unavailable">
-                            <MapPinned size={18} />
-                            <span>Interaktivní mapa není k dispozici – pořadatel pro tuto trasu nezveřejňuje GPX.</span>
-                          </div>
-                        )}
-
-                        <div className="route-card-actions">
-                          <a className="route-primary-action" href={route.mapUrl} target="_blank" rel="noopener noreferrer">
-                            <Map size={18} /> Mapy.com
-                            <ExternalLink size={15} />
-                          </a>
-                          {route.gpxUrl && (
-                            <a className="route-secondary-action" href={route.gpxUrl} target="_blank" rel="noopener noreferrer">
-                              <Download size={17} /> Stáhnout GPX
-                            </a>
-                          )}
-                        </div>
-                      </article>
-                    ))}
+          {visibleRoutes.map(({ route, groupTitle }) => (
+            <article className="route-card tile" key={route.name + groupTitle}>
+              <button
+                type="button"
+                className="route-map-preview-button"
+                onClick={() => setSelectedRoute({ route, groupTitle })}
+                aria-label={`Otevřít podrobnosti trasy ${route.name}`}
+              >
+                {route.gpxUrl ? (
+                  <RouteMap gpxUrl={route.gpxUrl} mapUrl={route.mapUrl} name={route.name} laps={route.laps} />
+                ) : (
+                  <div className="route-map-unavailable">
+                    <MapPinned size={18} />
+                    <span>Náhled mapy není k dispozici.</span>
                   </div>
                 )}
-
-                <a className="routes-source" href={group.sourceUrl} target="_blank" rel="noopener noreferrer">
-                  Zdroj a podrobnosti na SKS Dolní Lhota <ExternalLink size={13} />
-                </a>
-              </section>
-            );
-          })}
+              </button>
+              <div className="route-card-main">
+                <div className="route-card-icon">
+                  {route.activity === "běh" ? <Route size={23} /> : <Footprints size={23} />}
+                </div>
+                <div className="route-card-info">
+                  <div className="route-card-title">
+                    <h2>{route.name}</h2>
+                    {route.badge && <span>{route.badge}</span>}
+                  </div>
+                  <div className="route-card-meta">
+                    <strong>{route.distance}</strong>
+                    <span>{route.activity === "běh" ? "Běh" : "Chůze"}</span>
+                  </div>
+                  <p><strong>{groupTitle}</strong> · {route.description}</p>
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
 
-        <section className="routes-note tile">
-          <Map size={21} />
-          <div>
-            <strong>Trasu můžeš otevřít přímo v Mapy.com</strong>
-            <p>GPX se otevře v Mapy.com jako trasa. Mapy.com může při importu vyžadovat přihlášení.</p>
+        {selectedRoute && (
+          <div className="route-detail-backdrop" role="presentation" onClick={() => setSelectedRoute(null)}>
+            <section className="route-detail-modal" role="dialog" aria-modal="true" aria-label={selectedRoute.route.name} onClick={e => e.stopPropagation()}>
+              <div className="route-detail-header">
+                <div>
+                  <span>{selectedRoute.groupTitle}</span>
+                  <h2>{selectedRoute.route.name}</h2>
+                  <p>{selectedRoute.route.distance} · {selectedRoute.route.activity === "běh" ? "Běh" : "Chůze"}{selectedRoute.route.badge ? ` · ${selectedRoute.route.badge}` : ""}</p>
+                </div>
+                <button type="button" onClick={() => setSelectedRoute(null)} aria-label="Zavřít podrobnosti">×</button>
+              </div>
+              <p className="route-detail-description">{selectedRoute.route.description}</p>
+              {selectedRoute.route.gpxUrl && (
+                <div className="route-detail-map">
+                  <RouteMap gpxUrl={selectedRoute.route.gpxUrl} mapUrl={selectedRoute.route.mapUrl} name={selectedRoute.route.name} laps={selectedRoute.route.laps} />
+                </div>
+              )}
+              <div className="route-card-actions route-detail-actions">
+                <a className="route-primary-action" href={selectedRoute.route.mapUrl} target="_blank" rel="noopener noreferrer">
+                  <Map size={18} /> Otevřít v Mapy.com <ExternalLink size={15} />
+                </a>
+                {selectedRoute.route.gpxUrl && (
+                  <a className="route-secondary-action" href={selectedRoute.route.gpxUrl} target="_blank" rel="noopener noreferrer">
+                    <Download size={17} /> Stáhnout GPX
+                  </a>
+                )}
+              </div>
+            </section>
           </div>
-        </section>
-
-        <p className="routes-disclaimer">
-          Trasy a jejich průběh může pořadatel podle aktuálních podmínek upravit. Aplikace zobrazuje data z veřejných stránek SKS Dolní Lhota.
-        </p>
+        )}
       </main>
     </>
   );
