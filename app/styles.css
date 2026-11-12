@@ -4449,3 +4449,7 @@ form select,
 .route-card-main-button { color: inherit; }
 .route-card-main-button .route-card-info { min-width: 0; }
 .route-card-main-button p { margin-bottom: 0; }
+
+.weather-rain-combo{position:relative;display:inline-block;vertical-align:middle;color:inherit;line-height:1}
+.weather-rain-combo>svg:first-child{position:absolute;inset:0;color:currentColor}
+.weather-rain-combo .weather-rain-drops{position:absolute;right:-1px;bottom:-3px;color:#4da3ff}
