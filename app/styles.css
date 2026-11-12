@@ -4295,7 +4295,7 @@ form select,
   stroke-width:3px;
   stroke-linejoin:round;
 }
-.route-map .maplibregl-canvas { z-index:1 !important; }
+.route-map .maplibregl-canvas { z-index:1 !important; filter:brightness(.62) saturate(.82) contrast(1.08); }
 .route-map .maplibregl-control-container { z-index:6 !important; }
 
 
