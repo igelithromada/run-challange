@@ -113,9 +113,22 @@ function formatKm(value: number) {
   return value >= 10 ? value.toFixed(0) : value.toFixed(1);
 }
 
-function ElevationProfile({ elevations, gain, min, max }: { elevations: (number | null)[]; gain: number | null; min: number | null; max: number | null }) {
+function ElevationProfile({
+  elevations,
+  gain,
+  min,
+  max,
+  distanceKm,
+}: {
+  elevations: (number | null)[];
+  gain: number | null;
+  min: number | null;
+  max: number | null;
+  distanceKm: number;
+}) {
   const valid = elevations.filter((value): value is number => typeof value === "number");
-  if (valid.length < 2 || min === null || max === null) return null;
+  if (valid.length < 2 || min === null || max === null || !Number.isFinite(distanceKm) || distanceKm <= 0) return null;
+
   const range = Math.max(1, max - min);
   const points = elevations
     .map((value, index) => {
@@ -124,18 +137,29 @@ function ElevationProfile({ elevations, gain, min, max }: { elevations: (number 
       const y = 88 - ((value - min) / range) * 68;
       return `${x.toFixed(2)},${y.toFixed(2)}`;
     })
-    .filter((value): value is string => value !== null)
-    .join(" ");
-  if (!points) return null;
+    .filter((value): value is string => value !== null);
+
+  if (!points.length) return null;
+
+  const linePoints = points.join(" ");
+  const areaPoints = `0,88 ${linePoints} 100,88`;
+  const axis = [0, 0.25, 0.5, 0.75, 1].map((ratio) => distanceKm * ratio);
+
   return (
-    <div className="route-elevation-profile" aria-label="Výškový profil trasy">
+    <div className="route-elevation-profile" aria-label={`Výškový profil trasy, ${distanceKm.toFixed(1)} km`}>
       <div className="route-elevation-header">
         <strong>Výškový profil</strong>
-        <span>{Math.round(min)}–{Math.round(max)} m n. m.{gain !== null ? ` · ↑ ${Math.round(gain)} m` : ""}</span>
+        <span>{distanceKm >= 10 ? distanceKm.toFixed(0) : distanceKm.toFixed(1)} km · {Math.round(min)}–{Math.round(max)} m n. m.{gain !== null ? ` · ↑ ${Math.round(gain)} m` : ""}</span>
       </div>
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        <polyline points={points} fill="none" stroke="currentColor" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+        <polygon points={areaPoints} fill="currentColor" fillOpacity=".10" stroke="none" />
+        <polyline points={linePoints} fill="none" stroke="currentColor" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
+      <div className="route-elevation-axis" aria-hidden="true">
+        {axis.map((value, index) => (
+          <span key={index}>{value >= 10 ? value.toFixed(0) : value.toFixed(1)} km</span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -388,7 +412,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
           </div>
         </div>
       )}
-      {stats && <ElevationProfile elevations={profileElevations} gain={stats.elevationGain} min={stats.minElevation} max={stats.maxElevation} />}
+      {stats && <ElevationProfile elevations={profileElevations} gain={stats.elevationGain} min={stats.minElevation} max={stats.maxElevation} distanceKm={stats.distanceKm} />}
 
       <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name}>
         <svg ref={routeSvgRef} className="route-map-route-overlay" aria-hidden="true">
