@@ -130,7 +130,7 @@ export default function RoutesPage() {
               </div>
               <div className="route-card-main">
                 <div className="route-card-icon">
-                  {route.activity === "běh" ? <Route size={23} /> : <Footprints size={23} />}
+                  <ActivityTypeIcon type={route.activity} size={23} />
                 </div>
                 <div className="route-card-info">
                   <div className="route-card-title">
