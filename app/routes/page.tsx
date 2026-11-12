@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { ExternalLink, Map, Download, MapPinned, Sparkles } from "lucide-react";
+import { ExternalLink, Map, Download, MapPinned, Sparkles, FileUp, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -10,6 +10,9 @@ import { routeGroups, type RouteGroup, type RouteItem } from "../lib/routes";
 import { getRecommendedRouteGroups } from "../lib/recommendedRoutes";
 import { ActivityTypeIcon } from "../components/ActivityTypeSelector";
 import type { ActivityType } from "../types";
+import { auth } from "../lib/firebase";
+import useAdminGuard from "../lib/useAdminGuard";
+import { showAppToast } from "../components/AppToast";
 
 export default function RoutesPage() {
   const router = useRouter();
@@ -18,6 +21,16 @@ export default function RoutesPage() {
   const [allGroups, setAllGroups] = useState<RouteGroup[]>(routeGroups);
   const [selectedRoute, setSelectedRoute] = useState<{ route: RouteItem; groupTitle: string } | null>(null);
   const [mapStyle, setMapStyle] = useState<"standard" | "minimal">("minimal");
+  const [routeFile, setRouteFile] = useState<File | null>(null);
+  const [routeName, setRouteName] = useState("");
+  const [routeActivity, setRouteActivity] = useState<"běh" | "chůze">("běh");
+  const [routeDescription, setRouteDescription] = useState("");
+  const [routeBadge, setRouteBadge] = useState("");
+  const [routeSourceUrl, setRouteSourceUrl] = useState("");
+  const [routeBusy, setRouteBusy] = useState(false);
+  const [adminRoutes, setAdminRoutes] = useState<Array<{id:string;name:string;activity:string;description?:string;badge?:string;sourceUrl?:string;gpxUrl?:string}>>([]);
+  const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
+  const adminAccess = useAdminGuard();
 
   React.useEffect(() => {
     let active = true;
@@ -27,6 +40,91 @@ export default function RoutesPage() {
     });
     return () => { active = false; };
   }, []);
+
+  const loadAdminRoutes = async () => {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+      const token = await currentUser.getIdToken();
+      const response = await fetch("/api/admin/routes", { headers: { Authorization: `Bearer ${token}` } });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok) setAdminRoutes(Array.isArray(result.routes) ? result.routes : []);
+    } catch (e) {
+      showAppToast(e instanceof Error ? e.message : "Trasy se nepodařilo načíst.", "error");
+    }
+  };
+
+  React.useEffect(() => {
+    if (adminAccess === "allowed") void loadAdminRoutes();
+  }, [adminAccess]);
+
+  const resetRouteForm = () => {
+    setEditingRouteId(null); setRouteFile(null); setRouteName(""); setRouteActivity("běh");
+    setRouteDescription(""); setRouteBadge(""); setRouteSourceUrl("");
+    const input = document.getElementById("routes-admin-gpx") as HTMLInputElement | null;
+    if (input) input.value = "";
+  };
+
+  const startEditRoute = (route: {id:string;name:string;activity:string;description?:string;badge?:string;sourceUrl?:string}) => {
+    setEditingRouteId(route.id);
+    setRouteName(route.name || "");
+    setRouteActivity(route.activity === "chůze" ? "chůze" : "běh");
+    setRouteDescription(route.description || "");
+    setRouteBadge(route.badge || "");
+    setRouteSourceUrl(route.sourceUrl || "");
+    setRouteFile(null);
+    const input = document.getElementById("routes-admin-gpx") as HTMLInputElement | null;
+    if (input) input.value = "";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const saveRoute = async () => {
+    if (!routeName.trim()) { showAppToast("Zadej název trasy.", "error"); return; }
+    if (!editingRouteId && !routeFile) { showAppToast("Vyber GPX soubor.", "error"); return; }
+    setRouteBusy(true);
+    const wasEditing = Boolean(editingRouteId);
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const token = await currentUser.getIdToken(true);
+      const form = new FormData();
+      form.append("name", routeName); form.append("activity", routeActivity);
+      form.append("description", routeDescription); form.append("badge", routeBadge); form.append("sourceUrl", routeSourceUrl);
+      if (routeFile) form.append("file", routeFile);
+      let response: Response;
+      if (editingRouteId) {
+        form.append("id", editingRouteId);
+        response = await fetch("/api/admin/routes", { method:"PUT", headers:{Authorization:`Bearer ${token}`}, body:form });
+      } else {
+        form.append("groupId","vlastni-trasy"); form.append("groupTitle","Vlastní doporučené trasy"); form.append("groupSubtitle","");
+        response = await fetch("/api/admin/routes", { method:"POST", headers:{Authorization:`Bearer ${token}`}, body:form });
+      }
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Trasu se nepodařilo uložit.");
+      resetRouteForm();
+      await loadAdminRoutes();
+      showAppToast(wasEditing ? "Trasa byla upravena." : "Trasa byla přidána.", "success");
+    } catch (e) {
+      showAppToast(e instanceof Error ? e.message : "Trasu se nepodařilo uložit.", "error");
+    } finally { setRouteBusy(false); }
+  };
+
+  const deleteAdminRoute = async (id: string, name: string) => {
+    if (!window.confirm(`Opravdu odstranit trasu „${name}“? GPX se odstraní také z úložiště.`)) return;
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const token = await currentUser.getIdToken(true);
+      const response = await fetch("/api/admin/routes", { method:"DELETE", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({id}) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Trasu se nepodařilo odstranit.");
+      setAdminRoutes(prev => prev.filter(item => item.id !== id));
+      if (editingRouteId === id) resetRouteForm();
+      showAppToast("Trasa byla odstraněna.","success");
+    } catch (e) {
+      showAppToast(e instanceof Error ? e.message : "Trasu se nepodařilo odstranit.","error");
+    }
+  };
 
   const visibleRoutes = useMemo(
     () => allGroups.flatMap(group =>
@@ -101,6 +199,45 @@ export default function RoutesPage() {
             <Map size={18} /> Mapa
           </button>
         </div>
+
+        {adminAccess === "allowed" && (
+          <section className="tile admin-route-upload routes-admin-management">
+            <div className="admin-section-heading">
+              <FileUp size={21}/>
+              <div>
+                <h2>{editingRouteId ? "Upravit doporučenou trasu" : "Správa tras"}</h2>
+                <span>{editingRouteId ? "Můžeš změnit popis, údaje nebo nahradit GPX." : "Přidávej, upravuj nebo maž doporučené trasy. Správa je dostupná jen administrátorovi."}</span>
+              </div>
+            </div>
+            <div className="admin-route-form">
+              <input id="routes-admin-gpx" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" onChange={e => setRouteFile(e.target.files?.[0] || null)} />
+              <input type="text" value={routeName} onChange={e => setRouteName(e.target.value)} placeholder="Název trasy" />
+              <select value={routeActivity} onChange={e => setRouteActivity(e.target.value as "běh" | "chůze")} aria-label="Typ aktivity">
+                <option value="běh">Běh</option><option value="chůze">Chůze</option>
+              </select>
+              <input type="text" value={routeBadge} onChange={e => setRouteBadge(e.target.value)} placeholder="Štítek, např. Výzva" />
+              <textarea value={routeDescription} onChange={e => setRouteDescription(e.target.value)} placeholder="Popis trasy" rows={3} />
+              <input type="url" value={routeSourceUrl} onChange={e => setRouteSourceUrl(e.target.value)} placeholder="Volitelný odkaz na zdroj" />
+              <div className="admin-route-form-actions">
+                <button type="button" className="admin-action-button" onClick={() => void saveRoute()} disabled={routeBusy}>
+                  <Upload size={18}/>{routeBusy ? "Ukládám…" : editingRouteId ? "Uložit změny" : "Přidat trasu"}
+                </button>
+                {editingRouteId && <button type="button" className="admin-action-button" onClick={resetRouteForm} disabled={routeBusy}>Zrušit úpravu</button>}
+              </div>
+            </div>
+            {adminRoutes.length > 0 && <div className="admin-route-list">
+              {adminRoutes.map(route => (
+                <div className="admin-route-row" key={route.id}>
+                  <span><strong>{route.name}</strong><small>{route.activity}</small></span>
+                  <div className="admin-route-row-actions">
+                    <button type="button" className="admin-action-button" onClick={() => startEditRoute(route)}>Upravit</button>
+                    <button type="button" className="admin-action-button danger" onClick={() => void deleteAdminRoute(route.id, route.name)}>Smazat</button>
+                  </div>
+                </div>
+              ))}
+            </div>}
+          </section>
+        )}
 
         <style>{`
           .route-map-preview-button{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;border-radius:16px;overflow:hidden}
