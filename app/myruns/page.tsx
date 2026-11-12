@@ -231,7 +231,7 @@ export default function MyRunsPage() {
     finally { setDeletingPhoto(false); }
   };
   const handleDelete = async (id: string) => {
-    if (confirmDelete && !window.confirm("Opravdu chceš tento záznam trvale smazat? Fotografie se odstraní také.")) return;
+    if (!window.confirm("Opravdu chceš tento záznam trvale smazat? Fotografie se odstraní také.")) return;
     setActionError("");
     try {
       const currentUser = auth.currentUser;
