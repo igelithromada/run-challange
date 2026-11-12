@@ -22,10 +22,7 @@ const DEFAULT_ACTIVITY_KEY = "dolni-lhota-default-activity-v1";
 export default function SettingsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [avatarUploading, setAvatarUploading] = useState(false);
   const [theme, setTheme] = useState("default");
   const [customColor, setCustomColor] = useState(DEFAULT_COLOR);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -83,8 +80,7 @@ export default function SettingsPage() {
           const storedTheme = useRemoteTheme ? remoteTheme : (cachedTheme?.theme || remoteTheme);
           const storedColor = useRemoteTheme ? remoteColor : (cachedTheme?.customColor || remoteColor);
           const storedAnimations = useRemoteTheme ? remoteAnimations : (cachedTheme?.animationsEnabled !== false);
-          setNickname(data.nickname || "");
-          setAvatarUrl(data.avatarUrl || "");
+          
           setTheme(storedTheme);
           setCustomColor(storedColor);
           setAnimationsEnabled(storedAnimations);
@@ -149,40 +145,6 @@ export default function SettingsPage() {
     await saveSettings({ theme: "custom", customColor });
     setShowColorPicker(false);
     flash("Vlastní vzhled uložen");
-  };
-
-  const handleNicknameSave = async () => {
-    const value = nickname.trim().replace(/\s+/g, " ");
-    if (!value) {
-      flash("Přezdívka nesmí být prázdná.", "error");
-      return;
-    }
-    if (value.length > 40) {
-      flash("Přezdívka může mít nejvýše 40 znaků.", "error");
-      return;
-    }
-    try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error("Nejsi přihlášen.");
-      const token = await currentUser.getIdToken(true);
-      const response = await fetch("/api/settings/profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ nickname: value }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "Přezdívku se nepodařilo uložit.");
-      const savedNickname = typeof result.nickname === "string" ? result.nickname : value;
-      setNickname(savedNickname);
-      invalidatePublicProfileCache(currentUser.uid);
-      flash("Přezdívka uložena");
-    } catch (error) {
-      console.error("Nepodařilo se uložit přezdívku", error);
-      flash(error instanceof Error ? error.message : "Přezdívku se nepodařilo uložit.", "error");
-    }
   };
 
   const handleAnimationsChange = async (enabled: boolean) => {
@@ -291,45 +253,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.currentTarget;
-    const file = input.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
-      flash(file.type.startsWith("image/") ? "Fotografie je příliš velká (max. 5 MB)." : "Vyber obrázek.");
-      input.value = "";
-      return;
-    }
-    if (!userId) return;
-    setAvatarUploading(true);
-    try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error("Nejsi přihlášen.");
-      const token = await currentUser.getIdToken();
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await fetch("/api/media/upload", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || typeof result.secureUrl !== "string") {
-        throw new Error(result.error || "Nahrání selhalo.");
-      }
-      await saveUserSettings(userId, { avatarUrl: result.secureUrl, avatarPublicId: result.publicId || "" });
-      await mergePublicProfile(userId, { avatarUrl: result.secureUrl });
-      setAvatarUrl(result.secureUrl);
-      flash("Profilová fotografie uložena");
-    } catch (error) {
-      console.error(error);
-      flash("Fotografii se nepodařilo uložit.");
-    } finally {
-      setAvatarUploading(false);
-      input.value = "";
-    }
-  };
-
   const handlePasswordChange = async () => {
     if (newPassword.length < 6) { flash("Nové heslo musí mít alespoň 6 znaků."); return; }
     if (newPassword !== newPasswordConfirm) { flash("Nová hesla se neshodují."); return; }
@@ -360,29 +283,6 @@ export default function SettingsPage() {
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
       <main className="container settings-page">
-        <section className="tile">
-          <div className="settings-section-heading"><Palette size={21}/><div><h2>Profil</h2><p>Nastavení, které se zobrazí u tvých aktivit.</p></div></div>
-          <label className="settings-field-label">Uživatelské jméno
-            <input value={nickname} maxLength={40} placeholder="Uživatelské jméno" onChange={e => setNickname(e.target.value)} />
-          </label>
-          <button type="button" className="tile-button settings-save-button" onClick={handleNicknameSave} disabled={saving}>{saving ? "Ukládám…" : "Uložit přezdívku"}</button>
-        </section>
-
-        <section className="tile settings-avatar">
-          <div className="settings-avatar-preview">
-            {avatarUrl ? <img src={avatarUrl} alt="Profilový avatar" /> : <span>{(nickname || email).charAt(0).toUpperCase() || "?"}</span>}
-          </div>
-          <div className="settings-avatar-copy">
-            <h3>Profilová fotografie</h3>
-            <p>Vyber obrázek, který se zobrazí u tvých aktivit.</p>
-            <label className="avatar-upload-button">
-              {avatarUploading ? "Nahrávám obrázek…" : avatarUrl ? "Změnit fotografii" : "Vybrat fotografii"}
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} disabled={avatarUploading} />
-            </label>
-            <small>JPG, PNG nebo WEBP · maximálně 5 MB</small>
-          </div>
-        </section>
-
         <section className="tile">
           <div className="settings-section-heading"><Sparkles size={21}/><div><h2>Vzhled</h2><p>Výběr se ukládá a zůstane zachovaný i po návratu do nastavení.</p></div></div>
 
