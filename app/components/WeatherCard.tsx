@@ -33,6 +33,15 @@ function weatherColorClass(type = "") {
   return "weather-condition-neutral";
 }
 
+function RainIcon({ size = 22, className = "" }: { size?: number; className?: string }) {
+  return (
+    <span className={`weather-rain-combo ${className}`} style={{ width: size, height: size }}>
+      <Cloud size={size} strokeWidth={1.8} />
+      <Droplets className="weather-rain-drops" size={Math.max(10, Math.round(size * 0.55))} strokeWidth={2.4} />
+    </span>
+  );
+}
+
 function hourLabel(item: WeatherHour) {
   const raw = item?.displayDateTime;
   if (raw?.hours !== undefined) return `${String(raw.hours).padStart(2, "0")}:00`;
@@ -122,7 +131,7 @@ export default function WeatherCard() {
               <small>Vítr</small>
             </div>
             <div style={{ background: "rgba(0,0,0,0.12)", borderRadius: "12px", padding: "0.65rem 0.5rem", textAlign: "center" }}>
-              <CloudRain className={`weather-stat-icon ${iconColorClass}`} size={19} style={{ margin: "0 auto 0.25rem" }} />
+              <RainIcon size={19} className="weather-stat-icon" />
               <strong className={rainLevelClass} style={{ display: "block" }}>{rainChance !== undefined ? `${rainChance}%` : "—"}</strong>
               <small>Déšť</small>
             </div>
@@ -142,7 +151,7 @@ export default function WeatherCard() {
                   return (
                     <div key={item?.interval?.startTime || index} style={{ textAlign: "center", padding: "0.6rem 0.25rem", borderRadius: "12px", background: "rgba(0,0,0,0.12)" }}>
                       <small>{hourLabel(item)}</small>
-                      <HourIcon className={`weather-hour-icon ${weatherColorClass(item?.weatherCondition?.type)}`} size={23} style={{ display: "block", margin: "0.35rem auto" }} />
+                      {(item?.weatherCondition?.type || "").toUpperCase().includes("RAIN") || (item?.weatherCondition?.type || "").toUpperCase().includes("DRIZZLE") ? <RainIcon size={23} className="weather-hour-icon" /> : <HourIcon className={`weather-hour-icon ${weatherColorClass(item?.weatherCondition?.type)}`} size={23} style={{ display: "block", margin: "0.35rem auto" }} />}
                       <strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong>
                       <small style={{ display: "block", opacity: 0.8 }}>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}%` : "—"} déšť</small>
                     </div>
