@@ -265,7 +265,6 @@ export default function ProfilePage() {
             <small>JPG, PNG nebo WEBP · maximálně 5 MB</small>
           </div>
         </section>
-        </section>
 
         <section className="tile settings-password-section">
           <div className="settings-section-heading">
