@@ -46,7 +46,11 @@ const translateSaveError = (error: unknown) => {
   return error instanceof Error ? error.message : "Aktivitu se nepodařilo uložit. Zkus to prosím znovu.";
 };
 
-export default function RunForm({ type, gpsDraft, onGpsDraftConsumed }: {\n  type: "běh" | "chůze";\n  gpsDraft?: { type: "běh" | "chůze"; km: number; seconds: number } | null;\n  onGpsDraftConsumed?: () => void;\n}) {
+export default function RunForm({ type, gpsDraft, onGpsDraftConsumed }: {
+  type: "běh" | "chůze";
+  gpsDraft?: { type: "běh" | "chůze"; km: number; seconds: number } | null;
+  onGpsDraftConsumed?: () => void;
+}) {
   const [showForm, setShowForm] = useState(false);
   const [km, setKm] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
