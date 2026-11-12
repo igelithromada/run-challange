@@ -34,6 +34,7 @@ export default function ActivityRecorder({ type, onFinished }:{
   const [requestingLocation,setRequestingLocation]=useState(false);
   const [backgrounded,setBackgrounded]=useState(false);
   const [gpsUnavailable,setGpsUnavailable]=useState(false);
+  const [initialGpsState,setInitialGpsState]=useState<"checking"|"ready"|"off">("checking");
 
   const startedAtRef=useRef<number|null>(null);
   const pausedAtRef=useRef<number|null>(null);
@@ -129,12 +130,18 @@ export default function ActivityRecorder({ type, onFinished }:{
           timestamp:pos.timestamp
         };
         setAccuracy(Math.round(p.accuracy));
+        if (requestingLocation && !runningRef.current) {
+          if (p.accuracy <= 75) {
+            lastPointRef.current = p;
+            onFirstFix?.();
+          }
+          return;
+        }
         if(!runningRef.current || pausedRef.current || gpsUnavailableRef.current || p.accuracy>50) return;
 
         const previous=lastPointRef.current;
         if(!previous){
           lastPointRef.current=p;
-          onFirstFix?.();
           return;
         }
 
@@ -148,8 +155,10 @@ export default function ActivityRecorder({ type, onFinished }:{
         lastPointRef.current=p;
       },err=>{
         if(err.code===1) {
+          setInitialGpsState("off");
           markGpsUnavailable("Přístup k poloze není povolen. Zapni polohu v telefonu a měření bude pozastaveno.");
         } else if(err.code===2) {
+          setInitialGpsState("off");
           markGpsUnavailable("GPS není dostupné. Zapni polohu v telefonu a měření je pozastaveno.");
         } else {
           setGpsError("GPS signál se nepodařilo získat. Zkontroluj polohu v telefonu.");
@@ -165,11 +174,13 @@ export default function ActivityRecorder({ type, onFinished }:{
 
   const start=()=>{
     if(!("geolocation" in navigator)){
+      setInitialGpsState("off");
       setGpsError("Tento prohlížeč nepodporuje GPS.");
       return;
     }
 
     setGpsError("");
+    setInitialGpsState("checking");
     setGpsUnavailable(false);
     gpsUnavailableRef.current=false;
     setRequestingLocation(true);
@@ -261,6 +272,41 @@ export default function ActivityRecorder({ type, onFinished }:{
     setRequestingLocation(false);
   };
 
+  useEffect(() => {
+    let active = true;
+    if (!("geolocation" in navigator)) {
+      setInitialGpsState("off");
+      return () => { active = false; };
+    }
+    const check = async () => {
+      try {
+        if ("permissions" in navigator && navigator.permissions?.query) {
+          const permission = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+          if (!active) return;
+          if (permission.state === "denied") {
+            setInitialGpsState("off");
+            return;
+          }
+          if (permission.state === "granted") {
+            navigator.geolocation.getCurrentPosition(
+              pos => { if (active) { setAccuracy(Math.round(pos.coords.accuracy)); setInitialGpsState(pos.coords.accuracy <= 75 ? "ready" : "off"); } },
+              () => { if (active) setInitialGpsState("off"); },
+              { enableHighAccuracy: true, maximumAge: 0, timeout: 2500 }
+            );
+            return;
+          }
+          setInitialGpsState("ready");
+          return;
+        }
+        setInitialGpsState("ready");
+      } catch {
+        if (active) setInitialGpsState("ready");
+      }
+    };
+    void check();
+    return () => { active = false; };
+  }, []);
+
   useEffect(()=>{
     if(!running) return;
     const timer=window.setInterval(()=>{
@@ -326,7 +372,7 @@ export default function ActivityRecorder({ type, onFinished }:{
   const status=requestingLocation
     ? "Získávám polohu…"
     : gpsUnavailable
-      ? "GPS nedostupné"
+      ? "GPS vypnuto"
       : running
         ? paused
           ? "Pozastaveno"
@@ -335,7 +381,9 @@ export default function ActivityRecorder({ type, onFinished }:{
             : "GPS aktivní"
         : elapsed>0
           ? "Měření dokončeno"
-          : "Připraveno";
+          : initialGpsState === "off"
+            ? "GPS vypnuto"
+            : "Připraveno";
 
   const distanceKm=distance/1000;
   const canContinue=!running && !requestingLocation && distanceKm>0.01 && elapsed>0;
@@ -348,7 +396,7 @@ export default function ActivityRecorder({ type, onFinished }:{
         <span className="activity-recorder-eyebrow">{icon} MĚŘENÍ GPS</span>
         <h2>{activityName} v reálném čase</h2>
       </div>
-      <span className={`activity-recorder-status ${paused?"is-paused":gpsUnavailable?"is-error":backgrounded?"is-background":""}`}>{status}</span>
+      <span className={`activity-recorder-status ${paused?"is-paused":gpsUnavailable||initialGpsState==="off"?"is-error":backgrounded?"is-background":""}`}>{status}</span>
     </div>
 
     {!running && elapsed===0 ? (
