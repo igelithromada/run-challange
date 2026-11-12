@@ -4696,6 +4696,28 @@ html[data-theme="white"] .route-map-minimal .maplibregl-canvas {
   .route-elevation-axis { font-size: .55rem; }
 }
 
+/* Detail trasy používá stejné čisté pořadí: výškový profil samostatně, potom mapa. */
+.route-detail-map .route-map-info {
+  display: none !important;
+}
+.route-detail-map .route-elevation-profile {
+  margin: 0 0 .8rem;
+  background: rgba(255,255,255,.055);
+}
+.route-detail-map .route-map {
+  border-radius: 18px;
+}
+.route-detail-map .route-map-shell {
+  display: flex;
+  flex-direction: column;
+}
+.route-detail-map .route-elevation-profile {
+  order: 0;
+}
+.route-detail-map .route-map {
+  order: 1;
+}
+
 /* Tlačítko GPS musí být jasně rozpoznatelné jako hlavní možnost měření. */
 .gps-form-launch {
   width: 100%;
