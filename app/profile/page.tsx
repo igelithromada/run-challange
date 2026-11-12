@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, signOut, updatePassword } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import { UserRound, Mail, KeyRound, LogOut, ShieldCheck } from "lucide-react";
+import { UserRound, Mail, KeyRound, LogOut, ShieldCheck, Camera } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getUserProfile } from "../lib/services/users";
 import { invalidatePublicProfileCache } from "../lib/services/publicProfiles";
@@ -17,6 +17,9 @@ export default function ProfilePage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [savingNickname, setSavingNickname] = useState(false);
@@ -33,6 +36,7 @@ export default function ProfilePage() {
       try {
         const profile = await getUserProfile(user.uid);
         setNickname(profile?.nickname || "");
+        setAvatarUrl(typeof profile?.avatarUrl === "string" ? profile.avatarUrl : "");
       } catch (error) {
         console.error("Nepodařilo se načíst profil:", error);
       }
@@ -77,6 +81,59 @@ export default function ProfilePage() {
       flash(error instanceof Error ? error.message : "Přezdívku se nepodařilo uložit.", "error");
     } finally {
       setSavingNickname(false);
+    }
+  };
+
+  const handleAvatarChange = async (file: File | null) => {
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      flash("Povoleny jsou pouze JPG, PNG a WebP.", "error");
+      return;
+    }
+    if (file.size <= 0 || file.size > 5 * 1024 * 1024) {
+      flash("Avatar může mít maximálně 5 MB.", "error");
+      return;
+    }
+    const user = auth.currentUser;
+    if (!user) {
+      flash("Nejsi přihlášen.", "error");
+      return;
+    }
+
+    setAvatarBusy(true);
+    try {
+      const token = await user.getIdToken(true);
+      const form = new FormData();
+      form.append("file", file);
+      const uploadResponse = await fetch("/api/media/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      const uploadResult = await uploadResponse.json().catch(() => ({}));
+      if (!uploadResponse.ok || typeof uploadResult.secureUrl !== "string") {
+        throw new Error(uploadResult.error || "Avatar se nepodařilo nahrát.");
+      }
+
+      const profileResponse = await fetch("/api/settings/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ avatarUrl: uploadResult.secureUrl }),
+      });
+      const profileResult = await profileResponse.json().catch(() => ({}));
+      if (!profileResponse.ok) throw new Error(profileResult.error || "Avatar se nepodařilo uložit.");
+
+      setAvatarUrl(uploadResult.secureUrl);
+      invalidatePublicProfileCache(user.uid);
+      flash("Profilová fotografie byla uložena.");
+    } catch (error) {
+      flash(error instanceof Error ? error.message : "Avatar se nepodařilo uložit.", "error");
+    } finally {
+      setAvatarBusy(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
     }
   };
 
@@ -180,6 +237,37 @@ export default function ProfilePage() {
             <div>
               <strong>E-mail</strong>
               <span>{email || "—"}</span>
+            </div>
+          </div>
+
+          <div className="profile-avatar-editor">
+            <div className="profile-avatar-preview">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Profilová fotografie" />
+              ) : (
+                <UserRound size={42} />
+              )}
+            </div>
+            <div className="profile-avatar-copy">
+              <strong>Profilová fotografie</strong>
+              <span>Avatar se zobrazuje u tvých aktivit a v profilu.</span>
+              <input
+                ref={avatarInputRef}
+                className="profile-avatar-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={e => void handleAvatarChange(e.target.files?.[0] || null)}
+              />
+              <button
+                type="button"
+                className="tile-button settings-save-button"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={avatarBusy}
+              >
+                <Camera size={18} />
+                {avatarBusy ? "Nahrávám…" : avatarUrl ? "Změnit fotografii" : "Nahrát fotografii"}
+              </button>
+              <small>JPG, PNG nebo WebP · maximálně 5 MB</small>
             </div>
           </div>
         </section>
