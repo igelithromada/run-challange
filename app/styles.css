@@ -4159,7 +4159,17 @@ form select,
   .site-navbar-button:hover { background: rgba(255,255,255,.11); }
 }
 .weather-stat-icon {
-  color: #4da3ff !important;
+  color: var(--ui-text, #fff) !important;
+}
+.weather-stat-icon.weather-condition-rain path:not(:first-child),
+.weather-stat-icon.weather-condition-drizzle path:not(:first-child),
+.weather-stat-icon.weather-condition-storm path:not(:first-child) {
+  stroke: #4da3ff !important;
+}
+.weather-stat-icon.weather-condition-rain,
+.weather-stat-icon.weather-condition-drizzle,
+.weather-stat-icon.weather-condition-storm {
+  color: var(--ui-text, #fff) !important;
 }
 .route-map-info {
   position: absolute;
@@ -4266,3 +4276,24 @@ form select,
 /* Déšť: modrá pouze ikona kapek/mraku, procento zůstává bílé */
 .weather-card .weather-stat-icon { color:#4da3ff !important; stroke:#4da3ff !important; }
 .weather-card .weather-stat-icon + strong { color:var(--ui-text,#fff) !important; }
+
+.route-map-route-overlay {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:4;
+  pointer-events:none;
+  overflow:visible;
+}
+.route-map-route-overlay text {
+  fill:#fff;
+  font-size:10px;
+  font-weight:800;
+  paint-order:stroke;
+  stroke:rgba(15,28,38,.9);
+  stroke-width:3px;
+  stroke-linejoin:round;
+}
+.route-map .maplibregl-canvas { z-index:1 !important; }
+.route-map .maplibregl-control-container { z-index:6 !important; }
