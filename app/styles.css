@@ -4563,3 +4563,106 @@ html[data-weather] body::before { display:none !important; animation:none !impor
 }
 .route-map-preview .route-elevation-profile svg { height:52px; }
 .route-map-interactive .route-elevation-profile svg { height:96px; }
+
+
+/* ===== Finální opravy počasí, tras a měření GPS ===== */
+
+/* Animace počasí patří pouze do pozadí. Obsah aplikace zůstává vždy nad ní. */
+.app-content-layer {
+  position: relative !important;
+  z-index: 1 !important;
+  isolation: isolate;
+  min-height: 100vh;
+}
+html[data-animations="true"] body::before {
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Velká ikona deště: neutrální mrak + modré kapky stejně jako v původním vzhledu. */
+.weather-main-icon.weather-rain-combo {
+  flex: 0 0 68px;
+  display: inline-block;
+}
+.weather-main-icon .weather-rain-drops {
+  color: #4da3ff !important;
+}
+
+/* Standardní mapa = barevná mapa. Naše = černobílá varianta podle zvoleného vzhledu. */
+.route-map-standard .maplibregl-canvas {
+  filter: none;
+}
+.route-map-minimal .maplibregl-canvas {
+  filter: grayscale(1) contrast(.94) brightness(1.03);
+}
+html[data-theme="dark"] .route-map-minimal .maplibregl-canvas {
+  filter: grayscale(1) contrast(1.08) brightness(.72);
+}
+html[data-theme="light"] .route-map-minimal .maplibregl-canvas,
+html[data-theme="white"] .route-map-minimal .maplibregl-canvas {
+  filter: grayscale(1) contrast(.9) brightness(1.08);
+}
+.route-map-standard,
+.route-map-minimal {
+  background: var(--ui-bg-strong, #10181c);
+}
+.route-map-standard .route-map-info,
+.route-map-minimal .route-map-info {
+  z-index: 5;
+}
+
+/* Výškový profil je součástí informací o trase, ne překrytí mapy. */
+.route-elevation-profile {
+  position: relative;
+  margin: .8rem 0 0;
+  padding: .75rem 0 .15rem;
+  border-top: 1px solid rgba(255,255,255,.13);
+  color: rgba(255,255,255,.9);
+}
+.route-elevation-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: .35rem;
+}
+.route-elevation-header strong {
+  font-size: .82rem;
+}
+.route-elevation-header span {
+  font-size: .68rem;
+  color: rgba(255,255,255,.68);
+  text-align: right;
+}
+.route-elevation-profile svg {
+  width: 100%;
+  height: 62px;
+  display: block;
+  overflow: visible;
+  color: #69e6a3;
+}
+
+/* Tlačítko GPS musí být jasně rozpoznatelné jako hlavní možnost měření. */
+.gps-form-launch {
+  width: 100%;
+  margin: 0 0 1rem;
+  justify-content: center;
+  min-height: 52px !important;
+  background: rgba(54,217,255,.15) !important;
+  border: 1px solid rgba(100,217,255,.48) !important;
+  color: #fff !important;
+  box-shadow: 0 7px 20px rgba(0,0,0,.14);
+}
+.gps-form-launch:hover {
+  background: rgba(54,217,255,.23) !important;
+  border-color: rgba(100,217,255,.7) !important;
+}
+@media(max-width:520px) {
+  .route-elevation-header { align-items: flex-start; flex-direction: column; gap: .15rem; }
+  .route-elevation-header span { text-align: left; }
+  .route-elevation-profile svg { height: 56px; }
+}
