@@ -4230,3 +4230,39 @@ form select,
 .admin-route-row span { display:flex; flex-direction:column; min-width:0; }
 .admin-route-row small { opacity:.72; margin-top:.12rem; }
 @media(max-width:620px){ .admin-route-form { grid-template-columns:1fr; } .admin-route-form input[type=file] { grid-column:auto; } }
+
+
+/* FINÁLNÍ OPRAVA – GPX administrace */
+.admin-route-form {
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:.7rem !important;
+  width:100% !important;
+  margin-top:.8rem !important;
+}
+.admin-route-form > * { min-width:0 !important; width:100% !important; box-sizing:border-box !important; }
+.admin-route-form input,
+.admin-route-form textarea,
+.admin-route-form select {
+  min-height:50px !important;
+  padding:.75rem .9rem !important;
+  border:1px solid rgba(255,255,255,.25) !important;
+  border-radius:13px !important;
+  background:rgba(255,255,255,.96) !important;
+  color:#14232c !important;
+  font:inherit !important;
+}
+.admin-route-form textarea { min-height:92px !important; resize:vertical !important; }
+.admin-route-form input[type="file"] { min-height:52px !important; padding:.55rem .7rem !important; }
+.admin-route-form input[type="file"]::file-selector-button { min-height:38px; margin-right:.6rem; padding:.45rem .7rem; border:0; border-radius:9px; background:#17212b; color:#fff; font:inherit; font-weight:700; }
+.admin-route-form .admin-action-button { width:100% !important; min-height:50px !important; justify-content:center !important; }
+@media(min-width:700px){
+  .admin-route-form { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  .admin-route-form input[type="file"],
+  .admin-route-form textarea,
+  .admin-route-form input[type="url"] { grid-column:1/-1 !important; }
+  .admin-route-form .admin-action-button { width:max-content !important; min-width:150px !important; }
+}
+/* Déšť: modrá pouze ikona kapek/mraku, procento zůstává bílé */
+.weather-card .weather-stat-icon { color:#4da3ff !important; stroke:#4da3ff !important; }
+.weather-card .weather-stat-icon + strong { color:var(--ui-text,#fff) !important; }
