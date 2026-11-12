@@ -22,7 +22,10 @@ export async function getRecommendedRouteGroups(): Promise<RouteGroup[]> {
         name: item.name,
         distance: typeof item.distance === "string" && item.distance ? item.distance : "GPX",
         activity: item.activity === "běh" ? "běh" : "chůze",
-        description: typeof item.description === "string" ? item.description : "",
+        description: [
+          typeof item.groupTitle === "string" && item.groupTitle ? item.groupTitle : "",
+          typeof item.description === "string" ? item.description : "",
+        ].filter(Boolean).join(" · "),
         mapUrl: typeof item.mapUrl === "string" ? item.mapUrl : `https://mapy.com/fnc/v1/gpx?url=${encodeURIComponent(item.gpxUrl)}`,
         gpxUrl: item.gpxUrl,
         badge: typeof item.badge === "string" ? item.badge : undefined,
