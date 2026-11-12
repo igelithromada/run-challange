@@ -208,12 +208,12 @@ export default function ProgressPage() {
   };
 
   return <>
-    <Navbar title="Můj progres" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
+    <Navbar title="Můj pokrok" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
     <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/>
     <main className="container progress-page">
       <header className="progress-header">
         <span className="progress-eyebrow">TVŮJ POHYB. TVŮJ POSUN.</span>
-        <h1>Můj progres</h1>
+        <h1>Můj pokrok</h1>
         <p>Každý kilometr se počítá. Sleduj cíle, úspěchy a svůj posun.</p>
       </header>
 
