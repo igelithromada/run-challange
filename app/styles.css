@@ -4458,3 +4458,7 @@ form select,
 .admin-route-row{gap:.75rem}
 .admin-route-row-actions{margin-left:auto}
 @media(max-width:620px){.admin-route-row{align-items:flex-start;flex-direction:column}.admin-route-row-actions{margin-left:0;width:100%}.admin-route-row-actions .admin-action-button{flex:1}}
+
+.gps-form-launch{width:100%;margin:0 0 1rem;justify-content:center}
+.run-form-gps-recorder .activity-recorder{margin:0}
+.run-form-gps-recorder .activity-recorder .install-pwa-prompt{margin-top:0}
