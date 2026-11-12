@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut, updatePassword } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import { UserRound, Mail, KeyRound, LogOut, ShieldCheck, Camera } from "lucide-react";
+import { UserRound, Mail, KeyRound, LogOut, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getUserProfile } from "../lib/services/users";
 import { invalidatePublicProfileCache } from "../lib/services/publicProfiles";
@@ -224,7 +224,7 @@ export default function ProfilePage() {
             <input
               value={nickname}
               maxLength={40}
-              placeholder="Tvoje přezdívka"
+              placeholder="Přezdívka"
               onChange={e => setNickname(e.target.value)}
             />
           </label>
@@ -239,37 +239,32 @@ export default function ProfilePage() {
               <span>{email || "—"}</span>
             </div>
           </div>
+        </section>
 
-          <div className="profile-avatar-editor">
-            <div className="profile-avatar-preview">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Profilová fotografie" />
-              ) : (
-                <UserRound size={42} />
-              )}
-            </div>
-            <div className="profile-avatar-copy">
-              <strong>Profilová fotografie</strong>
-              <span>Avatar se zobrazuje u tvých aktivit a v profilu.</span>
+        <section className="tile settings-avatar">
+          <div className="settings-avatar-preview">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Profilový avatar" />
+            ) : (
+              <span>{(nickname || email).charAt(0).toUpperCase() || "?"}</span>
+            )}
+          </div>
+          <div className="settings-avatar-copy">
+            <h3>Profilová fotografie</h3>
+            <p>Vyber obrázek, který se zobrazí u tvých aktivit.</p>
+            <label className="avatar-upload-button">
+              {avatarBusy ? "Nahrávám obrázek…" : avatarUrl ? "Změnit fotografii" : "Vybrat fotografii"}
               <input
                 ref={avatarInputRef}
-                className="profile-avatar-input"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 onChange={e => void handleAvatarChange(e.target.files?.[0] || null)}
-              />
-              <button
-                type="button"
-                className="tile-button settings-save-button"
-                onClick={() => avatarInputRef.current?.click()}
                 disabled={avatarBusy}
-              >
-                <Camera size={18} />
-                {avatarBusy ? "Nahrávám…" : avatarUrl ? "Změnit fotografii" : "Nahrát fotografii"}
-              </button>
-              <small>JPG, PNG nebo WebP · maximálně 5 MB</small>
-            </div>
+              />
+            </label>
+            <small>JPG, PNG nebo WEBP · maximálně 5 MB</small>
           </div>
+        </section>
         </section>
 
         <section className="tile settings-password-section">
