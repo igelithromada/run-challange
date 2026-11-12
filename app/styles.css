@@ -4297,3 +4297,86 @@ form select,
 }
 .route-map .maplibregl-canvas { z-index:1 !important; }
 .route-map .maplibregl-control-container { z-index:6 !important; }
+
+
+/* Můj účet – profil je první prvek panelu, odhlášení není součástí hlavní navigace */
+.site-sidebar-profile {
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:.75rem;
+  margin:.35rem 0 .85rem;
+  padding:.75rem .8rem;
+  border:1px solid var(--ui-border,rgba(255,255,255,.16));
+  border-radius:16px;
+  background:rgba(255,255,255,.09);
+  color:var(--ui-text,#fff);
+  text-align:left;
+  cursor:pointer;
+  transition:background .16s ease,transform .16s ease,border-color .16s ease;
+}
+.site-sidebar-profile:hover { background:rgba(255,255,255,.14); }
+.site-sidebar-profile:active { transform:scale(.99); }
+.site-sidebar-profile-icon {
+  width:44px;
+  height:44px;
+  flex:0 0 44px;
+  display:grid;
+  place-items:center;
+  border-radius:13px;
+  background:rgba(255,255,255,.12);
+}
+.site-sidebar-profile-copy {
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:.15rem;
+}
+.site-sidebar-profile-copy strong {
+  font-size:.98rem;
+  line-height:1.2;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.site-sidebar-profile-copy small {
+  font-size:.72rem;
+  color:var(--ui-muted,rgba(255,255,255,.68));
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.profile-header { margin-bottom:1rem; }
+.profile-header h1 { margin:.25rem 0 .35rem; }
+.profile-header p { margin:0; color:var(--ui-muted-strong,rgba(255,255,255,.78)); }
+.profile-email-row {
+  display:flex;
+  align-items:center;
+  gap:.7rem;
+  margin-top:1rem;
+  padding:.8rem .9rem;
+  border:1px solid var(--ui-border,rgba(255,255,255,.14));
+  border-radius:14px;
+  background:rgba(255,255,255,.055);
+}
+.profile-email-row svg { flex:0 0 auto; opacity:.8; }
+.profile-email-row div { min-width:0; display:flex; flex-direction:column; gap:.15rem; }
+.profile-email-row strong { font-size:.78rem; }
+.profile-email-row span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ui-muted-strong,rgba(255,255,255,.78)); }
+.profile-logout-button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.5rem;
+  width:100%;
+  min-height:48px;
+  padding:.7rem 1rem;
+  border-radius:13px;
+  border:1px solid rgba(235,87,87,.35);
+  background:rgba(235,87,87,.09);
+  color:inherit;
+  font:inherit;
+  font-weight:750;
+  cursor:pointer;
+}
+.profile-logout-button:hover { background:rgba(235,87,87,.15); }
