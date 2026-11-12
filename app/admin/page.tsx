@@ -285,7 +285,7 @@ export default function AdminPage() {
 
         <section className="tile admin-route-upload">
           <div className="admin-section-heading"><FileUp size={21}/><div><h2>Nahrát doporučenou trasu</h2><span>GPX ze Stravy, hodinek nebo Mapy.com. Trasa se uloží do aplikace.</span></div></div>
-          <div className="admin-registration-form admin-route-form">
+          <div className="admin-route-form">
             <input id="admin-route-gpx" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" onChange={e => setRouteFile(e.target.files?.[0] || null)} />
             <input type="text" value={routeName} onChange={e => setRouteName(e.target.value)} placeholder="Název trasy" />
             <select value={routeActivity} onChange={e => setRouteActivity(e.target.value as "běh" | "chůze")} aria-label="Typ aktivity">
