@@ -4026,11 +4026,29 @@ html[data-theme="dark"] {
 .weather-animation-overlay {
   position: fixed;
   inset: -20%;
-  z-index: 2;
+  z-index: 0;
   pointer-events: none;
   opacity: 0;
   transition: opacity .6s ease;
   will-change: transform, background-position, opacity;
+}
+
+/* Animace počasí je skutečné pozadí aplikace: nesmí ležet přes karty,
+   tlačítka ani text. Všechny další přímé děti stejného kontejneru jsou nad ní. */
+.weather-animation-overlay ~ * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Starší body::before už nepoužíváme – persistentní overlay výše je jediná
+   vrstva počasí. Tím se zabrání dvojité animaci a překrytí obsahu. */
+body::before {
+  z-index: -1 !important;
+}
+html[data-animations="true"][data-weather] body::before {
+  opacity: 0 !important;
+  background-image: none !important;
+  animation: none !important;
 }
 html[data-animations="false"] .weather-animation-overlay { display:none!important; animation:none!important; }
 html[data-animations="true"][data-weather="rain"] .weather-animation-overlay,
@@ -4083,8 +4101,27 @@ html[data-animations="true"][data-weather="night"] .weather-animation-overlay {
 @keyframes weather-overlay-wind { from{transform:translate3d(-5%,0,0)} to{transform:translate3d(5%,0,0)} }
 @keyframes weather-overlay-sun { from{opacity:.2} to{opacity:.42} }
 
-.run-form-panel { scroll-margin-top:5.5rem; overflow:visible!important; }
+/* Společné chování všech formulářů na mobilu.
+   Aktivní pole dostane prostor před klávesnicí a formuláře nesmí být
+   useknuté kvůli starým overflow pravidlům. */
+form,
+form input,
+form textarea,
+form select,
+.run-form-panel,
+.trainer-day-modal-form,
+.teams-create-form,
+.teams-challenge-form,
+.activity-edit-form {
+  scroll-margin-top: 5.5rem;
+}
+.run-form-panel { overflow: visible!important; }
 .run-form-field,.run-form-upload { scroll-margin-top:5.5rem; }
+
+@media(max-width:600px) {
+  form { scroll-margin-bottom: 12rem; }
+  form input, form textarea, form select { scroll-margin-bottom: 12rem; }
+}
 @media(max-width:600px) {
   .run-form-shell { width:100%; overflow:visible!important; }
   .run-form-panel { width:100%; max-width:100%; margin-bottom:2rem; padding-bottom:max(1rem,env(safe-area-inset-bottom)); }
