@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { ExternalLink, Map, Download, MapPinned } from "lucide-react";
+import { ExternalLink, Map, Download, MapPinned, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -17,6 +17,7 @@ export default function RoutesPage() {
   const [filter, setFilter] = useState<"vše" | "běh" | "chůze">("vše");
   const [allGroups, setAllGroups] = useState<RouteGroup[]>(routeGroups);
   const [selectedRoute, setSelectedRoute] = useState<{ route: RouteItem; groupTitle: string } | null>(null);
+  const [mapStyle, setMapStyle] = useState<"standard" | "minimal">("minimal");
 
   React.useEffect(() => {
     let active = true;
@@ -92,8 +93,22 @@ export default function RoutesPage() {
           </button>
         </div>
 
+        <div className="routes-view-toggle" role="group" aria-label="Styl mapy">
+          <button type="button" className={mapStyle === "minimal" ? "active" : ""} onClick={() => setMapStyle("minimal")}>
+            <Sparkles size={18} /> Naše
+          </button>
+          <button type="button" className={mapStyle === "standard" ? "active" : ""} onClick={() => setMapStyle("standard")}>
+            <Map size={18} /> Mapa
+          </button>
+        </div>
+
         <style>{`
           .route-map-preview-button{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;border-radius:16px;overflow:hidden}
+          .route-card-main-button{display:flex;width:100%;box-sizing:border-box;cursor:pointer;border:0;text-align:left}
+          .route-card-main-button:hover{background:rgba(255,255,255,.04)}
+          .routes-view-toggle{display:flex;gap:.45rem;margin:-.45rem 0 1rem}
+          .routes-view-toggle button{display:inline-flex;align-items:center;gap:.4rem;min-height:40px;padding:.55rem .8rem;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(255,255,255,.07);color:inherit;font:inherit;font-weight:750;cursor:pointer}
+          .routes-view-toggle button.active{background:rgba(255,255,255,.24);border-color:rgba(255,255,255,.42)}
           .route-map-preview-button:focus-visible{outline:2px solid rgba(255,255,255,.9);outline-offset:3px}
           .route-detail-backdrop{position:fixed;inset:0;z-index:5000;display:flex;align-items:stretch;justify-content:center;padding:0;background:rgba(8,16,22,.72);backdrop-filter:blur(10px)}
           .route-detail-modal{width:min(900px,100%);height:100%;overflow:auto;box-sizing:border-box;padding:1rem; background:linear-gradient(180deg,rgba(40,62,73,.98),rgba(28,44,54,.99));color:white}
@@ -111,24 +126,12 @@ export default function RoutesPage() {
         <div className="routes-groups">
           {visibleRoutes.map(({ route, groupTitle }) => (
             <article className="route-card tile" key={route.name + groupTitle}>
-              <div
-                className="route-map-preview-button"
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
+                className="route-card-main route-card-main-button"
                 onClick={() => setSelectedRoute({ route, groupTitle })}
-                onKeyDown={e => { if(e.key === "Enter" || e.key === " ") setSelectedRoute({ route, groupTitle }); }}
                 aria-label={`Otevřít podrobnosti trasy ${route.name}`}
               >
-                {route.gpxUrl ? (
-                  <RouteMap gpxUrl={route.gpxUrl} mapUrl={route.mapUrl} name={route.name} laps={route.laps} />
-                ) : (
-                  <div className="route-map-unavailable">
-                    <MapPinned size={18} />
-                    <span>Náhled mapy není k dispozici.</span>
-                  </div>
-                )}
-              </div>
-              <div className="route-card-main">
                 <div className="route-card-icon">
                   <ActivityTypeIcon type={route.activity} size={23} />
                 </div>
@@ -143,7 +146,22 @@ export default function RoutesPage() {
                   </div>
                   <p><strong>{groupTitle}</strong> · {route.description}</p>
                 </div>
-              </div>
+              </button>
+              <button
+                type="button"
+                className="route-map-preview-button"
+                onClick={() => setSelectedRoute({ route, groupTitle })}
+                aria-label={`Otevřít detail trasy ${route.name}`}
+              >
+                {route.gpxUrl ? (
+                  <RouteMap gpxUrl={route.gpxUrl} mapUrl={route.mapUrl} name={route.name} laps={route.laps} interactive={false} mapStyle={mapStyle} showInfo={false} />
+                ) : (
+                  <div className="route-map-unavailable">
+                    <MapPinned size={18} />
+                    <span>Náhled mapy není k dispozici.</span>
+                  </div>
+                )}
+              </button>
             </article>
           ))}
         </div>
@@ -162,7 +180,7 @@ export default function RoutesPage() {
               <p className="route-detail-description">{selectedRoute.route.description}</p>
               {selectedRoute.route.gpxUrl && (
                 <div className="route-detail-map">
-                  <RouteMap gpxUrl={selectedRoute.route.gpxUrl} mapUrl={selectedRoute.route.mapUrl} name={selectedRoute.route.name} laps={selectedRoute.route.laps} />
+                  <RouteMap gpxUrl={selectedRoute.route.gpxUrl} mapUrl={selectedRoute.route.mapUrl} name={selectedRoute.route.name} laps={selectedRoute.route.laps} interactive mapStyle={mapStyle} showInfo={false} />
                 </div>
               )}
               <div className="route-card-actions route-detail-actions">
