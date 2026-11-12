@@ -3,12 +3,17 @@ export type WeatherCondition = {
   description?: { text?: string };
 };
 
+export type Precipitation = {
+  probability?: { percent?: number | null };
+  amount?: number | null;
+};
+
 export type WeatherPoint = {
   temperature?: { degrees?: number };
   feelsLikeTemperature?: { degrees?: number };
   weatherCondition?: WeatherCondition;
   wind?: { speed?: { value?: number; unit?: string } };
-  precipitation?: { probability?: { percent?: number | null } };
+  precipitation?: Precipitation;
   relativeHumidity?: number;
 };
 
@@ -17,7 +22,7 @@ export type WeatherHour = {
   displayDateTime?: { hours?: number };
   temperature?: { degrees?: number };
   weatherCondition?: WeatherCondition;
-  precipitation?: { probability?: { percent?: number | null } };
+  precipitation?: Precipitation;
 };
 
 export type WeatherResponse = {
