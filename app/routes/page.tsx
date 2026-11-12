@@ -8,7 +8,6 @@ import Sidebar from "../components/Sidebar";
 import RouteMap from "../components/RouteMap";
 import { routeGroups, type RouteGroup, type RouteItem } from "../lib/routes";
 import { getRecommendedRouteGroups } from "../lib/recommendedRoutes";
-import { ActivityTypeIcon } from "../components/ActivityTypeSelector";
 import { auth } from "../lib/firebase";
 import useAdminGuard from "../lib/useAdminGuard";
 import { showAppToast } from "../components/AppToast";
