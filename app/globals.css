@@ -233,7 +233,7 @@ body::before {
   opacity: 0; transition: opacity .6s ease;
 }
 body > * { position: relative; z-index: 3; }
-body::before { z-index: 2 !important; }
+body::before { z-index: 0 !important; pointer-events: none !important; }
 html[data-animations="true"][data-weather="rain"] body::before,
 html[data-animations="true"][data-weather="rain-wind"] body::before {
   opacity: .72;
