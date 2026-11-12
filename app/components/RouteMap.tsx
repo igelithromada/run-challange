@@ -13,9 +13,22 @@ type Props = {
 
 type Coordinate = [number, number];
 
-const CLIENT_TIMEOUT_MS = 12_000;
+type ParsedGpx = {
+  coordinates: Coordinate[];
+  elevations: (number | null)[];
+};
 
-function parseGpx(text: string): Coordinate[] {
+type RouteStats = {
+  distanceKm: number;
+  elevationGain: number | null;
+  minElevation: number | null;
+  maxElevation: number | null;
+};
+
+const CLIENT_TIMEOUT_MS = 12_000;
+const OPEN_FREE_MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+
+function parseGpx(text: string): ParsedGpx {
   const doc = new DOMParser().parseFromString(text, "application/xml");
   if (doc.querySelector("parsererror")) throw new Error("Neplatný GPX soubor.");
 
@@ -28,29 +41,68 @@ function parseGpx(text: string): Coordinate[] {
   const routePoints = getPoints("rtept");
   const points = trackPoints.length >= 2 ? trackPoints : routePoints;
 
-  const coordinates = points
-    .map(point => [
-      Number(point.getAttribute("lon")),
-      Number(point.getAttribute("lat")),
-    ] as Coordinate)
-    .filter(([lon, lat]) =>
-      Number.isFinite(lon) && Number.isFinite(lat) &&
-      lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90
-    );
+  const coordinates: Coordinate[] = [];
+  const elevations: (number | null)[] = [];
 
-  if (coordinates.length < 2) {
-    throw new Error("GPX neobsahuje platnou trasu.");
+  for (const point of points) {
+    const lon = Number(point.getAttribute("lon"));
+    const lat = Number(point.getAttribute("lat"));
+    if (!Number.isFinite(lon) || !Number.isFinite(lat) || lon < -180 || lon > 180 || lat < -90 || lat > 90) continue;
+
+    coordinates.push([lon, lat]);
+    const eleNode = Array.from(point.children).find(node => node.localName === "ele");
+    const ele = eleNode ? Number(eleNode.textContent) : NaN;
+    elevations.push(Number.isFinite(ele) ? ele : null);
   }
 
-  return coordinates;
+  if (coordinates.length < 2) throw new Error("GPX neobsahuje platnou trasu.");
+  return { coordinates, elevations };
 }
 
-export default function RouteMap({ gpxUrl, mapUrl, name, laps = 1 }: Props) {
+function distanceMeters(a: Coordinate, b: Coordinate) {
+  const earthRadius = 6_371_000;
+  const toRad = (value: number) => value * Math.PI / 180;
+  const dLat = toRad(b[1] - a[1]);
+  const dLon = toRad(b[0] - a[0]);
+  const lat1 = toRad(a[1]);
+  const lat2 = toRad(b[1]);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return 2 * earthRadius * Math.asin(Math.sqrt(h));
+}
+
+function calculateStats(coordinates: Coordinate[], elevations: (number | null)[]): RouteStats {
+  let distance = 0;
+  for (let i = 1; i < coordinates.length; i += 1) distance += distanceMeters(coordinates[i - 1], coordinates[i]);
+
+  const validElevations = elevations.filter((value): value is number => typeof value === "number");
+  if (!validElevations.length) {
+    return { distanceKm: distance / 1000, elevationGain: null, minElevation: null, maxElevation: null };
+  }
+
+  let gain = 0;
+  for (let i = 1; i < elevations.length; i += 1) {
+    const previous = elevations[i - 1];
+    const current = elevations[i];
+    if (previous !== null && current !== null && current > previous) gain += current - previous;
+  }
+
+  return {
+    distanceKm: distance / 1000,
+    elevationGain: gain,
+    minElevation: Math.min(...validElevations),
+    maxElevation: Math.max(...validElevations),
+  };
+}
+
+function formatKm(value: number) {
+  return value >= 10 ? value.toFixed(0) : value.toFixed(1);
+}
+
+export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Props) {
   const elementRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
-  const [overlayPoints, setOverlayPoints] = useState("");
-  const [showRouteOverlay, setShowRouteOverlay] = useState(true);
+  const [stats, setStats] = useState<RouteStats | null>(null);
 
   useEffect(() => {
     const element = elementRef.current;
@@ -81,40 +133,28 @@ export default function RouteMap({ gpxUrl, mapUrl, name, laps = 1 }: Props) {
         const text = await response.text();
         if (!alive) return;
 
-        const basePoints = parseGpx(text);
+        const parsed = parseGpx(text);
         const requestedLaps = Number(laps);
         const lapCount = Number.isFinite(requestedLaps)
           ? Math.min(10, Math.max(1, Math.floor(requestedLaps)))
           : 1;
-        const routeLines =
-          lapCount === 1
-            ? [basePoints]
-            : Array.from({ length: lapCount }, () => basePoints);
+        const routeLines = lapCount === 1
+          ? [parsed.coordinates]
+          : Array.from({ length: lapCount }, () => parsed.coordinates);
         const routePoints = routeLines.flat();
+        const routeStats = calculateStats(parsed.coordinates, parsed.elevations);
+        setStats({
+          ...routeStats,
+          distanceKm: routeStats.distanceKm * lapCount,
+          elevationGain: routeStats.elevationGain === null ? null : routeStats.elevationGain * lapCount,
+        });
 
         const bounds = new ml.LngLatBounds(routePoints[0], routePoints[0]);
         routePoints.forEach(point => bounds.extend(point));
 
         map = new ml.Map({
           container: element,
-          style: {
-            version: 8,
-            sources: {
-              osm: {
-                type: "raster",
-                tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-                tileSize: 256,
-                attribution: "© OpenStreetMap contributors",
-              },
-            },
-            layers: [{
-              id: "osm",
-              type: "raster",
-              source: "osm",
-              minzoom: 0,
-              maxzoom: 19,
-            }],
-          },
+          style: OPEN_FREE_MAP_STYLE,
           center: [bounds.getCenter().lng, bounds.getCenter().lat],
           zoom: 13,
           maxZoom: 19,
@@ -122,33 +162,11 @@ export default function RouteMap({ gpxUrl, mapUrl, name, laps = 1 }: Props) {
         });
 
         mapRef.current = map;
-
-        // Vykreslíme GPX ještě jako SVG nad mapou. Je to záměrná druhá
-        // vrstva: pokud MapLibre z nějakého důvodu nepřijme vlastní GeoJSON
-        // vrstvu, trasa zůstane viditelná a přitom se přesně promítá do mapy.
-        const updateOverlay = () => {
-          if (!alive || !map) return;
-          const points = routePoints
-            .map(point => {
-              const projected = map!.project(point);
-              return `${projected.x.toFixed(1)},${projected.y.toFixed(1)}`;
-            })
-            .join(" ");
-          setOverlayPoints(points);
-        };
-
-        map.on("move", updateOverlay);
-        map.on("zoom", updateOverlay);
-        map.on("resize", updateOverlay);
-        map.on("rotate", updateOverlay);
-        map.on("pitch", updateOverlay);
-        updateOverlay();
+        map.addControl(new ml.NavigationControl({ showCompass: false }), "top-right");
+        map.addControl(new ml.ScaleControl({ unit: "metric" }), "bottom-left");
 
         const onMapError = (event: { error?: { message?: string } }) => {
-          console.warn(
-            "Route map tile/style error:",
-            event.error?.message || event.error || event
-          );
+          console.warn("Route map error:", event.error?.message || event.error || event);
         };
         map.on("error", onMapError);
 
@@ -162,7 +180,7 @@ export default function RouteMap({ gpxUrl, mapUrl, name, laps = 1 }: Props) {
                 type: "Feature",
                 properties: {},
                 geometry: lapCount === 1
-                  ? { type: "LineString", coordinates: basePoints }
+                  ? { type: "LineString", coordinates: parsed.coordinates }
                   : { type: "MultiLineString", coordinates: routeLines },
               },
             });
@@ -184,7 +202,7 @@ export default function RouteMap({ gpxUrl, mapUrl, name, laps = 1 }: Props) {
               type: "line",
               source: "route",
               paint: {
-                "line-color": "#69e6a3",
+                "line-color": "#35d69a",
                 "line-width": 5,
                 "line-opacity": 1,
               },
@@ -194,7 +212,7 @@ export default function RouteMap({ gpxUrl, mapUrl, name, laps = 1 }: Props) {
               type: "geojson",
               data: {
                 type: "Feature",
-                properties: {},
+                properties: { label: "START" },
                 geometry: { type: "Point", coordinates: routePoints[0] },
               },
             });
@@ -203,11 +221,8 @@ export default function RouteMap({ gpxUrl, mapUrl, name, laps = 1 }: Props) {
               type: "geojson",
               data: {
                 type: "Feature",
-                properties: {},
-                geometry: {
-                  type: "Point",
-                  coordinates: routePoints[routePoints.length - 1],
-                },
+                properties: { label: "CÍL" },
+                geometry: { type: "Point", coordinates: routePoints[routePoints.length - 1] },
               },
             });
 
@@ -217,9 +232,9 @@ export default function RouteMap({ gpxUrl, mapUrl, name, laps = 1 }: Props) {
               source: "route-start",
               paint: {
                 "circle-radius": 7,
-                "circle-color": "#69e6a3",
-                "circle-stroke-color": "#10231d",
-                "circle-stroke-width": 3,
+                "circle-color": "#35d69a",
+                "circle-stroke-color": "#ffffff",
+                "circle-stroke-width": 2,
               },
             });
 
@@ -230,8 +245,44 @@ export default function RouteMap({ gpxUrl, mapUrl, name, laps = 1 }: Props) {
               paint: {
                 "circle-radius": 7,
                 "circle-color": "#ff6b78",
-                "circle-stroke-color": "#30171b",
-                "circle-stroke-width": 3,
+                "circle-stroke-color": "#ffffff",
+                "circle-stroke-width": 2,
+              },
+            });
+
+            map.addLayer({
+              id: "route-labels",
+              type: "symbol",
+              source: "route-start",
+              layout: {
+                "text-field": ["get", "label"],
+                "text-size": 11,
+                "text-offset": [0, 1.5],
+                "text-anchor": "top",
+                "text-font": ["Noto Sans Regular"],
+              },
+              paint: {
+                "text-color": "#ffffff",
+                "text-halo-color": "#17232d",
+                "text-halo-width": 1.5,
+              },
+            });
+
+            map.addLayer({
+              id: "route-end-label",
+              type: "symbol",
+              source: "route-end",
+              layout: {
+                "text-field": ["get", "label"],
+                "text-size": 11,
+                "text-offset": [0, 1.5],
+                "text-anchor": "top",
+                "text-font": ["Noto Sans Regular"],
+              },
+              paint: {
+                "text-color": "#ffffff",
+                "text-halo-color": "#17232d",
+                "text-halo-width": 1.5,
               },
             });
 
@@ -239,12 +290,10 @@ export default function RouteMap({ gpxUrl, mapUrl, name, laps = 1 }: Props) {
               if (!alive || !map) return;
               map.resize();
               map.fitBounds(bounds, {
-                padding: { top: 34, bottom: 34, left: 34, right: 34 },
+                padding: { top: 78, bottom: 54, left: 34, right: 34 },
                 duration: 0,
                 maxZoom: 16,
               });
-              updateOverlay();
-              requestAnimationFrame(updateOverlay);
               setState("ready");
               window.clearTimeout(timeout);
             };
@@ -257,15 +306,10 @@ export default function RouteMap({ gpxUrl, mapUrl, name, laps = 1 }: Props) {
           }
         };
 
-        // Některé MapLibre verze mohou vyvolat load dříve, než je style
-        // plně připravený pro přidání vlastních vrstev. Zkusíme proto
-        // vykreslení při více bezpečných událostech; první úspěšné volání
-        // vytvoří source a další se díky guardu už nic nesnaží duplikovat.
         map.on("load", () => drawRoute?.());
         map.on("styledata", () => drawRoute?.());
         map.on("idle", () => drawRoute?.());
-
-        window.setTimeout(() => drawRoute?.(), 500);
+        window.setTimeout(() => drawRoute?.(), 700);
       } catch (error) {
         if (alive && (error as Error).name !== "AbortError") {
           console.error("Route map load failed:", error);
@@ -286,47 +330,46 @@ export default function RouteMap({ gpxUrl, mapUrl, name, laps = 1 }: Props) {
     };
   }, [gpxUrl, laps]);
 
+  const mapyGpxUrl = "https://mapy.com/fnc/v1/gpx?url=" + encodeURIComponent(gpxUrl);
+
   return (
     <div className="route-map-shell">
-      {mapUrl && !showRouteOverlay && (
-        <div className="route-map-mapy">
-          <iframe src={mapUrl} title={"Interaktivní mapa trasy " + name} loading="lazy" allowFullScreen />
+      <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name} />
+
+      {stats && (
+        <div className="route-map-info" aria-label="Informace o trase">
+          <strong>{name}</strong>
+          <div className="route-map-stats">
+            <span><b>{formatKm(stats.distanceKm)}</b> km</span>
+            {stats.elevationGain !== null && <span><b>↑ {Math.round(stats.elevationGain)}</b> m</span>}
+            {stats.maxElevation !== null && <span><b>{Math.round(stats.minElevation ?? 0)}–{Math.round(stats.maxElevation)}</b> m n. m.</span>}
+          </div>
         </div>
       )}
-      <div ref={elementRef} className={`route-map ${mapUrl && !showRouteOverlay ? "hidden" : ""}`} aria-label={"Mapa trasy " + name}>
-        {overlayPoints && (
-          <svg
-            className={`route-map-overlay ${showRouteOverlay ? "" : "hidden"}`}
-            aria-hidden="true"
-            focusable="false"
-            width="100%"
-            height="100%"
-          >
-            <polyline className="route-map-overlay-glow" points={overlayPoints} />
-            <polyline className="route-map-overlay-line" points={overlayPoints} />
-          </svg>
-        )}
-      </div>
+
       {state === "loading" && (
         <div className="route-map-state">
           <LoaderCircle className="route-map-spin" size={20} />
           <span>Načítám trasu…</span>
         </div>
       )}
+
       {state === "error" && (
         <div className="route-map-state">
           <MapPinned size={20} />
           <span>Interaktivní mapa se nepodařila načíst. Trasu můžeš stále otevřít v Mapy.com.</span>
         </div>
       )}
+
       {state === "ready" && (
-        <>
-          {mapUrl && (
-            <button type="button" className="route-map-toggle" onClick={() => setShowRouteOverlay(value => !value)}>
-              {showRouteOverlay ? "Mapy.com" : "Naše mapa"}
-            </button>
-          )}
-        </>
+        <a
+          className="route-map-open-mapy"
+          href={mapyGpxUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Mapy.com
+        </a>
       )}
     </div>
   );
