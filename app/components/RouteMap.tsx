@@ -376,7 +376,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
       map?.remove();
       mapRef.current = null;
     };
-  }, [gpxUrl, laps]);
+  }, [gpxUrl, laps, interactive, mapStyle]);
   return (
     <div className={`route-map-shell route-map-${mapStyle} ${interactive ? "route-map-interactive" : "route-map-preview"}`}>
       <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name}>
