@@ -26,10 +26,22 @@ type RouteStats = {
 };
 
 const CLIENT_TIMEOUT_MS = 12_000;
-const OPEN_STREET_MAP_STYLE = {
+const ROUTE_MAP_STYLE = {
   version: 8,
-  sources: { osm: { type: "raster", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256, attribution: "© OpenStreetMap contributors" } },
-  layers: [{ id: "osm", type: "raster", source: "osm", minzoom: 0, maxzoom: 19 }],
+  sources: {
+    carto: {
+      type: "raster",
+      tiles: [
+        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        "https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+      ],
+      tileSize: 256,
+      attribution: "© OpenStreetMap contributors © CARTO",
+    },
+  },
+  layers: [{ id: "carto", type: "raster", source: "carto", minzoom: 0, maxzoom: 19 }],
 };
 
 function parseGpx(text: string): ParsedGpx {
@@ -105,6 +117,7 @@ function formatKm(value: number) {
 export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Props) {
   const elementRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const routeSvgRef = useRef<SVGSVGElement | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [stats, setStats] = useState<RouteStats | null>(null);
 
@@ -158,7 +171,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Pr
 
         map = new ml.Map({
           container: element,
-          style: OPEN_STREET_MAP_STYLE as any,
+          style: ROUTE_MAP_STYLE as any,
           center: [bounds.getCenter().lng, bounds.getCenter().lat],
           zoom: 13,
           maxZoom: 19,
@@ -174,8 +187,32 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Pr
         };
         map.on("error", onMapError);
 
+        const updateRouteOverlay = () => {
+          if (!alive || !map || !routeSvgRef.current) return;
+          const svg = routeSvgRef.current;
+          svg.setAttribute("viewBox", `0 0 ${element.clientWidth} ${element.clientHeight}`);
+          const points = parsed.coordinates.map(point => {
+            const projected = map!.project(point);
+            return `${projected.x.toFixed(1)},${projected.y.toFixed(1)}`;
+          }).join(" ");
+          svg.querySelectorAll<SVGPolylineElement>(".route-overlay-line").forEach(line => line.setAttribute("points", points));
+          const first = map!.project(routePoints[0]);
+          const last = map!.project(routePoints[routePoints.length - 1]);
+          const start = svg.querySelector<SVGCircleElement>(".route-overlay-start");
+          const end = svg.querySelector<SVGCircleElement>(".route-overlay-end");
+          const startLabel = svg.querySelector<SVGTextElement>(".route-overlay-start-label");
+          const endLabel = svg.querySelector<SVGTextElement>(".route-overlay-end-label");
+          if (start) { start.setAttribute("cx", String(first.x)); start.setAttribute("cy", String(first.y)); }
+          if (end) { end.setAttribute("cx", String(last.x)); end.setAttribute("cy", String(last.y)); }
+          if (startLabel) { startLabel.setAttribute("x", String(first.x)); startLabel.setAttribute("y", String(first.y - 12)); }
+          if (endLabel) { endLabel.setAttribute("x", String(last.x)); endLabel.setAttribute("y", String(last.y - 12)); }
+        };
+
         drawRoute = () => {
-          if (!alive || !map || !map.isStyleLoaded() || map.getSource("route")) return;
+          if (!alive || !map || !map.isStyleLoaded() || map.getSource("route")) {
+            updateRouteOverlay();
+            return;
+          }
 
           try {
             map.addSource("route", {
@@ -302,8 +339,13 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Pr
               window.clearTimeout(timeout);
             };
 
+            map.on("move", updateRouteOverlay);
+            map.on("resize", updateRouteOverlay);
             fit();
-            requestAnimationFrame(fit);
+            requestAnimationFrame(() => {
+              fit();
+              updateRouteOverlay();
+            });
           } catch (error) {
             console.error("Route geometry render failed:", error);
             if (alive) setState("error");
@@ -338,7 +380,16 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1 }: Pr
 
   return (
     <div className="route-map-shell">
-      <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name} />
+      <div ref={elementRef} className="route-map" aria-label={"Mapa trasy " + name}>
+        <svg ref={routeSvgRef} className="route-map-route-overlay" aria-hidden="true">
+          <polyline className="route-overlay-line" fill="none" stroke="#35d69a" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          <polyline className="route-overlay-line route-overlay-line-inner" fill="none" stroke="#a7ffe4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          <circle className="route-overlay-start" r="7" fill="#35d69a" stroke="#fff" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+          <circle className="route-overlay-end" r="7" fill="#ff6b78" stroke="#fff" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+          <text className="route-overlay-start-label" textAnchor="middle">START</text>
+          <text className="route-overlay-end-label" textAnchor="middle">CÍL</text>
+        </svg>
+      </div>
 
       {stats && (
         <div className="route-map-info" aria-label="Informace o trase">
