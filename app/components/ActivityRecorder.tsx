@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Activity, Footprints, Gauge, MapPin, Pause, Play, Square, Smartphone } from "lucide-react";
 import type { ActivityType } from "../types";
 import InstallPwaPrompt from "./InstallPwaPrompt";
@@ -181,7 +181,7 @@ export default function ActivityRecorder({ type, onFinished }:{type:ActivityType
       {running && <button type="button" className="run-secondary-button" onClick={pause}>{paused?<Play size={18}/>:<Pause size={18}/>} {paused?"Pokračovat":"Pozastavit"}</button>}
       {running && <button type="button" className="run-primary-button" onClick={stop}><Square size={17}/> Ukončit</button>}
       {canContinue && <button type="button" className="run-primary-button" onClick={finishDraft}>Pokračovat k vytvoření záznamu</button>}
-      {!running && elapsed>0 && !saved && <button type="button" className="run-secondary-button" onClick={reset}>Zahodit měření</button>}
+      {!running && elapsed>0 && <button type="button" className="run-secondary-button" onClick={reset}>Zahodit měření</button>}
     </div>
   </section>;
 }
