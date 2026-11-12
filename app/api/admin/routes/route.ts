@@ -122,6 +122,57 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PUT(request: Request) {
+  try {
+    const { decoded, adminDb } = await requireAdmin(request);
+    const form = await request.formData();
+    const id = clean(form.get("id"), 128);
+    if (!id) return NextResponse.json({ error: "Chybí ID trasy." }, { status: 400 });
+
+    const ref = adminDb.collection("recommendedRoutes").doc(id);
+    const snapshot = await ref.get();
+    if (!snapshot.exists) return NextResponse.json({ error: "Trasa neexistuje." }, { status: 404 });
+
+    const current = snapshot.data() || {};
+    const name = clean(form.get("name"), 120);
+    const activity = clean(form.get("activity"), 20);
+    const description = clean(form.get("description"), 500);
+    const badge = clean(form.get("badge"), 60);
+    const sourceUrl = clean(form.get("sourceUrl"), 500);
+    if (!name) return NextResponse.json({ error: "Chybí název trasy." }, { status: 400 });
+    if (activity !== "běh" && activity !== "chůze") return NextResponse.json({ error: "Vyber běh nebo chůzi." }, { status: 400 });
+
+    const file = form.get("file");
+    let uploaded: { secureUrl: string; publicId: string } | null = null;
+    if (file instanceof File && file.size > 0) {
+      if (file.size > MAX_GPXS) return NextResponse.json({ error: "GPX může mít maximálně 15 MB." }, { status: 413 });
+      if (!file.name.toLowerCase().endsWith(".gpx")) return NextResponse.json({ error: "Nahraj soubor s příponou .gpx." }, { status: 400 });
+      uploaded = await uploadGpx(file, decoded.uid);
+    }
+
+    const nextData: Record<string, unknown> = {
+      name, activity, description, badge, sourceUrl,
+      updatedAt: new Date(),
+      updatedBy: decoded.uid,
+    };
+    if (uploaded) {
+      nextData.gpxUrl = uploaded.secureUrl;
+      nextData.gpxPublicId = uploaded.publicId;
+    }
+    await ref.update(nextData);
+
+    if (uploaded && typeof current.gpxPublicId === "string" && current.gpxPublicId) {
+      await deleteCloudinaryRaw(current.gpxPublicId);
+    }
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const auth = authErrorResponse(error);
+    if (auth) return NextResponse.json({ error: auth.message }, { status: auth.status });
+    console.error("PUT /api/admin/routes:", error);
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Trasu se nepodařilo upravit." }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const { adminDb } = await requireAdmin(request);
