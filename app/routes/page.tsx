@@ -25,6 +25,7 @@ export default function RoutesPage() {
   const [routeBusy, setRouteBusy] = useState(false);
   const [adminRoutes, setAdminRoutes] = useState<Array<{id:string;name:string;activity:string;description?:string;badge?:string;sourceUrl?:string;gpxUrl?:string}>>([]);
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
+  const [showRouteForm, setShowRouteForm] = useState(false);
   const adminAccess = useAdminGuard();
 
   React.useEffect(() => {
@@ -57,7 +58,7 @@ export default function RoutesPage() {
   }, [adminAccess]);
 
   const resetRouteForm = () => {
-    setEditingRouteId(null); setRouteFile(null); setRouteName("");
+    setEditingRouteId(null); setShowRouteForm(false); setRouteFile(null); setRouteName("");
     setRouteDescription(""); setRouteBadge(""); setRouteSourceUrl("");
     const input = document.getElementById("routes-admin-gpx") as HTMLInputElement | null;
     if (input) input.value = "";
@@ -65,6 +66,7 @@ export default function RoutesPage() {
 
   const startEditRoute = (route: {id:string;name:string;activity:string;description?:string;badge?:string;sourceUrl?:string}) => {
     setEditingRouteId(route.id);
+    setShowRouteForm(true);
     setRouteName(route.name || "");
     setRouteDescription(route.description || "");
     setRouteBadge(route.badge || "");
@@ -166,7 +168,7 @@ export default function RoutesPage() {
           <h1>Doporučené trasy</h1>
         </header>
 
-        {adminAccess === "allowed" && (editingRouteId || routeName || routeFile || routeDescription || routeBadge || routeSourceUrl) && (
+        {adminAccess === "allowed" && showRouteForm && (
           <section className="tile routes-admin-form-panel">
             <div className="admin-section-heading">
               <FileUp size={21}/>
@@ -215,9 +217,9 @@ export default function RoutesPage() {
           .route-detail-actions a{min-height:48px}
           @media(max-width:520px){.route-detail-modal{padding:.75rem}.route-detail-map .route-map-shell{height:calc(100vh - 250px);min-height:300px}.route-detail-header h2{font-size:1.25rem}}
         `}</style>
-        {adminAccess === "allowed" && !editingRouteId && !routeName && !routeFile && !routeDescription && !routeBadge && !routeSourceUrl && (
+        {adminAccess === "allowed" && !showRouteForm && (
           <div className="routes-admin-toolbar">
-            <button type="button" className="route-admin-add" onClick={() => { resetRouteForm(); setRouteName(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+            <button type="button" className="route-admin-add" onClick={() => { resetRouteForm(); setShowRouteForm(true); setRouteName(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
               <Upload size={18}/> Přidat trasu
             </button>
           </div>
