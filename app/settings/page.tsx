@@ -8,7 +8,7 @@ import Sidebar from "../components/Sidebar";
 import { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
-import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, Smartphone, Bell, Moon, Sun, Square } from "lucide-react";
+import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, Smartphone, Bell, BellOff, Heart, MessageCircle, Moon, Sun, Square } from "lucide-react";
 import { registerTrainerPush, removeTrainerPush } from "../lib/pushNotifications";
 import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
@@ -200,8 +200,22 @@ export default function SettingsPage() {
     const previous = socialNotifications;
     const next = { ...previous, ...patch };
     setSocialNotifications(next);
-    try { await saveSettings({ socialNotifications: next }); showAppToast("Nastavení upozornění uloženo."); }
-    catch (error) { setSocialNotifications(previous); showAppToast(error instanceof Error ? error.message : "Nastavení upozornění se nepodařilo uložit.", "error"); }
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const token = await currentUser.getIdToken(true);
+      const response = await fetch("/api/settings/social-notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ socialNotifications: next }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Nastavení upozornění se nepodařilo uložit.");
+      showAppToast("Nastavení upozornění uloženo.");
+    } catch (error) {
+      setSocialNotifications(previous);
+      showAppToast(error instanceof Error ? error.message : "Nastavení upozornění se nepodařilo uložit.", "error");
+    }
   };
 
   const persistTrainerNotifications = async (next: typeof trainerNotifications) => {
@@ -247,10 +261,16 @@ export default function SettingsPage() {
   };
 
   const socialNotificationSection = (
-    <section className="settings-section">
-      <div className="settings-section-heading"><Bell size={18} /><div><h2>Upozornění</h2><p>Vyber, na co chceš upozornění během používání aplikace.</p></div></div>
-      <label className="settings-toggle-row"><span><strong>❤️ To se mi líbí</strong><small>Upozorni mě, když někdo označí můj záznam.</small></span><input type="checkbox" checked={socialNotifications.likes} onChange={e => void updateSocialNotifications({ likes: e.target.checked })} /></label>
-      <label className="settings-toggle-row"><span><strong>💬 Komentáře</strong><small>Upozorni mě, když někdo okomentuje můj záznam.</small></span><input type="checkbox" checked={socialNotifications.comments} onChange={e => void updateSocialNotifications({ comments: e.target.checked })} /></label>
+    <section className="tile settings-notification-section">
+      <div className="settings-section-heading"><Bell size={21} /><div><h2>Upozornění</h2><p>Vyber, na co chceš upozornění během používání aplikace.</p></div></div>
+      <label className="settings-notification-row">
+        <span className="settings-notification-copy"><span className="settings-notification-title"><Heart size={18} /> To se mi líbí</span><small>Upozorni mě, když někdo označí můj záznam.</small></span>
+        <input type="checkbox" checked={socialNotifications.likes} onChange={e => void updateSocialNotifications({ likes: e.target.checked })} />
+      </label>
+      <label className="settings-notification-row">
+        <span className="settings-notification-copy"><span className="settings-notification-title"><MessageCircle size={18} /> Komentáře</span><small>Upozorni mě, když někdo okomentuje můj záznam.</small></span>
+        <input type="checkbox" checked={socialNotifications.comments} onChange={e => void updateSocialNotifications({ comments: e.target.checked })} />
+      </label>
     </section>
   );
 
@@ -341,23 +361,27 @@ export default function SettingsPage() {
           <ActivityTypeSelector value={defaultActivity as ActivityType} onChange={(value) => void handleDefaultActivityChange(value)} ariaLabel="Výchozí aktivita" />
         </section>
 
-        <section className="tile">
+        <section className="tile settings-notification-section">
           <div className="settings-section-heading"><Bell size={21}/><div><h2>Notifikace osobního trenéra</h2><p>Dostávej upozornění na dnešní nebo zítřejší naplánovaný trénink.</p><p className="settings-notification-times">Dnešní plán: kolem 7:00 · Zítřejší plán: kolem 18:00 (časové pásmo ČR)</p></div></div>
           {!trainerNotifications.enabled ? (
-            <button type="button" className="tile-button settings-save-button" onClick={() => void enableTrainerNotifications()} disabled={notificationBusy}>
-              {notificationBusy ? "Zapínám…" : "Povolit notifikace"}
-            </button>
+            <>
+              <div className="settings-notification-status is-off"><BellOff size={18}/><span>Notifikace jsou vypnuté</span></div>
+              <button type="button" className="tile-button settings-save-button settings-notification-action" onClick={() => void enableTrainerNotifications()} disabled={notificationBusy}>
+                {notificationBusy ? "Zapínám…" : "Zapnout notifikace"}
+              </button>
+            </>
           ) : (
             <>
-              <label className="settings-animation-toggle">
-                <span><strong>Dnešní plán</strong><small>Ranní upozornění, pokud máš na dnešek naplánovaný trénink.</small></span>
+              <div className="settings-notification-status is-on"><Bell size={18}/><span>Notifikace jsou zapnuté</span></div>
+              <label className="settings-notification-row">
+                <span className="settings-notification-copy"><span className="settings-notification-title">Dnešní plán</span><small>Ranní upozornění, pokud máš na dnešek naplánovaný trénink.</small></span>
                 <input type="checkbox" checked={trainerNotifications.today} onChange={e => void updateTrainerNotifications({ today: e.target.checked })} disabled={notificationBusy} />
               </label>
-              <label className="settings-animation-toggle">
-                <span><strong>Zítřejší plán</strong><small>Večerní upozornění na trénink naplánovaný na další den.</small></span>
+              <label className="settings-notification-row">
+                <span className="settings-notification-copy"><span className="settings-notification-title">Zítřejší plán</span><small>Večerní upozornění na trénink naplánovaný na další den.</small></span>
                 <input type="checkbox" checked={trainerNotifications.tomorrow} onChange={e => void updateTrainerNotifications({ tomorrow: e.target.checked })} disabled={notificationBusy} />
               </label>
-              <button type="button" className="tile-button settings-save-button" onClick={() => void disableTrainerNotifications()} disabled={notificationBusy}>
+              <button type="button" className="tile-button settings-save-button settings-notification-action" onClick={() => void disableTrainerNotifications()} disabled={notificationBusy}>
                 {notificationBusy ? "Vypínám…" : "Vypnout notifikace"}
               </button>
             </>

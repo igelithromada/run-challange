@@ -59,10 +59,26 @@ export default function UserPage() {
 
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
-    if (item === "logout") { await signOut(auth); router.push("/login"); return; }
-    if (item === "home") { router.push("/"); return; }
-    if (item === "trainer") { router.push("/trainer"); return; }
-    router.push("/" + (item === "myrun" ? "myruns" : item));
+    if (item === "logout") {
+      await signOut(auth);
+      window.location.assign("/login");
+      return;
+    }
+    const paths: Record<string, string> = {
+      home: "/",
+      myrun: "/myruns",
+      teams: "/teams",
+      progress: "/progress",
+      trainer: "/trainer",
+      statistics: "/statistics",
+      participants: "/participants",
+      weather: "/weather",
+      routes: "/routes",
+      settings: "/settings",
+      profile: "/profile",
+      admin: "/admin",
+    };
+    window.location.assign(paths[item] || "/");
   };
 
   const profileName = userInfo.nickname || "Uživatel";
@@ -77,7 +93,7 @@ export default function UserPage() {
 
   return (
     <>
-      <Navbar title={profileName} onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
+      <Navbar title={profileName} onMenuClick={() => setMenuVisible(true)} onHomeClick={() => window.location.assign("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
       <main className="container user-page-modern">
         <header className="user-page-header">
