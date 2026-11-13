@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const allowedHosts = new Set(["sarops.info"]);
+const allowedHosts = new Set(["sarops.info", "res.cloudinary.com"]);
 const MAX_GPX_SIZE = 2_000_000;
 const FETCH_TIMEOUT_MS = 10_000;
 
