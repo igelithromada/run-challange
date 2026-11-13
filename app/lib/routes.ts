@@ -1,7 +1,7 @@
 export type RouteItem = {
   name: string;
   distance: string;
-  activity: "běh" | "chůze";
+  activity: "běh" | "chůze" | "běh i chůze";
   description: string;
   mapUrl: string;
   gpxUrl?: string;
