@@ -77,7 +77,7 @@ export default function UserPage() {
 
   return (
     <>
-      <Navbar title={profileName} onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
+      <Navbar title={profileName} onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.replace("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
       <main className="container user-page-modern">
         <header className="user-page-header">
