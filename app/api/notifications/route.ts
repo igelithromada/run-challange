@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
-import { requireUser as requireApiUser, authErrorResponse } from "../../../lib/apiAuth";
+import { requireUser as requireApiUser, authErrorResponse } from "../../lib/apiAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
         .limit(100)
         .get();
       const batch = adminDb.batch();
-      snapshot.docs.filter(doc => doc.data()?.read !== true).forEach(doc => batch.update(doc.ref, { read: true, readAt: FieldValue.serverTimestamp() }));
+      snapshot.docs.filter(doc => doc.data()?.read !== true).forEach(doc => batch.delete(doc.ref));
       await batch.commit();
       return NextResponse.json({ ok: true });
     }
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Upozornění neexistuje." }, { status: 404 });
     }
 
-    await ref.update({ read: true, readAt: FieldValue.serverTimestamp() });
+    await ref.delete();
     return NextResponse.json({ ok: true });
   } catch (error) {
     const authError = authErrorResponse(error);
