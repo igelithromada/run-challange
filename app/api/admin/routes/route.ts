@@ -101,7 +101,7 @@ export async function GET(request: Request) {
         sourceUrl: typeof override.sourceUrl === "string" ? override.sourceUrl : group.sourceUrl,
         gpxUrl: typeof override.gpxUrl === "string" ? override.gpxUrl : (route.gpxUrl || ""),
         mapUrl: typeof override.mapUrl === "string" ? override.mapUrl : route.mapUrl,
-        groupId: group.id, groupTitle: group.title, disabled: override.disabled === true,
+        groupId: group.id, groupTitle: group.title, disabled: override.disabled === true, deleted: override.deleted === true,
       };
     }));
     return NextResponse.json({ routes: [...dynamicRoutes, ...staticRoutes] });
@@ -174,8 +174,9 @@ export async function PUT(request: Request) {
       if (!route) return NextResponse.json({ error: "Původní trasa neexistuje." }, { status: 404 });
       const ref = adminDb.collection("recommendedRouteOverrides").doc(id);
       const current = (await ref.get()).data() || {};
+      if (current.deleted === true) return NextResponse.json({ error: "Tato trasa byla trvale smazána." }, { status: 410 });
       const overrideData: Record<string, unknown> = {
-        name, description, badge, sourceUrl, disabled: false,
+        name, description, badge, sourceUrl, disabled: false, deleted: false,
         updatedAt: new Date(), updatedBy: decoded.uid,
       };
       if (uploaded) {
@@ -215,24 +216,61 @@ export async function DELETE(request: Request) {
     const { decoded, adminDb } = await requireAdmin(request);
     const body = await request.json().catch(() => ({}));
     const id = clean(body?.id, 128);
+    const action = body?.action === "activate" || body?.action === "deactivate" || body?.action === "delete"
+      ? body.action
+      : "delete";
+
     if (!id) return NextResponse.json({ error: "Chybí ID trasy." }, { status: 400 });
-    if (parseStaticRouteId(id)) {
-      await adminDb.collection("recommendedRouteOverrides").doc(id).set(
-        { disabled: true, updatedAt: new Date(), updatedBy: decoded.uid },
-        { merge: true }
-      );
-      return NextResponse.json({ ok: true });
+
+    const staticInfo = parseStaticRouteId(id);
+    if (staticInfo) {
+      const ref = adminDb.collection("recommendedRouteOverrides").doc(id);
+      const snapshot = await ref.get();
+      const current = snapshot.data() || {};
+
+      if (action === "delete") {
+        // U statické trasy ponecháváme zdrojový záznam v aplikaci, ale
+        // trvale uložíme příznak smazání, takže se už veřejně nikdy nevrátí.
+        await ref.set(
+          { deleted: true, disabled: false, updatedAt: new Date(), updatedBy: decoded.uid },
+          { merge: true }
+        );
+      } else {
+        await ref.set(
+          {
+            deleted: false,
+            disabled: action === "deactivate",
+            updatedAt: new Date(),
+            updatedBy: decoded.uid,
+          },
+          { merge: true }
+        );
+      }
+
+      return NextResponse.json({ ok: true, action });
     }
+
     const ref = adminDb.collection("recommendedRoutes").doc(id);
     const snapshot = await ref.get();
     if (!snapshot.exists) return NextResponse.json({ error: "Trasa neexistuje." }, { status: 404 });
-    const publicId = typeof snapshot.data()?.gpxPublicId === "string" ? snapshot.data()?.gpxPublicId : "";
-    await ref.delete();
-    if (publicId) await deleteCloudinaryRaw(publicId);
-    return NextResponse.json({ ok: true });
+
+    if (action === "delete") {
+      const publicId = typeof snapshot.data()?.gpxPublicId === "string" ? snapshot.data()?.gpxPublicId : "";
+      await ref.delete();
+      if (publicId) await deleteCloudinaryRaw(publicId);
+    } else {
+      await ref.update({
+        disabled: action === "deactivate",
+        deleted: false,
+        updatedAt: new Date(),
+        updatedBy: decoded.uid,
+      });
+    }
+
+    return NextResponse.json({ ok: true, action });
   } catch (error) {
     const auth = authErrorResponse(error);
     if (auth) return NextResponse.json({ error: auth.message }, { status: auth.status });
-    return NextResponse.json({ error: "Trasu se nepodařilo odstranit." }, { status: 500 });
+    return NextResponse.json({ error: "Trasu se nepodařilo změnit." }, { status: 500 });
   }
 }
