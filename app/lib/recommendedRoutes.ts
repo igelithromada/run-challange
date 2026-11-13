@@ -21,7 +21,7 @@ export async function getRecommendedRouteGroups(): Promise<RouteGroup[]> {
       const route: RouteItem = {
         name: item.name,
         distance: typeof item.distance === "string" && item.distance ? item.distance : "GPX",
-        activity: item.activity === "běh" ? "běh" : "chůze",
+        activity: "běh i chůze",
         description: typeof item.description === "string" ? item.description : "",
         mapUrl: typeof item.mapUrl === "string" ? item.mapUrl : `https://mapy.com/fnc/v1/gpx?url=${encodeURIComponent(item.gpxUrl)}`,
         gpxUrl: item.gpxUrl,
