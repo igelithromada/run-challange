@@ -166,13 +166,13 @@ export default function RoutesPage() {
           <h1>Doporučené trasy</h1>
         </header>
 
-        {adminAccess === "allowed" && (
-          <section className="tile admin-route-upload routes-admin-management">
+        {adminAccess === "allowed" && (editingRouteId || routeName || routeFile || routeDescription || routeBadge || routeSourceUrl) && (
+          <section className="tile routes-admin-form-panel">
             <div className="admin-section-heading">
               <FileUp size={21}/>
               <div>
-                <h2>{editingRouteId ? "Upravit doporučenou trasu" : "Správa tras"}</h2>
-                <span>{editingRouteId ? "Můžeš změnit popis, údaje nebo nahradit GPX." : "Přidávej, upravuj nebo maž doporučené trasy. Správa je dostupná jen administrátorovi."}</span>
+                <h2>{editingRouteId ? "Upravit trasu" : "Přidat trasu"}</h2>
+                <span>{editingRouteId ? "Uprav údaje trasy nebo případně nahraď GPX soubor." : "Přidej novou doporučenou trasu pomocí GPX souboru."}</span>
               </div>
             </div>
             <div className="admin-route-form">
@@ -185,24 +185,19 @@ export default function RoutesPage() {
                 <button type="button" className="admin-action-button" onClick={() => void saveRoute()} disabled={routeBusy}>
                   <Upload size={18}/>{routeBusy ? "Ukládám…" : editingRouteId ? "Uložit změny" : "Přidat trasu"}
                 </button>
-                {editingRouteId && <button type="button" className="admin-action-button" onClick={resetRouteForm} disabled={routeBusy}>Zrušit úpravu</button>}
+                <button type="button" className="admin-action-button" onClick={resetRouteForm} disabled={routeBusy}>Zrušit</button>
               </div>
             </div>
-            {adminRoutes.length > 0 && <div className="admin-route-list">
-              {adminRoutes.map(route => (
-                <div className="admin-route-row" key={route.id}>
-                  <span><strong>{route.name}</strong><small>{route.activity}</small></span>
-                  <div className="admin-route-row-actions">
-                    <button type="button" className="admin-action-button" onClick={() => startEditRoute(route)}>Upravit</button>
-                    <button type="button" className="admin-action-button danger" onClick={() => void deleteAdminRoute(route.id, route.name)}>Smazat</button>
-                  </div>
-                </div>
-              ))}
-            </div>}
           </section>
         )}
 
         <style>{`
+          .routes-admin-toolbar{display:flex;justify-content:flex-end;margin-bottom:1rem}
+          .routes-admin-form-panel{margin-bottom:1rem}
+          .route-admin-actions{display:flex;gap:.6rem;margin-top:.8rem}
+          .route-admin-actions button{flex:1;min-height:44px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(255,255,255,.1);color:white;font-weight:700;cursor:pointer}
+          .route-admin-actions .danger{background:rgba(150,60,70,.28);border-color:rgba(255,130,140,.25)}
+          .route-admin-add{width:100%;min-height:50px;border:1px solid rgba(255,255,255,.2);border-radius:16px;background:rgba(255,255,255,.13);color:white;font-size:1rem;font-weight:800;cursor:pointer}
           .route-map-preview-button{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;border-radius:16px;overflow:hidden}
           .route-card-main-button{display:flex;width:100%;box-sizing:border-box;cursor:pointer;border:0;background:transparent;color:inherit;padding:0;text-align:left;font:inherit}
           .route-card-main-button:hover{background:rgba(255,255,255,.04)}
@@ -220,6 +215,14 @@ export default function RoutesPage() {
           .route-detail-actions a{min-height:48px}
           @media(max-width:520px){.route-detail-modal{padding:.75rem}.route-detail-map .route-map-shell{height:calc(100vh - 250px);min-height:300px}.route-detail-header h2{font-size:1.25rem}}
         `}</style>
+        {adminAccess === "allowed" && !editingRouteId && !routeName && !routeFile && !routeDescription && !routeBadge && !routeSourceUrl && (
+          <div className="routes-admin-toolbar">
+            <button type="button" className="route-admin-add" onClick={() => { resetRouteForm(); setRouteName(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+              <Upload size={18}/> Přidat trasu
+            </button>
+          </div>
+        )}
+
         <div className="routes-groups">
           {visibleRoutes.map(({ route, groupTitle }) => (
             <article className="route-card tile" key={route.name + groupTitle}>
@@ -259,6 +262,18 @@ export default function RoutesPage() {
                   </div>
                 )}
               </button>
+              {adminAccess === "allowed" && route.id && (
+                <div className="route-admin-actions">
+                  <button type="button" onClick={() => {
+                    const managed = adminRoutes.find(item => item.id === route.id);
+                    if (managed) startEditRoute(managed);
+                  }}>Upravit</button>
+                  <button type="button" className="danger" onClick={() => {
+                    const managed = adminRoutes.find(item => item.id === route.id);
+                    if (managed) void deleteAdminRoute(managed.id, managed.name);
+                  }}>Smazat</button>
+                </div>
+              )}
             </article>
           ))}
         </div>
