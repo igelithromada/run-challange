@@ -95,7 +95,6 @@ export async function POST(request: Request) {
     if (!filename.endsWith(".gpx")) return NextResponse.json({ error: "Nahraj soubor s příponou .gpx." }, { status: 400 });
 
     const name = clean(form.get("name"), 120);
-    const activity = clean(form.get("activity"), 20);
     const description = clean(form.get("description"), 500);
     const badge = clean(form.get("badge"), 60);
     const groupId = clean(form.get("groupId"), 80) || "moje-trasy";
@@ -104,12 +103,11 @@ export async function POST(request: Request) {
     const sourceUrl = clean(form.get("sourceUrl"), 500);
 
     if (!name) return NextResponse.json({ error: "Chybí název trasy." }, { status: 400 });
-    if (activity !== "běh" && activity !== "chůze") return NextResponse.json({ error: "Vyber běh nebo chůzi." }, { status: 400 });
 
     const uploaded = await uploadGpx(file, decoded.uid);
     const ref = adminDb.collection("recommendedRoutes").doc();
     await ref.set({
-      name, activity, description, badge, groupId, groupTitle, groupSubtitle, sourceUrl,
+      name, activity: "běh i chůze", description, badge, groupId, groupTitle, groupSubtitle, sourceUrl,
       gpxUrl: uploaded.secureUrl, gpxPublicId: uploaded.publicId,
       createdAt: new Date(), createdBy: decoded.uid,
     });
@@ -135,12 +133,10 @@ export async function PUT(request: Request) {
 
     const current = snapshot.data() || {};
     const name = clean(form.get("name"), 120);
-    const activity = clean(form.get("activity"), 20);
     const description = clean(form.get("description"), 500);
     const badge = clean(form.get("badge"), 60);
     const sourceUrl = clean(form.get("sourceUrl"), 500);
     if (!name) return NextResponse.json({ error: "Chybí název trasy." }, { status: 400 });
-    if (activity !== "běh" && activity !== "chůze") return NextResponse.json({ error: "Vyber běh nebo chůzi." }, { status: 400 });
 
     const file = form.get("file");
     let uploaded: { secureUrl: string; publicId: string } | null = null;
@@ -151,7 +147,7 @@ export async function PUT(request: Request) {
     }
 
     const nextData: Record<string, unknown> = {
-      name, activity, description, badge, sourceUrl,
+      name, activity: "běh i chůze", description, badge, sourceUrl,
       updatedAt: new Date(),
       updatedBy: decoded.uid,
     };
