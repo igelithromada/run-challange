@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
-import { routeGroups } from "../../../lib/routes";\n\ntype DynamicRoute = {\n  id: string;\n  disabled?: boolean;\n  deleted?: boolean;\n  [key: string]: unknown;\n};
+import { routeGroups } from "../../../lib/routes";
+
+type DynamicRoute = {
+  id: string;
+  disabled?: boolean;
+  deleted?: boolean;
+  [key: string]: unknown;
+};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
