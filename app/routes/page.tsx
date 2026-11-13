@@ -23,7 +23,7 @@ export default function RoutesPage() {
   const [routeBadge, setRouteBadge] = useState("");
   const [routeSourceUrl, setRouteSourceUrl] = useState("");
   const [routeBusy, setRouteBusy] = useState(false);
-  const [adminRoutes, setAdminRoutes] = useState<Array<{id:string;name:string;activity:string;description?:string;badge?:string;sourceUrl?:string;gpxUrl?:string}>>([]);
+  const [adminRoutes, setAdminRoutes] = useState<Array<{id:string;name:string;activity:string;description?:string;badge?:string;sourceUrl?:string;gpxUrl?:string;isStatic?:boolean;disabled?:boolean}>>([]);
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
   const [showRouteForm, setShowRouteForm] = useState(false);
   const adminAccess = useAdminGuard();
