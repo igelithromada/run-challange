@@ -34,6 +34,7 @@ export default function SettingsPage() {
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [trainerNotifications, setTrainerNotifications] = useState({ enabled: false, today: true, tomorrow: true });
+  const [socialNotifications, setSocialNotifications] = useState({ likes: true, comments: true });
   const [notificationBusy, setNotificationBusy] = useState(false);
 
   const router = useRouter();
@@ -89,6 +90,8 @@ export default function SettingsPage() {
           setHapticsEnabled(effectiveHaptics);
           const remoteDefaultActivity = data.defaultActivity === "chůze" ? "chůze" : "běh";
           setDefaultActivity(remoteDefaultActivity);
+          const remoteSocial = data.socialNotifications || {};
+          setSocialNotifications({ likes: remoteSocial.likes !== false, comments: remoteSocial.comments !== false });
           const remoteNotifications = data.trainerNotifications || {};
           setTrainerNotifications({
             enabled: remoteNotifications.enabled === true,
@@ -193,6 +196,14 @@ export default function SettingsPage() {
     }
   };
 
+  const updateSocialNotifications = async (patch: Partial<typeof socialNotifications>) => {
+    const previous = socialNotifications;
+    const next = { ...previous, ...patch };
+    setSocialNotifications(next);
+    try { await saveSettings({ socialNotifications: next }); showAppToast("Nastavení upozornění uloženo."); }
+    catch (error) { setSocialNotifications(previous); showAppToast(error instanceof Error ? error.message : "Nastavení upozornění se nepodařilo uložit.", "error"); }
+  };
+
   const persistTrainerNotifications = async (next: typeof trainerNotifications) => {
     const currentUser = auth.currentUser;
     if (!currentUser) throw new Error("Nejsi přihlášen.");
@@ -234,6 +245,14 @@ export default function SettingsPage() {
       setNotificationBusy(false);
     }
   };
+
+  const socialNotificationSection = (
+    <section className="settings-section">
+      <div className="settings-section-heading"><Bell size={18} /><div><h2>Upozornění</h2><p>Vyber, na co chceš upozornění během používání aplikace.</p></div></div>
+      <label className="settings-toggle-row"><span><strong>❤️ To se mi líbí</strong><small>Upozorni mě, když někdo označí můj záznam.</small></span><input type="checkbox" checked={socialNotifications.likes} onChange={e => void updateSocialNotifications({ likes: e.target.checked })} /></label>
+      <label className="settings-toggle-row"><span><strong>💬 Komentáře</strong><small>Upozorni mě, když někdo okomentuje můj záznam.</small></span><input type="checkbox" checked={socialNotifications.comments} onChange={e => void updateSocialNotifications({ comments: e.target.checked })} /></label>
+    </section>
+  );
 
   const disableTrainerNotifications = async () => {
     if (notificationBusy) return;
