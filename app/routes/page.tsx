@@ -20,10 +20,8 @@ export default function RoutesPage() {
   const [routeFile, setRouteFile] = useState<File | null>(null);
   const [routeName, setRouteName] = useState("");
   const [routeDescription, setRouteDescription] = useState("");
-  const [routeBadge, setRouteBadge] = useState("");
-  const [routeSourceUrl, setRouteSourceUrl] = useState("");
   const [routeBusy, setRouteBusy] = useState(false);
-  const [adminRoutes, setAdminRoutes] = useState<Array<{id:string;name:string;activity:string;description?:string;badge?:string;sourceUrl?:string;gpxUrl?:string;isStatic?:boolean;disabled?:boolean;deleted?:boolean}>>([]);
+  const [adminRoutes, setAdminRoutes] = useState<Array<{id:string;name:string;activity:string;description?:string;gpxUrl?:string;isStatic?:boolean;disabled?:boolean;deleted?:boolean}>>([]);
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
   const [showRouteForm, setShowRouteForm] = useState(false);
   const [routeSort, setRouteSort] = useState<"shortest" | "longest">("shortest");
@@ -58,7 +56,7 @@ export default function RoutesPage() {
 
   const resetRouteForm = () => {
     setEditingRouteId(null); setShowRouteForm(false); setRouteFile(null); setRouteName("");
-    setRouteDescription(""); setRouteBadge(""); setRouteSourceUrl("");
+    setRouteDescription("");
     const input = document.getElementById("routes-admin-gpx") as HTMLInputElement | null;
     if (input) input.value = "";
   };
@@ -68,8 +66,6 @@ export default function RoutesPage() {
     setShowRouteForm(true);
     setRouteName(route.name || "");
     setRouteDescription(route.description || "");
-    setRouteBadge(route.badge || "");
-    setRouteSourceUrl(route.sourceUrl || "");
     setRouteFile(null);
     const input = document.getElementById("routes-admin-gpx") as HTMLInputElement | null;
     if (input) input.value = "";
@@ -87,7 +83,7 @@ export default function RoutesPage() {
       const token = await currentUser.getIdToken(true);
       const form = new FormData();
       form.append("name", routeName);
-      form.append("description", routeDescription); form.append("badge", routeBadge); form.append("sourceUrl", routeSourceUrl);
+      form.append("description", routeDescription);
       if (routeFile) form.append("file", routeFile);
       let response: Response;
       if (editingRouteId) {
@@ -209,9 +205,7 @@ export default function RoutesPage() {
             <div className="admin-route-form">
               <input id="routes-admin-gpx" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" onChange={e => setRouteFile(e.target.files?.[0] || null)} />
               <input type="text" value={routeName} onChange={e => setRouteName(e.target.value)} placeholder="Název trasy" />
-              <input type="text" value={routeBadge} onChange={e => setRouteBadge(e.target.value)} placeholder="Štítek, např. Výzva" />
               <textarea value={routeDescription} onChange={e => setRouteDescription(e.target.value)} placeholder="Popis trasy" rows={3} />
-              <input type="url" value={routeSourceUrl} onChange={e => setRouteSourceUrl(e.target.value)} placeholder="Volitelný odkaz na zdroj" />
               <div className="admin-route-form-actions">
                 <button type="button" className="admin-action-button" onClick={() => void saveRoute()} disabled={routeBusy}>
                   <Upload size={18}/>{routeBusy ? "Ukládám…" : editingRouteId ? "Uložit změny" : "Přidat trasu"}
@@ -224,7 +218,6 @@ export default function RoutesPage() {
 
         <style>{`
           .routes-sort-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:.45rem;margin:0 0 1rem;flex-wrap:wrap}
-          .routes-sort-toolbar>span{opacity:.7;font-size:.9rem;margin-right:.15rem}
           .routes-sort-toolbar button{min-height:40px;padding:.45rem .8rem;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(255,255,255,.08);color:inherit;font-weight:700;cursor:pointer}
           .routes-sort-toolbar button.active{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.38)}
           .routes-admin-toolbar{display:flex;justify-content:flex-end;margin-bottom:1rem}
@@ -242,7 +235,6 @@ export default function RoutesPage() {
           .routes-disabled-actions .danger{background:rgba(150,60,70,.28);border-color:rgba(255,130,140,.25)}
           .route-admin-actions button{flex:1;min-height:44px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(255,255,255,.1);color:white;font-weight:700;cursor:pointer}
           .route-admin-actions .danger{background:rgba(150,60,70,.28);border-color:rgba(255,130,140,.25)}
-          .route-admin-source{margin:.45rem 0 0;opacity:.65;font-size:.78rem;text-align:center}
           .route-admin-add{width:100%;min-height:50px;border:1px solid rgba(255,255,255,.2);border-radius:16px;background:rgba(255,255,255,.13);color:white;font-size:1rem;font-weight:800;cursor:pointer}
           .route-map-preview-button{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;border-radius:16px;overflow:hidden}
           .route-card-main-button{display:flex;width:100%;box-sizing:border-box;cursor:pointer;border:0;background:transparent;color:inherit;padding:0;text-align:left;font:inherit}
@@ -267,7 +259,7 @@ export default function RoutesPage() {
             <button type="button" className={routeActivity === "běh" ? "active" : ""} onClick={() => setRouteActivity("běh")}>Běh</button>
             <button type="button" className={routeActivity === "chůze" ? "active" : ""} onClick={() => setRouteActivity("chůze")}>Chůze</button>
           </div>
-          <div className="routes-sort-toolbar" aria-label="Řazení tras"><span>Řazení:</span>
+          <div className="routes-sort-toolbar" aria-label="Řazení tras">
             <button type="button" className={routeSort === "shortest" ? "active" : ""} onClick={() => setRouteSort("shortest")}>Nejkratší</button>
             <button type="button" className={routeSort === "longest" ? "active" : ""} onClick={() => setRouteSort("longest")}>Nejdelší</button>
           </div>
@@ -295,14 +287,12 @@ export default function RoutesPage() {
                 <div className="routes-disabled-row" key={route.id}>
                   <div>
                     <strong>{route.name}</strong>
-                    <small>{route.activity}</small>
                   </div>
                   <div className="routes-disabled-actions">
                     <button type="button" onClick={() => startEditRoute(route)}>Upravit</button>
                     <button type="button" onClick={() => void changeRouteState(route.id, route.name, "activate")}>Aktivovat</button>
                     <button type="button" className="danger" onClick={() => void changeRouteState(route.id, route.name, "delete")}>Smazat</button>
                   </div>
-                  <small>{route.isStatic ? "Mapa je součástí kódu aplikace." : "Mapa je nahraná v úložišti aplikace."}</small>
                 </div>
               ))}
             </div>
@@ -322,15 +312,8 @@ export default function RoutesPage() {
                   <MapPinned size={23} />
                 </div>
                 <div className="route-card-info">
-                  <div className="route-card-title">
-                    <h2>{route.name}</h2>
-                    {route.badge && <span>{route.badge}</span>}
-                  </div>
-                  <div className="route-card-meta">
-                    <strong>{route.distance}</strong>
-                    <span>Běh i chůze</span>
-                  </div>
-                  <p><strong>{groupTitle}</strong> · {route.description}</p>
+                  <div className="route-card-title"><h2>{route.name}</h2></div>
+                  <p>{route.description}</p>
                 </div>
               </button>
               <button
@@ -358,7 +341,6 @@ export default function RoutesPage() {
                       <button type="button" onClick={() => void changeRouteState(managed.id, managed.name, "deactivate")}>Deaktivovat</button>
                       <button type="button" className="danger" onClick={() => void changeRouteState(managed.id, managed.name, "delete")}>Smazat</button>
                     </div>
-                    <p className="route-admin-source">{managed.isStatic ? "Mapa je součástí kódu aplikace." : "Mapa je nahraná v úložišti aplikace."}</p>
                   </>
                 );
               })()}
@@ -371,9 +353,7 @@ export default function RoutesPage() {
             <section className="route-detail-modal" role="dialog" aria-modal="true" aria-label={selectedRoute.route.name} onClick={e => e.stopPropagation()}>
               <div className="route-detail-header">
                 <div>
-                  <span>{selectedRoute.groupTitle}</span>
                   <h2>{selectedRoute.route.name}</h2>
-                  <p>{selectedRoute.route.distance} · Běh i chůze{selectedRoute.route.badge ? ` · ${selectedRoute.route.badge}` : ""}</p>
                 </div>
                 <button type="button" onClick={() => setSelectedRoute(null)} aria-label="Zavřít podrobnosti">×</button>
               </div>
