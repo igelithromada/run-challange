@@ -19,6 +19,11 @@ async function createSocialNotification(
   commentText?: string
 ) {
   if (!recipientUid || recipientUid === actorUid) return;
+  const recipientProfile = await adminDb.collection("users").doc(recipientUid).get();
+  const recipientData = recipientProfile.exists ? recipientProfile.data() || {} : {};
+  const preferences = recipientData.socialNotifications || {};
+  if (type === "like" && preferences.likes === false) return;
+  if (type === "comment" && preferences.comments === false) return;
   const title = type === "like" ? "Nové To se mi líbí" : "Nový komentář";
   const body = type === "like"
     ? `${actorNickname} dal To se mi líbí na tvůj záznam.`
