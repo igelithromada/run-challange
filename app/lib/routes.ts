@@ -1,4 +1,5 @@
 export type RouteItem = {
+  id?: string;
   name: string;
   distance: string;
   activity: "běh" | "chůze" | "běh i chůze";
