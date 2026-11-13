@@ -32,10 +32,7 @@ export default function RoutesPage() {
     let active = true;
     void getRecommendedRouteGroups().then(groups => {
       if (!active || !groups.length) return;
-      setAllGroups(prev => {
-        const existingIds = new Set(prev.map(group => group.id));
-        return [...prev, ...groups.filter(group => !existingIds.has(group.id))];
-      });
+      setAllGroups(groups);
     });
     return () => { active = false; };
   }, []);
@@ -103,12 +100,7 @@ export default function RoutesPage() {
       resetRouteForm();
       await loadAdminRoutes();
       const refreshedGroups = await getRecommendedRouteGroups();
-      if (refreshedGroups.length) {
-        setAllGroups(prev => {
-          const dynamicIds = new Set(refreshedGroups.map(group => group.id));
-          return [...prev.filter(group => !dynamicIds.has(group.id)), ...refreshedGroups];
-        });
-      }
+      if (refreshedGroups.length) setAllGroups(refreshedGroups);
       showAppToast(wasEditing ? "Trasa byla upravena." : "Trasa byla přidána.", "success");
     } catch (e) {
       showAppToast(e instanceof Error ? e.message : "Trasu se nepodařilo uložit.", "error");
@@ -126,6 +118,8 @@ export default function RoutesPage() {
       if (!response.ok) throw new Error(result.error || "Trasu se nepodařilo odstranit.");
       setAdminRoutes(prev => prev.filter(item => item.id !== id));
       if (editingRouteId === id) resetRouteForm();
+      const refreshedGroups = await getRecommendedRouteGroups();
+      if (refreshedGroups.length) setAllGroups(refreshedGroups);
       showAppToast("Trasa byla odstraněna.","success");
     } catch (e) {
       showAppToast(e instanceof Error ? e.message : "Trasu se nepodařilo odstranit.","error");
