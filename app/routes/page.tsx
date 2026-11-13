@@ -322,12 +322,14 @@ export default function RoutesPage() {
                 const managed = adminRoutes.find(item => item.id === route.id);
                 if (!managed) return null;
                 return (
-                  <div className="route-admin-actions">
-                    <button type="button" onClick={() => startEditRoute(managed)}>Upravit</button>
-                    <button type="button" onClick={() => void changeRouteState(managed.id, managed.name, "deactivate")}>Deaktivovat</button>
-                    <button type="button" className="danger" onClick={() => void changeRouteState(managed.id, managed.name, "delete")}>Smazat</button>
-                  </div>
-                  <p className="route-admin-source">{managed.isStatic ? "Mapa je součástí kódu aplikace." : "Mapa je nahraná v úložišti aplikace."}</p>
+                  <>
+                    <div className="route-admin-actions">
+                      <button type="button" onClick={() => startEditRoute(managed)}>Upravit</button>
+                      <button type="button" onClick={() => void changeRouteState(managed.id, managed.name, "deactivate")}>Deaktivovat</button>
+                      <button type="button" className="danger" onClick={() => void changeRouteState(managed.id, managed.name, "delete")}>Smazat</button>
+                    </div>
+                    <p className="route-admin-source">{managed.isStatic ? "Mapa je součástí kódu aplikace." : "Mapa je nahraná v úložišti aplikace."}</p>
+                  </>
                 );
               })()}
             </article>
