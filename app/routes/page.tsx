@@ -23,7 +23,7 @@ export default function RoutesPage() {
   const [routeBadge, setRouteBadge] = useState("");
   const [routeSourceUrl, setRouteSourceUrl] = useState("");
   const [routeBusy, setRouteBusy] = useState(false);
-  const [adminRoutes, setAdminRoutes] = useState<Array<{id:string;name:string;activity:string;description?:string;badge?:string;sourceUrl?:string;gpxUrl?:string;isStatic?:boolean;disabled?:boolean}>>([]);
+  const [adminRoutes, setAdminRoutes] = useState<Array<{id:string;name:string;activity:string;description?:string;badge?:string;sourceUrl?:string;gpxUrl?:string;isStatic?:boolean;disabled?:boolean;deleted?:boolean}>>([]);
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
   const [showRouteForm, setShowRouteForm] = useState(false);
   const adminAccess = useAdminGuard();
@@ -107,22 +107,43 @@ export default function RoutesPage() {
     } finally { setRouteBusy(false); }
   };
 
-  const deleteAdminRoute = async (id: string, name: string) => {
-    if (!window.confirm(`Opravdu odstranit trasu „${name}“? GPX se odstraní také z úložiště.`)) return;
+  const changeRouteState = async (id: string, name: string, action: "activate" | "deactivate" | "delete") => {
+    const message =
+      action === "deactivate"
+        ? `Deaktivovat trasu „${name}“? Přestane se zobrazovat uživatelům, ale později ji můžeš znovu aktivovat.`
+        : action === "delete"
+          ? `Opravdu trvale smazat trasu „${name}“? Tuto akci už nepůjde vrátit.`
+          : `Znovu aktivovat trasu „${name}“?`;
+    if (!window.confirm(message)) return;
+
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("Nejsi přihlášen.");
       const token = await currentUser.getIdToken(true);
-      const response = await fetch("/api/admin/routes", { method:"DELETE", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`}, body:JSON.stringify({id}) });
+      const response = await fetch("/api/admin/routes", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id, action }),
+      });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "Trasu se nepodařilo odstranit.");
-      setAdminRoutes(prev => prev.filter(item => item.id !== id));
-      if (editingRouteId === id) resetRouteForm();
+      if (!response.ok) throw new Error(result.error || "Stav trasy se nepodařilo změnit.");
+
+      if (action === "delete") {
+        setAdminRoutes(prev => prev.filter(item => item.id !== id));
+        if (editingRouteId === id) resetRouteForm();
+      } else {
+        setAdminRoutes(prev => prev.map(item => item.id === id ? { ...item, disabled: action === "deactivate" } : item));
+      }
+
       const refreshedGroups = await getRecommendedRouteGroups();
-      if (refreshedGroups.length) setAllGroups(refreshedGroups);
-      showAppToast("Trasa byla odstraněna.","success");
+      setAllGroups(refreshedGroups);
+      showAppToast(
+        action === "delete" ? "Trasa byla trvale smazána." :
+        action === "deactivate" ? "Trasa byla deaktivována." : "Trasa byla znovu aktivována.",
+        "success"
+      );
     } catch (e) {
-      showAppToast(e instanceof Error ? e.message : "Trasu se nepodařilo odstranit.","error");
+      showAppToast(e instanceof Error ? e.message : "Stav trasy se nepodařilo změnit.", "error");
     }
   };
 
@@ -190,7 +211,17 @@ export default function RoutesPage() {
         <style>{`
           .routes-admin-toolbar{display:flex;justify-content:flex-end;margin-bottom:1rem}
           .routes-admin-form-panel{margin-bottom:1rem}
-          .route-admin-actions{display:flex;gap:.6rem;margin-top:.8rem}
+          .route-admin-actions{display:flex;gap:.5rem;margin-top:.8rem}
+          .route-admin-actions button{min-width:0;flex:1}
+          .routes-disabled-panel{margin-bottom:1rem}
+          .routes-disabled-list{display:flex;flex-direction:column;gap:.6rem;margin-top:1rem}
+          .routes-disabled-row{display:flex;align-items:center;justify-content:space-between;gap:.7rem;padding:.75rem;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(0,0,0,.16)}
+          .routes-disabled-row>div:first-child{min-width:0}
+          .routes-disabled-row strong{display:block;overflow-wrap:anywhere}
+          .routes-disabled-row small{display:block;margin-top:.15rem;opacity:.65}
+          .routes-disabled-actions{display:flex;gap:.4rem;flex:0 0 auto}
+          .routes-disabled-actions button{min-height:40px;padding:.45rem .65rem;border:1px solid rgba(255,255,255,.16);border-radius:11px;background:rgba(255,255,255,.1);color:white;font-weight:700;cursor:pointer}
+          .routes-disabled-actions .danger{background:rgba(150,60,70,.28);border-color:rgba(255,130,140,.25)}
           .route-admin-actions button{flex:1;min-height:44px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(255,255,255,.1);color:white;font-weight:700;cursor:pointer}
           .route-admin-actions .danger{background:rgba(150,60,70,.28);border-color:rgba(255,130,140,.25)}
           .route-admin-add{width:100%;min-height:50px;border:1px solid rgba(255,255,255,.2);border-radius:16px;background:rgba(255,255,255,.13);color:white;font-size:1rem;font-weight:800;cursor:pointer}
@@ -209,7 +240,7 @@ export default function RoutesPage() {
           .route-detail-map .route-map-shell{height:calc(100vh - 270px);min-height:360px;margin-top:.8rem;border-radius:18px}
           .route-detail-actions{margin-top:.8rem;padding-bottom:.4rem}
           .route-detail-actions a{min-height:48px}
-          @media(max-width:520px){.route-detail-modal{padding:.75rem}.route-detail-map .route-map-shell{height:calc(100vh - 250px);min-height:300px}.route-detail-header h2{font-size:1.25rem}}
+          @media(max-width:620px){.routes-disabled-row{align-items:stretch;flex-direction:column}.routes-disabled-actions{width:100%}.routes-disabled-actions button{flex:1;min-width:0}}\n          @media(max-width:520px){.route-detail-modal{padding:.75rem}.route-detail-map .route-map-shell{height:calc(100vh - 250px);min-height:300px}.route-detail-header h2{font-size:1.25rem}}
         `}</style>
         {adminAccess === "allowed" && !showRouteForm && (
           <div className="routes-admin-toolbar">
@@ -217,6 +248,33 @@ export default function RoutesPage() {
               <Upload size={18}/> Přidat trasu
             </button>
           </div>
+        )}
+
+        {adminAccess === "allowed" && adminRoutes.some(route => route.disabled) && (
+          <section className="tile routes-disabled-panel">
+            <div className="admin-section-heading">
+              <MapPinned size={21}/>
+              <div>
+                <h2>Deaktivované trasy</h2>
+                <span>Tyto trasy jsou skryté uživatelům, ale můžeš je kdykoli znovu aktivovat.</span>
+              </div>
+            </div>
+            <div className="routes-disabled-list">
+              {adminRoutes.filter(route => route.disabled).map(route => (
+                <div className="routes-disabled-row" key={route.id}>
+                  <div>
+                    <strong>{route.name}</strong>
+                    <small>{route.activity}</small>
+                  </div>
+                  <div className="routes-disabled-actions">
+                    <button type="button" onClick={() => startEditRoute(route)}>Upravit</button>
+                    <button type="button" onClick={() => void changeRouteState(route.id, route.name, "activate")}>Aktivovat</button>
+                    <button type="button" className="danger" onClick={() => void changeRouteState(route.id, route.name, "delete")}>Smazat</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
 
         <div className="routes-groups">
@@ -258,18 +316,17 @@ export default function RoutesPage() {
                   </div>
                 )}
               </button>
-              {adminAccess === "allowed" && route.id && (
-                <div className="route-admin-actions">
-                  <button type="button" onClick={() => {
-                    const managed = adminRoutes.find(item => item.id === route.id);
-                    if (managed) startEditRoute(managed);
-                  }}>Upravit</button>
-                  <button type="button" className="danger" onClick={() => {
-                    const managed = adminRoutes.find(item => item.id === route.id);
-                    if (managed) void deleteAdminRoute(managed.id, managed.name);
-                  }}>Smazat</button>
-                </div>
-              )}
+              {adminAccess === "allowed" && route.id && (() => {
+                const managed = adminRoutes.find(item => item.id === route.id);
+                if (!managed) return null;
+                return (
+                  <div className="route-admin-actions">
+                    <button type="button" onClick={() => startEditRoute(managed)}>Upravit</button>
+                    <button type="button" onClick={() => void changeRouteState(managed.id, managed.name, "deactivate")}>Deaktivovat</button>
+                    <button type="button" className="danger" onClick={() => void changeRouteState(managed.id, managed.name, "delete")}>Smazat</button>
+                  </div>
+                );
+              })()}
             </article>
           ))}
         </div>
