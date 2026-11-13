@@ -364,6 +364,8 @@ export default function SettingsPage() {
           )}
         </section>
 
+        {socialNotificationSection}
+
         <section className="tile">
           <div className="settings-section-heading"><Smartphone size={21}/><div><h2>Haptická odezva</h2><p>Velmi jemné krátké zavibrování při kliknutí a přepnutí ovládacích prvků.</p></div></div>
           <label className="settings-animation-toggle">
