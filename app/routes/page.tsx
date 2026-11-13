@@ -26,6 +26,7 @@ export default function RoutesPage() {
   const [adminRoutes, setAdminRoutes] = useState<Array<{id:string;name:string;activity:string;description?:string;badge?:string;sourceUrl?:string;gpxUrl?:string;isStatic?:boolean;disabled?:boolean;deleted?:boolean}>>([]);
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
   const [showRouteForm, setShowRouteForm] = useState(false);
+  const [routeSort, setRouteSort] = useState<"shortest" | "longest">("shortest");
   const adminAccess = useAdminGuard();
 
   React.useEffect(() => {
@@ -147,9 +148,20 @@ export default function RoutesPage() {
     }
   };
 
-  const visibleRoutes = allGroups.flatMap(group =>
-    group.routes.map(route => ({ route, groupTitle: group.title }))
-  );
+  const visibleRoutes = allGroups
+    .flatMap(group => group.routes.map(route => ({ route, groupTitle: group.title })))
+    .sort((a, b) => {
+      const parseDistanceKm = (value: string) => {
+        const normalized = value.replace(",", ".").replace("~", "").trim().toLowerCase();
+        const match = normalized.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(km|m)?/);
+        if (!match) return Number.POSITIVE_INFINITY;
+        const amount = Number(match[1]);
+        return match[2] === "m" ? amount / 1000 : amount;
+      };
+      const diff = parseDistanceKm(a.route.distance) - parseDistanceKm(b.route.distance);
+      if (diff !== 0) return routeSort === "shortest" ? diff : -diff;
+      return a.route.name.localeCompare(b.route.name, "cs");
+    });
 
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
@@ -209,6 +221,10 @@ export default function RoutesPage() {
         )}
 
         <style>{`
+          .routes-sort-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:.45rem;margin:0 0 1rem;flex-wrap:wrap}
+          .routes-sort-toolbar>span{opacity:.7;font-size:.9rem;margin-right:.15rem}
+          .routes-sort-toolbar button{min-height:40px;padding:.45rem .8rem;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(255,255,255,.08);color:inherit;font-weight:700;cursor:pointer}
+          .routes-sort-toolbar button.active{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.38)}
           .routes-admin-toolbar{display:flex;justify-content:flex-end;margin-bottom:1rem}
           .routes-admin-form-panel{margin-bottom:1rem}
           .route-admin-actions{display:flex;gap:.5rem;margin-top:.8rem}
@@ -243,6 +259,12 @@ export default function RoutesPage() {
           .route-detail-actions a{min-height:48px}
           @media(max-width:620px){.routes-disabled-row{align-items:stretch;flex-direction:column}.routes-disabled-actions{width:100%}.routes-disabled-actions button{flex:1;min-width:0}}\n          @media(max-width:520px){.route-detail-modal{padding:.75rem}.route-detail-map .route-map-shell{height:calc(100vh - 250px);min-height:300px}.route-detail-header h2{font-size:1.25rem}}
         `}</style>
+        <div className="routes-sort-toolbar" aria-label="Řazení tras">
+          <span>Řazení:</span>
+          <button type="button" className={routeSort === "shortest" ? "active" : ""} onClick={() => setRouteSort("shortest")}>Nejkratší</button>
+          <button type="button" className={routeSort === "longest" ? "active" : ""} onClick={() => setRouteSort("longest")}>Nejdelší</button>
+        </div>
+
         {adminAccess === "allowed" && !showRouteForm && (
           <div className="routes-admin-toolbar">
             <button type="button" className="route-admin-add" onClick={() => { resetRouteForm(); setShowRouteForm(true); setRouteName(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
