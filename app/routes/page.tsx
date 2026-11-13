@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ExternalLink, Map, Download, MapPinned, Sparkles, FileUp, Upload } from "lucide-react";
+import { ExternalLink, Map, Download, MapPinned, FileUp, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -17,10 +17,8 @@ export default function RoutesPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [allGroups, setAllGroups] = useState<RouteGroup[]>(routeGroups);
   const [selectedRoute, setSelectedRoute] = useState<{ route: RouteItem; groupTitle: string } | null>(null);
-  const [mapStyle, setMapStyle] = useState<"standard" | "minimal">("minimal");
   const [routeFile, setRouteFile] = useState<File | null>(null);
   const [routeName, setRouteName] = useState("");
-  const [routeActivity, setRouteActivity] = useState<"běh" | "chůze">("běh");
   const [routeDescription, setRouteDescription] = useState("");
   const [routeBadge, setRouteBadge] = useState("");
   const [routeSourceUrl, setRouteSourceUrl] = useState("");
@@ -33,7 +31,10 @@ export default function RoutesPage() {
     let active = true;
     void getRecommendedRouteGroups().then(groups => {
       if (!active || !groups.length) return;
-      setAllGroups(prev => [...prev, ...groups]);
+      setAllGroups(prev => {
+        const existingIds = new Set(prev.map(group => group.id));
+        return [...prev, ...groups.filter(group => !existingIds.has(group.id))];
+      });
     });
     return () => { active = false; };
   }, []);
@@ -56,7 +57,7 @@ export default function RoutesPage() {
   }, [adminAccess]);
 
   const resetRouteForm = () => {
-    setEditingRouteId(null); setRouteFile(null); setRouteName(""); setRouteActivity("běh");
+    setEditingRouteId(null); setRouteFile(null); setRouteName("");
     setRouteDescription(""); setRouteBadge(""); setRouteSourceUrl("");
     const input = document.getElementById("routes-admin-gpx") as HTMLInputElement | null;
     if (input) input.value = "";
@@ -65,7 +66,6 @@ export default function RoutesPage() {
   const startEditRoute = (route: {id:string;name:string;activity:string;description?:string;badge?:string;sourceUrl?:string}) => {
     setEditingRouteId(route.id);
     setRouteName(route.name || "");
-    setRouteActivity(route.activity === "chůze" ? "chůze" : "běh");
     setRouteDescription(route.description || "");
     setRouteBadge(route.badge || "");
     setRouteSourceUrl(route.sourceUrl || "");
@@ -85,7 +85,7 @@ export default function RoutesPage() {
       if (!currentUser) throw new Error("Nejsi přihlášen.");
       const token = await currentUser.getIdToken(true);
       const form = new FormData();
-      form.append("name", routeName); form.append("activity", routeActivity);
+      form.append("name", routeName);
       form.append("description", routeDescription); form.append("badge", routeBadge); form.append("sourceUrl", routeSourceUrl);
       if (routeFile) form.append("file", routeFile);
       let response: Response;
@@ -100,6 +100,13 @@ export default function RoutesPage() {
       if (!response.ok) throw new Error(result.error || "Trasu se nepodařilo uložit.");
       resetRouteForm();
       await loadAdminRoutes();
+      const refreshedGroups = await getRecommendedRouteGroups();
+      if (refreshedGroups.length) {
+        setAllGroups(prev => {
+          const dynamicIds = new Set(refreshedGroups.map(group => group.id));
+          return [...prev.filter(group => !dynamicIds.has(group.id)), ...refreshedGroups];
+        });
+      }
       showAppToast(wasEditing ? "Trasa byla upravena." : "Trasa byla přidána.", "success");
     } catch (e) {
       showAppToast(e instanceof Error ? e.message : "Trasu se nepodařilo uložit.", "error");
@@ -159,15 +166,6 @@ export default function RoutesPage() {
           <h1>Doporučené trasy</h1>
         </header>
 
-        <div className="routes-view-toggle" role="group" aria-label="Styl mapy">
-          <button type="button" className={mapStyle === "minimal" ? "active" : ""} onClick={() => setMapStyle("minimal")}>
-            <Sparkles size={18} /> Naše
-          </button>
-          <button type="button" className={mapStyle === "standard" ? "active" : ""} onClick={() => setMapStyle("standard")}>
-            <Map size={18} /> Mapa
-          </button>
-        </div>
-
         {adminAccess === "allowed" && (
           <section className="tile admin-route-upload routes-admin-management">
             <div className="admin-section-heading">
@@ -180,9 +178,6 @@ export default function RoutesPage() {
             <div className="admin-route-form">
               <input id="routes-admin-gpx" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" onChange={e => setRouteFile(e.target.files?.[0] || null)} />
               <input type="text" value={routeName} onChange={e => setRouteName(e.target.value)} placeholder="Název trasy" />
-              <select value={routeActivity} onChange={e => setRouteActivity(e.target.value as "běh" | "chůze")} aria-label="Typ aktivity">
-                <option value="běh">Běh</option><option value="chůze">Chůze</option>
-              </select>
               <input type="text" value={routeBadge} onChange={e => setRouteBadge(e.target.value)} placeholder="Štítek, např. Výzva" />
               <textarea value={routeDescription} onChange={e => setRouteDescription(e.target.value)} placeholder="Popis trasy" rows={3} />
               <input type="url" value={routeSourceUrl} onChange={e => setRouteSourceUrl(e.target.value)} placeholder="Volitelný odkaz na zdroj" />
@@ -211,9 +206,6 @@ export default function RoutesPage() {
           .route-map-preview-button{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;border-radius:16px;overflow:hidden}
           .route-card-main-button{display:flex;width:100%;box-sizing:border-box;cursor:pointer;border:0;background:transparent;color:inherit;padding:0;text-align:left;font:inherit}
           .route-card-main-button:hover{background:rgba(255,255,255,.04)}
-          .routes-view-toggle{display:flex;gap:.45rem;margin:-.45rem 0 1rem}
-          .routes-view-toggle button{display:inline-flex;align-items:center;gap:.4rem;min-height:40px;padding:.55rem .8rem;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(255,255,255,.07);color:inherit;font:inherit;font-weight:750;cursor:pointer}
-          .routes-view-toggle button.active{background:rgba(255,255,255,.24);border-color:rgba(255,255,255,.42)}
           .route-map-preview-button:focus-visible{outline:2px solid rgba(255,255,255,.9);outline-offset:3px}
           .route-detail-backdrop{position:fixed;inset:0;z-index:5000;display:flex;align-items:stretch;justify-content:center;padding:0;background:rgba(8,16,22,.72);backdrop-filter:blur(10px)}
           .route-detail-modal{width:min(900px,100%);height:100%;overflow:auto;box-sizing:border-box;padding:1rem; background:linear-gradient(180deg,rgba(40,62,73,.98),rgba(28,44,54,.99));color:white}
@@ -259,7 +251,7 @@ export default function RoutesPage() {
                 aria-label={`Otevřít detail trasy ${route.name}`}
               >
                 {route.gpxUrl ? (
-                  <RouteMap gpxUrl={route.gpxUrl} mapUrl={route.mapUrl} name={route.name} laps={route.laps} interactive={false} mapStyle={mapStyle} />
+                  <RouteMap gpxUrl={route.gpxUrl} mapUrl={route.mapUrl} name={route.name} laps={route.laps} interactive={false} mapStyle="standard" />
                 ) : (
                   <div className="route-map-unavailable">
                     <MapPinned size={18} />
@@ -285,7 +277,7 @@ export default function RoutesPage() {
               <p className="route-detail-description">{selectedRoute.route.description}</p>
               {selectedRoute.route.gpxUrl && (
                 <div className="route-detail-map">
-                  <RouteMap gpxUrl={selectedRoute.route.gpxUrl} mapUrl={selectedRoute.route.mapUrl} name={selectedRoute.route.name} laps={selectedRoute.route.laps} interactive mapStyle={mapStyle} />
+                  <RouteMap gpxUrl={selectedRoute.route.gpxUrl} mapUrl={selectedRoute.route.mapUrl} name={selectedRoute.route.name} laps={selectedRoute.route.laps} interactive mapStyle="standard" />
                 </div>
               )}
               <div className="route-card-actions route-detail-actions">
