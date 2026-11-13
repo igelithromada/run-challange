@@ -211,7 +211,7 @@ export default function RunForm({ type }: {
         timestamp: new Date(activityDate),
         imageUrls,
         imagePublicIds,
-        teamId: selectedTeamId || undefined,
+        teamId: selectedTeamId,
         activityType: type,
         likedBy: [],
         likeCount: 0,
