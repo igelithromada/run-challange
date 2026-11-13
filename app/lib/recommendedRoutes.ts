@@ -20,7 +20,6 @@ export async function getRecommendedRouteGroups(): Promise<RouteGroup[]> {
       };
       const route: RouteItem = {
         id: item.id,
-        id: item.id,
         name: item.name,
         distance: typeof item.distance === "string" && item.distance ? item.distance : "GPX",
         activity: "běh i chůze",
