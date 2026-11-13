@@ -27,6 +27,7 @@ export default function RoutesPage() {
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
   const [showRouteForm, setShowRouteForm] = useState(false);
   const [routeSort, setRouteSort] = useState<"shortest" | "longest">("shortest");
+  const [routeActivity, setRouteActivity] = useState<"all" | "běh" | "chůze">("all");
   const adminAccess = useAdminGuard();
 
   React.useEffect(() => {
@@ -150,6 +151,7 @@ export default function RoutesPage() {
 
   const visibleRoutes = allGroups
     .flatMap(group => group.routes.map(route => ({ route, groupTitle: group.title })))
+    .filter(({ route }) => routeActivity === "all" || route.activity === "běh i chůze" || route.activity === routeActivity)
     .sort((a, b) => {
       const parseDistanceKm = (value: string) => {
         const normalized = value.replace(",", ".").replace("~", "").trim().toLowerCase();
@@ -259,10 +261,16 @@ export default function RoutesPage() {
           .route-detail-actions a{min-height:48px}
           @media(max-width:620px){.routes-disabled-row{align-items:stretch;flex-direction:column}.routes-disabled-actions{width:100%}.routes-disabled-actions button{flex:1;min-width:0}}\n          @media(max-width:520px){.route-detail-modal{padding:.75rem}.route-detail-map .route-map-shell{height:calc(100vh - 250px);min-height:300px}.route-detail-header h2{font-size:1.25rem}}
         `}</style>
-        <div className="routes-sort-toolbar" aria-label="Řazení tras">
-          <span>Řazení:</span>
-          <button type="button" className={routeSort === "shortest" ? "active" : ""} onClick={() => setRouteSort("shortest")}>Nejkratší</button>
-          <button type="button" className={routeSort === "longest" ? "active" : ""} onClick={() => setRouteSort("longest")}>Nejdelší</button>
+        <div className="routes-toolbar">
+          <div className="routes-filter-toolbar" aria-label="Filtr tras"><span>Aktivita:</span>
+            <button type="button" className={routeActivity === "all" ? "active" : ""} onClick={() => setRouteActivity("all")}>Vše</button>
+            <button type="button" className={routeActivity === "běh" ? "active" : ""} onClick={() => setRouteActivity("běh")}>Běh</button>
+            <button type="button" className={routeActivity === "chůze" ? "active" : ""} onClick={() => setRouteActivity("chůze")}>Chůze</button>
+          </div>
+          <div className="routes-sort-toolbar" aria-label="Řazení tras"><span>Řazení:</span>
+            <button type="button" className={routeSort === "shortest" ? "active" : ""} onClick={() => setRouteSort("shortest")}>Nejkratší</button>
+            <button type="button" className={routeSort === "longest" ? "active" : ""} onClick={() => setRouteSort("longest")}>Nejdelší</button>
+          </div>
         </div>
 
         {adminAccess === "allowed" && !showRouteForm && (
