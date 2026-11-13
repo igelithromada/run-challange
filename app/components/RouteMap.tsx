@@ -413,7 +413,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
     };
   }, [gpxUrl, laps, interactive, mapStyle]);
   return (
-    <div className={`route-visualization route-visualization-${mapStyle} ${interactive ? "route-visualization-interactive" : "route-visualization-preview"}`}>
+    <div className={`route-visualization route-visualization-${mapStyle} ${interactive ? "route-visualization-interactive" : "route-visualization-preview"} route-map-loading-${state}`}>
       {stats && (
         <ElevationProfile
           elevations={profileElevations}
@@ -437,9 +437,9 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
         </div>
 
         {state === "loading" && (
-          <div className="route-map-state">
-            <LoaderCircle className="route-map-spin" size={20} />
-            <span>Načítám trasu…</span>
+          <div className="route-map-state route-map-loading-state">
+            <div className="route-map-loading-placeholder" aria-hidden="true"><span /><span /><span /></div>
+            <div className="route-map-loading-copy"><LoaderCircle className="route-map-spin" size={20} /><span>Načítám trasu…</span></div>
           </div>
         )}
 
