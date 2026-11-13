@@ -10,8 +10,7 @@ export async function GET(request: Request) {
     const { adminDb, decoded } = await requireApiUser(request);
     const snapshot = await adminDb.collection("notifications")
       .where("recipientUid", "==", decoded.uid)
-      .orderBy("createdAt", "desc")
-      .limit(30)
+      .limit(50)
       .get();
 
     const notifications = snapshot.docs.map(doc => {
@@ -30,6 +29,7 @@ export async function GET(request: Request) {
       };
     });
 
+    notifications.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
     return NextResponse.json({
       notifications,
       unreadCount: notifications.filter(item => !item.read).length,
@@ -52,11 +52,10 @@ export async function POST(request: Request) {
     if (markAll) {
       const snapshot = await adminDb.collection("notifications")
         .where("recipientUid", "==", decoded.uid)
-        .where("read", "==", false)
         .limit(100)
         .get();
       const batch = adminDb.batch();
-      snapshot.docs.forEach(doc => batch.update(doc.ref, { read: true, readAt: FieldValue.serverTimestamp() }));
+      snapshot.docs.filter(doc => doc.data()?.read !== true).forEach(doc => batch.update(doc.ref, { read: true, readAt: FieldValue.serverTimestamp() }));
       await batch.commit();
       return NextResponse.json({ ok: true });
     }
