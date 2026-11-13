@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const STATIC_PREFIX = "static:";
-function staticRouteId(groupId: string, name: string) { return STATIC_PREFIX + groupId + ":" + encodeURIComponent(name); }
+type AdminRoute = { id: string; isStatic: boolean; deleted?: boolean; disabled?: boolean; [key: string]: unknown };\n\nfunction staticRouteId(groupId: string, name: string) { return STATIC_PREFIX + groupId + ":" + encodeURIComponent(name); }
 function parseStaticRouteId(id: string) {
   if (!id.startsWith(STATIC_PREFIX)) return null;
   const raw = id.slice(STATIC_PREFIX.length);
@@ -87,7 +87,7 @@ export async function GET(request: Request) {
     const { adminDb } = await requireAdmin(request);
     const snapshot = await adminDb.collection("recommendedRoutes").orderBy("createdAt", "desc").get();
     const dynamicRoutes = snapshot.docs
-      .map(doc => ({ id: doc.id, isStatic: false, ...doc.data() }))
+      .map(doc => ({ id: doc.id, isStatic: false, ...doc.data() }) as AdminRoute)
       .filter(route => route.deleted !== true);
     const overrideSnapshot = await adminDb.collection("recommendedRouteOverrides").get();
     const overrides = new Map(overrideSnapshot.docs.map(doc => [doc.id, doc.data()]));
