@@ -236,7 +236,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
 
   return (
     <>
-      <article className="tile list-tile activity-card activity-card-modern">
+      <article id={`run-${run.id}`} className="tile list-tile activity-card activity-card-modern">
         <header className="activity-card-top">
           <button type="button" className="activity-avatar" onClick={onUserClick} disabled={!onUserClick} aria-label={`Profil uživatele ${resolvedNickname}`}>
             {resolvedAvatarUrl ? <img src={cloudinaryImageUrl(resolvedAvatarUrl, 128)} alt="" loading="lazy" decoding="async" /> : resolvedNickname.charAt(0).toUpperCase()}
