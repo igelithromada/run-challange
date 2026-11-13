@@ -7,7 +7,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const STATIC_PREFIX = "static:";
-type AdminRoute = { id: string; isStatic: boolean; deleted?: boolean; disabled?: boolean; [key: string]: unknown };\n\nfunction staticRouteId(groupId: string, name: string) { return STATIC_PREFIX + groupId + ":" + encodeURIComponent(name); }
+type AdminRoute = { id: string; isStatic: boolean; deleted?: boolean; disabled?: boolean; [key: string]: unknown };
+
+function staticRouteId(groupId: string, name: string) { return STATIC_PREFIX + groupId + ":" + encodeURIComponent(name); }
 function parseStaticRouteId(id: string) {
   if (!id.startsWith(STATIC_PREFIX)) return null;
   const raw = id.slice(STATIC_PREFIX.length);
