@@ -8,6 +8,35 @@ export const dynamic = "force-dynamic";
 const MAX_SOCIAL_COMMENTS = 100;
 const MAX_SOCIAL_LIKE_USERS = 100;
 
+async function createSocialNotification(
+  adminDb: Firestore,
+  recipientUid: string,
+  actorUid: string,
+  actorNickname: string,
+  actorAvatarUrl: string,
+  type: "like" | "comment",
+  runId: string,
+  commentText?: string
+) {
+  if (!recipientUid || recipientUid === actorUid) return;
+  const title = type === "like" ? "Nové To se mi líbí" : "Nový komentář";
+  const body = type === "like"
+    ? `${actorNickname} dal To se mi líbí na tvůj záznam.`
+    : `${actorNickname} okomentoval tvůj záznam${commentText ? `: "${commentText.slice(0, 80)}"` : "."}`;
+  await adminDb.collection("notifications").add({
+    recipientUid,
+    actorUid,
+    actorNickname,
+    actorAvatarUrl,
+    type: `social_${type}`,
+    title,
+    body,
+    runId,
+    read: false,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+}
+
 async function isAdminUser(adminDb: Firestore, uid: string, claim: boolean): Promise<boolean> {
   if (claim) return true;
   const profile = await adminDb.collection("users").doc(uid).get();
@@ -147,6 +176,13 @@ export async function POST(request: Request) {
         transaction.update(runRef, { likedBy: next, likeCount: next.length });
         return { liked: !liked, likeCount: next.length };
       });
+      if (result.liked && runData.uid && runData.uid !== decoded.uid) {
+        const publicProfile = await adminDb.collection("publicProfiles").doc(decoded.uid).get();
+        const profile = publicProfile.exists ? publicProfile.data() || {} : {};
+        const actorNickname = typeof profile.nickname === "string" && profile.nickname.trim() ? profile.nickname : "Uživatel";
+        const actorAvatarUrl = typeof profile.avatarUrl === "string" ? profile.avatarUrl : "";
+        await createSocialNotification(adminDb, runData.uid, decoded.uid, actorNickname, actorAvatarUrl, "like", runId);
+      }
       return NextResponse.json(result);
     }
 
@@ -173,6 +209,10 @@ export async function POST(request: Request) {
       });
       transaction.update(runRef, { commentCount: currentCount + 1 });
     });
+
+    if (runData.uid && runData.uid !== decoded.uid) {
+      await createSocialNotification(adminDb, runData.uid, decoded.uid, nickname, avatarUrl, "comment", runId, text);
+    }
 
     return NextResponse.json({
       ok: true,
