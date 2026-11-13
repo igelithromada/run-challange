@@ -226,11 +226,24 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
           style: ROUTE_MAP_STYLE as any,
           center: [bounds.getCenter().lng, bounds.getCenter().lat],
           zoom: 13,
-          maxZoom: 19,
+          bearing: 0,
+          pitch: 0,
+          maxPitch: 0,
           attributionControl: { compact: true },
         });
 
         mapRef.current = map;
+
+        // Detailní mapa je záměrně vždy „severem nahoru“ a bez naklopení.
+        // Uživatel tak nemůže mapu omylem otočit nebo naklopit a ztratit orientaci.
+        map.setBearing(0);
+        map.setPitch(0);
+        map.setMaxPitch(0);
+        map.dragRotate.disable();
+        map.touchPitch.disable();
+        map.touchZoomRotate.disableRotation();
+        map.keyboard.disable();
+
         if (interactive) {
           map.addControl(new ml.NavigationControl({ showCompass: false }), "top-right");
           map.addControl(new ml.ScaleControl({ unit: "metric" }), "bottom-left");
