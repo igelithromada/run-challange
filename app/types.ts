@@ -78,6 +78,10 @@ export interface UserData {
   teamIdsByType?: Partial<Record<ActivityType, string | null>>;
   challengeGoalKm?: number;
   hapticsEnabled?: boolean;
+  socialNotifications?: {
+    likes?: boolean;
+    comments?: boolean;
+  };
   confirmDelete?: boolean;
   trainerNotifications?: {
     enabled?: boolean;
