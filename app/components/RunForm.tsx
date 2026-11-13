@@ -43,6 +43,8 @@ const translateSaveError = (error: unknown) => {
   if (code.includes("permission-denied")) return "Aktivitu se nepodařilo uložit kvůli oprávnění. Zkontroluj přihlášení a zkus to znovu.";
   if (code.includes("failed-precondition")) return "Aktivitu se nepodařilo uložit. Firebase čeká na dokončení nastavení databáze.";
   if (code.includes("unavailable")) return "Databáze je momentálně nedostupná. Zkus to za chvíli znovu.";
+  if (error instanceof Error && /Function addDoc\(\) called with invalid data|Unsupported field value: undefined|found in field/i.test(error.message)) return "Aktivitu se nepodařilo uložit. Některý údaj nebyl vyplněný správně. Zkontroluj tým a zkus to znovu.";
+  if (error instanceof Error && /permission|Permission denied|Missing or insufficient permissions/i.test(error.message)) return "Aktivitu se nepodařilo uložit kvůli oprávnění. Zkontroluj přihlášení a zkus to znovu.";
   if (error instanceof Error && /network|fetch/i.test(error.message)) return "Nepodařilo se připojit k serveru. Zkontroluj internetové připojení.";
   return error instanceof Error ? error.message : "Aktivitu se nepodařilo uložit. Zkus to prosím znovu.";
 };
