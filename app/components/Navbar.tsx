@@ -105,7 +105,7 @@ function NotificationsBell() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ notificationId: notification.id }),
       });
-      setNotifications(previous => previous.map(item => item.id === notification.id ? { ...item, read: true } : item));
+      setNotifications(previous => previous.filter(item => item.id !== notification.id));
       setUnreadCount(previous => Math.max(0, previous - (notification.read ? 0 : 1)));
     } catch {}
   };
@@ -119,7 +119,7 @@ function NotificationsBell() {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ markAll: true }),
       });
-      setNotifications(previous => previous.map(item => ({ ...item, read: true })));
+      setNotifications([]);
       setUnreadCount(0);
     } catch {}
   };
