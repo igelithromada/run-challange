@@ -105,7 +105,7 @@ export async function GET(request: Request) {
         mapUrl: typeof override.mapUrl === "string" ? override.mapUrl : route.mapUrl,
         groupId: group.id, groupTitle: group.title, disabled: override.disabled === true, deleted: override.deleted === true,
       };
-    }).filter(route => route.deleted !== true);
+    }).filter(route => route.deleted !== true));
     return NextResponse.json({ routes: [...dynamicRoutes, ...staticRoutes] });
   } catch (error) {
     const auth = authErrorResponse(error);
