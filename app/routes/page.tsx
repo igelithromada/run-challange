@@ -224,6 +224,7 @@ export default function RoutesPage() {
           .routes-disabled-actions .danger{background:rgba(150,60,70,.28);border-color:rgba(255,130,140,.25)}
           .route-admin-actions button{flex:1;min-height:44px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(255,255,255,.1);color:white;font-weight:700;cursor:pointer}
           .route-admin-actions .danger{background:rgba(150,60,70,.28);border-color:rgba(255,130,140,.25)}
+          .route-admin-source{margin:.45rem 0 0;opacity:.65;font-size:.78rem;text-align:center}
           .route-admin-add{width:100%;min-height:50px;border:1px solid rgba(255,255,255,.2);border-radius:16px;background:rgba(255,255,255,.13);color:white;font-size:1rem;font-weight:800;cursor:pointer}
           .route-map-preview-button{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;border-radius:16px;overflow:hidden}
           .route-card-main-button{display:flex;width:100%;box-sizing:border-box;cursor:pointer;border:0;background:transparent;color:inherit;padding:0;text-align:left;font:inherit}
@@ -271,6 +272,7 @@ export default function RoutesPage() {
                     <button type="button" onClick={() => void changeRouteState(route.id, route.name, "activate")}>Aktivovat</button>
                     <button type="button" className="danger" onClick={() => void changeRouteState(route.id, route.name, "delete")}>Smazat</button>
                   </div>
+                  <small>{route.isStatic ? "Mapa je součástí kódu aplikace." : "Mapa je nahraná v úložišti aplikace."}</small>
                 </div>
               ))}
             </div>
@@ -325,6 +327,7 @@ export default function RoutesPage() {
                     <button type="button" onClick={() => void changeRouteState(managed.id, managed.name, "deactivate")}>Deaktivovat</button>
                     <button type="button" className="danger" onClick={() => void changeRouteState(managed.id, managed.name, "delete")}>Smazat</button>
                   </div>
+                  <p className="route-admin-source">{managed.isStatic ? "Mapa je součástí kódu aplikace." : "Mapa je nahraná v úložišti aplikace."}</p>
                 );
               })()}
             </article>
