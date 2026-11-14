@@ -165,10 +165,10 @@ export default function ActivityRecorder({ type, onFinished }:{
       },err=>{
         if(err.code===1) {
           setInitialGpsState("off");
-          markGpsUnavailable("Přístup k poloze není povolen. Zapni polohu v telefonu a měření bude pozastaveno.");
+          markGpsUnavailable("Přístup k poloze není povolen. Povol polohu v telefonu a zkus měření znovu.");
         } else if(err.code===2) {
           setInitialGpsState("off");
-          markGpsUnavailable("GPS není dostupné. Zapni polohu v telefonu a měření je pozastaveno.");
+          markGpsUnavailable("GPS není dostupné. Zapni polohu v telefonu a zkus měření znovu.");
         } else {
           setGpsError("GPS signál se nepodařilo získat. Zkontroluj polohu v telefonu.");
         }
