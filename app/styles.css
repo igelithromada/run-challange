@@ -4847,3 +4847,187 @@ html[data-theme="white"] .route-map-minimal .maplibregl-canvas {
 .routes-toolbar{display:flex;align-items:center;justify-content:space-between;gap:.7rem;margin:0 0 1rem;flex-wrap:wrap}.routes-filter-toolbar{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}.routes-filter-toolbar button{min-height:40px;padding:.45rem .8rem;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(255,255,255,.08);color:inherit;font-weight:700;cursor:pointer}.routes-filter-toolbar button.active{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.38)}
 .route-map-loading-placeholder{position:absolute;inset:0;background:linear-gradient(135deg,rgba(230,237,241,.92),rgba(210,222,228,.82));overflow:hidden}.route-map-loading-placeholder:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 20%,rgba(255,255,255,.45) 42%,transparent 64%);transform:translateX(-100%);animation:route-map-shimmer 1.15s linear infinite}.route-map-loading-placeholder span{position:absolute;display:block;border-radius:999px;background:rgba(255,255,255,.58);height:8px}.route-map-loading-placeholder span:nth-child(1){left:9%;top:27%;width:46%}.route-map-loading-placeholder span:nth-child(2){left:23%;top:50%;width:64%}.route-map-loading-placeholder span:nth-child(3){left:12%;top:72%;width:34%}.route-map-loading-copy{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;display:flex;align-items:center;gap:.45rem;padding:.55rem .75rem;border-radius:12px;background:rgba(9,20,30,.72);color:#fff;font-size:.75rem;font-weight:700;white-space:nowrap}.route-map-loading-state{background:transparent!important}.route-map-loading-loading .route-map{opacity:0!important}@keyframes route-map-shimmer{to{transform:translateX(100%)}}
 @media(max-width:620px){.routes-toolbar{align-items:stretch;flex-direction:column}.routes-filter-toolbar,.routes-sort-toolbar{justify-content:flex-start}}
+
+
+/* ================================================================
+   Audit 2026-11-14 – sjednocení vzhledu, notifikací, tras a počasí
+   ================================================================ */
+
+/* 1–2: notifikace musí být čitelné a nesmí se rozpadat do úzkého sloupce */
+.notification-panel {
+  position: fixed !important;
+  top: 72px !important;
+  right: 12px !important;
+  left: auto !important;
+  width: min(390px, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: calc(100vh - 88px) !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+.notification-list { max-height: calc(100vh - 150px) !important; overflow-x: hidden !important; }
+.notification-item { min-width: 0 !important; box-sizing: border-box !important; }
+.notification-copy { flex: 1 1 auto !important; min-width: 0 !important; overflow-wrap: anywhere !important; word-break: break-word !important; }
+.notification-copy span, .notification-copy strong { overflow-wrap:anywhere !important; }
+@media (max-width: 600px) {
+  .notification-panel {
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-width: none !important;
+    top: 70px !important;
+  }
+}
+
+/* 4–5: na stránce tras je titul už jen ve vrchním panelu a zůstává pouze řazení */
+.routes-header { display:none !important; }
+.routes-filter-toolbar { display:none !important; }
+.routes-toolbar { justify-content:flex-end !important; }
+.routes-loading { margin-top:.8rem !important; text-align:center; opacity:.78; }
+
+/* 11: hodinová předpověď je na mobilu ve třech sloupcích */
+.weather-hour-grid { grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
+.weather-hour-card { min-width:0; }
+@media (max-width:360px) {
+  .weather-hour-grid { grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:.45rem !important; }
+  .weather-hour-card { padding:.55rem .25rem !important; }
+  .weather-hour-card strong { font-size:.92rem !important; }
+}
+
+/* 8–9: nové ovládání vzhledu a času trenéra */
+.settings-time-input {
+  width: 104px;
+  min-height: 42px;
+  flex: 0 0 104px;
+  box-sizing:border-box;
+  border:1px solid var(--ui-border);
+  border-radius:12px;
+  background:rgba(0,0,0,.18);
+  color:var(--ui-text);
+  padding:.45rem .55rem;
+  color-scheme:dark;
+}
+.settings-time-input:focus { border-color:var(--ui-border-strong); outline:none; }
+html[data-theme="light"] .settings-time-input,
+html[data-theme="white"] .settings-time-input {
+  color-scheme:light;
+  background:rgba(0,0,0,.06);
+  color:#162536;
+}
+
+/* 12: testovací přepínače animací počasí */
+.weather-test-controls {
+  display:flex;
+  align-items:center;
+  gap:.45rem;
+  flex-wrap:wrap;
+  margin:.75rem 0 1rem;
+  padding:.7rem;
+  border:1px dashed var(--ui-border);
+  border-radius:14px;
+  background:rgba(255,255,255,.04);
+}
+.weather-test-controls > span { font-size:.72rem; font-weight:800; opacity:.7; margin-right:.15rem; }
+.weather-test-controls button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.3rem;
+  min-height:38px;
+  padding:.4rem .65rem;
+  border:1px solid var(--ui-border);
+  border-radius:11px;
+  background:rgba(255,255,255,.07);
+  color:inherit;
+  font-weight:750;
+  cursor:pointer;
+}
+.weather-test-controls button.active {
+  background:rgba(255,255,255,.18);
+  border-color:var(--ui-border-strong);
+}
+
+/* 13–14: jeden vizuální systém pro dlaždice i záznamy */
+.tile,
+.activity-card-modern,
+.weather-card,
+.run-weather-recommendation {
+  border-color:var(--ui-border) !important;
+}
+.tile,
+.activity-card-modern {
+  background:var(--ui-bg) !important;
+  box-shadow:none !important;
+}
+.activity-card-modern {
+  border:1px solid var(--ui-border) !important;
+  border-radius:var(--radius-lg) !important;
+}
+.activity-card-modern .activity-metrics > div {
+  background:rgba(255,255,255,.06) !important;
+  border-color:var(--ui-border) !important;
+}
+.activity-card-modern .activity-social-actions {
+  border-top-color:var(--ui-border) !important;
+}
+
+/* 12: skutečná globální vrstva animací je pod obsahem aplikace */
+.weather-animation-overlay {
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  opacity:0;
+  overflow:hidden;
+}
+.app-content-layer {
+  position:relative;
+  z-index:2;
+  isolation:isolate;
+}
+html[data-animations="true"][data-weather="rain"] .weather-animation-overlay {
+  opacity:.48;
+  background-image:
+    repeating-linear-gradient(105deg,transparent 0 14px,rgba(225,242,255,.72) 15px 17px,transparent 18px 38px),
+    repeating-linear-gradient(105deg,transparent 0 29px,rgba(210,235,255,.42) 30px 31px,transparent 32px 76px);
+  background-size:86px 150px,140px 210px;
+  animation:weather-rain-global .72s linear infinite;
+}
+html[data-animations="true"][data-weather="wind"] .weather-animation-overlay {
+  opacity:.18;
+  background-image:repeating-linear-gradient(0deg,transparent 0 18px,rgba(255,255,255,.25) 19px 21px,transparent 22px 46px);
+  background-size:100% 120px;
+  animation:weather-wind-global 3.8s linear infinite;
+}
+html[data-animations="true"][data-weather="clear"] .weather-animation-overlay {
+  opacity:.10;
+  background:radial-gradient(circle at 78% 18%,rgba(255,221,120,.45),transparent 20%);
+  animation:weather-sun-global 7s ease-in-out infinite alternate;
+}
+html[data-animations="true"][data-weather="storm"] .weather-animation-overlay {
+  opacity:.24;
+  background:
+    radial-gradient(circle at 70% 30%,rgba(255,255,255,.12),transparent 18%),
+    linear-gradient(180deg,rgba(70,75,105,.16),rgba(0,0,0,.05));
+  animation:weather-storm-global 3.2s ease-in-out infinite;
+}
+@keyframes weather-rain-global {
+  from { background-position:0 -150px,35px -55px; }
+  to { background-position:-86px 0,35px 155px; }
+}
+@keyframes weather-wind-global {
+  from { background-position:0 0; }
+  to { background-position:-180px 0; }
+}
+@keyframes weather-sun-global {
+  from { opacity:.08; transform:scale(1); }
+  to { opacity:.22; transform:scale(1.04); }
+}
+@keyframes weather-storm-global {
+  0%,92%,100% { opacity:.18; }
+  94% { opacity:.62; }
+  96% { opacity:.20; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .weather-animation-overlay { animation:none !important; }
+}
