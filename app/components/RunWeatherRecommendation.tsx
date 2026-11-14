@@ -110,7 +110,7 @@ export default function RunWeatherRecommendation({
         <span className="run-weather-eyebrow"><ActivityIcon /> Doporučení pro {activityType === "chůze" ? "chůzi" : "běh"} · Dolní Lhota</span>
         <strong>{title}</strong>
         <p>{advice}</p>
-        {current && <small>{Math.round(temperature)} °C · <span className="run-weather-wind"><Wind size={14} className="wind-icon-animated" /> vítr {Math.round(wind)} km/h</span>{rainChance > 0 ? ` · srážky ${Math.round(rainChance)} %` : ""}</small>}
+        {current && <small>{Math.round(temperature)} °C · <span className="run-weather-wind"><Wind size={14} /> vítr {Math.round(wind)} km/h</span>{rainChance > 0 ? ` · srážky ${Math.round(rainChance)} %` : ""}</small>}
         {linkToWeather && <span className="run-weather-more">Podrobná předpověď <span aria-hidden="true">→</span></span>}
       </div>
     </section>
