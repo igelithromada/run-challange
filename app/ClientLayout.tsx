@@ -127,6 +127,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
             avatarUrl: "",
             theme: "default",
             customColor: "#36D1DC",
+            gradientEnabled: true,
             hapticsEnabled: true
           });
           await mergePublicProfile(user.uid, {
@@ -148,6 +149,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
         if (!data.nickname) update.nickname = defaultNickname;
         if (!data.theme) update.theme = "default";
         if (!data.customColor) update.customColor = "#36D1DC";
+        if (data.gradientEnabled === undefined) update.gradientEnabled = true;
         if (data.avatarUrl === undefined) update.avatarUrl = "";
         if (data.hapticsEnabled === undefined) update.hapticsEnabled = true;
 
