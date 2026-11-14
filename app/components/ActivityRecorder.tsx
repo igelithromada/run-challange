@@ -165,10 +165,10 @@ export default function ActivityRecorder({ type, onFinished }:{
       },err=>{
         if(err.code===1) {
           setInitialGpsState("off");
-          markGpsUnavailable("Přístup k poloze není povolen. Zapni polohu v telefonu a měření bude pozastaveno.");
+          markGpsUnavailable("Přístup k poloze není povolen. Zapni polohu v telefonu a zkus GPS znovu.");
         } else if(err.code===2) {
           setInitialGpsState("off");
-          markGpsUnavailable("GPS není dostupné. Zapni polohu v telefonu a měření je pozastaveno.");
+          markGpsUnavailable("GPS není dostupné. Zapni polohu v telefonu a zkus GPS znovu.");
         } else {
           setGpsError("GPS signál se nepodařilo získat. Zkontroluj polohu v telefonu.");
         }
@@ -367,8 +367,8 @@ export default function ActivityRecorder({ type, onFinished }:{
 
           if(err.code===1 || err.code===2) {
             markGpsUnavailable(err.code===1
-              ? "Přístup k poloze není povolen. Zapni polohu v telefonu a měření je pozastaveno."
-              : "GPS není dostupné. Zapni polohu v telefonu a měření je pozastaveno.");
+              ? "Přístup k poloze není povolen. Zapni polohu v telefonu a zkus GPS znovu."
+              : "GPS není dostupné. Zapni polohu v telefonu a zkus GPS znovu.");
             return;
           }
 
@@ -376,7 +376,7 @@ export default function ActivityRecorder({ type, onFinished }:{
           // místo chyby 2. Teprve několik po sobě jdoucích timeoutů označí GPS
           // jako nedostupné, aby krátký výpadek signálu nezastavil měření.
           if(err.code===3 && gpsWatchdogFailuresRef.current >= 3 && lastSuccessAge > 8000) {
-            markGpsUnavailable("GPS není dostupné. Zapni polohu v telefonu a měření je pozastaveno.");
+            markGpsUnavailable("GPS není dostupné. Zapni polohu v telefonu a zkus GPS znovu.");
           }
         },
         {enableHighAccuracy:true,maximumAge:0,timeout:2000}
@@ -428,10 +428,10 @@ export default function ActivityRecorder({ type, onFinished }:{
             : "Připraveno";
 
   const distanceKm=distance/1000;
-  const canContinue=!running && !requestingLocation && distanceKm>0.01 && elapsed>0;
+  const canContinue=!running && !requestingLocation && elapsed>0;
 
   return <section className="activity-recorder" aria-label={`Měření ${activityName.toLowerCase()}`}>
-    {!running && elapsed===0 && !requestingLocation && <InstallPwaPrompt compact />}
+    {!running && elapsed===0 && !requestingLocation && <InstallPwaPrompt compact type={type} />}
 
     <div className="activity-recorder-header">
       <div>
@@ -463,7 +463,7 @@ export default function ActivityRecorder({ type, onFinished }:{
       {running && !gpsUnavailable && <button type="button" className="run-secondary-button gps-action" onClick={pause}>{paused?<Play size={18}/>:<Pause size={18}/>} {paused?"Pokračovat":"Pozastavit"}</button>}
       {running && gpsUnavailable && <button type="button" className="run-secondary-button gps-action" onClick={retryGps}><MapPin size={18}/> Zkusit GPS znovu</button>}
       {running && <button type="button" className="run-primary-button gps-action" onClick={stop}><Square size={17}/> Ukončit</button>}
-      {canContinue && <button type="button" className="run-primary-button gps-action" onClick={finishDraft}>Pokračovat k vytvoření záznamu</button>}
+      {canContinue && <button type="button" className="run-primary-button gps-action" onClick={finishDraft}>Použít měření a vytvořit záznam</button>}
       {!running && elapsed>0 && <button type="button" className="run-secondary-button gps-action" onClick={reset}>Zahodit měření</button>}
     </div>
   </section>;
