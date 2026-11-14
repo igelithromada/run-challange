@@ -81,7 +81,7 @@ export async function GET(request: Request) {
     let failed = 0;
     let usersChecked = 0;
 
-    const sendForUser = async (userDoc: FirebaseFirestore.DocumentSnapshot, data: UserData, targetKey: string, mode: "today" | "tomorrow") => {
+    const sendForUser = async (userDoc: typeof snapshot.docs[number], data: UserData, targetKey: string, mode: "today" | "tomorrow") => {
       const prefs = data.trainerNotifications;
       if (!prefs) return;
 
