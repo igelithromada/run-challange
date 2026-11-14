@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function distanceLabelFromGpx(text: string): string {
-  const re = /<trkpt\b[^>]*\blat=["']([^"']+)["'][^>]*\blon=["']([^"']+)["'][^>]*>/gi;
+  const re = /<(?:trkpt|rtept)\b[^>]*\blat=["']([^"']+)["'][^>]*\blon=["']([^"']+)["'][^>]*>/gi;
   const points: Array<[number, number]> = [];
   let match: RegExpExecArray | null;
   while ((match = re.exec(text)) !== null) {
