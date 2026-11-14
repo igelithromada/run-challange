@@ -5031,3 +5031,14 @@ html[data-animations="true"][data-weather="storm"] .weather-animation-overlay {
 @media (prefers-reduced-motion:reduce) {
   .weather-animation-overlay { animation:none !important; }
 }
+
+/* Konečné sjednocení i při aktivní animaci počasí */
+html[data-weather] .tile,
+html[data-weather] .list-tile,
+html[data-weather] .activity-card-modern,
+html[data-windy="true"] .tile,
+html[data-windy="true"] .list-tile {
+  background:var(--ui-bg) !important;
+  background-color:var(--ui-bg) !important;
+  border-color:var(--ui-border) !important;
+}
