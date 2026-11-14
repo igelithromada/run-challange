@@ -71,6 +71,7 @@ export default function SettingsPage() {
             const stored = localStorage.getItem("dolni-lhota-haptics-v1");
             if (stored !== null) localHaptics = stored !== "false";
           } catch {}
+          let cachedTheme: { theme?: string; customColor?: string; gradientEnabled?: boolean; savedAt?: number } | null = null;
           try {
             cachedTheme = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
           } catch {}
@@ -117,7 +118,12 @@ export default function SettingsPage() {
     if (!activeUserId) throw new Error("Nejsi přihlášen.");
     setSaving(true);
     try {
+      const themeChanged = "theme" in patch || "customColor" in patch || "gradientEnabled" in patch;
       await saveUserSettings(activeUserId, {
+        theme,
+        customColor,
+        gradientEnabled,
+        ...patch,
       }, themeChanged);
       if ("defaultActivity" in patch) {
         await mergePublicProfile(activeUserId, { activityType: defaultActivity });
@@ -129,6 +135,7 @@ export default function SettingsPage() {
 
   const handleThemeChange = async (selectedTheme: string) => {
     setTheme(selectedTheme);
+    await applyTheme(selectedTheme, customColor, false, gradientEnabled);
     await saveSettings({ theme: selectedTheme });
     flash("Vzhled uložen");
   };
@@ -136,9 +143,11 @@ export default function SettingsPage() {
   const handleCustomColorLiveChange = async (color: string) => {
     setCustomColor(color);
     setTheme("custom");
+    await applyTheme("custom", color, false, gradientEnabled);
   };
 
   const handleCustomColorFinalSave = async () => {
+    await applyTheme("custom", customColor, false, gradientEnabled);
     await saveSettings({ theme: "custom", customColor });
     setShowColorPicker(false);
     flash("Vlastní vzhled uložen");
@@ -303,10 +312,6 @@ export default function SettingsPage() {
           <div className="settings-section-heading"><Sparkles size={21}/><div><h2>Vzhled</h2><p>Výběr se ukládá a zůstane zachovaný i po návratu do nastavení.</p></div></div>
 
           <label className="settings-animation-toggle">
-            <span><strong>Animace počasí</strong><small>Efekty počasí i při vlastním barevném vzhledu.</small></span>
-          </label>
-
-          <label className="settings-animation-toggle">
             <span><strong>Gradient efekt</strong><small>Plynulý barevný přechod pozadí. Vypnutím zůstane jedna barva.</small></span>
             <input type="checkbox" checked={gradientEnabled} onChange={e => void handleGradientChange(e.target.checked)} />
           </label>
@@ -323,6 +328,7 @@ export default function SettingsPage() {
           </div>
 
           <div className={`custom-theme-box ${theme === "custom" ? "active" : ""}`}>
+            <button type="button" className="custom-theme-trigger" onClick={() => { setShowColorPicker(v => !v); setTheme("custom"); void applyTheme("custom", customColor, false, gradientEnabled); }}>
               <span className="theme-color-dot" style={{ background: customColor }} />
               <span><strong>Vlastní barva</strong><small>{customColor.toUpperCase()}</small></span>
               <Check size={19} className={theme === "custom" ? "theme-check" : "theme-check hidden"} />
