@@ -4678,24 +4678,6 @@ html[data-theme="white"] .settings-time-input {
   border-top-color:var(--ui-border) !important;
 }
 
-/* 12: skutečná globální vrstva animací je pod obsahem aplikace */
-
-.app-content-layer {
-  position:relative;
-  z-index:2;
-  isolation:isolate;
-}
-
-
-
-
-
-
-
-
-@media (prefers-reduced-motion:reduce) {
-  .weather-animation-overlay { animation:none !important; }
-}
 .site-navbar.is-visible {
   top:0 !important;
   transform:none !important;
