@@ -399,8 +399,8 @@ export default function ActivityRecorder({ type, onFinished }:{
   useEffect(()=>()=>{stopGps();releaseWakeLock();},[]);
 
   const finishDraft=()=>{
-    if(distanceRef.current<=0.01 || elapsed<=0){
-      setGpsError("Nejdřív naměř alespoň malou vzdálenost.");
+    if(elapsed<=0){
+      setGpsError("Měření ještě nebylo dokončeno.");
       return;
     }
     onFinished?.({
