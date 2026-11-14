@@ -101,19 +101,15 @@ export async function POST(request: Request) {
 
     const name = clean(form.get("name"), 120);
     const description = clean(form.get("description"), 500);
-    const badge = clean(form.get("badge"), 60);
-    const groupId = clean(form.get("groupId"), 80) || "moje-trasy";
-    const groupTitle = clean(form.get("groupTitle"), 120) || "Moje doporučené trasy";
-    const groupSubtitle = clean(form.get("groupSubtitle"), 180) || "Trasy doporučené pro naši aplikaci";
-    const sourceUrl = clean(form.get("sourceUrl"), 500);
-
     if (!name) return NextResponse.json({ error: "Chybí název trasy." }, { status: 400 });
 
     const uploaded = await uploadGpx(file, decoded.uid);
     const ref = adminDb.collection("recommendedRoutes").doc();
     await ref.set({
-      name, activity: "běh i chůze", description, badge, groupId, groupTitle, groupSubtitle, sourceUrl,
+      name, activity: "běh i chůze", description,
       gpxUrl: uploaded.secureUrl, gpxPublicId: uploaded.publicId,
+      mapUrl: "https://mapy.com/fnc/v1/gpx?url=" + encodeURIComponent(uploaded.secureUrl),
+      groupId: "vlastni-trasy", groupTitle: "Vlastní doporučené trasy", groupSubtitle: "",
       createdAt: new Date(), createdBy: decoded.uid,
     });
     return NextResponse.json({ ok: true, id: ref.id });
@@ -133,8 +129,6 @@ export async function PUT(request: Request) {
     if (!id) return NextResponse.json({ error: "Chybí ID trasy." }, { status: 400 });
     const name = clean(form.get("name"), 120);
     const description = clean(form.get("description"), 500);
-    const badge = clean(form.get("badge"), 60);
-    const sourceUrl = clean(form.get("sourceUrl"), 500);
     if (!name) return NextResponse.json({ error: "Chybí název trasy." }, { status: 400 });
     const file = form.get("file");
     let uploaded: { secureUrl: string; publicId: string } | null = null;
@@ -148,7 +142,7 @@ export async function PUT(request: Request) {
     if (!snapshot.exists) return NextResponse.json({ error: "Trasa neexistuje." }, { status: 404 });
     const current = snapshot.data() || {};
     const nextData: Record<string, unknown> = {
-      name, activity: "běh i chůze", description, badge, sourceUrl,
+      name, activity: "běh i chůze", description,
       updatedAt: new Date(), updatedBy: decoded.uid,
     };
     if (uploaded) {
