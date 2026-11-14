@@ -74,7 +74,7 @@ export default function SettingsPage() {
             const stored = localStorage.getItem("dolni-lhota-haptics-v1");
             if (stored !== null) localHaptics = stored !== "false";
           } catch {}
-          let cachedTheme: { theme?: string; customColor?: string; animationsEnabled?: boolean; savedAt?: number } | null = null;
+          let cachedTheme: { theme?: string; customColor?: string; animationsEnabled?: boolean; gradientEnabled?: boolean; savedAt?: number } | null = null;
           try {
             cachedTheme = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
           } catch {}
