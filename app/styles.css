@@ -5042,3 +5042,19 @@ html[data-windy="true"] .list-tile {
   background-color:var(--ui-bg) !important;
   border-color:var(--ui-border) !important;
 }
+
+/* Oprava vrstvení: transform na fixed navbaru vytvářel containing block pro panel upozornění. */
+.site-navbar {
+  top:0 !important;
+  transition:top .24s ease, opacity .24s ease !important;
+}
+.site-navbar.is-visible {
+  top:0 !important;
+  transform:none !important;
+  opacity:1 !important;
+}
+.site-navbar.is-hidden {
+  top:-110% !important;
+  transform:none !important;
+  opacity:.2 !important;
+}
