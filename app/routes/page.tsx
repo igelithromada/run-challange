@@ -306,7 +306,7 @@ export default function RoutesPage() {
                   <MapPinned size={23} />
                 </div>
                 <div className="route-card-info">
-                  <div className="route-card-title"><h2>{route.name}</h2></div>
+                  <div className="route-card-title"><h2>{route.name}</h2><span className="route-distance-after-name">{route.distance}</span></div>
                   <p>{route.description}</p>
                 </div>
               </button>
