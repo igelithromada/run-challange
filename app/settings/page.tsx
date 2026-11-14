@@ -93,10 +93,11 @@ export default function SettingsPage() {
           const remoteSocial = data.socialNotifications || {};
           setSocialNotifications({ likes: remoteSocial.likes !== false, comments: remoteSocial.comments !== false });
           const remoteNotifications = data.trainerNotifications || {};
+          const remoteTrainerEnabled = remoteNotifications.enabled === true;
           setTrainerNotifications({
-            enabled: remoteNotifications.enabled === true,
-            today: remoteNotifications.today !== false,
-            tomorrow: remoteNotifications.tomorrow !== false,
+            enabled: remoteTrainerEnabled,
+            today: remoteTrainerEnabled && remoteNotifications.today !== false,
+            tomorrow: remoteTrainerEnabled && remoteNotifications.tomorrow !== false,
             todayTime: typeof remoteNotifications.todayTime === "string" ? remoteNotifications.todayTime : "07:00",
             tomorrowTime: typeof remoteNotifications.tomorrowTime === "string" ? remoteNotifications.tomorrowTime : "18:00"
           });
