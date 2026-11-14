@@ -252,8 +252,8 @@ export default function SettingsPage() {
     setTrainerNotifications({ ...next, enabled: shouldBeEnabled });
     setNotificationBusy(true);
     try {
-      if (patch.enabled === true && !previous.enabled) await registerTrainerPush();
-      if (patch.enabled === false && !next.today && !next.tomorrow) await removeTrainerPush();
+      if (shouldBeEnabled && !previous.enabled) await registerTrainerPush();
+      if (!shouldBeEnabled && previous.enabled) await removeTrainerPush();
       await persistTrainerNotifications({ ...next, enabled: shouldBeEnabled });
       showAppToast("Nastavení notifikací uloženo.");
     } catch (error) {
