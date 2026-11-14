@@ -4656,6 +4656,18 @@ html[data-theme="white"] .route-map-minimal .maplibregl-canvas {
   color-scheme:dark;
 }
 .settings-time-input:focus { border-color:var(--ui-border-strong); outline:none; }
+.settings-trainer-day-row {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 104px 22px;
+  align-items:center;
+  gap:.7rem;
+}
+.settings-trainer-day-row .settings-time-input { width:104px; }
+.settings-trainer-day-row input[type="checkbox"] { width:22px; height:22px; margin:0; accent-color:#36D1DC; }
+@media(max-width:520px) {
+  .settings-trainer-day-row { grid-template-columns:minmax(0,1fr) 92px 22px; gap:.45rem; }
+  .settings-trainer-day-row .settings-time-input { width:92px; }
+}
 html[data-theme="light"] .settings-time-input,
 html[data-theme="white"] .settings-time-input {
   color-scheme:light;
@@ -4663,37 +4675,6 @@ html[data-theme="white"] .settings-time-input {
   color:#162536;
 }
 
-/* 12: testovací přepínače animací počasí */
-.weather-test-controls {
-  display:flex;
-  align-items:center;
-  gap:.45rem;
-  flex-wrap:wrap;
-  margin:.75rem 0 1rem;
-  padding:.7rem;
-  border:1px dashed var(--ui-border);
-  border-radius:14px;
-  background:rgba(255,255,255,.04);
-}
-.weather-test-controls > span { font-size:.72rem; font-weight:800; opacity:.7; margin-right:.15rem; }
-.weather-test-controls button {
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:.3rem;
-  min-height:38px;
-  padding:.4rem .65rem;
-  border:1px solid var(--ui-border);
-  border-radius:11px;
-  background:rgba(255,255,255,.07);
-  color:inherit;
-  font-weight:750;
-  cursor:pointer;
-}
-.weather-test-controls button.active {
-  background:rgba(255,255,255,.18);
-  border-color:var(--ui-border-strong);
-}
 
 /* 13–14: jeden vizuální systém pro dlaždice i záznamy */
 .tile,
