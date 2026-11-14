@@ -294,16 +294,7 @@ body::before {
 }
 body > * { position: relative; z-index: 3; }
 html[data-animations="true"][data-weather="rain"] body::before,
-html[data-animations="true"][data-weather="rain-wind"] body::before {
-  opacity: .72;
-  background-image:
-    repeating-linear-gradient(105deg, transparent 0 14px, rgba(225,242,255,.72) 15px 17px, transparent 18px 38px),
-    repeating-linear-gradient(105deg, transparent 0 29px, rgba(210,235,255,.42) 30px 31px, transparent 32px 76px);
-  background-size: 86px 150px, 140px 210px;
-  background-position: 0 0, 35px -55px;
-  animation: weather-rain 0.72s linear infinite;
-  will-change: background-position, transform;
-}
+
 html[data-weather="snow"] body::before,
 html[data-weather="snow-wind"] body::before {
   opacity: .68;
@@ -315,11 +306,8 @@ html[data-weather="snow-wind"] body::before {
   background-size: 220px 180px;
   animation: weather-snow 10s linear infinite;
 }
-@keyframes weather-rain {
-  from { transform: translate3d(0,-150px,0); }
-  to { transform: translate3d(-86px,0,0); }
-}
-@keyframes weather-snow { from { transform: translate3d(0,-5%,0); } to { transform: translate3d(3%,10%,0); } }
+
+
 @media (prefers-reduced-motion: reduce) {
   html[data-weather="rain"] body::before, html[data-weather="rain-wind"] body::before, html[data-weather="snow"] body::before, html[data-weather="snow-wind"] body::before { animation: none; }
 }
@@ -636,13 +624,13 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .activity-photos-button { display: inline-flex; align-items: center; gap: .35rem; margin-top: .65rem; padding: .35rem .55rem; border: 1px solid rgba(255,255,255,.18); border-radius: 9px; color: white; background: rgba(255,255,255,.1); font: inherit; font-size: .75rem; cursor: pointer; }
 body::before { z-index: 0; }
 body > * { position: relative; z-index: 1; }
-html[data-animations="false"] body::before { display: none !important; animation: none !important; }
+
 html[data-animations="true"][data-weather="rain"] body::before,
-html[data-animations="true"][data-weather="rain-wind"] body::before { opacity: .34; animation: weather-rain 1.1s linear infinite; }
+
 html[data-animations="true"][data-weather="snow"] body::before,
-html[data-animations="true"][data-weather="snow-wind"] body::before { opacity: .58; animation: weather-snow 10s linear infinite; }
-html[data-animations="true"][data-windy="true"] .wind-icon-animated { animation: wind-icon-gust 1.35s ease-in-out infinite; }
-html[data-animations="false"] .wind-icon-animated { animation: none !important; }
+
+
+
 @media (max-width: 520px) {
   .teams-grid { grid-template-columns: minmax(0,1fr) !important; }
   .team-card { display: grid !important; grid-template-columns: 44px minmax(0,1fr) !important; gap: .55rem .75rem !important; }
@@ -1099,15 +1087,8 @@ html[data-animations="false"] .wind-icon-animated { animation: none !important; 
 .site-sidebar-panel > .site-sidebar-item.sidebar-close { aspect-ratio:auto; }
 
 /* Vítr: posouvají se celé pruhy, ne jen jejich kontejner */
-html[data-animations="true"][data-weather="wind"] body::before {
-  background-repeat:repeat;
-  background-size:180% 100%;
-  animation:weather-wind-flow 3.8s linear infinite !important;
-}
-@keyframes weather-wind-flow {
-  from { background-position:0 0; transform:translate3d(0,0,0); }
-  to { background-position:-180% 0; transform:translate3d(0,0,0); }
-}
+
+
 
 @media(max-width:520px) {
   .activity-card-modern { padding:.85rem !important; gap:.7rem !important; }
@@ -1306,11 +1287,11 @@ html[data-animations="true"][data-weather="wind"] body::before {
 .run-profile-icon { width:26px; height:26px; flex:0 0 auto; }
 .run-profile-icon path { stroke-linecap:round; stroke-linejoin:round; }
 .progress-goal-inputs { grid-template-columns:repeat(2,minmax(0,1fr)); }
-html[data-animations="false"] body::before { display:none !important; animation:none !important; }
+
 html[data-animations="true"][data-weather="rain"] body::before,
 html[data-animations="true"][data-weather="rain-wind"] body::before,
 html[data-animations="true"][data-weather="snow"] body::before,
-html[data-animations="true"][data-weather="snow-wind"] body::before { z-index:0; pointer-events:none; }
+
 
 .site-sidebar-item { appearance:none; border:1px solid rgba(255,255,255,.13); background:rgba(0,0,0,.22); color:#fff; border-radius:16px; min-height:76px; padding:.8rem .5rem; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:.45rem; font:600 1rem/1.25 'Poppins',sans-serif; text-align:center; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,.14); }
 .site-sidebar-item:active { background:rgba(255,255,255,.28); transform:scale(.98); }
@@ -1319,45 +1300,15 @@ html[data-animations="true"][data-weather="snow-wind"] body::before { z-index:0;
 
 
 /* Počasí na pozadí: oblačnost, slunce, mlha a poryvy větru */
-html[data-animations="true"][data-weather="cloudy"] body::before {
-  opacity: .25;
-  background-image:
-    radial-gradient(ellipse 32% 18% at 18% 24%, rgba(255,255,255,.48) 0 45%, transparent 72%),
-    radial-gradient(ellipse 38% 22% at 62% 48%, rgba(255,255,255,.35) 0 45%, transparent 72%),
-    radial-gradient(ellipse 30% 17% at 88% 18%, rgba(255,255,255,.3) 0 45%, transparent 72%);
-  background-size: 150% 100%;
-  animation: weather-clouds 34s ease-in-out infinite alternate;
-}
-html[data-animations="true"][data-weather="fog"] body::before {
-  opacity: .32;
-  background-image: linear-gradient(180deg, transparent 25%, rgba(225,238,244,.28) 48%, transparent 68%);
-  background-size: 100% 180%;
-  animation: weather-fog 18s ease-in-out infinite alternate;
-}
-html[data-animations="true"][data-weather="wind"] body::before {
-  opacity: .24;
-  background-image: repeating-linear-gradient(175deg, transparent 0 42px, rgba(225,245,255,.3) 43px 45px, transparent 46px 86px);
-  background-size: 180% 100%;
-  animation: weather-wind 5s linear infinite;
-}
-html[data-animations="true"][data-weather="clear"] body::before {
-  opacity: .34;
-  background-image: radial-gradient(ellipse at 82% 12%, rgba(255,222,130,.52), rgba(255,201,100,.13) 24%, transparent 52%);
-  animation: weather-sun 8s ease-in-out infinite alternate;
-}
-html[data-animations="true"][data-weather="night"] body::before {
-  opacity: .3;
-  background-image:
-    radial-gradient(2px 2px at 18% 22%, rgba(255,255,255,.9) 98%, transparent),
-    radial-gradient(1px 1px at 72% 18%, rgba(255,255,255,.8) 98%, transparent),
-    radial-gradient(2px 2px at 48% 62%, rgba(255,255,255,.7) 98%, transparent),
-    radial-gradient(1px 1px at 88% 72%, rgba(255,255,255,.8) 98%, transparent);
-  background-size: 240px 180px;
-}
-@keyframes weather-clouds { from { transform: translate3d(-2%,0,0); } to { transform: translate3d(3%,1%,0); } }
-@keyframes weather-fog { from { transform: translate3d(-2%,0,0); opacity:.18; } to { transform: translate3d(2%,0,0); opacity:.36; } }
-@keyframes weather-wind { from { transform: translate3d(-5%,0,0); } to { transform: translate3d(5%,0,0); } }
-@keyframes weather-sun { from { opacity:.2; } to { opacity:.42; } }
+
+
+
+
+
+
+
+
+
 @media (prefers-reduced-motion: reduce) {
   html[data-animations="true"] body::before { animation: none !important; }
 }
@@ -1445,9 +1396,9 @@ html[data-animations="true"][data-weather="night"] body::before {
 .site-sidebar-panel { isolation:isolate; overflow:hidden !important; position:relative; }
 .site-sidebar-panel::before { content:""; position:absolute; inset:-12%; z-index:0; pointer-events:none; opacity:0; border-radius:inherit; background:radial-gradient(ellipse at 25% 20%, rgba(255,255,255,.18), transparent 58%); transform:translate3d(0,0,0); }
 .site-sidebar-panel > * { position:relative; z-index:1; }
-html[data-animations="true"][data-weather] .site-sidebar-panel::before { opacity:.55; animation:sidebar-weather-drift 24s ease-in-out infinite alternate; }
+
 @keyframes sidebar-weather-drift { from { transform:translate3d(-1%,0,0); } to { transform:translate3d(1%,1%,0); } }
-html[data-animations="false"] .site-sidebar-panel::before { display:none !important; animation:none !important; }
+
 @media (prefers-reduced-motion: reduce) { .site-sidebar-panel::before { animation:none !important; } }
 .activity-card-meta { border-radius:14px !important; overflow:hidden; padding:.55rem .7rem; background:rgba(255,255,255,.08) !important; border:1px solid rgba(255,255,255,.08); }
 .activity-card { border-radius:var(--card-radius,18px) !important; }
@@ -3654,15 +3605,8 @@ button { touch-action:manipulation; }
 html[data-animations="true"][data-weather="rain"] body::before,
 html[data-animations="true"][data-weather="rain-wind"] body::before,
 html[data-animations="true"][data-weather="snow"] body::before,
-html[data-animations="true"][data-weather="snow-wind"] body::before {
-  animation: none !important;
-  background-image: none !important;
-  opacity: 0 !important;
-  transform: none !important;
-}
-html[data-windy="true"] .wind-icon-animated {
-  animation: wind-icon-gust 1.35s ease-in-out infinite;
-}
+
+
 @media (prefers-reduced-motion: reduce) {
   html[data-windy="true"] .wind-icon-animated { animation: none !important; }
 }
@@ -4035,83 +3979,34 @@ html[data-theme="dark"] {
 
 
 /* Audit 2026-11-12 – stabilní vrstva počasí a formulář s klávesnicí */
-.weather-animation-overlay {
-  position: fixed;
-  inset: -20%;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity .6s ease;
-  will-change: transform, background-position, opacity;
-}
+
 
 /* Animace počasí je skutečné pozadí aplikace: nesmí ležet přes karty,
    tlačítka ani text. Všechny další přímé děti stejného kontejneru jsou nad ní. */
-.weather-animation-overlay ~ * {
-  position: relative;
-  z-index: 1;
-}
+
 
 /* Starší body::before už nepoužíváme – persistentní overlay výše je jediná
    vrstva počasí. Tím se zabrání dvojité animaci a překrytí obsahu. */
 body::before {
   z-index: -1 !important;
 }
-html[data-animations="true"][data-weather] body::before {
-  opacity: 0 !important;
-  background-image: none !important;
-  animation: none !important;
-}
-html[data-animations="false"] .weather-animation-overlay { display:none!important; animation:none!important; }
+
+
 html[data-animations="true"][data-weather="rain"] .weather-animation-overlay,
-html[data-animations="true"][data-weather="rain-wind"] .weather-animation-overlay {
-  opacity:.72;
-  background-image:repeating-linear-gradient(105deg,transparent 0 14px,rgba(225,242,255,.72) 15px 17px,transparent 18px 38px),repeating-linear-gradient(105deg,transparent 0 29px,rgba(210,235,255,.42) 30px 31px,transparent 32px 76px);
-  background-size:86px 150px,140px 210px;
-  background-position:0 0,35px -55px;
-  animation:weather-overlay-rain .72s linear infinite;
-}
+
 html[data-animations="true"][data-weather="snow"] .weather-animation-overlay,
-html[data-animations="true"][data-weather="snow-wind"] .weather-animation-overlay {
-  opacity:.68;
-  background-image:radial-gradient(3px 3px at 18px 24px,rgba(255,255,255,.9) 98%,transparent),radial-gradient(2px 2px at 72px 85px,rgba(255,255,255,.8) 98%,transparent),radial-gradient(4px 4px at 135px 48px,rgba(255,255,255,.85) 98%,transparent),radial-gradient(2px 2px at 190px 130px,rgba(255,255,255,.75) 98%,transparent);
-  background-size:220px 180px;
-  animation:weather-overlay-snow 10s linear infinite;
-}
-html[data-animations="true"][data-weather="cloudy"] .weather-animation-overlay {
-  opacity:.25;
-  background-image:radial-gradient(ellipse 32% 18% at 18% 24%,rgba(255,255,255,.48) 0 45%,transparent 72%),radial-gradient(ellipse 38% 22% at 62% 48%,rgba(255,255,255,.35) 0 45%,transparent 72%),radial-gradient(ellipse 30% 17% at 88% 18%,rgba(255,255,255,.3) 0 45%,transparent 72%);
-  background-size:150% 100%;
-  animation:weather-overlay-clouds 34s ease-in-out infinite alternate;
-}
-html[data-animations="true"][data-weather="fog"] .weather-animation-overlay {
-  opacity:.32;
-  background-image:linear-gradient(180deg,transparent 25%,rgba(225,238,244,.28) 48%,transparent 68%);
-  background-size:100% 180%;
-  animation:weather-overlay-fog 18s ease-in-out infinite alternate;
-}
-html[data-animations="true"][data-weather="wind"] .weather-animation-overlay {
-  opacity:.24;
-  background-image:repeating-linear-gradient(175deg,transparent 0 42px,rgba(225,245,255,.3) 43px 45px,transparent 46px 86px);
-  background-size:180% 100%;
-  animation:weather-overlay-wind 5s linear infinite;
-}
-html[data-animations="true"][data-weather="clear"] .weather-animation-overlay {
-  opacity:.34;
-  background-image:radial-gradient(ellipse at 82% 12%,rgba(255,222,130,.52),rgba(255,201,100,.13) 24%,transparent 52%);
-  animation:weather-overlay-sun 8s ease-in-out infinite alternate;
-}
-html[data-animations="true"][data-weather="night"] .weather-animation-overlay {
-  opacity:.3;
-  background-image:radial-gradient(2px 2px at 18% 22%,rgba(255,255,255,.9) 98%,transparent),radial-gradient(1px 1px at 72% 18%,rgba(255,255,255,.8) 98%,transparent),radial-gradient(2px 2px at 48% 62%,rgba(255,255,255,.7) 98%,transparent),radial-gradient(1px 1px at 88% 72%,rgba(255,255,255,.8) 98%,transparent);
-  background-size:240px 180px;
-}
-@keyframes weather-overlay-rain { from{transform:translate3d(0,-150px,0)} to{transform:translate3d(-86px,0,0)} }
-@keyframes weather-overlay-snow { from{transform:translate3d(0,-5%,0)} to{transform:translate3d(3%,10%,0)} }
-@keyframes weather-overlay-clouds { from{transform:translate3d(-2%,0,0)} to{transform:translate3d(3%,1%,0)} }
-@keyframes weather-overlay-fog { from{transform:translate3d(-2%,0,0)} to{transform:translate3d(2%,0,0)} }
-@keyframes weather-overlay-wind { from{transform:translate3d(-5%,0,0)} to{transform:translate3d(5%,0,0)} }
-@keyframes weather-overlay-sun { from{opacity:.2} to{opacity:.42} }
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* Společné chování všech formulářů na mobilu.
    Aktivní pole dostane prostor před klávesnicí a formuláře nesmí být
@@ -4148,13 +4043,8 @@ form select,
   z-index: 1 !important;
   min-height: 100vh;
 }
-.weather-animation-overlay {
-  z-index: 0 !important;
-  pointer-events: none !important;
-}
-.weather-animation-overlay ~ * {
-  z-index: 1 !important;
-}
+
+
 .container {
   margin-top: 0 !important;
   padding-top: 4.9rem !important;
@@ -4504,7 +4394,7 @@ form select,
 .weather-card .weather-stat-icon .weather-rain-drops { color:#4da3ff !important; stroke:#4da3ff !important; }
 .weather-card .weather-rain-combo > svg:first-child { color:rgba(255,255,255,.92); stroke:rgba(255,255,255,.92); }
 html[data-weather] body::before { display:none !important; animation:none !important; }
-.weather-animation-overlay { display:none !important; }
+
 
 .route-card-main-button,
 .route-card-main-button:hover,
@@ -4574,10 +4464,7 @@ html[data-weather] body::before { display:none !important; animation:none !impor
   isolation: isolate;
   min-height: 100vh;
 }
-html[data-animations="true"] body::before {
-  z-index: 0 !important;
-  pointer-events: none !important;
-}
+
 body > * {
   position: relative;
   z-index: 1;
@@ -4972,62 +4859,20 @@ html[data-theme="white"] .settings-time-input {
 }
 
 /* 12: skutečná globální vrstva animací je pod obsahem aplikace */
-.weather-animation-overlay {
-  position:fixed;
-  inset:0;
-  z-index:0;
-  pointer-events:none;
-  opacity:0;
-  overflow:hidden;
-}
+
 .app-content-layer {
   position:relative;
   z-index:2;
   isolation:isolate;
 }
-html[data-animations="true"][data-weather="rain"] .weather-animation-overlay {
-  opacity:.48;
-  background-image:
-    repeating-linear-gradient(105deg,transparent 0 14px,rgba(225,242,255,.72) 15px 17px,transparent 18px 38px),
-    repeating-linear-gradient(105deg,transparent 0 29px,rgba(210,235,255,.42) 30px 31px,transparent 32px 76px);
-  background-size:86px 150px,140px 210px;
-  animation:weather-rain-global .72s linear infinite;
-}
-html[data-animations="true"][data-weather="wind"] .weather-animation-overlay {
-  opacity:.18;
-  background-image:repeating-linear-gradient(0deg,transparent 0 18px,rgba(255,255,255,.25) 19px 21px,transparent 22px 46px);
-  background-size:100% 120px;
-  animation:weather-wind-global 3.8s linear infinite;
-}
-html[data-animations="true"][data-weather="clear"] .weather-animation-overlay {
-  opacity:.10;
-  background:radial-gradient(circle at 78% 18%,rgba(255,221,120,.45),transparent 20%);
-  animation:weather-sun-global 7s ease-in-out infinite alternate;
-}
-html[data-animations="true"][data-weather="storm"] .weather-animation-overlay {
-  opacity:.24;
-  background:
-    radial-gradient(circle at 70% 30%,rgba(255,255,255,.12),transparent 18%),
-    linear-gradient(180deg,rgba(70,75,105,.16),rgba(0,0,0,.05));
-  animation:weather-storm-global 3.2s ease-in-out infinite;
-}
-@keyframes weather-rain-global {
-  from { background-position:0 -150px,35px -55px; }
-  to { background-position:-86px 0,35px 155px; }
-}
-@keyframes weather-wind-global {
-  from { background-position:0 0; }
-  to { background-position:-180px 0; }
-}
-@keyframes weather-sun-global {
-  from { opacity:.08; transform:scale(1); }
-  to { opacity:.22; transform:scale(1.04); }
-}
-@keyframes weather-storm-global {
-  0%,92%,100% { opacity:.18; }
-  94% { opacity:.62; }
-  96% { opacity:.20; }
-}
+
+
+
+
+
+
+
+
 @media (prefers-reduced-motion:reduce) {
   .weather-animation-overlay { animation:none !important; }
 }
@@ -5037,11 +4882,7 @@ html[data-weather] .tile,
 html[data-weather] .list-tile,
 html[data-weather] .activity-card-modern,
 html[data-windy="true"] .tile,
-html[data-windy="true"] .list-tile {
-  background:var(--ui-bg) !important;
-  background-color:var(--ui-bg) !important;
-  border-color:var(--ui-border) !important;
-}
+
 
 /* Oprava vrstvení: transform na fixed navbaru vytvářel containing block pro panel upozornění. */
 .site-navbar {
@@ -5154,18 +4995,14 @@ html[data-windy="true"] .list-tile {
   background:repeating-linear-gradient(175deg,transparent 0 18px,rgba(225,245,255,.24) 19px 21px,transparent 22px 42px);
   animation:weather-tile-wind 3s linear infinite;
 }
-@keyframes weather-tile-rain{from{background-position:0 -90px}to{background-position:-70px 10px}}
-@keyframes weather-tile-sun{from{transform:scale(.94);opacity:.28}to{transform:scale(1.08);opacity:.65}}
-@keyframes weather-tile-storm{0%,100%{opacity:.28}48%{opacity:.45}52%{opacity:.72}}
-@keyframes weather-tile-lightning{0%,44%,100%{opacity:0}48%{opacity:1}51%{opacity:0}}
-@keyframes weather-tile-wind{from{background-position:0 0}to{background-position:80px 0}}
-html[data-animations="false"] .weather-hour-animation{display:none!important;animation:none!important}
-html[data-animations="true"][data-weather="storm"] .weather-animation-overlay{
-  opacity:.42!important;
-  background:linear-gradient(180deg,rgba(55,65,95,.24),transparent 62%)!important;
-  animation:weather-overlay-storm 2.8s ease-in-out infinite!important;
-}
-@keyframes weather-overlay-storm{0%,100%{opacity:.24}48%{opacity:.36}52%{opacity:.52}}
+
+
+
+
+
+
+
+
 @media(prefers-reduced-motion:reduce){.weather-hour-animation,.weather-animation-overlay{animation:none!important}}
 .settings-trainer-master-toggle{margin-bottom:.5rem}
 .settings-time-row .settings-time-input{
