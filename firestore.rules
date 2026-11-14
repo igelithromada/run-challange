@@ -35,6 +35,7 @@ service cloud.firestore {
               "avatarPublicId",
               "theme",
               "customColor",
+              "gradientEnabled",
               "themeUpdatedAt",
               "hapticsEnabled",
               "defaultActivity",
