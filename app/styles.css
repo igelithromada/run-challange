@@ -5063,3 +5063,7 @@ html[data-windy="true"] .list-tile {
 .site-navbar-inner {
   grid-template-columns:44px minmax(0,1fr) 44px 44px !important;
 }
+
+.site-navbar-inner:not(:has(.notification-wrap)) {
+  grid-template-columns:44px minmax(0,1fr) 44px !important;
+}
