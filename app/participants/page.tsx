@@ -27,6 +27,12 @@ type RunRecord = RunData;
 export default function ParticipantsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedType, setSelectedType] = useState<ActivityType>("běh");
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
+      if (cached === "běh" || cached === "chůze") setSelectedType(cached);
+    } catch {}
+  }, []);
   const [runs, setRuns] = useState<RunRecord[]>([]);
   const [runsLoading, setRunsLoading] = useState(true);
   const [runsError, setRunsError] = useState("");
