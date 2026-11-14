@@ -90,6 +90,7 @@ export interface UserData {
     tomorrow?: boolean;
     todayTime?: string;
     tomorrowTime?: string;
+    lastSentKey?: string;
   };
   progressGoals?: {
     type?: ActivityType;
