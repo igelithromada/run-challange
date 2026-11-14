@@ -5,8 +5,8 @@ import { auth } from "./firebase";
 import { getUserProfile } from "./services/users";
 
 const CACHE_KEY = "dolni-lhota-theme-v1";
-type ThemeCache = { theme: string; customColor: string; animationsEnabled: boolean; gradientEnabled: boolean; savedAt: number };
-const defaults: ThemeCache = { theme: "default", customColor: "#36D1DC", animationsEnabled: true, gradientEnabled: true, savedAt: 0 };
+type ThemeCache = { theme: string; customColor: string; gradientEnabled: boolean; savedAt: number };
+const defaults: ThemeCache = { theme: "default", customColor: "#36D1DC", gradientEnabled: true, savedAt: 0 };
 
 function readThemeCache(): ThemeCache {
   try {
@@ -16,8 +16,7 @@ function readThemeCache(): ThemeCache {
     return {
       theme: typeof value.theme === "string" ? value.theme : defaults.theme,
       customColor: typeof value.customColor === "string" ? value.customColor : defaults.customColor,
-      animationsEnabled: value.animationsEnabled !== false,
-      gradientEnabled: value.gradientEnabled !== false,
+            gradientEnabled: value.gradientEnabled !== false,
       savedAt: typeof value.savedAt === "number" ? value.savedAt : 0
     };
   } catch { return defaults; }
@@ -31,7 +30,7 @@ export default function useThemeLoader() {
     let active = true;
     let userData = readThemeCache();
     // Lokální kopie se aplikuje hned; Firestore ji později případně aktualizuje.
-    void applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, false, userData.gradientEnabled);
+    void applyTheme(userData.theme, userData.customColor, userData.gradientEnabled);
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) return;
       try {
@@ -40,36 +39,35 @@ export default function useThemeLoader() {
         userData = {
           theme: data.theme || "default",
           customColor: data.customColor || "#36D1DC",
-          animationsEnabled: data.animationsEnabled !== false,
-          gradientEnabled: data.gradientEnabled !== false,
+                    gradientEnabled: data.gradientEnabled !== false,
           savedAt: data.themeUpdatedAt instanceof Date ? data.themeUpdatedAt.getTime() : data.themeUpdatedAt && "toDate" in data.themeUpdatedAt && typeof data.themeUpdatedAt.toDate === "function" ? data.themeUpdatedAt.toDate().getTime() : data.themeUpdatedAt && "seconds" in data.themeUpdatedAt && typeof data.themeUpdatedAt.seconds === "number" ? data.themeUpdatedAt.seconds * 1000 : Number(data.themeUpdatedAt || 0)
         };
         const cached = readThemeCache();
         const remoteIsNewer = userData.savedAt > cached.savedAt;
         if (remoteIsNewer || cached.savedAt === 0) {
           writeThemeCache(userData);
-          await applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, false, userData.gradientEnabled);
+          await applyTheme(userData.theme, userData.customColor, userData.gradientEnabled);
         } else {
           userData = cached;
-          await applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, false, userData.gradientEnabled);
+          await applyTheme(userData.theme, userData.customColor, userData.gradientEnabled);
         }
       } catch (error) { console.error("Nepodařilo se načíst vzhled", error); }
     });
     const interval = window.setInterval(() => {
       if (userData.theme === "auto" || userData.theme === "weather") {
-        void applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, true, userData.gradientEnabled);
+        void applyTheme(userData.theme, userData.customColor, userData.gradientEnabled);
       }
     }, 5 * 60 * 1000);
     return () => { active = false; unsub(); window.clearInterval(interval); };
   }, []);
 }
 
-export async function applyTheme(selectedTheme: string, color: string, animationsEnabled = true, persist = true, gradientEnabled = true) {
+export async function applyTheme(selectedTheme: string, color: string, gradientEnabled = true) {
   let gradient = "linear-gradient(180deg, #36D1DC, #5B86E5)";
   const root = document.documentElement;
   root.removeAttribute("data-weather");
   root.removeAttribute("data-windy");
-  root.setAttribute("data-animations", animationsEnabled ? "true" : "false");
+  root.removeAttribute("data-animations");
 
   root.removeAttribute("data-theme");
   if (selectedTheme === "dark") {
@@ -91,14 +89,14 @@ export async function applyTheme(selectedTheme: string, color: string, animation
 
 
   // Zapiš základní nastavení před síťovým požadavkem, aby další start neproblikl.
-  if (persist) writeThemeCache({ theme: selectedTheme, customColor: color, animationsEnabled, gradientEnabled, savedAt: Date.now() });
+  writeThemeCache({ theme: selectedTheme, customColor: color, gradientEnabled, savedAt: Date.now() });
   if (!gradientEnabled) {
     const solid = selectedTheme === "dark" ? "#000000" : selectedTheme === "light" ? "#eef6fb" : selectedTheme === "white" ? "#ffffff" : selectedTheme === "woman" ? "#ff7eb3" : selectedTheme === "man" ? "#2980b9" : selectedTheme === "custom" ? color : "#36D1DC";
     gradient = solid;
   }
   root.style.setProperty("--main-gradient", gradient);
 
-  if (animationsEnabled || selectedTheme === "weather") {
+  if (selectedTheme === "weather") {
     try {
       const controller = new AbortController();
       const timeout = window.setTimeout(() => controller.abort(), 8_000);
@@ -139,8 +137,6 @@ export async function applyTheme(selectedTheme: string, color: string, animation
           : "linear-gradient(180deg,#f2b95f,#438bc0)";
         root.style.setProperty("--main-gradient", gradient);
       }
-      root.style.setProperty("--wind-strength", String(Math.min(1, Math.max(0.15, wind / 45))));
-      if (animationsEnabled && isWindy) root.setAttribute("data-windy", "true");
 
       let weather = "clear";
       if (isSnow) weather = isWindy ? "snow-wind" : "snow";
@@ -154,13 +150,6 @@ export async function applyTheme(selectedTheme: string, color: string, animation
         const firstStop = gradient.split(",")[1]?.replace(")", "").trim();
         if (firstStop) gradient = firstStop;
       }
-      try {
-        const testMode = localStorage.getItem("dolni-lhota-weather-test-v1");
-        if (testMode) {
-          root.setAttribute("data-weather", testMode);
-          root.setAttribute("data-windy", testMode === "wind" ? "true" : "false");
-        }
-      } catch {}
 
     } catch (error) {
       console.warn("Vzhled podle počasí se nepodařilo aktualizovat.", error);
