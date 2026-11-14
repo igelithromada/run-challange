@@ -62,7 +62,7 @@ export default function RoutesPage() {
     if (input) input.value = "";
   };
 
-  const startEditRoute = (route: {id:string;name:string;activity:string;description?:string;badge?:string;sourceUrl?:string}) => {
+  const startEditRoute = (route: {id:string;name:string;activity:string;description?:string}) => {
     setEditingRouteId(route.id);
     setShowRouteForm(true);
     setRouteName(route.name || "");
