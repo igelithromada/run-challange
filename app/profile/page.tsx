@@ -23,7 +23,9 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [savingNickname, setSavingNickname] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false);\n  const [deleteOpen, setDeleteOpen] = useState(false);\n  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async user => {
