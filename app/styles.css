@@ -5058,3 +5058,8 @@ html[data-windy="true"] .list-tile {
   transform:none !important;
   opacity:.2 !important;
 }
+
+/* Navbar: správné rozložení se zvonkem i bez něj */
+.site-navbar-inner {
+  grid-template-columns:44px minmax(0,1fr) 44px 44px !important;
+}
