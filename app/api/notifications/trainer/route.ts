@@ -65,64 +65,82 @@ export async function GET(request: Request) {
     const publicKey = process.env.VAPID_PUBLIC_KEY?.trim();
     const privateKey = process.env.VAPID_PRIVATE_KEY?.trim();
     const subject = process.env.VAPID_SUBJECT?.trim();
-    if (!publicKey || !privateKey || !subject) {
-      throw new Error("VAPID not configured.");
-    }
+    if (!publicKey || !privateKey || !subject) throw new Error("VAPID not configured.");
 
     webpush.setVapidDetails(subject, publicKey, privateKey);
 
     const { adminDb } = getAdminServices();
     const now = new Date();
     const local = dateParts(now);
-    const isToday = local.hour < 12;
-    const targetKey = isToday ? dateKey(now) : addLocalDays(now, 1);
+    const currentTime = `${String(local.hour).padStart(2, "0")}:00`;
+    const todayKey = dateKey(now);
+    const tomorrowKey = addLocalDays(now, 1);
     const snapshot = await adminDb.collection("users").where("trainerNotifications.enabled", "==", true).get();
 
     let sent = 0;
     let failed = 0;
+    let usersChecked = 0;
 
-    for (const userDoc of snapshot.docs) {
-      const data = { id: userDoc.id, ...userDoc.data() } as UserData;
+    const sendForUser = async (userDoc: FirebaseFirestore.DocumentSnapshot, data: UserData, targetKey: string, mode: "today" | "tomorrow") => {
       const prefs = data.trainerNotifications;
-      if (!prefs || (isToday ? prefs.today !== true : prefs.tomorrow !== true)) continue;
+      if (!prefs) return;
+
+      const enabled = mode === "today" ? prefs.today !== false : prefs.tomorrow !== false;
+      const preferredTime = mode === "today" ? (prefs.todayTime || "07:00") : (prefs.tomorrowTime || "18:00");
+      if (!enabled || preferredTime !== currentTime) return;
 
       const texts = ACTIVITY_TYPES
         .map(type => planFor(data, type, targetKey))
         .filter((plan): plan is TrainerPlan => plan !== null)
         .map(plan => plannedText(plan, targetKey))
         .filter(Boolean);
+      if (!texts.length) return;
 
-      if (!texts.length) continue;
+      const sentKey = `${mode}-${targetKey}-${preferredTime}`;
+      if (prefs.lastSentKey === sentKey) return;
 
       const subscriptions = await userDoc.ref.collection("pushSubscriptions").get();
+      let delivered = false;
       for (const subDoc of subscriptions.docs) {
         try {
           await webpush.sendNotification(
             subDoc.data() as webpush.PushSubscription,
             JSON.stringify({
-              title: isToday ? "Dnešní plán" : "Zítřejší plán",
+              title: mode === "today" ? "Dnešní plán" : "Zítřejší plán",
               body: texts.join("  ·  "),
-              tag: `trainer-${isToday ? "today" : "tomorrow"}-${targetKey}`,
+              tag: `trainer-${mode}-${targetKey}`,
               url: "/trainer",
             })
           );
           sent++;
+          delivered = true;
         } catch (error) {
           failed++;
           const code = error instanceof webpush.WebPushError ? error.statusCode : 0;
-          if (code === 404 || code === 410) {
-            await subDoc.ref.delete().catch(() => undefined);
-          }
+          if (code === 404 || code === 410) await subDoc.ref.delete().catch(() => undefined);
         }
       }
+
+      if (delivered) {
+        await userDoc.ref.set({ trainerNotifications: { ...prefs, lastSentKey: sentKey } }, { merge: true });
+      }
+    };
+
+    for (const userDoc of snapshot.docs) {
+      usersChecked++;
+      const data = { id: userDoc.id, ...userDoc.data() } as UserData;
+      await sendForUser(userDoc, data, todayKey, "today");
+      await sendForUser(userDoc, data, tomorrowKey, "tomorrow");
     }
 
     return NextResponse.json({
       ok: true,
       sent,
       failed,
-      target: targetKey,
-      mode: isToday ? "today" : "tomorrow",
+      usersChecked,
+      currentTime,
+      today: todayKey,
+      tomorrow: tomorrowKey,
     });
   } catch (error) {
     console.error("GET /api/notifications/trainer:", error);
