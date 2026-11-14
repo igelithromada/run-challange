@@ -135,7 +135,7 @@ export default function SettingsPage() {
 
   const handleThemeChange = async (selectedTheme: string) => {
     setTheme(selectedTheme);
-    await applyTheme(selectedTheme, customColor, false, gradientEnabled);
+    await applyTheme(selectedTheme, customColor, gradientEnabled);
     await saveSettings({ theme: selectedTheme });
     flash("Vzhled uložen");
   };
@@ -143,11 +143,11 @@ export default function SettingsPage() {
   const handleCustomColorLiveChange = async (color: string) => {
     setCustomColor(color);
     setTheme("custom");
-    await applyTheme("custom", color, false, gradientEnabled);
+    await applyTheme("custom", color, gradientEnabled);
   };
 
   const handleCustomColorFinalSave = async () => {
-    await applyTheme("custom", customColor, false, gradientEnabled);
+    await applyTheme("custom", customColor, gradientEnabled);
     await saveSettings({ theme: "custom", customColor });
     setShowColorPicker(false);
     flash("Vlastní vzhled uložen");
@@ -328,7 +328,7 @@ export default function SettingsPage() {
           </div>
 
           <div className={`custom-theme-box ${theme === "custom" ? "active" : ""}`}>
-            <button type="button" className="custom-theme-trigger" onClick={() => { setShowColorPicker(v => !v); setTheme("custom"); void applyTheme("custom", customColor, false, gradientEnabled); }}>
+            <button type="button" className="custom-theme-trigger" onClick={() => { setShowColorPicker(v => !v); setTheme("custom"); void applyTheme("custom", customColor, gradientEnabled); }}>
               <span className="theme-color-dot" style={{ background: customColor }} />
               <span><strong>Vlastní barva</strong><small>{customColor.toUpperCase()}</small></span>
               <Check size={19} className={theme === "custom" ? "theme-check" : "theme-check hidden"} />
