@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import type { WeatherHour, WeatherResponse } from "../lib/weather";
 import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudSnow, Sun, Wind, Droplets, RefreshCw } from "lucide-react";
+import RunWeatherRecommendation from "../components/RunWeatherRecommendation";
 
 function isRainType(type = "") {
   const value = type.toUpperCase();
@@ -41,6 +42,7 @@ export default function WeatherCard() {
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState("");
+  const [weatherTest, setWeatherTest] = useState<string>("");
   const loadWeather = async (forceRefresh = false) => {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 10000);
@@ -53,7 +55,27 @@ export default function WeatherCard() {
       setWeather({ configured: true, error: "Počasí se nepodařilo načíst. Zkus to později." });
     } finally { window.clearTimeout(timeout); setLoading(false); }
   };
-  useEffect(() => { void loadWeather(); const timer = window.setInterval(() => void loadWeather(), 30 * 60 * 1000); return () => window.clearInterval(timer); }, []);
+  useEffect(() => {
+    try { setWeatherTest(localStorage.getItem("dolni-lhota-weather-test-v1") || ""); } catch {}
+    void loadWeather();
+    const timer = window.setInterval(() => void loadWeather(), 30 * 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const setWeatherTestMode = (mode: "wind" | "rain" | "clear" | "storm" | "") => {
+    setWeatherTest(mode);
+    try {
+      if (mode) localStorage.setItem("dolni-lhota-weather-test-v1", mode);
+      else localStorage.removeItem("dolni-lhota-weather-test-v1");
+    } catch {}
+    const root = document.documentElement;
+    if (mode) {
+      root.setAttribute("data-weather", mode);
+      root.setAttribute("data-windy", mode === "wind" ? "true" : "false");
+    } else {
+      root.removeAttribute("data-weather");
+      root.removeAttribute("data-windy");
+    }
+  };
   const current = weather?.current;
   const condition = current?.weatherCondition;
   const hours = (weather?.hourly || []).slice(0, 8);
@@ -70,6 +92,17 @@ export default function WeatherCard() {
       <div className="weather-card-heading"><div><h2>Počasí pro pohyb</h2><p>Dolní Lhota u Ostravy</p></div><button type="button" className="ui-icon-button weather-refresh-button" onClick={() => void loadWeather(true)} aria-label="Obnovit počasí" title="Obnovit počasí"><RefreshCw size={18} /></button></div>
       {loading && !weather ? <p className="weather-loading">Načítám předpověď…</p> : !weather?.configured ? <div className="weather-message"><strong>Google Počasí čeká na propojení</strong><p>Je potřeba doplnit klíč Google Weather API do nastavení projektu na Vercelu.</p></div> : weather?.error || !current ? <p className="weather-message">{weather?.error || "Předpověď není momentálně dostupná."}</p> : (
         <>
+          <RunWeatherRecommendation linkToWeather={false} />
+
+          <div className="weather-test-controls" aria-label="Test animací počasí">
+            <span>Test animací:</span>
+            <button type="button" className={weatherTest === "wind" ? "active" : ""} onClick={() => setWeatherTestMode("wind")}><Wind size={15}/> Vítr</button>
+            <button type="button" className={weatherTest === "rain" ? "active" : ""} onClick={() => setWeatherTestMode("rain")}><CloudRain size={15}/> Déšť</button>
+            <button type="button" className={weatherTest === "clear" ? "active" : ""} onClick={() => setWeatherTestMode("clear")}><Sun size={15}/> Slunečno</button>
+            <button type="button" className={weatherTest === "storm" ? "active" : ""} onClick={() => setWeatherTestMode("storm")}><CloudLightning size={15}/> Bouřka</button>
+            <button type="button" className={!weatherTest ? "active" : ""} onClick={() => setWeatherTestMode("")}>Reálné počasí</button>
+          </div>
+
           <div className="weather-current-grid">
             <div className="weather-current-main"><WeatherVisual type={condition?.type} size={74} className="weather-main-icon" /><div className="weather-current-copy"><strong className="weather-temperature">{Math.round(temperature ?? 0)}°C</strong><span className="weather-description">{condition?.description?.text || "Aktuální počasí"}</span>{feelsLike !== undefined && <small>Pocitově {Math.round(feelsLike)}°C</small>}</div></div>
             <div className="weather-stat-grid">
