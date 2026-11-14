@@ -83,6 +83,12 @@ export default function MyRunsPage() {
   const [deletingPhoto, setDeletingPhoto] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedType, setSelectedType] = useState<ActivityType>("běh");
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
+      if (cached === "běh" || cached === "chůze") setSelectedType(cached);
+    } catch {}
+  }, []);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [quickFilter, setQuickFilter] = useState("all");
