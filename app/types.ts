@@ -69,6 +69,7 @@ export interface UserData {
   theme?: string;
   customColor?: string;
   animationsEnabled?: boolean;
+  gradientEnabled?: boolean;
   themeUpdatedAt?: FirestoreTimestamp;
   role?: string;
   blocked?: boolean;
@@ -87,6 +88,8 @@ export interface UserData {
     enabled?: boolean;
     today?: boolean;
     tomorrow?: boolean;
+    todayTime?: string;
+    tomorrowTime?: string;
   };
   progressGoals?: {
     type?: ActivityType;
