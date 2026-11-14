@@ -403,7 +403,7 @@ export default function SettingsPage() {
               </label>
               <label className="settings-notification-row">
                 <span className="settings-notification-copy"><span className="settings-notification-title">Čas dnešního upozornění</span><small>V kolik hodin se má ranní kontrola provést.</small></span>
-                <input className="settings-time-input" type="time" value={trainerNotifications.todayTime} onChange={e => void updateTrainerNotifications({ todayTime: e.target.value })} disabled={notificationBusy} />
+                <input className="settings-time-input" type="time" step={3600} value={trainerNotifications.todayTime} onChange={e => void updateTrainerNotifications({ todayTime: e.target.value })} disabled={notificationBusy} />
               </label>
               <label className="settings-notification-row">
                 <span className="settings-notification-copy"><span className="settings-notification-title">Zítřejší plán</span><small>Večerní upozornění na trénink naplánovaný na další den.</small></span>
