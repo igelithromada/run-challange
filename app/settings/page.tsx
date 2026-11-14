@@ -118,16 +118,27 @@ export default function SettingsPage() {
 
   const saveSettings = async (patch: Record<string, unknown>) => {
     const activeUserId = userId || auth.currentUser?.uid;
-    if (!activeUserId) throw new Error("Nejsi přihlášen.");
+    const currentUser = auth.currentUser;
+    if (!activeUserId || !currentUser) throw new Error("Nejsi přihlášen.");
     setSaving(true);
     try {
       const themeChanged = "theme" in patch || "customColor" in patch || "gradientEnabled" in patch;
-      await saveUserSettings(activeUserId, {
-        theme,
-        customColor,
-        gradientEnabled,
-        ...patch,
-      }, themeChanged);
+      if (themeChanged) {
+        const token = await currentUser.getIdToken(true);
+        const response = await fetch("/api/settings/appearance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            theme: patch.theme ?? theme,
+            customColor: patch.customColor ?? customColor,
+            gradientEnabled: patch.gradientEnabled ?? gradientEnabled,
+          }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Vzhled se nepodařilo uložit.");
+        return;
+      }
+      await saveUserSettings(activeUserId, { ...patch });
       if ("defaultActivity" in patch) {
         await mergePublicProfile(activeUserId, { activityType: defaultActivity });
       }
