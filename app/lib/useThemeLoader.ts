@@ -137,8 +137,8 @@ export async function applyTheme(selectedTheme: string, color: string, animation
       else if (night) weather = "night";
       root.setAttribute("data-weather", weather);
       if (!gradientEnabled && selectedTheme === "weather") {
-        const match = gradient.match(/linear-gradient\\(180deg,\\s*([^,\\)]+)/i);
-        if (match?.[1]) gradient = match[1].trim();
+        const firstStop = gradient.split(",")[1]?.replace(")", "").trim();
+        if (firstStop) gradient = firstStop;
       }
       try {
         const testMode = localStorage.getItem("dolni-lhota-weather-test-v1");
