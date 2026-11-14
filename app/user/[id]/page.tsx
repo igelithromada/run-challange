@@ -25,6 +25,12 @@ export default function UserPage() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedType, setSelectedType] = useState<ActivityType>("běh");
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
+      if (cached === "běh" || cached === "chůze") setSelectedType(cached);
+    } catch {}
+  }, []);
   const [userInfo, setUserInfo] = useState({ nickname: "", avatarUrl: "" });
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
