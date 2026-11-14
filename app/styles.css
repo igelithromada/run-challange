@@ -5100,3 +5100,78 @@ html[data-windy="true"] .list-tile {
   color:#b79cff;
   stroke:#b79cff;
 }
+
+
+/* 2026-11-14 – počasí: stejné rozměry ikon + skutečně viditelné animace v hodinových dlaždicích */
+.weather-visual-wrap{
+  position:relative!important;
+  display:grid!important;
+  place-items:center!important;
+  flex:0 0 auto!important;
+}
+.weather-visual-wrap .weather-sun{position:absolute;left:7%;top:5%;color:#ffd166;stroke:#ffd166}
+.weather-visual-wrap .weather-cloud{position:absolute;right:2%;bottom:3%;color:#fff;stroke:#fff}
+.weather-visual-wrap .weather-visual-icon{display:block}
+.weather-current-main .weather-visual-wrap{width:74px!important;height:74px!important}
+.weather-hour-card{position:relative;overflow:hidden}
+.weather-hour-card>*{position:relative;z-index:2}
+.weather-hour-animation{position:absolute!important;inset:0!important;z-index:1!important;pointer-events:none!important;opacity:0}
+.weather-hour-rain .weather-hour-animation,
+.weather-hour-drizzle .weather-hour-animation{
+  opacity:.8;
+  background:repeating-linear-gradient(108deg,transparent 0 16px,rgba(210,238,255,.72) 17px 19px,transparent 20px 42px);
+  background-size:70px 100px;
+  animation:weather-tile-rain .7s linear infinite;
+}
+.weather-hour-rain .weather-hour-animation::before,
+.weather-hour-drizzle .weather-hour-animation::before{
+  content:"";position:absolute;left:50%;top:8px;width:42px;height:20px;transform:translateX(-50%);
+  border-radius:50%;background:rgba(255,255,255,.10);filter:blur(3px);
+}
+.weather-hour-sun .weather-hour-animation,
+.weather-hour-clear .weather-hour-animation{
+  opacity:.55;
+  background:radial-gradient(circle at 50% 38%,rgba(255,221,120,.36),transparent 42%);
+  animation:weather-tile-sun 3.2s ease-in-out infinite alternate;
+}
+.weather-hour-partly .weather-hour-animation{
+  opacity:.42;
+  background:radial-gradient(ellipse at 70% 34%,rgba(255,221,120,.25),transparent 30%);
+  animation:weather-tile-sun 4s ease-in-out infinite alternate;
+}
+.weather-hour-storm .weather-hour-animation{
+  opacity:.65;
+  background:linear-gradient(180deg,rgba(80,95,130,.22),transparent 65%);
+  animation:weather-tile-storm 2.8s ease-in-out infinite;
+}
+.weather-hour-storm .weather-hour-animation::after{
+  content:"";position:absolute;left:62%;top:18%;width:2px;height:38px;
+  background:rgba(255,245,180,.95);box-shadow:0 0 10px rgba(255,245,180,.9);
+  transform:rotate(12deg);opacity:0;animation:weather-tile-lightning 2.8s ease-in-out infinite;
+}
+.weather-hour-wind .weather-hour-animation{
+  opacity:.35;
+  background:repeating-linear-gradient(175deg,transparent 0 18px,rgba(225,245,255,.24) 19px 21px,transparent 22px 42px);
+  animation:weather-tile-wind 3s linear infinite;
+}
+@keyframes weather-tile-rain{from{background-position:0 -90px}to{background-position:-70px 10px}}
+@keyframes weather-tile-sun{from{transform:scale(.94);opacity:.28}to{transform:scale(1.08);opacity:.65}}
+@keyframes weather-tile-storm{0%,100%{opacity:.28}48%{opacity:.45}52%{opacity:.72}}
+@keyframes weather-tile-lightning{0%,44%,100%{opacity:0}48%{opacity:1}51%{opacity:0}}
+@keyframes weather-tile-wind{from{background-position:0 0}to{background-position:80px 0}}
+html[data-animations="false"] .weather-hour-animation{display:none!important;animation:none!important}
+html[data-animations="true"][data-weather="storm"] .weather-animation-overlay{
+  opacity:.42!important;
+  background:linear-gradient(180deg,rgba(55,65,95,.24),transparent 62%)!important;
+  animation:weather-overlay-storm 2.8s ease-in-out infinite!important;
+}
+@keyframes weather-overlay-storm{0%,100%{opacity:.24}48%{opacity:.36}52%{opacity:.52}}
+@media(prefers-reduced-motion:reduce){.weather-hour-animation,.weather-animation-overlay{animation:none!important}}
+.settings-trainer-master-toggle{margin-bottom:.5rem}
+.settings-time-row .settings-time-input{
+  width:92px!important;min-width:92px!important;height:42px!important;padding:.45rem .55rem!important;
+  border:1px solid var(--ui-border)!important;border-radius:12px!important;
+  background:rgba(255,255,255,.10)!important;color:var(--ui-text,#fff)!important;
+  color-scheme:dark!important;font-weight:800!important;text-align:center!important;
+}
+.settings-time-row .settings-time-input:focus{outline:2px solid rgba(54,209,220,.55);outline-offset:2px}
