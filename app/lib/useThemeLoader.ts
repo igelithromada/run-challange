@@ -66,8 +66,6 @@ export async function applyTheme(selectedTheme: string, color: string, gradientE
   let gradient = "linear-gradient(180deg, #36D1DC, #5B86E5)";
   const root = document.documentElement;
   root.removeAttribute("data-weather");
-  root.removeAttribute("data-windy");
-  root.removeAttribute("data-animations");
 
   root.removeAttribute("data-theme");
   if (selectedTheme === "dark") {
