@@ -5177,6 +5177,35 @@ html[data-theme="white"] .app-toast {
   box-shadow:0 4px 16px rgba(18,38,52,.12) !important;
 }
 
+/* Navigace – stejný barevný systém jako zbytek aplikace a aktivní schéma. */
+.site-sidebar-panel .site-sidebar-profile {
+  background:var(--ui-bg-soft) !important;
+  border-color:var(--ui-border) !important;
+  color:var(--ui-text) !important;
+}
+.site-sidebar-panel .site-sidebar-profile:hover {
+  background:var(--ui-bg-hover) !important;
+}
+.site-sidebar-panel .site-sidebar-profile-icon {
+  background:var(--ui-bg-hover) !important;
+  color:var(--ui-text) !important;
+}
+.site-sidebar-panel > .site-sidebar-item {
+  background:var(--ui-bg) !important;
+  border-color:var(--ui-border) !important;
+  color:var(--ui-text) !important;
+  box-shadow:none !important;
+}
+.site-sidebar-panel > .site-sidebar-item:hover,
+.site-sidebar-panel > .site-sidebar-item:active {
+  background:var(--ui-bg-hover) !important;
+  border-color:var(--ui-border-strong) !important;
+}
+.site-sidebar-panel > .site-sidebar-item.sidebar-close {
+  background:var(--ui-bg-soft) !important;
+  border-color:var(--ui-border) !important;
+}
+
 /* Barevné prvky aplikace nesjednocovat na šedou – jejich barva nese význam. */
 html[data-theme="white"] .text-success,
 html[data-theme="white"] .success,
