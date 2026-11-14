@@ -27,6 +27,12 @@ export default function TeamsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [teamName, setTeamName] = useState("");
   const [selectedType, setSelectedType] = useState<ActivityType>("běh");
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
+      if (cached === "běh" || cached === "chůze") setSelectedType(cached);
+    } catch {}
+  }, []);
   const [teamIdsByType, setTeamIdsByType] = useState<Record<ActivityType, string | null>>({ běh: null, chůze: null });
   const [user, setUser] = useState<User | null>(null);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
