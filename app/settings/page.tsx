@@ -386,7 +386,7 @@ export default function SettingsPage() {
         </section>
 
         <section className="tile settings-notification-section">
-          <div className="settings-section-heading"><Bell size={21}/><div><h2>Notifikace osobního trenéra</h2><p>Dostávej upozornění na dnešní nebo zítřejší naplánovaný trénink.</p><p className="settings-notification-times">Dnešní plán: kolem 7:00 · Zítřejší plán: kolem 18:00 (časové pásmo ČR)</p></div></div>
+          <div className="settings-section-heading"><Bell size={21}/><div><h2>Notifikace osobního trenéra</h2><p>Dostávej upozornění na dnešní nebo zítřejší naplánovaný trénink.</p><p className="settings-notification-times">Dnešní plán: {trainerNotifications.todayTime} · Zítřejší plán: {trainerNotifications.tomorrowTime} (časové pásmo ČR)</p></div></div>
           <label className="settings-notification-row settings-trainer-master-toggle">
             <span className="settings-notification-copy"><span className="settings-notification-title"><Bell size={18}/> Notifikace trenéra</span><small>Upozorní tě na dnešní nebo zítřejší naplánovaný trénink.</small></span>
             <input type="checkbox" checked={trainerNotifications.enabled} onChange={e => void (e.target.checked ? enableTrainerNotifications() : disableTrainerNotifications())} disabled={notificationBusy} />
