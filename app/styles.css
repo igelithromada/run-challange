@@ -3317,6 +3317,11 @@ button { touch-action:manipulation; }
 .site-sidebar-grid .site-sidebar-item {
   min-width:0;
   min-height:76px;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  gap:.35rem !important;
 }
 .site-sidebar-header {
   grid-column:1 / -1;
