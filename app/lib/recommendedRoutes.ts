@@ -26,7 +26,6 @@ export async function getRecommendedRouteGroups(): Promise<RouteGroup[]> {
         description: typeof item.description === "string" ? item.description : "",
         mapUrl: typeof item.mapUrl === "string" ? item.mapUrl : `https://mapy.com/fnc/v1/gpx?url=${encodeURIComponent(item.gpxUrl)}`,
         gpxUrl: item.gpxUrl,
-        badge: typeof item.badge === "string" ? item.badge : undefined,
       };
       group.routes.push(route);
       groups.set(groupId, group);
