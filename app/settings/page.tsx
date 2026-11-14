@@ -128,9 +128,9 @@ export default function SettingsPage() {
       await saveUserSettings(activeUserId, {
         theme, customColor, animationsEnabled, gradientEnabled, ...patch,
       }, themeChanged);
-      await mergePublicProfile(activeUserId, {
-        activityType: defaultActivity,
-      });
+      if ("defaultActivity" in patch) {
+        await mergePublicProfile(activeUserId, { activityType: defaultActivity });
+      }
     } finally {
       setSaving(false);
     }
@@ -387,35 +387,28 @@ export default function SettingsPage() {
 
         <section className="tile settings-notification-section">
           <div className="settings-section-heading"><Bell size={21}/><div><h2>Notifikace osobního trenéra</h2><p>Dostávej upozornění na dnešní nebo zítřejší naplánovaný trénink.</p><p className="settings-notification-times">Dnešní plán: kolem 7:00 · Zítřejší plán: kolem 18:00 (časové pásmo ČR)</p></div></div>
-          {!trainerNotifications.enabled ? (
+          <label className="settings-notification-row settings-trainer-master-toggle">
+            <span className="settings-notification-copy"><span className="settings-notification-title"><Bell size={18}/> Notifikace trenéra</span><small>Upozorní tě na dnešní nebo zítřejší naplánovaný trénink.</small></span>
+            <input type="checkbox" checked={trainerNotifications.enabled} onChange={e => void (e.target.checked ? enableTrainerNotifications() : disableTrainerNotifications())} disabled={notificationBusy} />
+          </label>
+          {trainerNotifications.enabled && (
             <>
-              <div className="settings-notification-status is-off"><BellOff size={18}/><span>Notifikace jsou vypnuté</span></div>
-              <button type="button" className="tile-button settings-save-button settings-notification-action" onClick={() => void enableTrainerNotifications()} disabled={notificationBusy}>
-                {notificationBusy ? "Zapínám…" : "Zapnout notifikace"}
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="settings-notification-status is-on"><Bell size={18}/><span>Notifikace jsou zapnuté</span></div>
               <label className="settings-notification-row">
                 <span className="settings-notification-copy"><span className="settings-notification-title">Dnešní plán</span><small>Ranní upozornění, pokud máš na dnešek naplánovaný trénink.</small></span>
                 <input type="checkbox" checked={trainerNotifications.today} onChange={e => void updateTrainerNotifications({ today: e.target.checked })} disabled={notificationBusy} />
               </label>
-              <label className="settings-notification-row">
-                <span className="settings-notification-copy"><span className="settings-notification-title">Čas dnešního upozornění</span><small>V kolik hodin se má ranní kontrola provést.</small></span>
+              <label className="settings-notification-row settings-time-row">
+                <span className="settings-notification-copy"><span className="settings-notification-title">Čas dnešního upozornění</span><small>Kdy se má ranní kontrola provést.</small></span>
                 <input className="settings-time-input" type="time" step={3600} value={trainerNotifications.todayTime} onChange={e => void updateTrainerNotifications({ todayTime: e.target.value })} disabled={notificationBusy} />
               </label>
               <label className="settings-notification-row">
                 <span className="settings-notification-copy"><span className="settings-notification-title">Zítřejší plán</span><small>Večerní upozornění na trénink naplánovaný na další den.</small></span>
                 <input type="checkbox" checked={trainerNotifications.tomorrow} onChange={e => void updateTrainerNotifications({ tomorrow: e.target.checked })} disabled={notificationBusy} />
               </label>
-              <label className="settings-notification-row">
-                <span className="settings-notification-copy"><span className="settings-notification-title">Čas zítřejšího upozornění</span><small>V kolik hodin se má večerní kontrola provést.</small></span>
-                <input className="settings-time-input" type="time" value={trainerNotifications.tomorrowTime} onChange={e => void updateTrainerNotifications({ tomorrowTime: e.target.value })} disabled={notificationBusy} />
+              <label className="settings-notification-row settings-time-row">
+                <span className="settings-notification-copy"><span className="settings-notification-title">Čas zítřejšího upozornění</span><small>Kdy se má večerní kontrola provést.</small></span>
+                <input className="settings-time-input" type="time" step={3600} value={trainerNotifications.tomorrowTime} onChange={e => void updateTrainerNotifications({ tomorrowTime: e.target.value })} disabled={notificationBusy} />
               </label>
-              <button type="button" className="tile-button settings-save-button settings-notification-action" onClick={() => void disableTrainerNotifications()} disabled={notificationBusy}>
-                {notificationBusy ? "Vypínám…" : "Vypnout notifikace"}
-              </button>
             </>
           )}
         </section>
