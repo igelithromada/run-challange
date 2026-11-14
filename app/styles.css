@@ -3898,8 +3898,6 @@ body::before {
   .run-form-panel { width:100%; max-width:100%; margin-bottom:2rem; padding-bottom:max(1rem,env(safe-area-inset-bottom)); }
   .run-form-field input,.run-form-field textarea,.run-form-unit-field input,.run-form-upload { scroll-margin-top:5rem; scroll-margin-bottom:12rem; }
 }
-@media(prefers-reduced-motion:reduce) { .weather-animation-overlay { animation:none!important; } }
-
 
 /* Finální úpravy map, rozestupů a dotykového chování */
 .app-content-layer {
