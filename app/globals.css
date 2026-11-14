@@ -235,16 +235,7 @@ body::before {
 body > * { position: relative; z-index: 3; }
 body::before { z-index: 0 !important; pointer-events: none !important; }
 html[data-animations="true"][data-weather="rain"] body::before,
-html[data-animations="true"][data-weather="rain-wind"] body::before {
-  opacity: .72;
-  background-image:
-    repeating-linear-gradient(105deg, transparent 0 14px, rgba(225,242,255,.72) 15px 17px, transparent 18px 38px),
-    repeating-linear-gradient(105deg, transparent 0 29px, rgba(210,235,255,.42) 30px 31px, transparent 32px 76px);
-  background-size: 86px 150px, 140px 210px;
-  background-position: 0 0, 35px -55px;
-  animation: weather-rain 0.72s linear infinite;
-  will-change: background-position, transform;
-}
+
 html[data-weather="snow"] body::before,
 html[data-weather="snow-wind"] body::before {
   opacity: .68;
@@ -256,11 +247,8 @@ html[data-weather="snow-wind"] body::before {
   background-size: 220px 180px;
   animation: weather-snow 10s linear infinite;
 }
-@keyframes weather-rain {
-  from { transform: translate3d(0,-150px,0); }
-  to { transform: translate3d(-86px,0,0); }
-}
-@keyframes weather-snow { from { transform: translate3d(0,-5%,0); } to { transform: translate3d(3%,10%,0); } }
+
+
 @media (prefers-reduced-motion: reduce) {
   html[data-weather="rain"] body::before, html[data-weather="rain-wind"] body::before, html[data-weather="snow"] body::before, html[data-weather="snow-wind"] body::before { animation: none; }
 }
@@ -577,13 +565,13 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .activity-photos-button { display: inline-flex; align-items: center; gap: .35rem; margin-top: .65rem; padding: .35rem .55rem; border: 1px solid rgba(255,255,255,.18); border-radius: 9px; color: white; background: rgba(255,255,255,.1); font: inherit; font-size: .75rem; cursor: pointer; }
 body::before { z-index: 0; }
 body > * { position: relative; z-index: 1; }
-html[data-animations="false"] body::before { display: none !important; animation: none !important; }
+
 html[data-animations="true"][data-weather="rain"] body::before,
-html[data-animations="true"][data-weather="rain-wind"] body::before { opacity: .34; animation: weather-rain 1.1s linear infinite; }
+
 html[data-animations="true"][data-weather="snow"] body::before,
-html[data-animations="true"][data-weather="snow-wind"] body::before { opacity: .58; animation: weather-snow 10s linear infinite; }
-html[data-animations="true"][data-windy="true"] .wind-icon-animated { animation: wind-icon-gust 1.35s ease-in-out infinite; }
-html[data-animations="false"] .wind-icon-animated { animation: none !important; }
+
+
+
 @media (max-width: 520px) {
   .teams-grid { grid-template-columns: minmax(0,1fr) !important; }
   .team-card { display: grid !important; grid-template-columns: 44px minmax(0,1fr) !important; gap: .55rem .75rem !important; }
@@ -1030,15 +1018,8 @@ html[data-animations="false"] .wind-icon-animated { animation: none !important; 
 .site-sidebar-panel > .site-sidebar-item.sidebar-close { aspect-ratio:auto; }
 
 /* Vítr: posouvají se celé pruhy, ne jen jejich kontejner */
-html[data-animations="true"][data-weather="wind"] body::before {
-  background-repeat:repeat;
-  background-size:180% 100%;
-  animation:weather-wind-flow 3.8s linear infinite !important;
-}
-@keyframes weather-wind-flow {
-  from { background-position:0 0; transform:translate3d(0,0,0); }
-  to { background-position:-180% 0; transform:translate3d(0,0,0); }
-}
+
+
 
 @media(max-width:520px) {
   .activity-card-modern { padding:.85rem !important; gap:.7rem !important; }
@@ -1188,11 +1169,7 @@ html[data-animations="true"][data-weather="wind"] body::before {
 html[data-animations="true"][data-weather="rain"] body::before,
 html[data-animations="true"][data-weather="rain-wind"] body::before,
 html[data-animations="true"][data-weather="snow"] body::before,
-html[data-animations="true"][data-weather="snow-wind"] body::before{
-  z-index:0!important;
-  display:block!important;
-  pointer-events:none!important;
-}
+
 .route-map-shell{background:#e9eef2!important}
 .route-map{background:#e9eef2!important}
 
@@ -1201,9 +1178,7 @@ html[data-animations="true"][data-weather="snow-wind"] body::before{
 html[data-animations="true"][data-weather="rain"] body::before,
 html[data-animations="true"][data-weather="rain-wind"] body::before,
 html[data-animations="true"][data-weather="snow"] body::before,
-html[data-animations="true"][data-weather="snow-wind"] body::before {
-  pointer-events:none;
-}
+
 .route-map.hidden{display:none!important}
 .route-map-mapy{position:absolute;inset:0;z-index:2;background:#fff}
 .route-map-mapy iframe{display:block;width:100%;height:100%;border:0}
