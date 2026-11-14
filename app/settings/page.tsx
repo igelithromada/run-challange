@@ -8,7 +8,7 @@ import Sidebar from "../components/Sidebar";
 import { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
-import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, Smartphone, Bell, BellOff, Heart, MessageCircle, Moon, Sun, Square } from "lucide-react";
+import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, Smartphone, Bell, Heart, MessageCircle, Moon, Sun, Square } from "lucide-react";
 import { registerTrainerPush, removeTrainerPush } from "../lib/pushNotifications";
 import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
@@ -26,7 +26,6 @@ export default function SettingsPage() {
   const [theme, setTheme] = useState("default");
   const [customColor, setCustomColor] = useState(DEFAULT_COLOR);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [gradientEnabled, setGradientEnabled] = useState(true);
   const [hapticsEnabled, setHapticsEnabledState] = useState(true);
   const [defaultActivity, setDefaultActivity] = useState<"běh" | "chůze">("běh");
@@ -50,7 +49,6 @@ export default function SettingsPage() {
       if (cached) {
         setTheme(cached.theme || "default");
         setCustomColor(cached.customColor || DEFAULT_COLOR);
-        setAnimationsEnabled(cached.animationsEnabled !== false);
         setGradientEnabled(cached.gradientEnabled !== false);
       }
     } catch {}
@@ -66,7 +64,6 @@ export default function SettingsPage() {
         if (data) {
           const remoteTheme = data.theme || "default";
           const remoteColor = data.customColor || DEFAULT_COLOR;
-          const remoteAnimations = data.animationsEnabled !== false;
           const remoteGradient = data.gradientEnabled !== false;
           const remoteHaptics = data.hapticsEnabled !== false;
           let localHaptics: boolean | null = null;
@@ -74,7 +71,6 @@ export default function SettingsPage() {
             const stored = localStorage.getItem("dolni-lhota-haptics-v1");
             if (stored !== null) localHaptics = stored !== "false";
           } catch {}
-          let cachedTheme: { theme?: string; customColor?: string; animationsEnabled?: boolean; gradientEnabled?: boolean; savedAt?: number } | null = null;
           try {
             cachedTheme = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
           } catch {}
@@ -83,12 +79,10 @@ export default function SettingsPage() {
           const useRemoteTheme = cachedSavedAt === 0 || remoteSavedAt >= cachedSavedAt;
           const storedTheme = useRemoteTheme ? remoteTheme : (cachedTheme?.theme || remoteTheme);
           const storedColor = useRemoteTheme ? remoteColor : (cachedTheme?.customColor || remoteColor);
-          const storedAnimations = useRemoteTheme ? remoteAnimations : (cachedTheme?.animationsEnabled !== false);
           const storedGradient = useRemoteTheme ? remoteGradient : (cachedTheme?.gradientEnabled !== false);
           
           setTheme(storedTheme);
           setCustomColor(storedColor);
-          setAnimationsEnabled(storedAnimations);
           setGradientEnabled(storedGradient);
           const effectiveHaptics = localHaptics ?? remoteHaptics;
           setHapticsEnabledState(effectiveHaptics);
@@ -106,7 +100,6 @@ export default function SettingsPage() {
             tomorrowTime: typeof remoteNotifications.tomorrowTime === "string" ? remoteNotifications.tomorrowTime : "18:00"
           });
           try { localStorage.setItem(DEFAULT_ACTIVITY_KEY, remoteDefaultActivity); } catch {}
-          await applyTheme(storedTheme, storedColor, storedAnimations, false, storedGradient);
         }
       } catch (error) {
         console.error("Nepodařilo se načíst nastavení:", error);
@@ -124,9 +117,7 @@ export default function SettingsPage() {
     if (!activeUserId) throw new Error("Nejsi přihlášen.");
     setSaving(true);
     try {
-      const themeChanged = "theme" in patch || "customColor" in patch || "animationsEnabled" in patch || "gradientEnabled" in patch;
       await saveUserSettings(activeUserId, {
-        theme, customColor, animationsEnabled, gradientEnabled, ...patch,
       }, themeChanged);
       if ("defaultActivity" in patch) {
         await mergePublicProfile(activeUserId, { activityType: defaultActivity });
@@ -138,7 +129,6 @@ export default function SettingsPage() {
 
   const handleThemeChange = async (selectedTheme: string) => {
     setTheme(selectedTheme);
-    await applyTheme(selectedTheme, customColor, animationsEnabled, true, gradientEnabled);
     await saveSettings({ theme: selectedTheme });
     flash("Vzhled uložen");
   };
@@ -146,7 +136,6 @@ export default function SettingsPage() {
   const handleCustomColorLiveChange = async (color: string) => {
     setCustomColor(color);
     setTheme("custom");
-    await applyTheme("custom", color, animationsEnabled, true, gradientEnabled);
   };
 
   const handleCustomColorFinalSave = async () => {
@@ -155,16 +144,8 @@ export default function SettingsPage() {
     flash("Vlastní vzhled uložen");
   };
 
-  const handleAnimationsChange = async (enabled: boolean) => {
-    setAnimationsEnabled(enabled);
-    await applyTheme(theme, customColor, enabled, true, gradientEnabled);
-    await saveSettings({ animationsEnabled: enabled });
-    flash(enabled ? "Animace zapnuty" : "Animace vypnuty");
-  };
-
   const handleGradientChange = async (enabled: boolean) => {
     setGradientEnabled(enabled);
-    await applyTheme(theme, customColor, animationsEnabled, true, enabled);
     try {
       await saveSettings({ gradientEnabled: enabled });
       flash(enabled ? "Gradient zapnutý" : "Gradient vypnutý");
@@ -250,30 +231,25 @@ export default function SettingsPage() {
     if (!response.ok) throw new Error(result.error || "Nastavení notifikací se nepodařilo uložit.");
   };
 
-  const updateTrainerNotifications = async (patch: Partial<typeof trainerNotifications>) => {
+  const updateTrainerDay = async (mode: "today" | "tomorrow", patch: { enabled?: boolean; time?: string }) => {
+    if (notificationBusy) return;
     const previous = trainerNotifications;
-    const next = { ...previous, ...patch };
-    setTrainerNotifications(next);
+    const next = {
+      ...previous,
+      ...(patch.enabled !== undefined ? { [mode]: patch.enabled } : {}),
+      ...(patch.time !== undefined ? { [mode === "today" ? "todayTime" : "tomorrowTime"]: patch.time } : {}),
+    } as typeof trainerNotifications;
+    const shouldBeEnabled = next.today || next.tomorrow;
+    setTrainerNotifications({ ...next, enabled: shouldBeEnabled });
+    setNotificationBusy(true);
     try {
-      await persistTrainerNotifications(next);
+      if (patch.enabled === true && !previous.enabled) await registerTrainerPush();
+      if (patch.enabled === false && !next.today && !next.tomorrow) await removeTrainerPush();
+      await persistTrainerNotifications({ ...next, enabled: shouldBeEnabled });
       showAppToast("Nastavení notifikací uloženo.");
     } catch (error) {
       setTrainerNotifications(previous);
       showAppToast(error instanceof Error ? error.message : "Nastavení notifikací se nepodařilo uložit.", "error");
-    }
-  };
-
-  const enableTrainerNotifications = async () => {
-    if (notificationBusy) return;
-    setNotificationBusy(true);
-    try {
-      await registerTrainerPush();
-      const next = { ...trainerNotifications, enabled: true };
-      setTrainerNotifications(next);
-      await persistTrainerNotifications(next);
-      showAppToast("Notifikace osobního trenéra jsou zapnuté.");
-    } catch (error) {
-      showAppToast(error instanceof Error ? error.message : "Notifikace se nepodařilo zapnout.", "error");
     } finally {
       setNotificationBusy(false);
     }
@@ -292,22 +268,6 @@ export default function SettingsPage() {
       </label>
     </section>
   );
-
-  const disableTrainerNotifications = async () => {
-    if (notificationBusy) return;
-    setNotificationBusy(true);
-    try {
-      await removeTrainerPush();
-      const next = { ...trainerNotifications, enabled: false };
-      setTrainerNotifications(next);
-      await persistTrainerNotifications(next);
-      showAppToast("Notifikace osobního trenéra jsou vypnuté.");
-    } catch (error) {
-      showAppToast(error instanceof Error ? error.message : "Notifikace se nepodařilo vypnout.", "error");
-    } finally {
-      setNotificationBusy(false);
-    }
-  };
 
   const handlePasswordChange = async () => {
     if (newPassword.length < 6) { flash("Nové heslo musí mít alespoň 6 znaků."); return; }
@@ -344,7 +304,6 @@ export default function SettingsPage() {
 
           <label className="settings-animation-toggle">
             <span><strong>Animace počasí</strong><small>Efekty počasí i při vlastním barevném vzhledu.</small></span>
-            <input type="checkbox" checked={animationsEnabled} onChange={e => void handleAnimationsChange(e.target.checked)} />
           </label>
 
           <label className="settings-animation-toggle">
@@ -364,7 +323,6 @@ export default function SettingsPage() {
           </div>
 
           <div className={`custom-theme-box ${theme === "custom" ? "active" : ""}`}>
-            <button type="button" className="custom-theme-trigger" onClick={() => { setShowColorPicker(v => !v); setTheme("custom"); void applyTheme("custom", customColor, animationsEnabled, true, gradientEnabled); }}>
               <span className="theme-color-dot" style={{ background: customColor }} />
               <span><strong>Vlastní barva</strong><small>{customColor.toUpperCase()}</small></span>
               <Check size={19} className={theme === "custom" ? "theme-check" : "theme-check hidden"} />
@@ -386,31 +344,17 @@ export default function SettingsPage() {
         </section>
 
         <section className="tile settings-notification-section">
-          <div className="settings-section-heading"><Bell size={21}/><div><h2>Notifikace osobního trenéra</h2><p>Dostávej upozornění na dnešní nebo zítřejší naplánovaný trénink.</p><p className="settings-notification-times">Dnešní plán: {trainerNotifications.todayTime} · Zítřejší plán: {trainerNotifications.tomorrowTime} (časové pásmo ČR)</p></div></div>
-          <label className="settings-notification-row settings-trainer-master-toggle">
-            <span className="settings-notification-copy"><span className="settings-notification-title"><Bell size={18}/> Notifikace trenéra</span><small>Upozorní tě na dnešní nebo zítřejší naplánovaný trénink.</small></span>
-            <input type="checkbox" checked={trainerNotifications.enabled} onChange={e => void (e.target.checked ? enableTrainerNotifications() : disableTrainerNotifications())} disabled={notificationBusy} />
+          <div className="settings-section-heading"><Bell size={21}/><div><h2>Notifikace osobního trenéra</h2><p>Zapni jen ty typy upozornění, které chceš dostávat, a nastav jejich čas.</p></div></div>
+          <label className="settings-notification-row settings-trainer-day-row">
+            <span className="settings-notification-copy"><span className="settings-notification-title">Dnešní plán</span><small>Ranní upozornění, pokud máš na dnešek naplánovaný trénink.</small></span>
+            <input type="time" className="settings-time-input" step={3600} value={trainerNotifications.todayTime} onChange={e => void updateTrainerDay("today", { time: e.target.value })} disabled={notificationBusy} />
+            <input type="checkbox" checked={trainerNotifications.today} onChange={e => void updateTrainerDay("today", { enabled: e.target.checked })} disabled={notificationBusy} aria-label="Zapnout upozornění na dnešní plán" />
           </label>
-          {trainerNotifications.enabled && (
-            <>
-              <label className="settings-notification-row">
-                <span className="settings-notification-copy"><span className="settings-notification-title">Dnešní plán</span><small>Ranní upozornění, pokud máš na dnešek naplánovaný trénink.</small></span>
-                <input type="checkbox" checked={trainerNotifications.today} onChange={e => void updateTrainerNotifications({ today: e.target.checked })} disabled={notificationBusy} />
-              </label>
-              <label className="settings-notification-row settings-time-row">
-                <span className="settings-notification-copy"><span className="settings-notification-title">Čas dnešního upozornění</span><small>Kdy se má ranní kontrola provést.</small></span>
-                <input className="settings-time-input" type="time" step={3600} value={trainerNotifications.todayTime} onChange={e => void updateTrainerNotifications({ todayTime: e.target.value })} disabled={notificationBusy} />
-              </label>
-              <label className="settings-notification-row">
-                <span className="settings-notification-copy"><span className="settings-notification-title">Zítřejší plán</span><small>Večerní upozornění na trénink naplánovaný na další den.</small></span>
-                <input type="checkbox" checked={trainerNotifications.tomorrow} onChange={e => void updateTrainerNotifications({ tomorrow: e.target.checked })} disabled={notificationBusy} />
-              </label>
-              <label className="settings-notification-row settings-time-row">
-                <span className="settings-notification-copy"><span className="settings-notification-title">Čas zítřejšího upozornění</span><small>Kdy se má večerní kontrola provést.</small></span>
-                <input className="settings-time-input" type="time" step={3600} value={trainerNotifications.tomorrowTime} onChange={e => void updateTrainerNotifications({ tomorrowTime: e.target.value })} disabled={notificationBusy} />
-              </label>
-            </>
-          )}
+          <label className="settings-notification-row settings-trainer-day-row">
+            <span className="settings-notification-copy"><span className="settings-notification-title">Zítřejší plán</span><small>Večerní upozornění na trénink naplánovaný na další den.</small></span>
+            <input type="time" className="settings-time-input" step={3600} value={trainerNotifications.tomorrowTime} onChange={e => void updateTrainerDay("tomorrow", { time: e.target.value })} disabled={notificationBusy} />
+            <input type="checkbox" checked={trainerNotifications.tomorrow} onChange={e => void updateTrainerDay("tomorrow", { enabled: e.target.checked })} disabled={notificationBusy} aria-label="Zapnout upozornění na zítřejší plán" />
+          </label>
         </section>
 
         {socialNotificationSection}
