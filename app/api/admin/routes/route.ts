@@ -1,22 +1,11 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { requireAdmin, authErrorResponse } from "../../../lib/apiAuth";
-import { routeGroups } from "../../../lib/routes";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const STATIC_PREFIX = "static:";
-type AdminRoute = { id: string; isStatic: boolean; deleted?: boolean; disabled?: boolean; [key: string]: unknown };
-
-function staticRouteId(groupId: string, name: string) { return STATIC_PREFIX + groupId + ":" + encodeURIComponent(name); }
-function parseStaticRouteId(id: string) {
-  if (!id.startsWith(STATIC_PREFIX)) return null;
-  const raw = id.slice(STATIC_PREFIX.length);
-  const separator = raw.indexOf(":");
-  if (separator < 1) return null;
-  return { groupId: raw.slice(0, separator), name: decodeURIComponent(raw.slice(separator + 1)) };
-}
+type AdminRoute = { id: string; isStatic: false; deleted?: boolean; disabled?: boolean; [key: string]: unknown };
 
 const MAX_GPXS = 15 * 1024 * 1024;
 const CLOUDINARY_TIMEOUT_MS = 20_000;
@@ -91,24 +80,7 @@ export async function GET(request: Request) {
     const dynamicRoutes = snapshot.docs
       .map(doc => ({ id: doc.id, isStatic: false, ...doc.data() }) as AdminRoute)
       .filter(route => route.deleted !== true);
-    const overrideSnapshot = await adminDb.collection("recommendedRouteOverrides").get();
-    const overrides = new Map(overrideSnapshot.docs.map(doc => [doc.id, doc.data()]));
-    const staticRoutes = routeGroups.flatMap(group => group.routes.map(route => {
-      const id = staticRouteId(group.id, route.name);
-      const override = overrides.get(id) || {};
-      return {
-        id, isStatic: true,
-        name: typeof override.name === "string" ? override.name : route.name,
-        activity: "běh i chůze",
-        description: typeof override.description === "string" ? override.description : route.description,
-        badge: typeof override.badge === "string" ? override.badge : (route.badge || ""),
-        sourceUrl: typeof override.sourceUrl === "string" ? override.sourceUrl : group.sourceUrl,
-        gpxUrl: typeof override.gpxUrl === "string" ? override.gpxUrl : (route.gpxUrl || ""),
-        mapUrl: typeof override.mapUrl === "string" ? override.mapUrl : route.mapUrl,
-        groupId: group.id, groupTitle: group.title, disabled: override.disabled === true, deleted: override.deleted === true,
-      };
-    }).filter(route => route.deleted !== true));
-    return NextResponse.json({ routes: [...dynamicRoutes, ...staticRoutes] });
+    return NextResponse.json({ routes: dynamicRoutes });
   } catch (error) {
     const auth = authErrorResponse(error);
     if (auth) return NextResponse.json({ error: auth.message }, { status: auth.status });
@@ -171,27 +143,6 @@ export async function PUT(request: Request) {
       if (!file.name.toLowerCase().endsWith(".gpx")) return NextResponse.json({ error: "Nahraj soubor s příponou .gpx." }, { status: 400 });
       uploaded = await uploadGpx(file, decoded.uid);
     }
-    const staticInfo = parseStaticRouteId(id);
-    if (staticInfo) {
-      const group = routeGroups.find(item => item.id === staticInfo.groupId);
-      const route = group?.routes.find(item => item.name === staticInfo.name);
-      if (!route) return NextResponse.json({ error: "Původní trasa neexistuje." }, { status: 404 });
-      const ref = adminDb.collection("recommendedRouteOverrides").doc(id);
-      const current = (await ref.get()).data() || {};
-      if (current.deleted === true) return NextResponse.json({ error: "Tato trasa byla trvale smazána." }, { status: 410 });
-      const overrideData: Record<string, unknown> = {
-        name, description, badge, sourceUrl, disabled: false, deleted: false,
-        updatedAt: new Date(), updatedBy: decoded.uid,
-      };
-      if (uploaded) {
-        overrideData.gpxUrl = uploaded.secureUrl;
-        overrideData.gpxPublicId = uploaded.publicId;
-        overrideData.mapUrl = "https://mapy.com/fnc/v1/gpx?url=" + encodeURIComponent(uploaded.secureUrl);
-      }
-      await ref.set(overrideData, { merge: true });
-      if (uploaded && typeof current.gpxPublicId === "string" && current.gpxPublicId) await deleteCloudinaryRaw(current.gpxPublicId);
-      return NextResponse.json({ ok: true });
-    }
     const ref = adminDb.collection("recommendedRoutes").doc(id);
     const snapshot = await ref.get();
     if (!snapshot.exists) return NextResponse.json({ error: "Trasa neexistuje." }, { status: 404 });
@@ -225,34 +176,6 @@ export async function DELETE(request: Request) {
       : "delete";
 
     if (!id) return NextResponse.json({ error: "Chybí ID trasy." }, { status: 400 });
-
-    const staticInfo = parseStaticRouteId(id);
-    if (staticInfo) {
-      const ref = adminDb.collection("recommendedRouteOverrides").doc(id);
-      const snapshot = await ref.get();
-      const current = snapshot.data() || {};
-
-      if (action === "delete") {
-        // U statické trasy ponecháváme zdrojový záznam v aplikaci, ale
-        // trvale uložíme příznak smazání, takže se už veřejně nikdy nevrátí.
-        await ref.set(
-          { deleted: true, disabled: false, updatedAt: new Date(), updatedBy: decoded.uid },
-          { merge: true }
-        );
-      } else {
-        await ref.set(
-          {
-            deleted: false,
-            disabled: action === "deactivate",
-            updatedAt: new Date(),
-            updatedBy: decoded.uid,
-          },
-          { merge: true }
-        );
-      }
-
-      return NextResponse.json({ ok: true, action });
-    }
 
     const ref = adminDb.collection("recommendedRoutes").doc(id);
     const snapshot = await ref.get();
