@@ -112,8 +112,7 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
         <button type="button" className="site-sidebar-profile" onClick={() => handleNavigation("profile")}>
           <span className="site-sidebar-profile-icon"><UserRound size={22} aria-hidden="true" /></span>
           <span className="site-sidebar-profile-copy">
-            <strong>{nickname || "Můj účet"}</strong>
-            <small>{email || "Můj účet"}</small>
+            <strong>Můj účet</strong>
           </span>
         </button>
         <div className="site-sidebar-grid">
