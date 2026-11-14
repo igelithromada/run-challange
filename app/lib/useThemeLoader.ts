@@ -62,35 +62,32 @@ export default function useThemeLoader() {
   }, []);
 }
 
-export async function applyTheme(activeTheme: string, color: string, gradientEnabled = true) {
+export async function applyTheme(selectedTheme: string, color: string, gradientEnabled = true) {
   const activeTheme = ["default", "dark", "auto", "weather", "custom"].includes(selectedTheme) ? selectedTheme : "default";
   let gradient = "linear-gradient(180deg, #36D1DC, #5B86E5)";
   const root = document.documentElement;
   root.removeAttribute("data-weather");
-
+  root.removeAttribute("data-auto-period");
   root.removeAttribute("data-theme");
+
   if (activeTheme === "dark") {
     gradient = "#000000";
     root.setAttribute("data-theme", "dark");
-  } else if (activeTheme === "light") {
-    gradient = "#eef6fb";
-    root.setAttribute("data-theme", "light");
-  } else if (activeTheme === "white") {
-    gradient = "#ffffff";
-    root.setAttribute("data-theme", "white");
-  } else if (activeTheme === "man") gradient = "linear-gradient(180deg, #2980b9, #2c3e50)";
-  else if (activeTheme === "woman") gradient = "linear-gradient(180deg, #ff7eb3, #ff758c)";
-  else if (activeTheme === "auto") {
+  } else if (activeTheme === "auto") {
     const timeTheme = getTimeTheme(new Date());
     gradient = timeTheme.gradient;
     root.setAttribute("data-auto-period", timeTheme.period);
-  } else if (activeTheme === "custom") gradient = `linear-gradient(180deg, ${color}, #000000)`;
+  } else if (activeTheme === "custom") {
+    gradient = `linear-gradient(180deg, ${color}, #000000)`;
+  }
 
-
-  // Zapiš základní nastavení před síťovým požadavkem, aby další start neproblikl.
   writeThemeCache({ theme: activeTheme, customColor: color, gradientEnabled, savedAt: Date.now() });
+
   if (!gradientEnabled) {
-    const solid = activeTheme === "dark" ? "#000000" : activeTheme === "light" ? "#eef6fb" : activeTheme === "white" ? "#ffffff" : activeTheme === "woman" ? "#ff7eb3" : activeTheme === "man" ? "#2980b9" : activeTheme === "custom" ? color : "#36D1DC";
+    const solid =
+      activeTheme === "dark" ? "#000000" :
+      activeTheme === "custom" ? color :
+      "#36D1DC";
     gradient = solid;
   }
   root.style.setProperty("--main-gradient", gradient);
@@ -109,6 +106,7 @@ export async function applyTheme(activeTheme: string, color: string, gradientEna
       const data = await response.json();
       const current = data.current;
       if (!current) throw new Error("Chybí aktuální počasí");
+
       const condition = String(current.weatherCondition?.type || "").toUpperCase();
       const wind = Number(current.wind?.speed?.value || 0);
       const hour = new Date().getHours();
@@ -116,25 +114,23 @@ export async function applyTheme(activeTheme: string, color: string, gradientEna
       const isSnow = condition.includes("SNOW") || condition.includes("SLEET") || condition.includes("HAIL");
       const isRain = condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER");
       const isWindy = wind >= 8;
-      if (activeTheme === "weather") {
-        if (condition.includes("THUNDER")) gradient = night
-          ? "linear-gradient(180deg,#17152d,#34204d)"
-          : "linear-gradient(180deg,#53647f,#2f3b59)";
-        else if (isRain) gradient = night
-          ? "linear-gradient(180deg,#1b2a38,#101820)"
-          : "linear-gradient(180deg,#6688a3,#304f68)";
-        else if (isSnow) gradient = night
-          ? "linear-gradient(180deg,#1d2b3a,#101923)"
-          : "linear-gradient(180deg,#b9d4e6,#587d96)";
-        else if (condition.includes("FOG")) gradient = "linear-gradient(180deg,#74818a,#414b52)";
-        else if (condition.includes("CLOUD")) gradient = night
-          ? "linear-gradient(180deg,#202d3a,#17212a)"
-          : "linear-gradient(180deg,#8fa9bc,#496c83)";
-        else gradient = night
-          ? "linear-gradient(180deg,#17253a,#293e61)"
-          : "linear-gradient(180deg,#f2b95f,#438bc0)";
-        root.style.setProperty("--main-gradient", gradient);
-      }
+
+      if (condition.includes("THUNDER")) gradient = night
+        ? "linear-gradient(180deg,#17152d,#34204d)"
+        : "linear-gradient(180deg,#53647f,#2f3b59)";
+      else if (isRain) gradient = night
+        ? "linear-gradient(180deg,#1b2a38,#101820)"
+        : "linear-gradient(180deg,#6688a3,#304f68)";
+      else if (isSnow) gradient = night
+        ? "linear-gradient(180deg,#1d2b3a,#101923)"
+        : "linear-gradient(180deg,#b9d4e6,#587d96)";
+      else if (condition.includes("FOG")) gradient = "linear-gradient(180deg,#74818a,#414b52)";
+      else if (condition.includes("CLOUD")) gradient = night
+        ? "linear-gradient(180deg,#202d3a,#17212a)"
+        : "linear-gradient(180deg,#8fa9bc,#496c83)";
+      else gradient = night
+        ? "linear-gradient(180deg,#17253a,#293e61)"
+        : "linear-gradient(180deg,#f2b95f,#438bc0)";
 
       let weather = "clear";
       if (isSnow) weather = isWindy ? "snow-wind" : "snow";
@@ -144,15 +140,16 @@ export async function applyTheme(activeTheme: string, color: string, gradientEna
       else if (condition.includes("CLOUD")) weather = "cloudy";
       else if (night) weather = "night";
       root.setAttribute("data-weather", weather);
-      if (!gradientEnabled && activeTheme === "weather") {
-        const firstStop = gradient.split(",")[1]?.replace(")", "").trim();
-        if (firstStop) gradient = firstStop;
-      }
 
+      if (!gradientEnabled) {
+        const match = gradient.match(/#[0-9a-fA-F]{6}/);
+        gradient = match?.[0] || "#36D1DC";
+      }
     } catch (error) {
       console.warn("Vzhled podle počasí se nepodařilo aktualizovat.", error);
     }
   }
+
   root.style.setProperty("--main-gradient", gradient);
 }
 
