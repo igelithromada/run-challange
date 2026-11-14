@@ -1044,3 +1044,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .notification-item>i{width:8px;height:8px;flex:0 0 8px;margin:.28rem 0 0 auto;border-radius:50%;background:var(--ui-info,#64d9ff);box-shadow:0 0 0 3px rgba(100,217,255,.10)}
 .notification-empty{margin:.35rem 0;padding:1.5rem 1rem;text-align:center;border:1px dashed rgba(255,255,255,.12);border-radius:16px;color:var(--ui-muted,rgba(255,255,255,.72));font-size:.8rem}
 @media(max-width:600px){.notification-panel{position:fixed;right:12px;top:70px;width:min(400px,calc(100vw - 24px))}.notification-list{max-height:calc(100vh - 155px)}}
+
+
+/* Upozornění: stejný skleněný vzhled ve všech tématech. */
+.notification-panel,.notification-item,.notification-panel-header button,.notification-mark-all{box-sizing:border-box;}
+.notification-panel{color:#fff!important;background:rgba(22,61,84,.97)!important;}
+.notification-item{color:#fff!important;background:rgba(255,255,255,.055)!important;}
+.notification-item.is-unread{background:rgba(100,217,255,.10)!important;}
+.notification-copy strong{color:#fff!important;}
+.notification-copy span{color:rgba(255,255,255,.86)!important;}
+.notification-copy time{color:rgba(255,255,255,.72)!important;}
+.notification-avatar{color:#fff!important;background:rgba(255,255,255,.12)!important;}
+.notification-mark-all{color:#64d9ff!important;background:rgba(100,217,255,.08)!important;}
