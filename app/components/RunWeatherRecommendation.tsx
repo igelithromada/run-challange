@@ -6,7 +6,7 @@ import type { WeatherResponse } from "../lib/weather";
 import { auth } from "../lib/firebase";
 import { getUserProfile } from "../lib/services/users";
 import Link from "next/link";
-import { CloudSun, CloudRain, CloudSnow, Wind, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { CloudSun, CloudRain, CloudSnow, Wind, AlertTriangle, CheckCircle2, Moon, Sun } from "lucide-react";
 import { ActivityType, ActivityTypeIcon } from "./ActivityTypeSelector";
 
 export default function RunWeatherRecommendation({
@@ -103,15 +103,33 @@ export default function RunWeatherRecommendation({
       : "Může foukat nebo být chladněji. Přizpůsob oblečení a tempo.";
   }
 
+  const isNight = (() => {
+    if (!current) return false;
+    const hour = new Date().getHours();
+    return hour < 6 || hour >= 20;
+  })();
+  const WeatherIcon = isNight && !rain && !snow ? Moon : Icon;
+  const status = tone === "good"
+    ? "Aktivita je možná"
+    : tone === "caution"
+      ? "Aktivita je možná s opatrností"
+      : tone === "warning"
+        ? "Aktivitu raději zvaž"
+        : "Aktuální podmínky";
   const content = (
     <section className={`run-weather-recommendation run-weather-${tone}`} aria-live="polite">
-      <div className="run-weather-icon"><Icon size={27} /></div>
+      <div className="run-weather-icon">
+        <WeatherIcon size={42} strokeWidth={1.8} />
+      </div>
       <div className="run-weather-copy">
-        <span className="run-weather-eyebrow"><ActivityIcon /> Doporučení pro {activityType === "chůze" ? "chůzi" : "běh"} · Dolní Lhota</span>
-        <strong>{title}</strong>
+        <span className="run-weather-eyebrow"><ActivityIcon /> {activityType === "chůze" ? "Chůze" : "Běh"} · Dolní Lhota</span>
+        <div className="run-weather-summary">
+          {current && <strong className="run-weather-temperature">{Math.round(temperature)} °C</strong>}
+          <strong>{status}</strong>
+        </div>
         <p>{advice}</p>
-        {current && <small>{Math.round(temperature)} °C · <span className="run-weather-wind"><Wind size={14} /> vítr {Math.round(wind)} km/h</span>{rainChance > 0 ? ` · srážky ${Math.round(rainChance)} %` : ""}</small>}
-        {linkToWeather && <span className="run-weather-more">Podrobná předpověď <span aria-hidden="true">→</span></span>}
+        {current && <small><Wind size={14} /> vítr {Math.round(wind)} km/h{rainChance > 0 ? ` · srážky ${Math.round(rainChance)} %` : ""}</small>}
+        {linkToWeather && <span className="run-weather-more">Podrobné počasí <span aria-hidden="true">→</span></span>}
       </div>
     </section>
   );
