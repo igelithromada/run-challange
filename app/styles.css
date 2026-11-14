@@ -293,19 +293,6 @@ body::before {
   opacity: 0; transition: opacity .6s ease;
 }
 body > * { position: relative; z-index: 3; }
-html[data-animations="true"][data-weather="rain"] body::before,
-
-html[data-weather="snow"] body::before,
-html[data-weather="snow-wind"] body::before {
-  opacity: .68;
-  background-image:
-    radial-gradient(3px 3px at 18px 24px, rgba(255,255,255,.9) 98%, transparent),
-    radial-gradient(2px 2px at 72px 85px, rgba(255,255,255,.8) 98%, transparent),
-    radial-gradient(4px 4px at 135px 48px, rgba(255,255,255,.85) 98%, transparent),
-    radial-gradient(2px 2px at 190px 130px, rgba(255,255,255,.75) 98%, transparent);
-  background-size: 220px 180px;
-  animation: weather-snow 10s linear infinite;
-}
 
 
 @media (prefers-reduced-motion: reduce) {
@@ -322,30 +309,6 @@ html[data-weather="snow-wind"] body::before {
 @media (prefers-reduced-motion: reduce) {
   }
 
-
-/* Vítr znázorňuje pouze malá ikona u údaje o rychlosti větru.
-   Žádná celoplošná animace ani opakující se pozadí – aplikace zůstává plynulá. */
-
-/* Počasí: déšť má zůstat viditelný v pozadí, ale nesmí měnit vzhled vnitřních částí záznamových karet. */
-html[data-windy="true"] .tile:not(.activity-card-modern),
-html[data-windy="true"] .list-tile:not(.activity-card-modern),
-html[data-windy="true"] .run-weather-recommendation,
-html[data-weather="rain"] .tile:not(.activity-card-modern),
-html[data-weather="rain"] .list-tile:not(.activity-card-modern),
-html[data-weather="rain"] .run-weather-recommendation,
-html[data-weather="rain-wind"] .tile:not(.activity-card-modern),
-html[data-weather="rain-wind"] .list-tile:not(.activity-card-modern),
-html[data-weather="rain-wind"] .run-weather-recommendation,
-html[data-weather="snow"] .tile:not(.activity-card-modern),
-html[data-weather="snow"] .list-tile:not(.activity-card-modern),
-html[data-weather="snow"] .run-weather-recommendation,
-html[data-weather="snow-wind"] .tile:not(.activity-card-modern),
-html[data-weather="snow-wind"] .list-tile:not(.activity-card-modern),
-html[data-weather="snow-wind"] .run-weather-recommendation {
-  background-color: rgba(0, 0, 0, .20) !important;
-  border-color: rgba(255, 255, 255, .13);
-}
-
 /* Záznamy zůstávají přesně ve svém běžném vzhledu i při aktivní animaci počasí. */
 html[data-weather="rain"] .activity-card-modern,
 html[data-weather="rain-wind"] .activity-card-modern,
@@ -358,20 +321,6 @@ html[data-weather="snow-wind"] .activity-card-modern {
   grid-template-columns:none !important;
   grid-template-rows:none !important;
   background-color: var(--card-background) !important;
-}
-
-/* Vnitřní prvky karet zůstávají nad animovanou vrstvou a plně čitelné. */
-html[data-windy="true"] .tile > *,
-html[data-windy="true"] .list-tile > *,
-html[data-weather="rain"] .tile > *,
-html[data-weather="rain"] .list-tile > *,
-html[data-weather="rain-wind"] .tile > *,
-html[data-weather="rain-wind"] .list-tile > *,
-html[data-weather="snow"] .tile > *,
-html[data-weather="snow"] .list-tile > *,
-html[data-weather="snow-wind"] .tile > *,
-html[data-weather="snow-wind"] .list-tile > * {
-  position: relative;
 }
 
 
@@ -617,27 +566,6 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .activity-photos-button { display: inline-flex; align-items: center; gap: .35rem; margin-top: .65rem; padding: .35rem .55rem; border: 1px solid rgba(255,255,255,.18); border-radius: 9px; color: white; background: rgba(255,255,255,.1); font: inherit; font-size: .75rem; cursor: pointer; }
 body::before { z-index: 0; }
 body > * { position: relative; z-index: 1; }
-
-html[data-animations="true"][data-weather="rain"] body::before,
-
-html[data-animations="true"][data-weather="snow"] body::before,
-
-
-
-@media (max-width: 520px) {
-  .teams-grid { grid-template-columns: minmax(0,1fr) !important; }
-  .team-card { display: grid !important; grid-template-columns: 44px minmax(0,1fr) !important; gap: .55rem .75rem !important; }
-  .team-card-top { grid-column: 1; grid-row: 1 / span 2; flex-direction: column !important; align-items: center !important; }
-  .team-card h3 { grid-column: 2; grid-row: 1; align-self: end; }
-  .team-card-actions { grid-column: 2; grid-row: 2; margin: 0 !important; }
-  .activity-card-modern { grid-template-columns: 44px minmax(0,1fr) !important; padding: .8rem !important; gap: .65rem !important; }
-  .activity-avatar { width: 44px; height: 44px; }
-  .activity-card-heading { flex-direction: column; gap: .2rem; }
-  .activity-card-heading time { text-align: left; }
-  .activity-metrics { gap: .35rem; }
-  .activity-metrics > div { padding: .45rem .3rem; }
-  .activity-metrics strong { font-size: .82rem; }
-}
 
 
 /* Můj progres – přehled cílů, odznaků a aktivit */
@@ -1280,13 +1208,6 @@ html[data-animations="true"][data-weather="snow"] body::before,
 .run-profile-icon { width:26px; height:26px; flex:0 0 auto; }
 .run-profile-icon path { stroke-linecap:round; stroke-linejoin:round; }
 .progress-goal-inputs { grid-template-columns:repeat(2,minmax(0,1fr)); }
-
-html[data-animations="true"][data-weather="rain"] body::before,
-html[data-animations="true"][data-weather="rain-wind"] body::before,
-html[data-animations="true"][data-weather="snow"] body::before,
-
-
-.site-sidebar-item { appearance:none; border:1px solid rgba(255,255,255,.13); background:rgba(0,0,0,.22); color:#fff; border-radius:16px; min-height:76px; padding:.8rem .5rem; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:.45rem; font:600 1rem/1.25 'Poppins',sans-serif; text-align:center; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,.14); }
 .site-sidebar-item:active { background:rgba(255,255,255,.28); transform:scale(.98); }
 .site-sidebar-logout { background:rgba(190,55,85,.5); }
 .site-sidebar-panel .sidebar-close { grid-column:1/-1; min-height:52px; flex-direction:row; background:transparent; border:0; box-shadow:none; }
@@ -1303,7 +1224,6 @@ html[data-animations="true"][data-weather="snow"] body::before,
 
 
 @media (prefers-reduced-motion: reduce) {
-  html[data-animations="true"] body::before { animation: none !important; }
 }
 
 
@@ -3587,22 +3507,6 @@ button { touch-action:manipulation; }
   align-self:stretch !important;
 }
 
-/* Stavové hlášky týmů nesmí být globálně skryté. */
-
-
-/* ===== AUDIT SAFETY OVERRIDES ===== */
-/*
- * Stabilizační pojistka: animace počasí nesmí běžet jako celoobrazovková
- * vrstva. Zachováme pouze lehké lokální efekty (např. ikonu větru).
- */
-html[data-animations="true"][data-weather="rain"] body::before,
-html[data-animations="true"][data-weather="rain-wind"] body::before,
-html[data-animations="true"][data-weather="snow"] body::before,
-
-
-@media (prefers-reduced-motion: reduce) {
-  html[data-windy="true"] }
-
 
 /* ============================================================
    STANDARD UI BUTTON SYSTEM
@@ -3982,38 +3886,6 @@ html[data-theme="dark"] {
 body::before {
   z-index: -1 !important;
 }
-
-
-html[data-animations="true"][data-weather="rain"] .weather-animation-overlay,
-
-html[data-animations="true"][data-weather="snow"] .weather-animation-overlay,
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* Společné chování všech formulářů na mobilu.
-   Aktivní pole dostane prostor před klávesnicí a formuláře nesmí být
-   useknuté kvůli starým overflow pravidlům. */
-form,
-form input,
-form textarea,
-form select,
-.run-form-panel,
-.trainer-day-modal-form,
-.teams-create-form,
-.teams-challenge-form,
-.activity-edit-form {
-  scroll-margin-top: 5.5rem;
-}
 .run-form-panel { overflow: visible!important; }
 .run-form-field,.run-form-upload { scroll-margin-top:5.5rem; }
 
@@ -4385,7 +4257,6 @@ form select,
 .weather-card .weather-stat-icon { color:#4da3ff !important; stroke:#4da3ff !important; }
 .weather-card .weather-stat-icon .weather-rain-drops { color:#4da3ff !important; stroke:#4da3ff !important; }
 .weather-card .weather-rain-combo > svg:first-child { color:rgba(255,255,255,.92); stroke:rgba(255,255,255,.92); }
-html[data-weather] body::before { display:none !important; animation:none !important; }
 
 
 .route-card-main-button,
@@ -4868,19 +4739,6 @@ html[data-theme="white"] .settings-time-input {
 @media (prefers-reduced-motion:reduce) {
   .weather-animation-overlay { animation:none !important; }
 }
-
-/* Konečné sjednocení i při aktivní animaci počasí */
-html[data-weather] .tile,
-html[data-weather] .list-tile,
-html[data-weather] .activity-card-modern,
-html[data-windy="true"] .tile,
-
-
-/* Oprava vrstvení: transform na fixed navbaru vytvářel containing block pro panel upozornění. */
-.site-navbar {
-  top:0 !important;
-  transition:top .24s ease, opacity .24s ease !important;
-}
 .site-navbar.is-visible {
   top:0 !important;
   transform:none !important;
@@ -4948,45 +4806,6 @@ html[data-windy="true"] .tile,
 .weather-current-main .weather-visual-wrap{width:74px!important;height:74px!important}
 .weather-hour-card{position:relative;overflow:hidden}
 .weather-hour-card>*{position:relative;z-index:2}
-.weather-hour-animation{position:absolute!important;inset:0!important;z-index:1!important;pointer-events:none!important;opacity:0}
-.weather-hour-rain .weather-hour-animation,
-.weather-hour-drizzle .weather-hour-animation{
-  opacity:.8;
-  background:repeating-linear-gradient(108deg,transparent 0 16px,rgba(210,238,255,.72) 17px 19px,transparent 20px 42px);
-  background-size:70px 100px;
-  animation:weather-tile-rain .7s linear infinite;
-}
-.weather-hour-rain .weather-hour-animation::before,
-.weather-hour-drizzle .weather-hour-animation::before{
-  content:"";position:absolute;left:50%;top:8px;width:42px;height:20px;transform:translateX(-50%);
-  border-radius:50%;background:rgba(255,255,255,.10);filter:blur(3px);
-}
-.weather-hour-sun .weather-hour-animation,
-.weather-hour-clear .weather-hour-animation{
-  opacity:.55;
-  background:radial-gradient(circle at 50% 38%,rgba(255,221,120,.36),transparent 42%);
-  animation:weather-tile-sun 3.2s ease-in-out infinite alternate;
-}
-.weather-hour-partly .weather-hour-animation{
-  opacity:.42;
-  background:radial-gradient(ellipse at 70% 34%,rgba(255,221,120,.25),transparent 30%);
-  animation:weather-tile-sun 4s ease-in-out infinite alternate;
-}
-.weather-hour-storm .weather-hour-animation{
-  opacity:.65;
-  background:linear-gradient(180deg,rgba(80,95,130,.22),transparent 65%);
-  animation:weather-tile-storm 2.8s ease-in-out infinite;
-}
-.weather-hour-storm .weather-hour-animation::after{
-  content:"";position:absolute;left:62%;top:18%;width:2px;height:38px;
-  background:rgba(255,245,180,.95);box-shadow:0 0 10px rgba(255,245,180,.9);
-  transform:rotate(12deg);opacity:0;animation:weather-tile-lightning 2.8s ease-in-out infinite;
-}
-.weather-hour-wind .weather-hour-animation{
-  opacity:.35;
-  background:repeating-linear-gradient(175deg,transparent 0 18px,rgba(225,245,255,.24) 19px 21px,transparent 22px 42px);
-  animation:weather-tile-wind 3s linear infinite;
-}
 
 
 
@@ -4995,7 +4814,6 @@ html[data-windy="true"] .tile,
 
 
 
-@media(prefers-reduced-motion:reduce){.weather-hour-animation,.weather-animation-overlay{animation:none!important}}
 .settings-trainer-master-toggle{margin-bottom:.5rem}
 .settings-time-row .settings-time-input{
   width:92px!important;min-width:92px!important;height:42px!important;padding:.45rem .55rem!important;
