@@ -36,6 +36,12 @@ export default function TrainerPage(){
  const [dayKm,setDayKm]=useState<Record<string,string>>({});
  const [selectedDate,setSelectedDate]=useState("");
  const [type,setType]=useState<ActivityType>("běh");
+ useEffect(() => {
+   try {
+     const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
+     if (cached === "běh" || cached === "chůze") setType(cached);
+   } catch {}
+ }, []);
  const [profileLoading,setProfileLoading]=useState(true);
  const [monthlyGoal,setMonthlyGoal]=useState(100);
  const [goalsByType,setGoalsByType]=useState<Record<ActivityType,number>>({běh:100,chůze:100});
