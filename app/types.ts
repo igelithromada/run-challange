@@ -68,7 +68,6 @@ export interface UserData {
   avatarUrl?: string;
   theme?: string;
   customColor?: string;
-  animationsEnabled?: boolean;
   gradientEnabled?: boolean;
   themeUpdatedAt?: FirestoreTimestamp;
   role?: string;
