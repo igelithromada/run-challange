@@ -13,7 +13,9 @@ export async function POST(request: Request) {
     const trainerNotifications={
       enabled:value.enabled===true,
       today:value.today!==false,
-      tomorrow:value.tomorrow!==false
+      tomorrow:value.tomorrow!==false,
+      todayTime: /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value.todayTime) ? value.todayTime : "07:00",
+      tomorrowTime: /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value.tomorrowTime) ? value.tomorrowTime : "18:00"
     };
     await adminDb.collection("users").doc(decoded.uid).set({trainerNotifications},{merge:true});
     return NextResponse.json({ok:true,trainerNotifications});
