@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, Home, Menu, X } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -63,6 +64,7 @@ type AppNotification = {
 };
 
 function NotificationsBell() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -127,7 +129,7 @@ function NotificationsBell() {
   const openNotification = async (notification: AppNotification) => {
     await markRead(notification);
     setOpen(false);
-    if (notification.runId) window.location.href = `/#run-${notification.runId}`;
+    if (notification.runId) router.push(`/#run-${notification.runId}`);
   };
 
   return <div className="notification-wrap">
