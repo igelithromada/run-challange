@@ -1,7 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [
-    { "path": "/api/notifications/trainer", "schedule": "0 6 * * *" },
-    { "path": "/api/notifications/trainer", "schedule": "0 17 * * *" }
-  ]
+  "schedules": {
+    "trainer-hourly": {
+      "schedule": "0 * * * *",
+      "path": "/api/notifications/trainer",
+      "timezone": "Europe/Prague",
+      "requestMethod": "GET"
+    }
+  }
 }
