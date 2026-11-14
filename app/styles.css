@@ -5067,3 +5067,36 @@ html[data-windy="true"] .list-tile {
 .site-navbar-inner:not(:has(.notification-wrap)) {
   grid-template-columns:44px minmax(0,1fr) 44px !important;
 }
+
+/* Sociální stav je viditelný všem: barva vyjadřuje existující aktivitu, srdce navíc výplní vlastní reakci. */
+.activity-card-modern .activity-social-button.has-likes {
+  color:#ff647d !important;
+  border-color:rgba(255,100,125,.38) !important;
+  background:rgba(255,100,125,.10) !important;
+}
+.activity-card-modern .activity-social-button.has-likes svg {
+  color:#ff647d;
+  stroke:#ff647d;
+}
+.activity-card-modern .activity-social-button.is-liked svg {
+  fill:#ff647d;
+  stroke:#ff647d;
+}
+.activity-card-modern .activity-social-button.has-comments {
+  color:#55d6e8 !important;
+  border-color:rgba(85,214,232,.36) !important;
+  background:rgba(85,214,232,.09) !important;
+}
+.activity-card-modern .activity-social-button.has-comments svg {
+  color:#55d6e8;
+  stroke:#55d6e8;
+}
+.activity-card-modern .activity-social-button.has-photos {
+  color:#b79cff !important;
+  border-color:rgba(183,156,255,.38) !important;
+  background:rgba(183,156,255,.10) !important;
+}
+.activity-card-modern .activity-social-button.has-photos svg {
+  color:#b79cff;
+  stroke:#b79cff;
+}
