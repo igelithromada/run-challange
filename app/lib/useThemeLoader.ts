@@ -5,8 +5,8 @@ import { auth } from "./firebase";
 import { getUserProfile } from "./services/users";
 
 const CACHE_KEY = "dolni-lhota-theme-v1";
-type ThemeCache = { theme: string; customColor: string; animationsEnabled: boolean; savedAt: number };
-const defaults: ThemeCache = { theme: "default", customColor: "#36D1DC", animationsEnabled: true, savedAt: 0 };
+type ThemeCache = { theme: string; customColor: string; animationsEnabled: boolean; gradientEnabled: boolean; savedAt: number };
+const defaults: ThemeCache = { theme: "default", customColor: "#36D1DC", animationsEnabled: true, gradientEnabled: true, savedAt: 0 };
 
 function readThemeCache(): ThemeCache {
   try {
@@ -17,6 +17,7 @@ function readThemeCache(): ThemeCache {
       theme: typeof value.theme === "string" ? value.theme : defaults.theme,
       customColor: typeof value.customColor === "string" ? value.customColor : defaults.customColor,
       animationsEnabled: value.animationsEnabled !== false,
+      gradientEnabled: value.gradientEnabled !== false,
       savedAt: typeof value.savedAt === "number" ? value.savedAt : 0
     };
   } catch { return defaults; }
@@ -30,7 +31,7 @@ export default function useThemeLoader() {
     let active = true;
     let userData = readThemeCache();
     // Lokální kopie se aplikuje hned; Firestore ji později případně aktualizuje.
-    void applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, false);
+    void applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, false, userData.gradientEnabled);
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) return;
       try {
@@ -40,13 +41,14 @@ export default function useThemeLoader() {
           theme: data.theme || "default",
           customColor: data.customColor || "#36D1DC",
           animationsEnabled: data.animationsEnabled !== false,
+          gradientEnabled: data.gradientEnabled !== false,
           savedAt: data.themeUpdatedAt instanceof Date ? data.themeUpdatedAt.getTime() : data.themeUpdatedAt && "toDate" in data.themeUpdatedAt && typeof data.themeUpdatedAt.toDate === "function" ? data.themeUpdatedAt.toDate().getTime() : data.themeUpdatedAt && "seconds" in data.themeUpdatedAt && typeof data.themeUpdatedAt.seconds === "number" ? data.themeUpdatedAt.seconds * 1000 : Number(data.themeUpdatedAt || 0)
         };
         const cached = readThemeCache();
         const remoteIsNewer = userData.savedAt > cached.savedAt;
         if (remoteIsNewer || cached.savedAt === 0) {
           writeThemeCache(userData);
-          await applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, false);
+          await applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, false, userData.gradientEnabled);
         } else {
           userData = cached;
           await applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, false);
@@ -62,7 +64,7 @@ export default function useThemeLoader() {
   }, []);
 }
 
-export async function applyTheme(selectedTheme: string, color: string, animationsEnabled = true, persist = true) {
+export async function applyTheme(selectedTheme: string, color: string, animationsEnabled = true, persist = true, gradientEnabled = true) {
   let gradient = "linear-gradient(180deg, #36D1DC, #5B86E5)";
   const root = document.documentElement;
   root.removeAttribute("data-weather");
@@ -86,7 +88,11 @@ export async function applyTheme(selectedTheme: string, color: string, animation
 
 
   // Zapiš základní nastavení před síťovým požadavkem, aby další start neproblikl.
-  if (persist) writeThemeCache({ theme: selectedTheme, customColor: color, animationsEnabled, savedAt: Date.now() });
+  if (persist) writeThemeCache({ theme: selectedTheme, customColor: color, animationsEnabled, gradientEnabled, savedAt: Date.now() });
+  if (!gradientEnabled) {
+    const solid = selectedTheme === "dark" ? "#000000" : selectedTheme === "light" ? "#eef6fb" : selectedTheme === "white" ? "#ffffff" : selectedTheme === "woman" ? "#ff7eb3" : selectedTheme === "man" ? "#2980b9" : selectedTheme === "custom" ? color : "#36D1DC";
+    gradient = solid;
+  }
   root.style.setProperty("--main-gradient", gradient);
 
   if (animationsEnabled || selectedTheme === "weather") {
@@ -130,7 +136,13 @@ export async function applyTheme(selectedTheme: string, color: string, animation
       else if (condition.includes("CLOUD")) weather = "cloudy";
       else if (night) weather = "night";
       root.setAttribute("data-weather", weather);
-
+      try {
+        const testMode = localStorage.getItem("dolni-lhota-weather-test-v1");
+        if (testMode) {
+          root.setAttribute("data-weather", testMode);
+          root.setAttribute("data-windy", testMode === "wind" ? "true" : "false");
+        }
+      } catch {}
 
     } catch (error) {
       console.warn("Vzhled podle počasí se nepodařilo aktualizovat.", error);
