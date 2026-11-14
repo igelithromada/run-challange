@@ -49,6 +49,12 @@ export default function ProgressPage() {
   const [goalWeekly, setGoalWeekly] = useState("25");
   const [goalMonthly, setGoalMonthly] = useState("100");
   const [goalType, setGoalType] = useState<ActivityType>("běh");
+ useEffect(() => {
+   try {
+     const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
+     if (cached === "běh" || cached === "chůze") setGoalType(cached);
+   } catch {}
+ }, []);
   const [goalsByType, setGoalsByType] = useState<Record<ActivityType, { weekly: number; monthly: number }>>({ běh: { weekly: 25, monthly: 100 }, chůze: { weekly: 25, monthly: 100 } });
   const [saved, setSaved] = useState(false);
   const [trainerDays, setTrainerDays] = useState<number[]>([1,3,5]);
