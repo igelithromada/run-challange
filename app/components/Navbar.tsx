@@ -121,6 +121,7 @@ function NotificationsBell() {
       });
       setNotifications([]);
       setUnreadCount(0);
+      setOpen(false);
     } catch {}
   };
 
