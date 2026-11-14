@@ -110,7 +110,6 @@ export async function applyTheme(selectedTheme: string, color: string, gradientE
       if (!current) throw new Error("Chybí aktuální počasí");
       const condition = String(current.weatherCondition?.type || "").toUpperCase();
       const wind = Number(current.wind?.speed?.value || 0);
-      const temperature = Number(current.temperature?.degrees ?? 10);
       const hour = new Date().getHours();
       const night = hour < 6 || hour >= 20;
       const isSnow = condition.includes("SNOW") || condition.includes("SLEET") || condition.includes("HAIL");
