@@ -4859,3 +4859,336 @@ html[data-theme="dark"] .site-navbar *, html[data-theme="dark"] .site-sidebar-pa
 html[data-theme="auto"], html[data-theme="weather"] {
   --ui-text: #ffffff; --ui-muted: rgba(255,255,255,.82); --ui-muted-strong: rgba(255,255,255,.94);
 }
+
+
+
+/* =====================================================================
+   WHITE THEME — čistě světlý režim
+   ===================================================================== */
+html[data-theme="white"] {
+  --main-gradient:#ffffff;
+  --card-background:#ffffff;
+  --card-border:1px solid #e3e8ec;
+  --card-shadow:0 2px 10px rgba(18,38,52,.07);
+  --control-background:#ffffff;
+  --control-background-hover:#f4f7f9;
+  --control-background-active:#e9f1f6;
+  --control-shadow-active:0 3px 12px rgba(18,38,52,.10);
+  --ui-bg:#ffffff;
+  --ui-bg-soft:#f6f8fa;
+  --ui-bg-hover:#eef3f6;
+  --ui-border:#dce3e8;
+  --ui-border-strong:#c7d1d8;
+  --ui-text:#17212b;
+  --ui-muted:#66737d;
+  --ui-muted-strong:#46545e;
+  --ui-success:#16834d;
+  --ui-danger:#c93445;
+  --ui-info:#0879b6;
+  color-scheme:light;
+}
+html[data-theme="white"],
+html[data-theme="white"] body {
+  background:#fff !important;
+  background-image:none !important;
+}
+html[data-theme="white"] body {
+  color:#17212b !important;
+}
+html[data-theme="white"] .app-content-layer {
+  color:#17212b;
+}
+
+/* Základní karty a dlaždice */
+html[data-theme="white"] .tile,
+html[data-theme="white"] .list-tile,
+html[data-theme="white"] .activity-card-modern,
+html[data-theme="white"] .team-card,
+html[data-theme="white"] .teams-create,
+html[data-theme="white"] .routes-group,
+html[data-theme="white"] .route-card,
+html[data-theme="white"] .run-weather-recommendation {
+  background:#fff !important;
+  color:#17212b !important;
+  border-color:#e1e7eb !important;
+  box-shadow:0 2px 10px rgba(18,38,52,.07) !important;
+  -webkit-backdrop-filter:none !important;
+  backdrop-filter:none !important;
+}
+
+/* Textová hierarchie */
+html[data-theme="white"] .tile *,
+html[data-theme="white"] .list-tile *,
+html[data-theme="white"] .activity-card-modern *,
+html[data-theme="white"] .team-card *,
+html[data-theme="white"] .teams-create *,
+html[data-theme="white"] .routes-group *,
+html[data-theme="white"] .route-card * {
+  --local-text:#17212b;
+}
+html[data-theme="white"] .tile,
+html[data-theme="white"] .tile h1,
+html[data-theme="white"] .tile h2,
+html[data-theme="white"] .tile h3,
+html[data-theme="white"] .tile h4,
+html[data-theme="white"] .tile p,
+html[data-theme="white"] .tile span,
+html[data-theme="white"] .tile label,
+html[data-theme="white"] .tile strong,
+html[data-theme="white"] .tile small,
+html[data-theme="white"] .list-tile,
+html[data-theme="white"] .list-tile h1,
+html[data-theme="white"] .list-tile h2,
+html[data-theme="white"] .list-tile h3,
+html[data-theme="white"] .list-tile h4,
+html[data-theme="white"] .list-tile p,
+html[data-theme="white"] .list-tile span,
+html[data-theme="white"] .list-tile label,
+html[data-theme="white"] .list-tile strong,
+html[data-theme="white"] .list-tile small,
+html[data-theme="white"] .activity-card-modern,
+html[data-theme="white"] .activity-card-modern h1,
+html[data-theme="white"] .activity-card-modern h2,
+html[data-theme="white"] .activity-card-modern h3,
+html[data-theme="white"] .activity-card-modern h4,
+html[data-theme="white"] .activity-card-modern p,
+html[data-theme="white"] .activity-card-modern span,
+html[data-theme="white"] .activity-card-modern label,
+html[data-theme="white"] .activity-card-modern strong,
+html[data-theme="white"] .activity-card-modern small,
+html[data-theme="white"] .team-card,
+html[data-theme="white"] .team-card h1,
+html[data-theme="white"] .team-card h2,
+html[data-theme="white"] .team-card h3,
+html[data-theme="white"] .team-card h4,
+html[data-theme="white"] .team-card p,
+html[data-theme="white"] .team-card span,
+html[data-theme="white"] .team-card label,
+html[data-theme="white"] .team-card strong,
+html[data-theme="white"] .team-card small,
+html[data-theme="white"] .routes-group,
+html[data-theme="white"] .route-card {
+  color:#17212b !important;
+}
+html[data-theme="white"] .muted,
+html[data-theme="white"] .text-muted,
+html[data-theme="white"] .activity-card-modern .activity-metrics > div > span,
+html[data-theme="white"] .run-meta,
+html[data-theme="white"] .routes-header p,
+html[data-theme="white"] .routes-group-copy small,
+html[data-theme="white"] .route-card-info p,
+html[data-theme="white"] .routes-disclaimer {
+  color:#66737d !important;
+}
+
+/* Navigační dlaždice a tlačítka */
+html[data-theme="white"] .tile-button {
+  color:#17212b !important;
+  background:#fff !important;
+  border:1px solid #d9e1e6 !important;
+  box-shadow:0 1px 5px rgba(18,38,52,.05);
+}
+html[data-theme="white"] .tile-button:hover {
+  background:#f4f7f9 !important;
+  border-color:#c6d3db !important;
+}
+html[data-theme="white"] .tile-button.active {
+  background:#eaf3f8 !important;
+  border-color:#8fb3c6 !important;
+  box-shadow:0 3px 10px rgba(18,38,52,.08) !important;
+}
+
+/* Vstupy, selecty a formuláře */
+html[data-theme="white"] input,
+html[data-theme="white"] textarea,
+html[data-theme="white"] select {
+  background:#fff !important;
+  color:#17212b !important;
+  border-color:#cfd9df !important;
+  color-scheme:light !important;
+}
+html[data-theme="white"] input::placeholder,
+html[data-theme="white"] textarea::placeholder {
+  color:#7b8790 !important;
+  opacity:1 !important;
+}
+html[data-theme="white"] input:focus,
+html[data-theme="white"] textarea:focus,
+html[data-theme="white"] select:focus {
+  border-color:#3b8bb4 !important;
+  outline:2px solid rgba(59,139,180,.16) !important;
+  outline-offset:1px;
+}
+html[data-theme="white"] .date-clear,
+html[data-theme="white"] .link {
+  color:#176f9d !important;
+}
+
+/* Avatar, ikonové kontejnery a sekundární ovládací prvky */
+html[data-theme="white"] .avatar,
+html[data-theme="white"] .settings-avatar-preview,
+html[data-theme="white"] .teams-current-icon,
+html[data-theme="white"] .teams-create-icon,
+html[data-theme="white"] .team-avatar,
+html[data-theme="white"] .run-weather-icon,
+html[data-theme="white"] .routes-group-icon,
+html[data-theme="white"] .route-card-icon {
+  background:#f1f5f7 !important;
+  color:#26343d !important;
+  border-color:#dce4e9 !important;
+}
+html[data-theme="white"] .avatar-upload-button,
+html[data-theme="white"] .team-action-button,
+html[data-theme="white"] .route-secondary-action,
+html[data-theme="white"] .activity-card-modern .activity-photos-button,
+html[data-theme="white"] .activity-card-modern .activity-manage-button {
+  color:#25343e !important;
+  background:#f3f6f8 !important;
+  border-color:#d7e0e5 !important;
+}
+html[data-theme="white"] .avatar-upload-button:hover,
+html[data-theme="white"] .team-action-button:hover,
+html[data-theme="white"] .route-secondary-action:hover {
+  background:#e9eff3 !important;
+}
+
+/* Aktivita: zachovat barevné indikátory, ale odstranit tmavé plochy */
+html[data-theme="white"] .activity-card-modern .activity-metrics > div {
+  background:#f7f9fa !important;
+  border-color:#e0e6ea !important;
+}
+html[data-theme="white"] .activity-card-modern .activity-metrics svg {
+  color:#36515f !important;
+}
+html[data-theme="white"] .activity-card-modern .activity-card-actions {
+  border-top-color:#e1e7eb !important;
+}
+html[data-theme="white"] .activity-card-modern .activity-team-name {
+  color:#17212b !important;
+}
+html[data-theme="white"] .activity-card-modern .activity-delete-button {
+  color:#b72e3d !important;
+  background:#fff1f2 !important;
+  border-color:#f0b9c0 !important;
+}
+
+/* Týmy */
+html[data-theme="white"] .team-card-joined {
+  background:#f0faf5 !important;
+  border-color:#8bc8a9 !important;
+}
+html[data-theme="white"] .team-member-label {
+  color:#176d46 !important;
+  background:#e5f6ec !important;
+}
+
+/* Trasy */
+html[data-theme="white"] .routes-filter button {
+  color:#26343d !important;
+  background:#fff !important;
+  border-color:#d9e2e7 !important;
+}
+html[data-theme="white"] .routes-filter button.active {
+  color:#145f84 !important;
+  background:#eaf4f8 !important;
+  border-color:#9bc2d4 !important;
+}
+html[data-theme="white"] .route-card-title span,
+html[data-theme="white"] .routes-count,
+html[data-theme="white"] .routes-note {
+  color:#52616b !important;
+}
+html[data-theme="white"] .route-primary-action {
+  color:#fff !important;
+  background:#1976a8 !important;
+}
+html[data-theme="white"] .route-secondary-action {
+  color:#26343d !important;
+}
+html[data-theme="white"] .routes-source {
+  color:#55717f !important;
+}
+
+/* Počasí: doporučení zůstává barevné podle významu */
+html[data-theme="white"] .run-weather-good {
+  background:#f0faf5 !important;
+  border-color:#b9dfc8 !important;
+}
+html[data-theme="white"] .run-weather-caution {
+  background:#fff9ed !important;
+  border-color:#ecd49d !important;
+}
+html[data-theme="white"] .run-weather-warning {
+  background:#fff3f1 !important;
+  border-color:#edc0b9 !important;
+}
+
+/* Sidebar a horní navigace */
+html[data-theme="white"] .site-sidebar-panel {
+  background:#fff !important;
+  border-color:#dfe6ea !important;
+  box-shadow:0 10px 30px rgba(18,38,52,.14) !important;
+}
+html[data-theme="white"] .site-sidebar-panel > .site-sidebar-item {
+  background:#fff !important;
+  color:#26343d !important;
+  border-color:#dfe6ea !important;
+  box-shadow:0 2px 8px rgba(18,38,52,.06) !important;
+}
+html[data-theme="white"] .site-sidebar-panel > .site-sidebar-item:hover,
+html[data-theme="white"] .site-sidebar-panel > .site-sidebar-item.active {
+  background:#edf5f9 !important;
+  color:#145f84 !important;
+  border-color:#a8c7d6 !important;
+}
+html[data-theme="white"] .site-navbar,
+html[data-theme="white"] .navbar {
+  background:rgba(255,255,255,.96) !important;
+  color:#17212b !important;
+  border-bottom-color:#e0e6ea !important;
+  box-shadow:0 2px 10px rgba(18,38,52,.06) !important;
+}
+
+/* Překryv počasí nikdy nesmí změnit čitelnost obsahu */
+html[data-theme="white"] .weather-animation-overlay {
+  z-index:0 !important;
+  pointer-events:none !important;
+  opacity:.08 !important;
+}
+html[data-theme="white"] .app-content-layer {
+  position:relative;
+  z-index:1;
+}
+html[data-theme="white"] .activity-card-modern,
+html[data-theme="white"] .tile,
+html[data-theme="white"] .list-tile,
+html[data-theme="white"] .site-navbar,
+html[data-theme="white"] .site-sidebar-panel {
+  position:relative;
+  z-index:1;
+}
+
+/* Stavové a systémové prvky */
+html[data-theme="white"] .network-status,
+html[data-theme="white"] .app-toast {
+  color:#17212b !important;
+  background:#fff !important;
+  border-color:#dbe3e8 !important;
+  box-shadow:0 4px 16px rgba(18,38,52,.12) !important;
+}
+
+/* Barevné prvky aplikace nesjednocovat na šedou – jejich barva nese význam. */
+html[data-theme="white"] .text-success,
+html[data-theme="white"] .success,
+html[data-theme="white"] .run-weather-good strong { color:#16834d !important; }
+html[data-theme="white"] .text-danger,
+html[data-theme="white"] .danger { color:#c93445 !important; }
+html[data-theme="white"] .text-info,
+html[data-theme="white"] .info { color:#0879b6 !important; }
+
+/* Přístupnost – dostatečně výrazný focus pro klávesnici i mobilní ovládání */
+html[data-theme="white"] :focus-visible {
+  outline:2px solid #1976a8 !important;
+  outline-offset:2px;
+}
+
