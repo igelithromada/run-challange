@@ -27,13 +27,14 @@ export default function SettingsPage() {
   const [customColor, setCustomColor] = useState(DEFAULT_COLOR);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
+  const [gradientEnabled, setGradientEnabled] = useState(true);
   const [hapticsEnabled, setHapticsEnabledState] = useState(true);
   const [defaultActivity, setDefaultActivity] = useState<"běh" | "chůze">("běh");
   const [saving, setSaving] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
-  const [trainerNotifications, setTrainerNotifications] = useState({ enabled: false, today: true, tomorrow: true });
+  const [trainerNotifications, setTrainerNotifications] = useState({ enabled: false, today: true, tomorrow: true, todayTime: "07:00", tomorrowTime: "18:00" });
   const [socialNotifications, setSocialNotifications] = useState({ likes: true, comments: true });
   const [notificationBusy, setNotificationBusy] = useState(false);
 
@@ -50,6 +51,7 @@ export default function SettingsPage() {
         setTheme(cached.theme || "default");
         setCustomColor(cached.customColor || DEFAULT_COLOR);
         setAnimationsEnabled(cached.animationsEnabled !== false);
+        setGradientEnabled(cached.gradientEnabled !== false);
       }
     } catch {}
   }, []);
@@ -65,6 +67,7 @@ export default function SettingsPage() {
           const remoteTheme = data.theme || "default";
           const remoteColor = data.customColor || DEFAULT_COLOR;
           const remoteAnimations = data.animationsEnabled !== false;
+          const remoteGradient = data.gradientEnabled !== false;
           const remoteHaptics = data.hapticsEnabled !== false;
           let localHaptics: boolean | null = null;
           try {
@@ -81,10 +84,12 @@ export default function SettingsPage() {
           const storedTheme = useRemoteTheme ? remoteTheme : (cachedTheme?.theme || remoteTheme);
           const storedColor = useRemoteTheme ? remoteColor : (cachedTheme?.customColor || remoteColor);
           const storedAnimations = useRemoteTheme ? remoteAnimations : (cachedTheme?.animationsEnabled !== false);
+          const storedGradient = useRemoteTheme ? remoteGradient : (cachedTheme?.gradientEnabled !== false);
           
           setTheme(storedTheme);
           setCustomColor(storedColor);
           setAnimationsEnabled(storedAnimations);
+          setGradientEnabled(storedGradient);
           const effectiveHaptics = localHaptics ?? remoteHaptics;
           setHapticsEnabledState(effectiveHaptics);
           setHapticsEnabled(effectiveHaptics);
@@ -96,10 +101,12 @@ export default function SettingsPage() {
           setTrainerNotifications({
             enabled: remoteNotifications.enabled === true,
             today: remoteNotifications.today !== false,
-            tomorrow: remoteNotifications.tomorrow !== false
+            tomorrow: remoteNotifications.tomorrow !== false,
+            todayTime: typeof remoteNotifications.todayTime === "string" ? remoteNotifications.todayTime : "07:00",
+            tomorrowTime: typeof remoteNotifications.tomorrowTime === "string" ? remoteNotifications.tomorrowTime : "18:00"
           });
           try { localStorage.setItem(DEFAULT_ACTIVITY_KEY, remoteDefaultActivity); } catch {}
-          await applyTheme(storedTheme, storedColor, storedAnimations, false);
+          await applyTheme(storedTheme, storedColor, storedAnimations, false, storedGradient);
         }
       } catch (error) {
         console.error("Nepodařilo se načíst nastavení:", error);
@@ -117,9 +124,9 @@ export default function SettingsPage() {
     if (!activeUserId) throw new Error("Nejsi přihlášen.");
     setSaving(true);
     try {
-      const themeChanged = "theme" in patch || "customColor" in patch || "animationsEnabled" in patch;
+      const themeChanged = "theme" in patch || "customColor" in patch || "animationsEnabled" in patch || "gradientEnabled" in patch;
       await saveUserSettings(activeUserId, {
-        theme, customColor, animationsEnabled, ...patch,
+        theme, customColor, animationsEnabled, gradientEnabled, ...patch,
       }, themeChanged);
       await mergePublicProfile(activeUserId, {
         activityType: defaultActivity,
@@ -131,7 +138,7 @@ export default function SettingsPage() {
 
   const handleThemeChange = async (selectedTheme: string) => {
     setTheme(selectedTheme);
-    await applyTheme(selectedTheme, customColor, animationsEnabled);
+    await applyTheme(selectedTheme, customColor, animationsEnabled, true, gradientEnabled);
     await saveSettings({ theme: selectedTheme });
     flash("Vzhled uložen");
   };
@@ -139,7 +146,7 @@ export default function SettingsPage() {
   const handleCustomColorLiveChange = async (color: string) => {
     setCustomColor(color);
     setTheme("custom");
-    await applyTheme("custom", color, animationsEnabled);
+    await applyTheme("custom", color, animationsEnabled, true, gradientEnabled);
   };
 
   const handleCustomColorFinalSave = async () => {
@@ -150,9 +157,21 @@ export default function SettingsPage() {
 
   const handleAnimationsChange = async (enabled: boolean) => {
     setAnimationsEnabled(enabled);
-    await applyTheme(theme, customColor, enabled);
+    await applyTheme(theme, customColor, enabled, true, gradientEnabled);
     await saveSettings({ animationsEnabled: enabled });
     flash(enabled ? "Animace zapnuty" : "Animace vypnuty");
+  };
+
+  const handleGradientChange = async (enabled: boolean) => {
+    setGradientEnabled(enabled);
+    await applyTheme(theme, customColor, animationsEnabled, true, enabled);
+    try {
+      await saveSettings({ gradientEnabled: enabled });
+      flash(enabled ? "Gradient zapnutý" : "Gradient vypnutý");
+    } catch (error) {
+      console.error("Nepodařilo se uložit gradient", error);
+      flash("Nastavení gradientu se nepodařilo uložit", "error");
+    }
   };
 
   const handleHapticsChange = async (enabled: boolean) => {
@@ -328,6 +347,11 @@ export default function SettingsPage() {
             <input type="checkbox" checked={animationsEnabled} onChange={e => void handleAnimationsChange(e.target.checked)} />
           </label>
 
+          <label className="settings-animation-toggle">
+            <span><strong>Gradient efekt</strong><small>Plynulý barevný přechod pozadí. Vypnutím zůstane jedna barva.</small></span>
+            <input type="checkbox" checked={gradientEnabled} onChange={e => void handleGradientChange(e.target.checked)} />
+          </label>
+
           <div className="theme-options">
             <ThemeItem icon={<Moon size={19}/>} color="#000000" active={theme === "dark"} onClick={() => void handleThemeChange("dark")} text="Čistý černý" />
             <ThemeItem icon={<Sun size={19}/>} color="linear-gradient(180deg,#f7fbff,#dbeafe)" active={theme === "light"} onClick={() => void handleThemeChange("light")} text="Světlý režim" />
@@ -378,8 +402,16 @@ export default function SettingsPage() {
                 <input type="checkbox" checked={trainerNotifications.today} onChange={e => void updateTrainerNotifications({ today: e.target.checked })} disabled={notificationBusy} />
               </label>
               <label className="settings-notification-row">
+                <span className="settings-notification-copy"><span className="settings-notification-title">Čas dnešního upozornění</span><small>V kolik hodin se má ranní kontrola provést.</small></span>
+                <input className="settings-time-input" type="time" value={trainerNotifications.todayTime} onChange={e => void updateTrainerNotifications({ todayTime: e.target.value })} disabled={notificationBusy} />
+              </label>
+              <label className="settings-notification-row">
                 <span className="settings-notification-copy"><span className="settings-notification-title">Zítřejší plán</span><small>Večerní upozornění na trénink naplánovaný na další den.</small></span>
                 <input type="checkbox" checked={trainerNotifications.tomorrow} onChange={e => void updateTrainerNotifications({ tomorrow: e.target.checked })} disabled={notificationBusy} />
+              </label>
+              <label className="settings-notification-row">
+                <span className="settings-notification-copy"><span className="settings-notification-title">Čas zítřejšího upozornění</span><small>V kolik hodin se má večerní kontrola provést.</small></span>
+                <input className="settings-time-input" type="time" value={trainerNotifications.tomorrowTime} onChange={e => void updateTrainerNotifications({ tomorrowTime: e.target.value })} disabled={notificationBusy} />
               </label>
               <button type="button" className="tile-button settings-save-button settings-notification-action" onClick={() => void disableTrainerNotifications()} disabled={notificationBusy}>
                 {notificationBusy ? "Vypínám…" : "Vypnout notifikace"}
