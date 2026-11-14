@@ -48,7 +48,6 @@ export default function WeatherCard() {
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState("");
-  const [weatherTest, setWeatherTest] = useState<string>("");
   const loadWeather = async (forceRefresh = false) => {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 10000);
@@ -62,37 +61,10 @@ export default function WeatherCard() {
     } finally { window.clearTimeout(timeout); setLoading(false); }
   };
   useEffect(() => {
-    try { setWeatherTest(localStorage.getItem("dolni-lhota-weather-test-v1") || ""); } catch {}
     void loadWeather();
     const timer = window.setInterval(() => void loadWeather(), 30 * 60 * 1000);
     return () => window.clearInterval(timer);
   }, []);
-  const setWeatherTestMode = (mode: "wind" | "rain" | "clear" | "storm" | "") => {
-    setWeatherTest(mode);
-    try {
-      if (mode) localStorage.setItem("dolni-lhota-weather-test-v1", mode);
-      else localStorage.removeItem("dolni-lhota-weather-test-v1");
-    } catch {}
-    const root = document.documentElement;
-    if (mode) {
-      root.setAttribute("data-weather", mode);
-      root.setAttribute("data-windy", mode === "wind" ? "true" : "false");
-    } else {
-      const condition = String(weather?.current?.weatherCondition?.type || "").toUpperCase();
-      const wind = Number(weather?.current?.wind?.speed?.value || 0);
-      const isRain = condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER");
-      const isSnow = condition.includes("SNOW") || condition.includes("SLEET") || condition.includes("HAIL");
-      let realWeather = "clear";
-      if (isSnow) realWeather = wind >= 8 ? "snow-wind" : "snow";
-      else if (isRain) realWeather = wind >= 8 ? "rain-wind" : "rain";
-      else if (condition.includes("FOG")) realWeather = "fog";
-      else if (wind >= 8) realWeather = "wind";
-      else if (condition.includes("CLOUD")) realWeather = "cloudy";
-      else if (new Date().getHours() < 6 || new Date().getHours() >= 20) realWeather = "night";
-      root.setAttribute("data-weather", realWeather);
-      root.setAttribute("data-windy", wind >= 8 ? "true" : "false");
-    }
-  };
   const handleSelect = (item: string) => {
     setMenuVisible(false);
     if (item === "home") router.push("/");
@@ -123,24 +95,15 @@ export default function WeatherCard() {
         <>
           <RunWeatherRecommendation linkToWeather={false} />
 
-          <div className="weather-test-controls" aria-label="Test animací počasí">
-            <span>Test animací:</span>
-            <button type="button" className={weatherTest === "wind" ? "active" : ""} onClick={() => setWeatherTestMode("wind")}><Wind size={15}/> Vítr</button>
-            <button type="button" className={weatherTest === "rain" ? "active" : ""} onClick={() => setWeatherTestMode("rain")}><CloudRain size={15}/> Déšť</button>
-            <button type="button" className={weatherTest === "clear" ? "active" : ""} onClick={() => setWeatherTestMode("clear")}><Sun size={15}/> Slunečno</button>
-            <button type="button" className={weatherTest === "storm" ? "active" : ""} onClick={() => setWeatherTestMode("storm")}><CloudLightning size={15}/> Bouřka</button>
-            <button type="button" className={!weatherTest ? "active" : ""} onClick={() => setWeatherTestMode("")}>Reálné počasí</button>
-          </div>
-
           <div className="weather-current-grid">
             <div className="weather-current-main"><WeatherVisual type={condition?.type} size={74} className="weather-main-icon" /><div className="weather-current-copy"><strong className="weather-temperature">{Math.round(temperature ?? 0)}°C</strong><span className="weather-description">{condition?.description?.text || "Aktuální počasí"}</span>{feelsLike !== undefined && <small>Pocitově {Math.round(feelsLike)}°C</small>}</div></div>
             <div className="weather-stat-grid">
-              <div className="weather-stat-card"><Wind size={19} className="wind-icon-animated" /><strong>{wind !== undefined ? Math.round(wind) : "—"} {wind !== undefined ? windUnit : ""}</strong><small>Vítr</small></div>
+              <div className="weather-stat-card"><Wind size={19} className="" /><strong>{wind !== undefined ? Math.round(wind) : "—"} {wind !== undefined ? windUnit : ""}</strong><small>Vítr</small></div>
               <div className="weather-stat-card"><RainIcon size={19} className="weather-stat-icon" /><strong>{rainChance !== undefined ? `${rainChance}%` : "—"}</strong><small>{formatMm(currentRainMm)} · Déšť</small></div>
               <div className="weather-stat-card"><Droplets className="weather-humidity-icon" size={19} /><strong>{humidity !== undefined ? `${humidity}%` : "—"}</strong><small>Vlhkost</small></div>
             </div>
           </div>
-          {hours.length > 0 && <section className="weather-hour-section"><h3>Předpověď po hodinách</h3><div className="weather-hour-grid">{hours.map((item,index) => { const kind = weatherKind(item?.weatherCondition?.type); return <div key={item?.interval?.startTime || index} className={`weather-hour-card weather-hour-${weatherTest || kind}`}><span className="weather-hour-animation" aria-hidden="true" /><small>{hourLabel(item)}</small>{isRainType(item?.weatherCondition?.type) ? <RainIcon size={27} className="weather-hour-icon" /> : <WeatherVisual type={item?.weatherCondition?.type} size={27} className="weather-hour-icon" />}<strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong><span>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}% déšť` : "—"}</span>{item?.precipitation?.amount !== undefined && item?.precipitation?.amount !== null && <small>{formatMm(item.precipitation.amount)}</small>}</div>; })}</div></section>}
+          {hours.length > 0 && <section className="weather-hour-section"><h3>Předpověď po hodinách</h3><div className="weather-hour-grid">{hours.map((item,index) => { const kind = weatherKind(item?.weatherCondition?.type); return <div key={item?.interval?.startTime || index} className="weather-hour-card"><small>{hourLabel(item)}</small>{isRainType(item?.weatherCondition?.type) ? <RainIcon size={27} className="weather-hour-icon" /> : <WeatherVisual type={item?.weatherCondition?.type} size={27} className="weather-hour-icon" />}<strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong><span>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}% déšť` : "—"}</span>{item?.precipitation?.amount !== undefined && item?.precipitation?.amount !== null && <small>{formatMm(item.precipitation.amount)}</small>}</div>; })}</div></section>}
           <p className="weather-source">Zdroj: {weather.source || "Google Weather"} · obnoveno {lastUpdated}</p>
         </>
       )}
