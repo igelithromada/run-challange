@@ -59,7 +59,7 @@ export default function useThemeLoader() {
       if (userData.theme === "auto" || userData.theme === "weather") {
         void applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, true, userData.gradientEnabled);
       }
-    }, 30 * 60 * 1000);
+    }, 5 * 60 * 1000);
     return () => { active = false; unsub(); window.clearInterval(interval); };
   }, []);
 }
@@ -83,8 +83,11 @@ export async function applyTheme(selectedTheme: string, color: string, animation
     root.setAttribute("data-theme", "white");
   } else if (selectedTheme === "man") gradient = "linear-gradient(180deg, #2980b9, #2c3e50)";
   else if (selectedTheme === "woman") gradient = "linear-gradient(180deg, #ff7eb3, #ff758c)";
-  else if (selectedTheme === "auto") gradient = `linear-gradient(180deg, ${getColorByHour(new Date().getHours())}, #000000)`;
-  else if (selectedTheme === "custom") gradient = `linear-gradient(180deg, ${color}, #000000)`;
+  else if (selectedTheme === "auto") {
+    const timeTheme = getTimeTheme(new Date());
+    gradient = timeTheme.gradient;
+    root.setAttribute("data-auto-period", timeTheme.period);
+  } else if (selectedTheme === "custom") gradient = `linear-gradient(180deg, ${color}, #000000)`;
 
 
   // Zapiš základní nastavení před síťovým požadavkem, aby další start neproblikl.
@@ -118,11 +121,22 @@ export async function applyTheme(selectedTheme: string, color: string, animation
       const isRain = condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER");
       const isWindy = wind >= 8;
       if (selectedTheme === "weather") {
-        if (isRain) gradient = night ? "linear-gradient(180deg,#243b55,#101820)" : "linear-gradient(180deg,#5f7f99,#243b55)";
-        else if (isSnow) gradient = night ? "linear-gradient(180deg,#26384a,#16232f)" : "linear-gradient(180deg,#dbeafe,#6f8fa8)";
-        else if (condition.includes("FOG")) gradient = "linear-gradient(180deg,#7f8c8d,#46545c)";
-        else if (condition.includes("CLOUD")) gradient = night ? "linear-gradient(180deg,#293949,#1b2630)" : "linear-gradient(180deg,#8fa9bc,#4f7188)";
-        else gradient = night ? "linear-gradient(180deg,#15253d,#243b55)" : "linear-gradient(180deg,#ffd166,#4facfe)";
+        if (condition.includes("THUNDER")) gradient = night
+          ? "linear-gradient(180deg,#17152d,#34204d)"
+          : "linear-gradient(180deg,#53647f,#2f3b59)";
+        else if (isRain) gradient = night
+          ? "linear-gradient(180deg,#1b2a38,#101820)"
+          : "linear-gradient(180deg,#6688a3,#304f68)";
+        else if (isSnow) gradient = night
+          ? "linear-gradient(180deg,#1d2b3a,#101923)"
+          : "linear-gradient(180deg,#b9d4e6,#587d96)";
+        else if (condition.includes("FOG")) gradient = "linear-gradient(180deg,#74818a,#414b52)";
+        else if (condition.includes("CLOUD")) gradient = night
+          ? "linear-gradient(180deg,#202d3a,#17212a)"
+          : "linear-gradient(180deg,#8fa9bc,#496c83)";
+        else gradient = night
+          ? "linear-gradient(180deg,#17253a,#293e61)"
+          : "linear-gradient(180deg,#f2b95f,#438bc0)";
         root.style.setProperty("--main-gradient", gradient);
       }
       root.style.setProperty("--wind-strength", String(Math.min(1, Math.max(0.15, wind / 45))));
@@ -155,12 +169,14 @@ export async function applyTheme(selectedTheme: string, color: string, animation
   root.style.setProperty("--main-gradient", gradient);
 }
 
-const getColorByHour = (hour: number): string => {
-  let lightness = 90;
-  if (hour < 6) lightness = 20;
-  else if (hour < 10) lightness = 70;
-  else if (hour < 16) lightness = 90;
-  else if (hour < 20) lightness = 60;
-  else lightness = 30;
-  return `hsl(200, 70%, ${lightness}%)`;
-};
+function getTimeTheme(date: Date): { period: string; gradient: string } {
+  const hour = date.getHours();
+  if (hour < 5) return { period: "noc", gradient: "linear-gradient(180deg,#111827,#24163d)" };
+  if (hour < 7) return { period: "svitani", gradient: "linear-gradient(180deg,#433b72,#e69a6b)" };
+  if (hour < 10) return { period: "rano", gradient: "linear-gradient(180deg,#4d8fc4,#6fc2d8)" };
+  if (hour < 13) return { period: "dopoledne", gradient: "linear-gradient(180deg,#3c98cf,#4f78b8)" };
+  if (hour < 16) return { period: "odpoledne", gradient: "linear-gradient(180deg,#2e8fc0,#536fb0)" };
+  if (hour < 19) return { period: "zapad", gradient: "linear-gradient(180deg,#d77d68,#5869a5)" };
+  if (hour < 22) return { period: "soumrak", gradient: "linear-gradient(180deg,#30486d,#2a3155)" };
+  return { period: "noc", gradient: "linear-gradient(180deg,#111827,#24163d)" };
+}
