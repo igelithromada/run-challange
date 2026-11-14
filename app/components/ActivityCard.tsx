@@ -259,7 +259,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
         <footer className="activity-card-actions activity-social-actions">
           <button
             type="button"
-            className={`activity-social-button ${liked ? "is-liked" : ""}`}
+            className={`activity-social-button ${liked ? "is-liked" : ""} ${likeCount > 0 ? "has-likes" : ""}`}
             onClick={() => { if (!likeLongPressTriggered.current) void toggleLike(); likeLongPressTriggered.current = false; }}
             onPointerDown={startLikeLongPress}
             onPointerUp={cancelLikeLongPress}
@@ -271,10 +271,10 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
           >
             <Heart size={20} fill={liked ? "currentColor" : "none"} /><span>{likeCount}</span>
           </button>
-          <button type="button" className="activity-social-button" onClick={() => void loadSocial("comments")} aria-label={`Komentáře · ${commentCount}`}>
+          <button type="button" className={`activity-social-button ${commentCount > 0 ? "has-comments" : ""}`} onClick={() => void loadSocial("comments")} aria-label={`Komentáře · ${commentCount}`}>
             <MessageCircle size={20} /><span>{commentCount}</span>
           </button>
-          {images.length > 0 && <button type="button" className="activity-social-button" onClick={() => onPhotosClick(images, run.imageUrl || "")} aria-label={`Fotografie · ${images.length}`}>
+          {images.length > 0 && <button type="button" className={`activity-social-button ${images.length > 0 ? "has-photos" : ""}`} onClick={() => onPhotosClick(images, run.imageUrl || "")} aria-label={`Fotografie · ${images.length}`}>
             <Camera size={20} /><span>{images.length}</span>
           </button>}
           <span className="activity-actions-spacer" />
