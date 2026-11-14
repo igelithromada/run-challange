@@ -20,11 +20,11 @@
 .run-profile-icon { width:26px; height:26px; flex:0 0 auto; }
 .run-profile-icon path { stroke-linecap:round; stroke-linejoin:round; }
 .progress-goal-inputs { grid-template-columns:repeat(2,minmax(0,1fr)); }
-html[data-animations="false"] body::before { display:none !important; animation:none !important; }
+
 html[data-animations="true"][data-weather="rain"] body::before,
 html[data-animations="true"][data-weather="rain-wind"] body::before,
 html[data-animations="true"][data-weather="snow"] body::before,
-html[data-animations="true"][data-weather="snow-wind"] body::before { z-index:1; pointer-events:none; }
+
 
 /* Počasí je nad pozadím stránky, ale vždy pod obsahem aplikace. */
 body > * { position:relative; z-index:2; }
@@ -36,45 +36,15 @@ body > * { position:relative; z-index:2; }
 
 
 /* Počasí na pozadí: oblačnost, slunce, mlha a poryvy větru */
-html[data-animations="true"][data-weather="cloudy"] body::before {
-  opacity: .25;
-  background-image:
-    radial-gradient(ellipse 32% 18% at 18% 24%, rgba(255,255,255,.48) 0 45%, transparent 72%),
-    radial-gradient(ellipse 38% 22% at 62% 48%, rgba(255,255,255,.35) 0 45%, transparent 72%),
-    radial-gradient(ellipse 30% 17% at 88% 18%, rgba(255,255,255,.3) 0 45%, transparent 72%);
-  background-size: 150% 100%;
-  animation: weather-clouds 34s ease-in-out infinite alternate;
-}
-html[data-animations="true"][data-weather="fog"] body::before {
-  opacity: .32;
-  background-image: linear-gradient(180deg, transparent 25%, rgba(225,238,244,.28) 48%, transparent 68%);
-  background-size: 100% 180%;
-  animation: weather-fog 18s ease-in-out infinite alternate;
-}
-html[data-animations="true"][data-weather="wind"] body::before {
-  opacity: .24;
-  background-image: repeating-linear-gradient(175deg, transparent 0 42px, rgba(225,245,255,.3) 43px 45px, transparent 46px 86px);
-  background-size: 180% 100%;
-  animation: weather-wind 5s linear infinite;
-}
-html[data-animations="true"][data-weather="clear"] body::before {
-  opacity: .34;
-  background-image: radial-gradient(ellipse at 82% 12%, rgba(255,222,130,.52), rgba(255,201,100,.13) 24%, transparent 52%);
-  animation: weather-sun 8s ease-in-out infinite alternate;
-}
-html[data-animations="true"][data-weather="night"] body::before {
-  opacity: .3;
-  background-image:
-    radial-gradient(2px 2px at 18% 22%, rgba(255,255,255,.9) 98%, transparent),
-    radial-gradient(1px 1px at 72% 18%, rgba(255,255,255,.8) 98%, transparent),
-    radial-gradient(2px 2px at 48% 62%, rgba(255,255,255,.7) 98%, transparent),
-    radial-gradient(1px 1px at 88% 72%, rgba(255,255,255,.8) 98%, transparent);
-  background-size: 240px 180px;
-}
-@keyframes weather-clouds { from { transform: translate3d(-2%,0,0); } to { transform: translate3d(3%,1%,0); } }
-@keyframes weather-fog { from { transform: translate3d(-2%,0,0); opacity:.18; } to { transform: translate3d(2%,0,0); opacity:.36; } }
-@keyframes weather-wind { from { transform: translate3d(-5%,0,0); } to { transform: translate3d(5%,0,0); } }
-@keyframes weather-sun { from { opacity:.2; } to { opacity:.42; } }
+
+
+
+
+
+
+
+
+
 @media (prefers-reduced-motion: reduce) {
   html[data-animations="true"] body::before { animation: none !important; }
 }
@@ -162,9 +132,9 @@ html[data-animations="true"][data-weather="night"] body::before {
 .site-sidebar-panel { isolation:isolate; overflow:hidden !important; position:relative; }
 .site-sidebar-panel::before { content:""; position:absolute; inset:-12%; z-index:0; pointer-events:none; opacity:0; border-radius:inherit; background:radial-gradient(ellipse at 25% 20%, rgba(255,255,255,.18), transparent 58%); transform:translate3d(0,0,0); }
 .site-sidebar-panel > * { position:relative; z-index:1; }
-html[data-animations="true"][data-weather] .site-sidebar-panel::before { opacity:.55; animation:sidebar-weather-drift 24s ease-in-out infinite alternate; }
+
 @keyframes sidebar-weather-drift { from { transform:translate3d(-1%,0,0); } to { transform:translate3d(1%,1%,0); } }
-html[data-animations="false"] .site-sidebar-panel::before { display:none !important; animation:none !important; }
+
 @media (prefers-reduced-motion: reduce) { .site-sidebar-panel::before { animation:none !important; } }
 .activity-card-meta { border-radius:14px !important; overflow:hidden; padding:.55rem .7rem; background:rgba(255,255,255,.08) !important; border:1px solid rgba(255,255,255,.08); }
 .activity-card { border-radius:var(--card-radius,18px) !important; }
