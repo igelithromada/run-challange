@@ -130,8 +130,10 @@ function NotificationsBell() {
     if (notification.runId) window.location.href = `/#run-${notification.runId}`;
   };
 
+  if (unreadCount <= 0 && !open) return null;
+
   return <div className="notification-wrap">
-    <button type="button" className="site-navbar-button notification-button" onClick={() => { setOpen(value => !value); void load(); }} aria-label={unreadCount ? `Upozornění, ${unreadCount} nepřečtených` : "Upozornění"}>
+    <button type="button" className="site-navbar-button notification-button" onClick={() => { setOpen(value => !value); void load(); }} aria-label={`Upozornění, ${unreadCount} nepřečtených`}>
       <Bell size={21} strokeWidth={2.2} aria-hidden="true" />
       {unreadCount > 0 && <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>}
     </button>
