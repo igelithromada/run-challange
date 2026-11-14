@@ -6,7 +6,7 @@ import type { WeatherResponse } from "../lib/weather";
 import { auth } from "../lib/firebase";
 import { getUserProfile } from "../lib/services/users";
 import Link from "next/link";
-import { CloudSun, CloudRain, CloudSnow, Wind, AlertTriangle, CheckCircle2, Moon, Sun } from "lucide-react";
+import { CloudSun, CloudRain, CloudSnow, Wind, AlertTriangle, CheckCircle2, Moon } from "lucide-react";
 import { ActivityType, ActivityTypeIcon } from "./ActivityTypeSelector";
 
 export default function RunWeatherRecommendation({
