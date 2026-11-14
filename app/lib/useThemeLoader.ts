@@ -51,13 +51,13 @@ export default function useThemeLoader() {
           await applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, false, userData.gradientEnabled);
         } else {
           userData = cached;
-          await applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, false);
+          await applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, false, userData.gradientEnabled);
         }
       } catch (error) { console.error("Nepodařilo se načíst vzhled", error); }
     });
     const interval = window.setInterval(() => {
       if (userData.theme === "auto" || userData.theme === "weather") {
-        void applyTheme(userData.theme, userData.customColor, userData.animationsEnabled);
+        void applyTheme(userData.theme, userData.customColor, userData.animationsEnabled, true, userData.gradientEnabled);
       }
     }, 30 * 60 * 1000);
     return () => { active = false; unsub(); window.clearInterval(interval); };
@@ -136,6 +136,10 @@ export async function applyTheme(selectedTheme: string, color: string, animation
       else if (condition.includes("CLOUD")) weather = "cloudy";
       else if (night) weather = "night";
       root.setAttribute("data-weather", weather);
+      if (!gradientEnabled && selectedTheme === "weather") {
+        const match = gradient.match(/linear-gradient\\(180deg,\\s*([^,\\)]+)/i);
+        if (match?.[1]) gradient = match[1].trim();
+      }
       try {
         const testMode = localStorage.getItem("dolni-lhota-weather-test-v1");
         if (testMode) {
