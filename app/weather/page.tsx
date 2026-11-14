@@ -72,8 +72,19 @@ export default function WeatherCard() {
       root.setAttribute("data-weather", mode);
       root.setAttribute("data-windy", mode === "wind" ? "true" : "false");
     } else {
-      root.removeAttribute("data-weather");
-      root.removeAttribute("data-windy");
+      const condition = String(weather?.current?.weatherCondition?.type || "").toUpperCase();
+      const wind = Number(weather?.current?.wind?.speed?.value || 0);
+      const isRain = condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER");
+      const isSnow = condition.includes("SNOW") || condition.includes("SLEET") || condition.includes("HAIL");
+      let realWeather = "clear";
+      if (isSnow) realWeather = wind >= 8 ? "snow-wind" : "snow";
+      else if (isRain) realWeather = wind >= 8 ? "rain-wind" : "rain";
+      else if (condition.includes("FOG")) realWeather = "fog";
+      else if (wind >= 8) realWeather = "wind";
+      else if (condition.includes("CLOUD")) realWeather = "cloudy";
+      else if (new Date().getHours() < 6 || new Date().getHours() >= 20) realWeather = "night";
+      root.setAttribute("data-weather", realWeather);
+      root.setAttribute("data-windy", wind >= 8 ? "true" : "false");
     }
   };
   const current = weather?.current;
