@@ -5175,3 +5175,84 @@ html[data-animations="true"][data-weather="storm"] .weather-animation-overlay{
   color-scheme:dark!important;font-weight:800!important;text-align:center!important;
 }
 .settings-time-row .settings-time-input:focus{outline:2px solid rgba(54,209,220,.55);outline-offset:2px}
+
+
+/* =====================================================================
+   THEME SYSTEM – explicit contrast for clean black/white + dynamic themes
+   ===================================================================== */
+html[data-theme="dark"] {
+  --ui-bg: #151515; --ui-bg-soft: #202020; --ui-bg-hover: #2b2b2b;
+  --ui-border: #3b3b3b; --ui-border-strong: #555;
+  --ui-text: #ffffff; --ui-muted: #c5c5c5; --ui-muted-strong: #e4e4e4;
+  --control-background: #242424; --control-background-hover: #303030; --control-background-active: #3a3a3a;
+  --card-background: #171717; --card-border: 1px solid #3b3b3b;
+  --card-shadow: 0 4px 18px rgba(0,0,0,.35);
+}
+html[data-theme="white"] {
+  --ui-bg: #f3f5f7; --ui-bg-soft: #ffffff; --ui-bg-hover: #e9edf1;
+  --ui-border: #cbd3db; --ui-border-strong: #aeb8c2;
+  --ui-text: #18212a; --ui-muted: #5c6873; --ui-muted-strong: #394651;
+  --control-background: #ffffff; --control-background-hover: #edf1f4; --control-background-active: #e2e8ed;
+  --card-background: #f7f8fa; --card-border: 1px solid #cbd3db;
+  --card-shadow: 0 4px 18px rgba(31,41,55,.10);
+}
+html[data-theme="dark"] body, html[data-theme="white"] body { color: var(--ui-text); }
+html[data-theme="dark"] .tile, html[data-theme="white"] .tile,
+html[data-theme="dark"] .list-tile, html[data-theme="white"] .list-tile {
+  background: var(--card-background) !important; border: var(--card-border) !important; color: var(--ui-text);
+}
+html[data-theme="dark"] .tile-button, html[data-theme="white"] .tile-button,
+html[data-theme="dark"] .avatar-upload-button, html[data-theme="white"] .avatar-upload-button {
+  background: var(--control-background) !important; border-color: var(--ui-border-strong) !important; color: var(--ui-text) !important;
+}
+html[data-theme="dark"] .tile-button:hover, html[data-theme="white"] .tile-button:hover { background: var(--control-background-hover) !important; }
+html[data-theme="dark"] input, html[data-theme="dark"] select, html[data-theme="dark"] textarea,
+html[data-theme="white"] input, html[data-theme="white"] select, html[data-theme="white"] textarea {
+  background: var(--ui-bg-soft) !important; color: var(--ui-text) !important; border-color: var(--ui-border) !important;
+}
+html[data-theme="dark"] input::placeholder, html[data-theme="dark"] textarea::placeholder,
+html[data-theme="white"] input::placeholder, html[data-theme="white"] textarea::placeholder {
+  color: var(--ui-muted) !important;
+}
+html[data-theme="white"] .settings-section-heading p, html[data-theme="white"] .settings-notification-copy small,
+html[data-theme="white"] .settings-notification-times, html[data-theme="white"] .theme-option small,
+html[data-theme="white"] .settings-avatar-copy p, html[data-theme="white"] .settings-avatar-copy small,
+html[data-theme="dark"] .settings-section-heading p, html[data-theme="dark"] .settings-notification-copy small,
+html[data-theme="dark"] .settings-notification-times, html[data-theme="dark"] .theme-option small,
+html[data-theme="dark"] .settings-avatar-copy p, html[data-theme="dark"] .settings-avatar-copy small {
+  color: var(--ui-muted) !important; opacity: 1 !important;
+}
+html[data-theme="white"] .theme-option, html[data-theme="dark"] .theme-option,
+html[data-theme="white"] .settings-notification-row, html[data-theme="dark"] .settings-notification-row,
+html[data-theme="white"] .settings-animation-toggle, html[data-theme="dark"] .settings-animation-toggle {
+  color: var(--ui-text) !important; border-color: var(--ui-border) !important; background: var(--ui-bg-soft) !important;
+}
+html[data-theme="white"] .theme-option.active, html[data-theme="dark"] .theme-option.active {
+  background: var(--control-background-active) !important; border-color: var(--ui-border-strong) !important;
+}
+html[data-theme="white"] .settings-time-input, html[data-theme="white"] .date-field input { color-scheme: light; }
+html[data-theme="dark"] .settings-time-input, html[data-theme="dark"] .date-field input { color-scheme: dark; }
+html[data-theme="white"] .link { color: #1769aa; }
+html[data-theme="dark"] .link { color: #79c8ff; }
+html[data-theme="white"] .team-card-joined, html[data-theme="white"] .run-weather-recommendation,
+html[data-theme="white"] .run-weather-icon, html[data-theme="white"] .settings-avatar-preview,
+html[data-theme="white"] .teams-current-icon, html[data-theme="white"] .teams-create-icon,
+html[data-theme="white"] .team-avatar {
+  background: #e9eef2 !important; color: var(--ui-text) !important;
+}
+html[data-theme="white"] .run-weather-copy p, html[data-theme="white"] .run-weather-copy small,
+html[data-theme="white"] .run-weather-eyebrow, html[data-theme="white"] .teams-header p,
+html[data-theme="white"] .teams-section-heading p {
+  color: var(--ui-muted) !important; opacity: 1 !important;
+}
+html[data-theme="white"] .site-navbar, html[data-theme="white"] .site-sidebar-panel {
+  background: #ffffff !important; border-color: #cbd3db !important; color: var(--ui-text) !important;
+}
+html[data-theme="dark"] .site-navbar, html[data-theme="dark"] .site-sidebar-panel {
+  background: #111111 !important; border-color: #3b3b3b !important; color: var(--ui-text) !important;
+}
+html[data-theme="white"] .site-navbar *, html[data-theme="white"] .site-sidebar-panel *,
+html[data-theme="dark"] .site-navbar *, html[data-theme="dark"] .site-sidebar-panel * { color: inherit; }
+html[data-theme="auto"], html[data-theme="weather"] {
+  --ui-text: #ffffff; --ui-muted: rgba(255,255,255,.82); --ui-muted-strong: rgba(255,255,255,.94);
+}
