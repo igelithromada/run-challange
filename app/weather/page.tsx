@@ -26,9 +26,10 @@ function weatherKind(type = "") {
 }
 function WeatherVisual({ type, size, className = "" }: { type?: string; size: number; className?: string }) {
   const kind = weatherKind(type);
-  if (kind === "partly") return <span className={`weather-visual weather-visual-partly ${className}`} style={{ width: size, height: size }}><Sun className="weather-sun" size={Math.round(size * .62)} strokeWidth={1.7} /><Cloud className="weather-cloud" size={Math.round(size * .72)} strokeWidth={1.8} /></span>;
   const Icon = kind === "storm" ? CloudLightning : kind === "snow" ? CloudSnow : kind === "rain" ? CloudRain : kind === "drizzle" ? CloudDrizzle : kind === "fog" ? CloudFog : kind === "cloud" ? Cloud : Sun;
-  return <Icon className={`weather-visual weather-visual-${kind} ${className}`} size={size} strokeWidth={1.7} />;
+  return <span className={`weather-visual-wrap weather-visual-${kind} ${className}`} style={{ width: size, height: size }}>
+    {kind === "partly" ? <><Sun className="weather-sun" size={Math.round(size * .58)} strokeWidth={1.7} /><Cloud className="weather-cloud" size={Math.round(size * .68)} strokeWidth={1.8} /></> : <Icon className="weather-visual-icon" size={Math.round(size * .72)} strokeWidth={1.7} />}
+  </span>;
 }
 function RainIcon({ size = 22, className = "" }: { size?: number; className?: string }) {
   return <span className={`weather-rain-combo ${className}`} style={{ width: size, height: size }}><Cloud size={size} strokeWidth={1.8} /><Droplets className="weather-rain-drops" size={Math.max(10, Math.round(size * .55))} strokeWidth={2.4} /></span>;
@@ -139,7 +140,7 @@ export default function WeatherCard() {
               <div className="weather-stat-card"><Droplets className="weather-humidity-icon" size={19} /><strong>{humidity !== undefined ? `${humidity}%` : "—"}</strong><small>Vlhkost</small></div>
             </div>
           </div>
-          {hours.length > 0 && <section className="weather-hour-section"><h3>Předpověď po hodinách</h3><div className="weather-hour-grid">{hours.map((item,index) => <div key={item?.interval?.startTime || index} className="weather-hour-card"><small>{hourLabel(item)}</small>{isRainType(item?.weatherCondition?.type) ? <RainIcon size={27} className="weather-hour-icon" /> : <WeatherVisual type={item?.weatherCondition?.type} size={27} className="weather-hour-icon" />}<strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong><span>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}% déšť` : "—"}</span>{item?.precipitation?.amount !== undefined && item?.precipitation?.amount !== null && <small>{formatMm(item.precipitation.amount)}</small>}</div>)}</div></section>}
+          {hours.length > 0 && <section className="weather-hour-section"><h3>Předpověď po hodinách</h3><div className="weather-hour-grid">{hours.map((item,index) => { const kind = weatherKind(item?.weatherCondition?.type); return <div key={item?.interval?.startTime || index} className={`weather-hour-card weather-hour-${kind}`}><span className="weather-hour-animation" aria-hidden="true" /><small>{hourLabel(item)}</small>{isRainType(item?.weatherCondition?.type) ? <RainIcon size={27} className="weather-hour-icon" /> : <WeatherVisual type={item?.weatherCondition?.type} size={27} className="weather-hour-icon" />}<strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong><span>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}% déšť` : "—"}</span>{item?.precipitation?.amount !== undefined && item?.precipitation?.amount !== null && <small>{formatMm(item.precipitation.amount)}</small>}</div>; })}</div></section>}
           <p className="weather-source">Zdroj: {weather.source || "Google Weather"} · obnoveno {lastUpdated}</p>
         </>
       )}
