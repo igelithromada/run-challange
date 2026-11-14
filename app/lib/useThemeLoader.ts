@@ -90,7 +90,9 @@ export async function applyTheme(selectedTheme: string, color: string, gradientE
       "#36D1DC";
     gradient = solid;
   }
-  root.style.setProperty("--main-gradient", gradient);\n  const accent = activeTheme === "custom" ? color : activeTheme === "dark" ? "#2f2f2f" : gradient.match(/#[0-9a-fA-F]{6}/)?.[0] || "#36D1DC";\n  root.style.setProperty("--theme-accent", accent);
+  root.style.setProperty("--main-gradient", gradient);
+  const accent = activeTheme === "custom" ? color : activeTheme === "dark" ? "#2f2f2f" : gradient.match(/#[0-9a-fA-F]{6}/)?.[0] || "#36D1DC";
+  root.style.setProperty("--theme-accent", accent);
 
   if (activeTheme === "weather") {
     try {
