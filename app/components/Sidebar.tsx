@@ -113,7 +113,7 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
           <span className="site-sidebar-profile-icon"><UserRound size={22} aria-hidden="true" /></span>
           <span className="site-sidebar-profile-copy">
             <strong>{nickname || "Můj účet"}</strong>
-            <small>{email || "Profil, heslo a odhlášení"}</small>
+            <small>{email || "Můj účet"}</small>
           </span>
         </button>
         <div className="site-sidebar-grid">
