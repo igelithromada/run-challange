@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Smartphone } from "lucide-react";
+import { Download } from "lucide-react";
 import { ActivityTypeIcon } from "./ActivityTypeSelector";
 import type { ActivityType } from "../types";
 
