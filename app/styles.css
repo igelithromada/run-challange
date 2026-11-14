@@ -1293,7 +1293,7 @@ body > * { position: relative; z-index: 1; }
 @media (prefers-reduced-motion: reduce) { .site-sidebar-panel::before { animation:none !important; } }
 .activity-card-meta { border-radius:14px !important; overflow:hidden; padding:.55rem .7rem; background:rgba(255,255,255,.08) !important; border:1px solid rgba(255,255,255,.08); }
 .activity-card { border-radius:var(--card-radius,18px) !important; }
-.site-sidebar-item { background:var(--control-background,rgba(255,255,255,.16)); border-color:rgba(255,255,255,.12); border-radius:var(--control-radius,16px); }
+.site-sidebar-item { background:var(--control-background,rgba(255,255,255,.16)); border-color:rgba(255,255,255,.12); border-radius:var(--control-radius,16px); color:var(--ui-text,#fff) !important; }
 .site-sidebar-panel > .site-sidebar-item { min-height:82px; padding:.6rem .35rem !important; font-size:clamp(.72rem,2.6vw,.95rem) !important; }
 
 /* Finální sjednocení panelu – přepíše i původní modalové rozložení. */
