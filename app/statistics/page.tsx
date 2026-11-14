@@ -23,6 +23,12 @@ export default function StatisticsPage() {
   const [avatars, setAvatars] = useState<Record<string, string>>({});
   const [user, setUser] = useState<AuthUser | null>(null);
   const [selectedType, setSelectedType] = useState<ActivityType>("běh");
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
+      if (cached === "běh" || cached === "chůze") setSelectedType(cached);
+    } catch {}
+  }, []);
   const [view, setView] = useState("já");
   const [metric, setMetric] = useState("km");
   const [startDate, setStartDate] = useState("");
