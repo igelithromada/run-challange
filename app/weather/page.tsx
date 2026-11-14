@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { WeatherHour, WeatherResponse } from "../lib/weather";
 import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudSnow, Sun, Wind, Droplets, RefreshCw } from "lucide-react";
 import RunWeatherRecommendation from "../components/RunWeatherRecommendation";
+import Navbar from "../components/Navbar";
+import Sidebar from "../components/Sidebar";
 
 function isRainType(type = "") {
   const value = type.toUpperCase();
@@ -39,6 +42,8 @@ function hourLabel(item: WeatherHour) {
 function formatMm(value?: number | null) { return value !== undefined && value !== null ? `${value.toFixed(value >= 10 ? 0 : 1)} mm` : "—"; }
 
 export default function WeatherCard() {
+  const router = useRouter();
+  const [menuVisible, setMenuVisible] = useState(false);
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState("");
@@ -87,6 +92,14 @@ export default function WeatherCard() {
       root.setAttribute("data-windy", wind >= 8 ? "true" : "false");
     }
   };
+  const handleSelect = (item: string) => {
+    setMenuVisible(false);
+    if (item === "home") router.push("/");
+    else if (item === "weather") router.push("/weather");
+    else if (item === "settings") router.push("/settings");
+    else if (item === "routes") router.push("/routes");
+    else router.push("/");
+  };
   const current = weather?.current;
   const condition = current?.weatherCondition;
   const hours = (weather?.hourly || []).slice(0, 8);
@@ -99,7 +112,11 @@ export default function WeatherCard() {
   const currentRainMm = current?.precipitation?.amount;
   const humidity = current?.relativeHumidity;
   return (
-    <section className="tile weather-card weather-card-improved" aria-label="Předpověď počasí">
+    <>
+      <Navbar title="Počasí" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
+      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+      <main className="container weather-page">
+        <section className="tile weather-card weather-card-improved" aria-label="Předpověď počasí">
       <div className="weather-card-heading"><div><h2>Počasí pro pohyb</h2><p>Dolní Lhota u Ostravy</p></div><button type="button" className="ui-icon-button weather-refresh-button" onClick={() => void loadWeather(true)} aria-label="Obnovit počasí" title="Obnovit počasí"><RefreshCw size={18} /></button></div>
       {loading && !weather ? <p className="weather-loading">Načítám předpověď…</p> : !weather?.configured ? <div className="weather-message"><strong>Google Počasí čeká na propojení</strong><p>Je potřeba doplnit klíč Google Weather API do nastavení projektu na Vercelu.</p></div> : weather?.error || !current ? <p className="weather-message">{weather?.error || "Předpověď není momentálně dostupná."}</p> : (
         <>
@@ -126,6 +143,8 @@ export default function WeatherCard() {
           <p className="weather-source">Zdroj: {weather.source || "Google Weather"} · obnoveno {lastUpdated}</p>
         </>
       )}
-    </section>
+        </section>
+      </main>
+    </>
   );
 }
