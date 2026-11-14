@@ -22,6 +22,12 @@ export default function RecordsPage() {
   const router = useRouter();
   const [menuVisible,setMenuVisible] = useState(false);
   const [selectedType,setSelectedType] = useState<"běh"|"chůze">("běh");
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
+      if (cached === "běh" || cached === "chůze") setSelectedType(cached);
+    } catch {}
+  }, []);
   const [lightbox,setLightbox] = useState<{urls:string[];index:number}|null>(null);
 
   const runsQuery = useMemo(() => userRunsQuery(id || "__none__"), [id]);
