@@ -62,39 +62,40 @@ export default function useThemeLoader() {
   }, []);
 }
 
-export async function applyTheme(selectedTheme: string, color: string, gradientEnabled = true) {
+export async function applyTheme(activeTheme: string, color: string, gradientEnabled = true) {
+  const activeTheme = ["default", "dark", "auto", "weather", "custom"].includes(selectedTheme) ? selectedTheme : "default";
   let gradient = "linear-gradient(180deg, #36D1DC, #5B86E5)";
   const root = document.documentElement;
   root.removeAttribute("data-weather");
 
   root.removeAttribute("data-theme");
-  if (selectedTheme === "dark") {
+  if (activeTheme === "dark") {
     gradient = "#000000";
     root.setAttribute("data-theme", "dark");
-  } else if (selectedTheme === "light") {
+  } else if (activeTheme === "light") {
     gradient = "#eef6fb";
     root.setAttribute("data-theme", "light");
-  } else if (selectedTheme === "white") {
+  } else if (activeTheme === "white") {
     gradient = "#ffffff";
     root.setAttribute("data-theme", "white");
-  } else if (selectedTheme === "man") gradient = "linear-gradient(180deg, #2980b9, #2c3e50)";
-  else if (selectedTheme === "woman") gradient = "linear-gradient(180deg, #ff7eb3, #ff758c)";
-  else if (selectedTheme === "auto") {
+  } else if (activeTheme === "man") gradient = "linear-gradient(180deg, #2980b9, #2c3e50)";
+  else if (activeTheme === "woman") gradient = "linear-gradient(180deg, #ff7eb3, #ff758c)";
+  else if (activeTheme === "auto") {
     const timeTheme = getTimeTheme(new Date());
     gradient = timeTheme.gradient;
     root.setAttribute("data-auto-period", timeTheme.period);
-  } else if (selectedTheme === "custom") gradient = `linear-gradient(180deg, ${color}, #000000)`;
+  } else if (activeTheme === "custom") gradient = `linear-gradient(180deg, ${color}, #000000)`;
 
 
   // Zapiš základní nastavení před síťovým požadavkem, aby další start neproblikl.
-  writeThemeCache({ theme: selectedTheme, customColor: color, gradientEnabled, savedAt: Date.now() });
+  writeThemeCache({ theme: activeTheme, customColor: color, gradientEnabled, savedAt: Date.now() });
   if (!gradientEnabled) {
-    const solid = selectedTheme === "dark" ? "#000000" : selectedTheme === "light" ? "#eef6fb" : selectedTheme === "white" ? "#ffffff" : selectedTheme === "woman" ? "#ff7eb3" : selectedTheme === "man" ? "#2980b9" : selectedTheme === "custom" ? color : "#36D1DC";
+    const solid = activeTheme === "dark" ? "#000000" : activeTheme === "light" ? "#eef6fb" : activeTheme === "white" ? "#ffffff" : activeTheme === "woman" ? "#ff7eb3" : activeTheme === "man" ? "#2980b9" : activeTheme === "custom" ? color : "#36D1DC";
     gradient = solid;
   }
   root.style.setProperty("--main-gradient", gradient);
 
-  if (selectedTheme === "weather") {
+  if (activeTheme === "weather") {
     try {
       const controller = new AbortController();
       const timeout = window.setTimeout(() => controller.abort(), 8_000);
@@ -115,7 +116,7 @@ export async function applyTheme(selectedTheme: string, color: string, gradientE
       const isSnow = condition.includes("SNOW") || condition.includes("SLEET") || condition.includes("HAIL");
       const isRain = condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER");
       const isWindy = wind >= 8;
-      if (selectedTheme === "weather") {
+      if (activeTheme === "weather") {
         if (condition.includes("THUNDER")) gradient = night
           ? "linear-gradient(180deg,#17152d,#34204d)"
           : "linear-gradient(180deg,#53647f,#2f3b59)";
@@ -143,7 +144,7 @@ export async function applyTheme(selectedTheme: string, color: string, gradientE
       else if (condition.includes("CLOUD")) weather = "cloudy";
       else if (night) weather = "night";
       root.setAttribute("data-weather", weather);
-      if (!gradientEnabled && selectedTheme === "weather") {
+      if (!gradientEnabled && activeTheme === "weather") {
         const firstStop = gradient.split(",")[1]?.replace(")", "").trim();
         if (firstStop) gradient = firstStop;
       }
