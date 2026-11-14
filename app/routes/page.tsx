@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import RouteMap from "../components/RouteMap";
-import { routeGroups, type RouteGroup, type RouteItem } from "../lib/routes";
+import { type RouteGroup, type RouteItem } from "../lib/routes";
 import { getRecommendedRouteGroups } from "../lib/recommendedRoutes";
 import { auth } from "../lib/firebase";
 import useAdminGuard from "../lib/useAdminGuard";
@@ -15,7 +15,8 @@ import { showAppToast } from "../components/AppToast";
 export default function RoutesPage() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [allGroups, setAllGroups] = useState<RouteGroup[]>(routeGroups);
+  const [allGroups, setAllGroups] = useState<RouteGroup[]>([]);
+  const [routesLoading, setRoutesLoading] = useState(true);
   const [selectedRoute, setSelectedRoute] = useState<{ route: RouteItem; groupTitle: string } | null>(null);
   const [routeFile, setRouteFile] = useState<File | null>(null);
   const [routeName, setRouteName] = useState("");
@@ -25,15 +26,15 @@ export default function RoutesPage() {
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
   const [showRouteForm, setShowRouteForm] = useState(false);
   const [routeSort, setRouteSort] = useState<"shortest" | "longest">("shortest");
-  const [routeActivity, setRouteActivity] = useState<"all" | "běh" | "chůze">("all");
   const adminAccess = useAdminGuard();
 
   React.useEffect(() => {
     let active = true;
     void getRecommendedRouteGroups().then(groups => {
-      if (!active || !groups.length) return;
+      if (!active) return;
       setAllGroups(groups);
-    });
+      setRoutesLoading(false);
+    }).catch(() => { if (active) setRoutesLoading(false); });
     return () => { active = false; };
   }, []);
 
@@ -147,7 +148,6 @@ export default function RoutesPage() {
 
   const visibleRoutes = allGroups
     .flatMap(group => group.routes.map(route => ({ route, groupTitle: group.title })))
-    .filter(({ route }) => routeActivity === "all" || route.activity === "běh i chůze" || route.activity === routeActivity)
     .sort((a, b) => {
       const parseDistanceKm = (value: string) => {
         const normalized = value.replace(",", ".").replace("~", "").trim().toLowerCase();
@@ -189,10 +189,6 @@ export default function RoutesPage() {
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
       <main className="container routes-page">
-        <header className="routes-header">
-          <h1>Doporučené trasy</h1>
-        </header>
-
         {adminAccess === "allowed" && showRouteForm && (
           <section className="tile routes-admin-form-panel">
             <div className="admin-section-heading">
@@ -254,11 +250,6 @@ export default function RoutesPage() {
           @media(max-width:620px){.routes-disabled-row{align-items:stretch;flex-direction:column}.routes-disabled-actions{width:100%}.routes-disabled-actions button{flex:1;min-width:0}}\n          @media(max-width:520px){.route-detail-modal{padding:.75rem}.route-detail-map .route-map-shell{height:calc(100vh - 250px);min-height:300px}.route-detail-header h2{font-size:1.25rem}}
         `}</style>
         <div className="routes-toolbar">
-          <div className="routes-filter-toolbar" aria-label="Filtr tras"><span>Aktivita:</span>
-            <button type="button" className={routeActivity === "all" ? "active" : ""} onClick={() => setRouteActivity("all")}>Vše</button>
-            <button type="button" className={routeActivity === "běh" ? "active" : ""} onClick={() => setRouteActivity("běh")}>Běh</button>
-            <button type="button" className={routeActivity === "chůze" ? "active" : ""} onClick={() => setRouteActivity("chůze")}>Chůze</button>
-          </div>
           <div className="routes-sort-toolbar" aria-label="Řazení tras">
             <button type="button" className={routeSort === "shortest" ? "active" : ""} onClick={() => setRouteSort("shortest")}>Nejkratší</button>
             <button type="button" className={routeSort === "longest" ? "active" : ""} onClick={() => setRouteSort("longest")}>Nejdelší</button>
@@ -298,6 +289,9 @@ export default function RoutesPage() {
             </div>
           </section>
         )}
+
+        {routesLoading ? <div className="tile routes-loading">Načítám doporučené trasy…</div> : null}
+        {!routesLoading && !visibleRoutes.length ? <div className="tile routes-loading">Zatím nemáš nahranou žádnou doporučenou trasu.</div> : null}
 
         <div className="routes-groups">
           {visibleRoutes.map(({ route, groupTitle }) => (
