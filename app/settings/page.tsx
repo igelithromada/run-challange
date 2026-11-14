@@ -364,7 +364,7 @@ export default function SettingsPage() {
           </div>
 
           <div className={`custom-theme-box ${theme === "custom" ? "active" : ""}`}>
-            <button type="button" className="custom-theme-trigger" onClick={() => { setShowColorPicker(v => !v); setTheme("custom"); void applyTheme("custom", customColor, animationsEnabled); }}>
+            <button type="button" className="custom-theme-trigger" onClick={() => { setShowColorPicker(v => !v); setTheme("custom"); void applyTheme("custom", customColor, animationsEnabled, true, gradientEnabled); }}>
               <span className="theme-color-dot" style={{ background: customColor }} />
               <span><strong>Vlastní barva</strong><small>{customColor.toUpperCase()}</small></span>
               <Check size={19} className={theme === "custom" ? "theme-check" : "theme-check hidden"} />
