@@ -43,7 +43,9 @@ export async function reconcileChallengesForUser(adminDb:any, userId:string) {
 
     let result=0;
     let targetReachedAt:any=null;
-    if(challenge.kind==="distance") {
+    if(challenge.kind==="sharedDistance") {
+      result=values.reduce((sum:any,item:any)=>sum+Number(item.data.km||0),0);
+    } else if(challenge.kind==="distance") {
       result=values.reduce((sum:any,item:any)=>sum+Number(item.data.km||0),0);
       if(result>=Number(challenge.goal||0)){
         let sum=0;
@@ -59,6 +61,11 @@ export async function reconcileChallengesForUser(adminDb:any, userId:string) {
     }
 
     await participantRef.set({result,targetReachedAt:targetReachedAt||null},{merge:true});
+    if(challenge.kind==="sharedDistance") {
+      const participants=await challengeDoc.ref.collection("participants").where("active","==",true).get();
+      const shared=participants.docs.reduce((sum:number,d:any)=>sum+Number(d.data()?.result||0),0);
+      await challengeDoc.ref.set({sharedProgress:shared},{merge:true});
+    }
   }
 }
 
@@ -82,9 +89,21 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
 
   if((challenge.state==="planned" || challenge.state==="active") && challenge.endDate<today) {
     const participants=await ref.collection("participants").where("active","==",true).get();
-    const winner=participants.docs.map((d:any)=>({id:d.id,...d.data()}))
-      .filter((p:any)=>p.result!==undefined)
-      .sort((a:any,b:any)=>Number(b.result||0)-Number(a.result||0))[0];
-    await ref.update({state:"completed",completedAt:Timestamp.now(),winnerId:winner?.id||null});
+    if(challenge.kind==="sharedDistance") {
+      const shared=participants.docs.reduce((sum:number,d:any)=>sum+Number(d.data()?.result||0),0);
+      await ref.update({state:"completed",completedAt:Timestamp.now(),sharedProgress:shared});
+    } else {
+      const target=Number(challenge.goal||0);
+      const reached=participants.docs.map((d:any)=>({id:d.id,...d.data()}))
+        .filter((p:any)=>Number(p.result||0)>=target)
+        .sort((a:any,b:any)=>{
+          const ta=a.targetReachedAt?.toMillis ? a.targetReachedAt.toMillis() : Number.MAX_SAFE_INTEGER;
+          const tb=b.targetReachedAt?.toMillis ? b.targetReachedAt.toMillis() : Number.MAX_SAFE_INTEGER;
+          if(ta!==tb)return ta-tb;
+          return Number(b.result||0)-Number(a.result||0);
+        });
+      const all=participants.docs.map((d:any)=>({id:d.id,...d.data()})).sort((a:any,b:any)=>Number(b.result||0)-Number(a.result||0));
+      await ref.update({state:"completed",completedAt:Timestamp.now(),winnerId:(reached[0]||all[0])?.id||null,goalReached:reached.length>0});
+    }
   }
 }
