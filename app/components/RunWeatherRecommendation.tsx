@@ -122,7 +122,7 @@ export default function RunWeatherRecommendation({
         {current ? <WeatherVisual type={current.weatherCondition?.type} size={50} night={isNight} /> : <Icon size={42} strokeWidth={1.8} />}
       </div>
       <div className="run-weather-copy">
-        <span className="run-weather-eyebrow"><ActivityIcon /> {activityType === "chůze" ? "Chůze" : "Běh"} · Dolní Lhota</span>
+        <span className="run-weather-eyebrow">Dolní Lhota</span>
         <div className="run-weather-summary">
           {current && <strong className="run-weather-temperature">{Math.round(temperature)} °C</strong>}
           <strong>{status}</strong>
