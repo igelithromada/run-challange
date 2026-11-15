@@ -77,23 +77,46 @@ async function removeUserNotifications(adminDb: Firestore, uid: string) {
 
 async function removeUserFromChallenges(adminDb: Firestore, uid: string) {
   const participantSnapshot = await adminDb.collectionGroup("participants").where("userId", "==", uid).get();
+  if (!participantSnapshot.size) return 0;
+
+  const challengeStates = new Map<string, string>();
+  const challengeRefs = new Map<string, DocumentReference>();
+
+  for (const participant of participantSnapshot.docs) {
+    const challengeRef = participant.ref.parent.parent;
+    if (!challengeRef) continue;
+    challengeRefs.set(challengeRef.path, challengeRef);
+  }
+
+  await Promise.all([...challengeRefs.entries()].map(async ([path, ref]) => {
+    const snapshot = await ref.get();
+    challengeStates.set(path, snapshot.exists ? String(snapshot.data()?.state || "") : "");
+  }));
 
   for (let i = 0; i < participantSnapshot.docs.length; i += 400) {
     const batch = adminDb.batch();
     for (const participant of participantSnapshot.docs.slice(i, i + 400)) {
-      batch.set(participant.ref, {
-        active: false,
-        leftAt: FieldValue.serverTimestamp(),
-        deletedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
+      const challengeRef = participant.ref.parent.parent;
+      const state = challengeRef ? challengeStates.get(challengeRef.path) : "";
+      if (state === "completed") {
+        // Completed challenges are immutable history: keep the result visible
+        // and let the UI fall back to “Uživatel” because the profile is gone.
+        batch.set(participant.ref, {
+          deletedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      } else {
+        batch.set(participant.ref, {
+          active: false,
+          leftAt: FieldValue.serverTimestamp(),
+          deletedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
     }
     await batch.commit();
   }
 
-  // Reconcile all active challenges once after the account is removed.
-  // This recalculates shared goals without repeatedly scanning the same
-  // challenges for every participant document.
-  if (participantSnapshot.size > 0) {
+  // Reconcile active challenges once after the account is removed.
+  if ([...challengeStates.values()].some(state => state === "active")) {
     await reconcileChallengesForUser(adminDb, uid);
   }
 
