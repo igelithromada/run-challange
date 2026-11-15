@@ -23,8 +23,12 @@ function kindLabel(kind: ChallengeKind) {
 }
 function unit(kind: ChallengeKind) { return kind==="distance"||kind==="sharedDistance" ? "km" : kind==="activities" ? "aktivit" : "dnů"; }
 function progress(challenge: ChallengeData) {
-  const value = challenge.kind==="sharedDistance" ? Number(challenge.sharedProgress||0) : 0;
-  return challenge.kind==="sharedDistance" ? `${value.toFixed(1)} / ${Number(challenge.goal).toFixed(1)} km` : `Cíl: ${Number(challenge.goal).toFixed(challenge.kind==="distance"||challenge.kind==="sharedDistance"?1:0)} ${unit(challenge.kind)}`;
+  if (challenge.kind === "sharedDistance") {
+    const value = Number(challenge.sharedProgress || 0);
+    return `${value.toFixed(1)} / ${Number(challenge.goal).toFixed(1)} km`;
+  }
+  const decimals = challenge.kind === "distance" ? 1 : 0;
+  return `Cíl: ${Number(challenge.goal).toFixed(decimals)} ${unit(challenge.kind)}`;
 }
 
 export default function ChallengesPage() {
