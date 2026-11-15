@@ -191,7 +191,7 @@ export default function TeamsPage() {
             <section className="teams-grid">
               {pageTeams.map(team => {
                 const joined = myTeamIds.includes(team.id);
-                const stats = team.stats || {};
+                const stats = team.stats || { runningKm: 0, runningActivities: 0, walkingKm: 0, walkingActivities: 0 };
                 return (
                   <article key={team.id} className={`tile team-card ${joined ? "team-card-joined" : ""}`} onClick={() => router.push("/teams/" + team.id)}>
                     <div className="team-card-main">
