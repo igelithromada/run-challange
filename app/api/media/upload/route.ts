@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { isUserCloudinaryPublicId, userCloudinaryPrefix } from "../../../lib/cloudinaryAdmin";
-import { consumeRateLimit } from "../../../lib/rateLimit";
+import { consumeRateLimit } from "../../../../lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
