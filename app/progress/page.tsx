@@ -43,8 +43,6 @@ export default function ProgressPage() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const [uid, setUid] = useState("");
-  const [joinedTeamId, setJoinedTeamId] = useState("");
-  const [teamIdsByType, setTeamIdsByType] = useState<Record<ActivityType, string | null>>({ běh: null, chůze: null });
   const [goalWeekly, setGoalWeekly] = useState("25");
   const [goalMonthly, setGoalMonthly] = useState("100");
   const [goalType, setGoalType] = useState<ActivityType>("běh");
@@ -56,8 +54,6 @@ export default function ProgressPage() {
  }, []);
   const [goalsByType, setGoalsByType] = useState<Record<ActivityType, { weekly: number; monthly: number }>>({ běh: { weekly: 25, monthly: 100 }, chůze: { weekly: 25, monthly: 100 } });
   const [saved, setSaved] = useState(false);
-  const [trainerDays, setTrainerDays] = useState<number[]>([1,3,5]);
-  const [trainerKm, setTrainerKm] = useState("20");
   const savedTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -76,9 +72,6 @@ export default function ProgressPage() {
         const data = await getUserProfile(user.uid);
         if (!active || !data) return;
         {
-          const trainer = data.personalTrainerPlan as LegacyTrainerPlan | undefined;
-          if (trainer && Array.isArray(trainer.days)) setTrainerDays(trainer.days.filter((day: unknown) => typeof day === "number" && day >= 0 && day <= 6));
-          if (trainer && Number(trainer.weeklyKm) > 0) setTrainerKm(String(trainer.weeklyKm));
           const storedGoals = data.progressGoalsByType || {};
           const legacy = data.progressGoals || {};
           const nextGoals: Record<ActivityType, { weekly: number; monthly: number }> = {
@@ -90,13 +83,6 @@ export default function ProgressPage() {
           setGoalType(initialType);
           setGoalWeekly(String(nextGoals[initialType].weekly));
           setGoalMonthly(String(nextGoals[initialType].monthly));
-          const storedTeams = data.teamIdsByType || {};
-          const nextTeamIds: Record<ActivityType, string | null> = {
-            běh: typeof storedTeams.běh === "string" ? storedTeams.běh : (typeof data.teamId === "string" ? data.teamId : null),
-            chůze: typeof storedTeams.chůze === "string" ? storedTeams.chůze : null,
-          };
-          setTeamIdsByType(nextTeamIds);
-          setJoinedTeamId(nextTeamIds[initialType] || "");
         }
       } catch (error) {
         if (active) console.error("Nepodařilo se načíst profil a cíle", error);
