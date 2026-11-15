@@ -4610,7 +4610,7 @@ html[data-theme="white"] .route-map-minimal .maplibregl-canvas {
 .run-weather-recommendation{padding:1rem 1.1rem!important;gap:1rem!important}
 .run-weather-icon{flex:0 0 64px!important;width:64px!important;height:64px!important;border-radius:18px!important}
 .run-weather-icon svg{width:42px!important;height:42px!important}
-.run-weather-copy{display:flex;flex-direction:column;min-width:0}
+.run-weather-copy{display:flex;flex-direction:column;min-width:0}.run-weather-location{font-size:.78rem;opacity:.7;font-weight:650;margin-top:-.05rem}
 .run-weather-summary{display:flex;align-items:baseline;gap:.65rem;flex-wrap:wrap}
 .run-weather-temperature{font-size:1.35rem!important;font-weight:800}
 .run-weather-copy>p{margin:.25rem 0!important}
