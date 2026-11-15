@@ -1,4 +1,4 @@
-import { collection, collectionGroup, doc, getDoc, getDocs, limit, orderBy, query, startAfter, where, type Query, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
+import { collection, collectionGroup, doc, getDoc, getDocs, query, where, type Query, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
 import { db } from "../firebase";
 import type { ChallengeData } from "../../types";
 
@@ -24,20 +24,19 @@ export async function fetchChallengesPage(
   pageSize = 10,
   cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>
 ): Promise<{ items: ChallengeData[]; lastDocument: QueryDocumentSnapshot<DocumentData, DocumentData> | null; hasMore: boolean }> {
-  const constraints = [
+  const snapshot = await getDocs(query(
+    collection(db, "challenges"),
     where("activityType", "==", activityType),
     where("state", "==", state),
-    where("startMonth", "==", monthStart.slice(0, 7)),
-    orderBy("name", "asc"),
-    ...(cursor ? [startAfter(cursor)] : []),
-    limit(pageSize),
-  ] as const;
-  const snapshot = await getDocs(query(collection(db, "challenges"), ...constraints));
-  const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ChallengeData));
+    where("startMonth", "==", monthStart.slice(0, 7))
+  ));
+  const items = snapshot.docs
+    .map(d => ({ id: d.id, ...d.data() } as ChallengeData))
+    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "cs"));
   return {
     items,
-    lastDocument: snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null,
-    hasMore: snapshot.docs.length === pageSize,
+    lastDocument: null,
+    hasMore: false,
   };
 }
 
@@ -53,18 +52,17 @@ export async function fetchChallengeParticipantsPage(
       ? "joinedAt"
       : "result";
   const orderDirection = challenge.state === "completed" || challenge.kind === "sharedDistance" ? "asc" : "desc";
-  const constraints = [
-    where("active", "==", true),
-    orderBy(orderField, orderDirection),
-    ...(cursor ? [startAfter(cursor)] : []),
-    limit(pageSize),
-  ] as const;
-  const snapshot = await getDocs(query(collection(db, "challenges", id, "participants"), ...constraints));
-  return {
-    items: snapshot.docs.map(d => ({ id: d.id, ...d.data() })),
-    lastDocument: snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null,
-    hasMore: snapshot.docs.length === pageSize,
-  };
+  const snapshot = await getDocs(
+    query(collection(db, "challenges", id, "participants"), where("active", "==", true))
+  );
+  const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  items.sort((a: any, b: any) => {
+    const av = Number(a[orderField] ?? 0);
+    const bv = Number(b[orderField] ?? 0);
+    if (av !== bv) return orderDirection === "asc" ? av - bv : bv - av;
+    return String(a.id || "").localeCompare(String(b.id || ""));
+  });
+  return { items, lastDocument: null, hasMore: false };
 }
 
 export async function getChallengeParticipant(id: string, userId: string) {
@@ -75,9 +73,10 @@ export async function getChallengeParticipant(id: string, userId: string) {
 
 export async function getActiveChallengeIdsForUser(userId: string): Promise<string[]> {
   const snapshot = await getDocs(
-    query(collectionGroup(db, "participants"), where("userId", "==", userId), where("active", "==", true))
+    query(collectionGroup(db, "participants"), where("userId", "==", userId))
   );
   return snapshot.docs
+    .filter(item => item.data()?.active === true)
     .map(item => item.ref.parent.parent?.id || "")
     .filter(Boolean);
 }
