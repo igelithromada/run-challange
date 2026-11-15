@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { requireUser } from "../../../lib/apiAuth";
 import { normalizeActivityType, normalizeTeamName } from "../../../lib/validation";
+import { cloudinaryPublicIdFromUrl, deleteCloudinaryImages, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,6 +46,51 @@ export async function POST(request: Request) {
     if (!teamSnap.exists) return NextResponse.json({ error: "Tým neexistuje." }, { status: 404 });
     const team = teamSnap.data() || {};
     const type = team.type === "chůze" ? "chůze" : "běh";
+
+    if (action === "update") {
+      if (team.createdBy !== decoded.uid) return NextResponse.json({ error: "Nastavení může měnit jen zakladatel týmu." }, { status: 403 });
+
+      const challengeGoalKm = Number(body?.challengeGoalKm);
+      if (!Number.isFinite(challengeGoalKm) || challengeGoalKm <= 0 || challengeGoalKm > 100000) {
+        return NextResponse.json({ error: "Zadej platný cíl týmu." }, { status: 400 });
+      }
+
+      const avatarUrl = typeof body?.avatarUrl === "string" ? body.avatarUrl.trim() : "";
+      const avatarPublicId = typeof body?.avatarPublicId === "string" ? body.avatarPublicId.trim() : "";
+      if (avatarUrl) {
+        const parsedPublicId = cloudinaryPublicIdFromUrl(avatarUrl);
+        if (
+          !avatarUrl.startsWith("https://res.cloudinary.com/") ||
+          !parsedPublicId ||
+          !isUserCloudinaryPublicId(parsedPublicId, decoded.uid) ||
+          (avatarPublicId && avatarPublicId !== parsedPublicId)
+        ) {
+          return NextResponse.json({ error: "Avatar týmu má neplatný zdroj." }, { status: 400 });
+        }
+      }
+      if (avatarPublicId && !isUserCloudinaryPublicId(avatarPublicId, decoded.uid)) {
+        return NextResponse.json({ error: "Avatar týmu má neplatné ID." }, { status: 400 });
+      }
+
+      const previousPublicId = typeof team.avatarPublicId === "string" ? team.avatarPublicId : "";
+      await teamRef.set(
+        { challengeGoalKm, avatarUrl, avatarPublicId },
+        { merge: true }
+      );
+
+      if (
+        previousPublicId &&
+        previousPublicId !== avatarPublicId &&
+        isUserCloudinaryPublicId(previousPublicId, decoded.uid)
+      ) {
+        const cleanup = await deleteCloudinaryImages([previousPublicId]);
+        if (cleanup.failed.length) {
+          console.warn("Starý avatar týmu se nepodařilo odstranit z Cloudinary:", cleanup.failed);
+        }
+      }
+
+      return NextResponse.json({ ok: true, challengeGoalKm, avatarUrl, avatarPublicId });
+    }
 
     if (action === "rename") {
       if (team.createdBy !== decoded.uid) return NextResponse.json({ error: "Název může měnit jen zakladatel týmu." }, { status: 403 });
