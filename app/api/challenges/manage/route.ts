@@ -3,12 +3,21 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { requireUser } from "../../../lib/apiAuth";
 import { normalizeName, normalizeDescription, isChallengeKind, isValidChallengeGoal, isValidDateOnly, normalizeActivityType } from "../../../lib/validation";
 import { reconcileChallengesForUser } from "../../../lib/challenges/server";
+import { cloudinaryPublicIdFromUrl, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
 
 const key=(name:string)=>name.trim().toLocaleLowerCase("cs-CZ");
 const startMonth=(date:string)=>date.slice(0,7);
+function challengeImage(body:any, uid:string) {
+  const avatarUrl=typeof body?.avatarUrl==="string"?body.avatarUrl.trim():"";
+  const avatarPublicId=typeof body?.avatarPublicId==="string"?body.avatarPublicId.trim():"";
+  if (!avatarUrl && !avatarPublicId) return { avatarUrl:"", avatarPublicId:"" };
+  const parsedId=cloudinaryPublicIdFromUrl(avatarUrl);
+  if (!avatarUrl.startsWith("https://res.cloudinary.com/") || !avatarPublicId || !isUserCloudinaryPublicId(avatarPublicId,uid) || !parsedId || parsedId!==avatarPublicId) throw new Error("INVALID_CHALLENGE_IMAGE");
+  return { avatarUrl, avatarPublicId };
+}
 
 function localDateString() {
   const now = new Date();
@@ -28,6 +37,7 @@ export async function POST(request:Request){
       const name=normalizeName(body?.name), description=normalizeDescription(body?.description);
       const kind=body?.kind, activityType=normalizeActivityType(body?.activityType);
       const goal=Number(body?.goal), startDate=String(body?.startDate||""), endDate=String(body?.endDate||"");
+      const image=challengeImage(body,uid);
       if(!name)return NextResponse.json({error:"Zadej název výzvy."},{status:400});
       if(!isChallengeKind(kind)||!isValidChallengeGoal(kind,goal))return NextResponse.json({error:"Výzva má neplatný typ nebo cíl."},{status:400});
       if(!isValidDateOnly(startDate)||!isValidDateOnly(endDate)||endDate<startDate)return NextResponse.json({error:"Zadej platné datumy výzvy."},{status:400});
@@ -48,7 +58,7 @@ export async function POST(request:Request){
         const activeOrPlannedSnap=await tx.get(adminDb.collection("challenges").where("createdBy","==",uid).where("state","in",["planned","active"]));
         if(activeOrPlannedSnap.size>=5)throw new Error("CHALLENGE_CREATE_LIMIT");
         tx.create(nameRef,{challengeId:challenge.id,createdAt:Timestamp.now()});
-        tx.create(challenge,{name,nameKey:key(name),description,createdBy:uid,kind,activityType,goal,startDate,endDate,startMonth:startMonth(startDate),state:startDate===today?"active":"planned",participantCount:1,sharedProgress:0,avatarUrl:typeof body?.avatarUrl==="string"?body.avatarUrl:"",avatarPublicId:typeof body?.avatarPublicId==="string"?body.avatarPublicId:"",createdAt:Timestamp.now()});
+        tx.create(challenge,{name,nameKey:key(name),description,createdBy:uid,kind,activityType,goal,startDate,endDate,startMonth:startMonth(startDate),state:startDate===today?"active":"planned",participantCount:1,sharedProgress:0,avatarUrl:image.avatarUrl,avatarPublicId:image.avatarPublicId,createdAt:Timestamp.now()});
         tx.create(challenge.collection("participants").doc(uid),{userId:uid,joinedAt:Timestamp.now(),active:true});
               });
       await reconcileChallengesForUser(adminDb, uid);
@@ -107,6 +117,7 @@ export async function POST(request:Request){
       const nextName=normalizeName(body?.name), nextDescription=normalizeDescription(body?.description);
       const nextKind=body?.kind, nextType=normalizeActivityType(body?.activityType);
       const nextGoal=Number(body?.goal), nextStart=String(body?.startDate||""), nextEnd=String(body?.endDate||"");
+      const image=challengeImage(body,uid);
       if(!nextName||!isChallengeKind(nextKind)||!isValidChallengeGoal(nextKind,nextGoal)||!isValidDateOnly(nextStart)||!isValidDateOnly(nextEnd)||nextEnd<nextStart)return NextResponse.json({error:"Výzva má neplatné údaje."},{status:400});
       const today=localDateString();
       if(nextStart<today)return NextResponse.json({error:"Výzvu nelze naplánovat do minulosti."},{status:400});
@@ -127,7 +138,7 @@ export async function POST(request:Request){
           tx.delete(adminDb.collection("challengeNames").doc(oldKey));
           tx.create(adminDb.collection("challengeNames").doc(newKey),{challengeId,createdAt:Timestamp.now()});
         }
-        tx.update(ref,{name:nextName,nameKey:newKey,description:nextDescription,kind:nextKind,activityType:nextType,goal:nextGoal,startDate:nextStart,endDate:nextEnd,startMonth:startMonth(nextStart),avatarUrl:typeof body?.avatarUrl==="string"?body.avatarUrl:"",avatarPublicId:typeof body?.avatarPublicId==="string"?body.avatarPublicId:""});
+        tx.update(ref,{name:nextName,nameKey:newKey,description:nextDescription,kind:nextKind,activityType:nextType,goal:nextGoal,startDate:nextStart,endDate:nextEnd,startMonth:startMonth(nextStart),avatarUrl:image.avatarUrl,avatarPublicId:image.avatarPublicId});
       });
       return NextResponse.json({ok:true});
     }
@@ -135,7 +146,7 @@ export async function POST(request:Request){
     return NextResponse.json({error:"Operace výzvy zatím není dostupná."},{status:400});
   }catch(error){
     const m=error instanceof Error?error.message:"";
-    const map:any={UNAUTHORIZED:["Nejsi přihlášen.",401],CHALLENGE_NAME_TAKEN:["Výzva s tímto názvem už existuje.",409],CHALLENGE_CREATE_LIMIT:["Můžeš vytvořit nejvýše 5 aktivních nebo plánovaných výzev.",409],CHALLENGE_NOT_FOUND:["Výzva nebyla nalezena.",404],CHALLENGE_LOCKED:["Tato výzva je uzamčená.",409],NOT_OWNER:["Tuto výzvu může upravovat nebo mazat jen její autor.",403]};
+    const map:any={UNAUTHORIZED:["Nejsi přihlášen.",401],CHALLENGE_NAME_TAKEN:["Výzva s tímto názvem už existuje.",409],CHALLENGE_CREATE_LIMIT:["Můžeš vytvořit nejvýše 5 aktivních nebo plánovaných výzev.",409],CHALLENGE_NOT_FOUND:["Výzva nebyla nalezena.",404],CHALLENGE_LOCKED:["Tato výzva je uzamčená.",409],INVALID_CHALLENGE_IMAGE:["Obrázek výzvy není platný.",400],NOT_OWNER:["Tuto výzvu může upravovat nebo mazat jen její autor.",403]};
     const [msg,status]=map[m]||["Operaci výzvy se nepodařilo dokončit.",500];
     console.error("POST /api/challenges/manage:",error);
     return NextResponse.json({error:msg},{status});
