@@ -122,7 +122,6 @@ export async function POST(request: Request) {
       const nextDescription = body.description !== undefined ? normalizeDescription(body.description) : undefined;
       const nextAvatarUrl = body.avatarUrl !== undefined ? (typeof body.avatarUrl==="string" ? body.avatarUrl : "") : undefined;
       const nextAvatarPublicId = body.avatarPublicId !== undefined ? (typeof body.avatarPublicId==="string" ? body.avatarPublicId : "") : undefined;
-      const image = (nextAvatarUrl !== undefined || nextAvatarPublicId !== undefined) ? teamImage({ avatarUrl: nextAvatarUrl ?? currentTeam?.avatarUrl ?? "", avatarPublicId: nextAvatarPublicId ?? currentTeam?.avatarPublicId ?? "" }, uid) : undefined;
 
       await adminDb.runTransaction(async tx => {
         const teamSnap = await tx.get(ref);
@@ -131,6 +130,7 @@ export async function POST(request: Request) {
         if (currentTeam.managerId !== uid) throw new Error("NOT_MANAGER");
 
         const updates:any = {};
+        const image = (nextAvatarUrl !== undefined || nextAvatarPublicId !== undefined) ? teamImage({ avatarUrl: nextAvatarUrl ?? currentTeam.avatarUrl ?? "", avatarPublicId: nextAvatarPublicId ?? currentTeam.avatarPublicId ?? "" }, uid) : undefined;
         if (nextName) {
           const nextKey = normalizeKey(nextName);
           const oldKey = String(currentTeam.nameKey || "");
