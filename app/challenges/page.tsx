@@ -48,7 +48,7 @@ export default function ChallengesPage() {
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState<Error|null>(null);
   const [page,setPage]=useState(1);
-  const [cursors,setCursors]=useState<Array<Record<ChallengeData["state"], QueryDocumentSnapshot<DocumentData, DocumentData>|undefined>>>([{}]);
+  const [cursors,setCursors]=useState<Array<Record<ChallengeData["state"], QueryDocumentSnapshot<DocumentData, DocumentData>|undefined>>>([{active: undefined, planned: undefined, completed: undefined}]);
   const [hasMore,setHasMore]=useState(false);
 
   useEffect(()=>{ const unsub=onAuthStateChanged(auth,u=>{ if(!u){router.push("/login");return;} setUser(u); try{const v=localStorage.getItem("dolni-lhota-default-activity-v1"); if(v==="běh"||v==="chůze")setActivityType(v);}catch{} }); return ()=>unsub(); },[router]);
