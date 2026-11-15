@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { getAdminServices } from "../../lib/firebaseAdmin";
+import { consumeRateLimit } from "../../lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +22,9 @@ async function getConfiguredCode(adminDb: ReturnType<typeof getAdminServices>["a
 export async function POST(request: Request) {
   try {
     const { adminAuth, adminDb } = getAdminServices();
+    const rate = await consumeRateLimit(adminDb, request, "register", 5);
+    if (!rate.allowed) return NextResponse.json({ error: "Příliš mnoho pokusů. Zkus to později." }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
+
     const body = await request.json().catch(() => ({}));
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body?.password === "string" ? body.password : "";
