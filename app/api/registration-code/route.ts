@@ -16,12 +16,9 @@ async function getConfiguredCode() {
   const envCode = process.env.REGISTRATION_CODE?.trim();
   if (!envCode) return null;
 
-  await adminDb.collection("appConfig").doc("registration").set({
-    code: envCode,
-    updatedAt: new Date(),
-    source: "env",
-  }, { merge: true });
-
+  // Veřejné ověření registračního kódu nesmí zapisovat tajný kód do Firestore.
+  // Pokud administrátor ještě nenastavil hodnotu v appConfig, použije se pouze
+  // serverová proměnná prostředí.
   return envCode;
 }
 
