@@ -1,4 +1,4 @@
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { FieldValue, Timestamp, type QueryDocumentSnapshot } from "firebase-admin/firestore";
 
 function pragueDate(value: unknown): string {
   const date = value instanceof Date ? value : value instanceof Timestamp ? value.toDate() : new Date(value as any);
@@ -110,7 +110,7 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
 
   if((challenge.state==="planned" || challenge.state==="active") && challenge.endDate<today) {
     const participants=await ref.collection("participants").where("active","==",true).get();
-    const finalized=await Promise.all(participants.docs.map(async d=>{
+    const finalized=await Promise.all(participants.docs.map(async (d: QueryDocumentSnapshot)=>{
       const data=d.data()||{};
       const calculated=await calculateParticipantResult(adminDb,challenge,{...data,userId:d.id});
       return {doc:d, data:{...data,...calculated}};
