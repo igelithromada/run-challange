@@ -112,6 +112,7 @@ export async function GET(request: Request) {
       isAdmin,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "LIKE_LIMIT_REACHED") return NextResponse.json({ error: "Tento záznam už má maximální počet zobrazených lajků." }, { status: 409 });
     const authError = authErrorResponse(error);
     if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
     return NextResponse.json({ error: "Sociální data se nepodařilo načíst." }, { status: 500 });
@@ -177,8 +178,13 @@ export async function POST(request: Request) {
       const result = await adminDb.runTransaction(async transaction => {
         const snapshot = await transaction.get(runRef);
         const data = snapshot.data() || {};
-        const current = Array.isArray(data.likedBy) ? data.likedBy.filter((id): id is string => typeof id === "string") : [];
+        const current = Array.isArray(data.likedBy)
+          ? [...new Set(data.likedBy.filter((id): id is string => typeof id === "string"))]
+          : [];
         const liked = current.includes(decoded.uid);
+        if (!liked && current.length >= MAX_SOCIAL_LIKE_USERS) {
+          throw new Error("LIKE_LIMIT_REACHED");
+        }
         const next = liked ? current.filter(id => id !== decoded.uid) : [...current, decoded.uid];
         transaction.update(runRef, { likedBy: next, likeCount: next.length });
         return { liked: !liked, likeCount: next.length };
