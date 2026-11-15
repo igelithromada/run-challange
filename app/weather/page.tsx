@@ -6,7 +6,7 @@ import type { WeatherHour, WeatherResponse } from "../lib/weather";
 import { Cloud, Wind, Droplets, RefreshCw } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import WeatherVisual from "../components/WeatherVisual";
+import WeatherVisual, { weatherDescription } from "../components/WeatherVisual";
 
 function isRainType(type = "") {
   const value = type.toUpperCase();
@@ -83,7 +83,7 @@ export default function WeatherCard() {
       {loading && !weather ? <p className="weather-loading">Načítám předpověď…</p> : !weather?.configured ? <div className="weather-message"><strong>Google Počasí čeká na propojení</strong><p>Je potřeba doplnit klíč Google Weather API do nastavení projektu na Vercelu.</p></div> : weather?.error || !current ? <p className="weather-message">{weather?.error || "Předpověď není momentálně dostupná."}</p> : (
         <>
           <div className="weather-current-grid">
-            <div className="weather-current-main"><div className="weather-current-icon-block"><WeatherVisual type={condition?.type} size={104} className="weather-main-icon" night={currentIsNight} /><span>Dolní Lhota u Ostravy</span></div><div className="weather-current-copy"><strong className="weather-temperature">{Math.round(temperature ?? 0)}°C</strong><span className="weather-description">{condition?.description?.text || "Aktuální počasí"}</span>{feelsLike !== undefined && <small>Pocitově {Math.round(feelsLike)}°C</small>}</div></div>
+            <div className="weather-current-main"><div className="weather-current-icon-block"><WeatherVisual type={condition?.type} size={104} className="weather-main-icon" night={currentIsNight} /><span>Dolní Lhota u Ostravy</span></div><div className="weather-current-copy"><strong className="weather-temperature">{Math.round(temperature ?? 0)}°C</strong><span className="weather-description">{weatherDescription(condition?.type)}</span>{feelsLike !== undefined && <small>Pocitově {Math.round(feelsLike)}°C</small>}</div></div>
             <div className="weather-stat-grid">
               <div className="weather-stat-card"><Wind size={19} /><strong>{wind !== undefined ? Math.round(wind) : "—"} {wind !== undefined ? windUnit : ""}</strong><small>Vítr</small></div>
               <div className="weather-stat-card"><RainIcon size={19} className="weather-stat-icon" /><strong>{rainChance !== undefined ? `${rainChance}%` : "—"}</strong><small>{formatMm(currentRainMm)} · Déšť</small></div>
