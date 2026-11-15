@@ -6,8 +6,9 @@ import type { WeatherResponse } from "../lib/weather";
 import { auth } from "../lib/firebase";
 import { getUserProfile } from "../lib/services/users";
 import Link from "next/link";
-import { CloudSun, CloudRain, CloudSnow, Wind, AlertTriangle, CheckCircle2, Moon } from "lucide-react";
+import { CloudSun, CloudRain, CloudSnow, Wind, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { ActivityType, ActivityTypeIcon } from "./ActivityTypeSelector";
+import WeatherVisual, { weatherDescription } from "./WeatherVisual";
 
 export default function RunWeatherRecommendation({
   linkToWeather = true,
@@ -108,7 +109,6 @@ export default function RunWeatherRecommendation({
     const hour = new Date().getHours();
     return hour < 6 || hour >= 20;
   })();
-  const WeatherIcon = isNight && !rain && !snow ? Moon : Icon;
   const status = tone === "good"
     ? "Aktivita je možná"
     : tone === "caution"
