@@ -83,30 +83,30 @@ export async function POST(request: Request) {
 
     const ref = adminDb.collection("runs").doc();
     const runCreatedAt = Timestamp.now();
-        const batch = adminDb.batch();
-    batch.create(ref, { ...safeData, createdAt: runCreatedAt });
+        const createBatch = adminDb.batch();
+    createBatch.create(ref, { ...safeData, createdAt: runCreatedAt });
+    await createBatch.commit();
 
-    for (const teamId of memberTeamIds) {
-      const teamRef = adminDb.collection("teams").doc(teamId);
-      const contributionRef = teamRef.collection("activityContributions").doc(ref.id);
-      const teamSnap = await teamRef.get();
-      if (!teamSnap.exists) continue;
-      batch.create(contributionRef, {
-        activityId: ref.id,
-        userId: decoded.uid,
-        type,
-        km,
-        createdAt: runCreatedAt,
-      });
-      const kmField = type === "chůze" ? "walkingKm" : "runningKm";
-      const countField = type === "chůze" ? "walkingActivities" : "runningActivities";
-      batch.update(teamRef, {
-        [`stats.${kmField}`]: FieldValue.increment(km),
-        [`stats.${countField}`]: FieldValue.increment(1),
-      });
-    }
-
-    await batch.commit();
+    const kmField = type === "chůze" ? "walkingKm" : "runningKm";
+    const countField = type === "chůze" ? "walkingActivities" : "runningActivities";
+    for (let start=0; start<memberTeamIds.length; start+=450) {
+      const chunk=memberTeamIds.slice(start,start+450);
+      const batch=adminDb.batch();
+      for (const teamId of chunk) {
+        const teamRef=adminDb.collection("teams").doc(teamId);
+        const contributionRef=teamRef.collection("activityContributions").doc(ref.id);
+        const teamSnap=await teamRef.get();
+        if(!teamSnap.exists) continue;
+        batch.set(contributionRef,{
+          activityId:ref.id,userId:decoded.uid,type,km,createdAt:runCreatedAt
+        });
+        batch.update(teamRef,{
+          [`stats.${kmField}`]:FieldValue.increment(km),
+          [`stats.${countField}`]:FieldValue.increment(1)
+        });
+      }
+      if(chunk.length) await batch.commit();
+    };
     await reconcileChallengesForUser(adminDb, decoded.uid);
     return NextResponse.json({ ok: true, id: ref.id });
   } catch (error) {
