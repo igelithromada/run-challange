@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
     if (!publicIds.length) return NextResponse.json({ ok: true, deleted: 0, failed: [] });
 
-    const result = await deleteCloudinaryImages([...new Set(publicIds)]);
+    const result = await deleteCloudinaryImages(Array.from(new Set<string>(publicIds)));
     return NextResponse.json({ ok: result.failed.length === 0, ...result }, { status: result.failed.length ? 502 : 200 });
   } catch (error) {
     const authError = authErrorResponse(error);
