@@ -75,27 +75,32 @@ export async function DELETE(request: Request) {
       .where("activityId", "==", runId)
       .get();
 
-    const batch = user.adminDb.batch();
-    contributions.docs.forEach(contribution => {
-      const data = contribution.data() || {};
-      const teamRef = contribution.ref.parent.parent;
-      if (!teamRef) return;
-      const type = data.type === "chůze" ? "chůze" : "běh";
-      const km = Number(data.km) || 0;
-      const kmField = type === "chůze" ? "walkingKm" : "runningKm";
-      const countField = type === "chůze" ? "walkingActivities" : "runningActivities";
-      batch.update(teamRef, {
-        [`stats.${kmField}`]: FieldValue.increment(-km),
-        [`stats.${countField}`]: FieldValue.increment(-1),
-      });
-      batch.delete(contribution.ref);
-    });
+    for(let start=0;start<contributions.docs.length;start+=225){
+      const chunk=contributions.docs.slice(start,start+225);
+      const batch=user.adminDb.batch();
+      for(const contribution of chunk){
+        const data=contribution.data()||{};
+        const teamRef=contribution.ref.parent.parent;
+        if(!teamRef)continue;
+        const type=data.type==="chůze"?"chůze":"běh";
+        const km=Number(data.km)||0;
+        const kmField=type==="chůze"?"walkingKm":"runningKm";
+        const countField=type==="chůze"?"walkingActivities":"runningActivities";
+        batch.update(teamRef,{
+          [`stats.${kmField}`]:FieldValue.increment(-km),
+          [`stats.${countField}`]:FieldValue.increment(-1)
+        });
+        batch.delete(contribution.ref);
+      }
+      await batch.commit();
+    }
 
     // The activity itself is authoritative data. Never leave it undeletable
     // because a remote image cleanup failed.
     await deleteRunComments(runRef);
-    batch.delete(runRef);
-    await batch.commit();
+    const runBatch=user.adminDb.batch();
+    runBatch.delete(runRef);
+    await runBatch.commit();
     await reconcileChallengesForUser(user.adminDb, data.uid);
 
     return NextResponse.json({
