@@ -10,12 +10,11 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
-import type { RunData, TeamData, LegacyTrainerPlan } from "../types";
+import type { RunData, LegacyTrainerPlan } from "../types";
 import { getUserProfile, mergeUserProfile } from "../lib/services/users";
-import { allTeamsQuery } from "../lib/services/teams";
-import { userRunsQuery, teamRunsQuery } from "../lib/services/runs";
+import { userRunsQuery } from "../lib/services/runs";
 
-type ProgressActivity = Pick<RunData, "id" | "uid" | "km" | "minuty" | "tempo" | "teamId" | "timestamp" | "type">;
+type ProgressActivity = Pick<RunData, "id" | "uid" | "km" | "minuty" | "tempo" | "timestamp" | "type">;
 const asNumber = (value: unknown) => {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
@@ -44,8 +43,6 @@ export default function ProgressPage() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const [uid, setUid] = useState("");
-  const [joinedTeamId, setJoinedTeamId] = useState("");
-  const [teamIdsByType, setTeamIdsByType] = useState<Record<ActivityType, string | null>>({ běh: null, chůze: null });
   const [goalWeekly, setGoalWeekly] = useState("25");
   const [goalMonthly, setGoalMonthly] = useState("100");
   const [goalType, setGoalType] = useState<ActivityType>("běh");
@@ -91,13 +88,6 @@ export default function ProgressPage() {
           setGoalType(initialType);
           setGoalWeekly(String(nextGoals[initialType].weekly));
           setGoalMonthly(String(nextGoals[initialType].monthly));
-          const storedTeams = data.teamIdsByType || {};
-          const nextTeamIds: Record<ActivityType, string | null> = {
-            běh: typeof storedTeams.běh === "string" ? storedTeams.běh : (typeof data.teamId === "string" ? data.teamId : null),
-            chůze: typeof storedTeams.chůze === "string" ? storedTeams.chůze : null,
-          };
-          setTeamIdsByType(nextTeamIds);
-          setJoinedTeamId(nextTeamIds[initialType] || "");
         }
       } catch (error) {
         if (active) console.error("Nepodařilo se načíst profil a cíle", error);
@@ -107,17 +97,12 @@ export default function ProgressPage() {
   }, [router]);
 
   const personalQuery = useMemo(() => userRunsQuery(uid || "__no_user__"), [uid]);
-  const teamActivityQuery = useMemo(() => teamRunsQuery(joinedTeamId || "__no_team__"), [joinedTeamId]);
-  const teamsQuery = useMemo(() => allTeamsQuery(), []);
   const personalState = useSharedFirestoreQuery<ProgressActivity>("progress:personal:" + (uid || "none"), personalQuery);
-  const teamRunsState = useSharedFirestoreQuery<ProgressActivity>("progress:team:" + (joinedTeamId || "none"), teamActivityQuery);
-  const teamsState = useSharedFirestoreQuery<TeamData>("teams:all", teamsQuery);
   const runs = useMemo(() => {
     const merged = new Map<string, ProgressActivity>();
-    [...personalState.data, ...teamRunsState.data].forEach(run => merged.set(run.id, run));
+    personalState.data.forEach(run => merged.set(run.id, run));
     return Array.from(merged.values());
   }, [personalState.data, teamRunsState.data]);
-  const teams = teamsState.data;
 
   const mine = useMemo(() => personalState.data, [personalState.data]);
   const selected = useMemo(() => mine.filter(run => (run.type || "běh") === goalType), [mine, goalType]);
@@ -181,13 +166,6 @@ export default function ProgressPage() {
     for (let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) days.push(new Date(d));
     return days;
   })();
-
-  const teamProgress = teams.filter(team => team.id === joinedTeamId).map(team => {
-    const km = runs.filter(run => (run.type || "běh")===goalType && run.teamId===team.id && activityDate(run).getFullYear()===now.getFullYear() && activityDate(run).getMonth()===now.getMonth())
-      .reduce((sum,run)=>sum+asNumber(run.km),0);
-    const goalKm = asNumber(team.challengeGoalKm) || 500;
-    return { ...team, km, goalKm, percent:Math.min(100,km/goalKm*100) };
-  }).sort((a,b)=>b.km-a.km);
 
   const switchGoalType = (nextType: ActivityType) => {
     setGoalType(nextType);
