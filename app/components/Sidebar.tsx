@@ -13,6 +13,7 @@ type SidebarProps = { visible: boolean; onClose: () => void; onSelect: (item: st
 const items = [
   { id: "myrun", label: "Moje aktivity", Icon: Footprints },
   { id: "teams", label: "Týmy", Icon: Users },
+  { id: "challenges", label: "Výzvy", Icon: Trophy },
   { id: "progress", label: "Můj pokrok", Icon: TrendingUp },
   { id: "trainer", label: "Osobní trenér", Icon: Dumbbell },
   { id: "statistics", label: "Výsledky", Icon: Trophy },
@@ -37,6 +38,11 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
     if (id === "routes") {
       onClose();
       router.push("/routes");
+      return;
+    }
+    if (id === "challenges") {
+      onClose();
+      router.push("/challenges");
       return;
     }
     onSelect(id);
