@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, where, type Query, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
+import { collection, collectionGroup, doc, getDoc, getDocs, limit, orderBy, query, startAfter, where, type Query, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
 import { db } from "../firebase";
 import type { ChallengeData } from "../../types";
 
@@ -70,4 +70,14 @@ export async function fetchChallengeParticipantsPage(
 export async function getChallengeParticipant(id: string, userId: string) {
   const snap = await getDoc(doc(db, "challenges", id, "participants", userId));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+
+export async function getActiveChallengeIdsForUser(userId: string): Promise<string[]> {
+  const snapshot = await getDocs(
+    query(collectionGroup(db, "participants"), where("userId", "==", userId), where("active", "==", true))
+  );
+  return snapshot.docs
+    .map(item => item.ref.parent.parent?.id || "")
+    .filter(Boolean);
 }
