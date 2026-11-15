@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
-import { normalizeActivityType } from "../../../lib/validation";
+import { isActivityType, normalizeActivityType } from "../../../lib/validation";
 import { reconcileChallengesForUser } from "../../../lib/challenges/server";
 
 export const runtime="nodejs";
@@ -29,6 +29,9 @@ export async function PATCH(request:Request){
       return NextResponse.json({error:"Aktivita obsahuje neplatné údaje."},{status:400});
     }
 
+    if (updates.type !== undefined && !isActivityType(updates.type)) {
+      return NextResponse.json({error:"Aktivita obsahuje neplatný typ."},{status:400});
+    }
     const nextType=updates.type===undefined ? (current.type==="chůze"?"chůze":"běh") : normalizeActivityType(updates.type);
     const tempo=(minuty/km).toFixed(2);
     const safeUpdate:any={
