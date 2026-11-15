@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   try {
     const { decoded, adminDb } = await requireUser(request);
     const rate = await consumeRateLimit(adminDb, request, "media-upload", 20);
-    if (!rate.allowed) return NextResponse.json({ error: "Příliš mnoho nahrávání. Zkus to později." }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } };
+    if (!rate.allowed) return NextResponse.json({ error: "Příliš mnoho nahrávání. Zkus to později." }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
     const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
     const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
