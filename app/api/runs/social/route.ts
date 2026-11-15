@@ -112,7 +112,6 @@ export async function GET(request: Request) {
       isAdmin,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "LIKE_LIMIT_REACHED") return NextResponse.json({ error: "Tento záznam už má maximální počet zobrazených lajků." }, { status: 409 });
     const authError = authErrorResponse(error);
     if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
     return NextResponse.json({ error: "Sociální data se nepodařilo načíst." }, { status: 500 });
@@ -232,6 +231,7 @@ export async function POST(request: Request) {
       comment: { id: commentRef.id, uid: decoded.uid, nickname, avatarUrl, text, mine: true },
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "LIKE_LIMIT_REACHED") return NextResponse.json({ error: "Tento záznam už má maximální počet zobrazených lajků." }, { status: 409 });
     const authError = authErrorResponse(error);
     if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
     console.error("POST /api/runs/social:", error);
