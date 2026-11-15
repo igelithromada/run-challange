@@ -37,30 +37,32 @@ export async function PATCH(request:Request){
     };
 
     const contributions=await adminDb.collectionGroup("activityContributions").where("activityId","==",id).get();
-    const batch=adminDb.batch();
-
-    for(const contribution of contributions.docs){
-      const data=contribution.data()||{};
-      const teamRef=contribution.ref.parent.parent;
-      if(!teamRef)continue;
-      const oldType=data.type==="chůze"?"chůze":"běh";
-      const oldKm=Number(data.km)||0;
-      const oldKmField=oldType==="chůze"?"walkingKm":"runningKm";
-      const oldCountField=oldType==="chůze"?"walkingActivities":"runningActivities";
-      const newKmField=nextType==="chůze"?"walkingKm":"runningKm";
-      const newCountField=nextType==="chůze"?"walkingActivities":"runningActivities";
-
-      batch.update(teamRef,{
-        [`stats.${oldKmField}`]:FieldValue.increment(-oldKm),
-        [`stats.${oldCountField}`]:FieldValue.increment(-1),
-        [`stats.${newKmField}`]:FieldValue.increment(km),
-        [`stats.${newCountField}`]:FieldValue.increment(1)
-      });
-      batch.update(contribution.ref,{type:nextType,km});
+    const newKmField=nextType==="chůze"?"walkingKm":"runningKm";
+    const newCountField=nextType==="chůze"?"walkingActivities":"runningActivities";
+    for(let start=0;start<contributions.docs.length;start+=225){
+      const chunk=contributions.docs.slice(start,start+225);
+      const batch=adminDb.batch();
+      for(const contribution of chunk){
+        const data=contribution.data()||{};
+        const teamRef=contribution.ref.parent.parent;
+        if(!teamRef)continue;
+        const oldType=data.type==="chůze"?"chůze":"běh";
+        const oldKm=Number(data.km)||0;
+        const oldKmField=oldType==="chůze"?"walkingKm":"runningKm";
+        const oldCountField=oldType==="chůze"?"walkingActivities":"runningActivities";
+        batch.update(teamRef,{
+          [`stats.${oldKmField}`]:FieldValue.increment(-oldKm),
+          [`stats.${oldCountField}`]:FieldValue.increment(-1),
+          [`stats.${newKmField}`]:FieldValue.increment(km),
+          [`stats.${newCountField}`]:FieldValue.increment(1)
+        });
+        batch.update(contribution.ref,{type:nextType,km});
+      }
+      await batch.commit();
     }
-
-    batch.update(runRef,safeUpdate);
-    await batch.commit();
+    const runBatch=adminDb.batch();
+    runBatch.update(runRef,safeUpdate);
+    await runBatch.commit();
     await reconcileChallengesForUser(adminDb,decoded.uid);
     return NextResponse.json({ok:true});
   }catch(error){
