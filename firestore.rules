@@ -68,32 +68,11 @@ service cloud.firestore {
     }
 
     match /runs/{runId} {
+      // Aktivity se zapisují, upravují a mažou výhradně přes serverové
+      // endpointy, kde se znovu ověřuje vlastník, rozsah hodnot a média.
+      // Přímé klientské zápisy jsou záměrně vypnuté.
       allow read: if signedIn();
-
-      allow create: if signedIn()
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasAll(["uid", "km", "minuty", "tempo", "timestamp"]);
-
-      // Vlastník může upravovat pouze skutečně editovatelná pole aktivity.
-      // Sociální počítadla, autora, vlastníka a tým spravuje aplikace/server.
-      allow update: if isAdmin()
-        || (signedIn()
-          && resource.data.uid == request.auth.uid
-          && request.resource.data.uid == request.auth.uid
-          && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly([
-              "km",
-              "minuty",
-              "tempo",
-              "timestamp",
-              "description",
-              "imageUrl",
-              "imageUrls",
-              "imagePublicIds"
-            ]));
-
-      allow delete: if isAdmin()
-        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create, update, delete: if isAdmin();
     }
 
     match /teams/{teamId} {
