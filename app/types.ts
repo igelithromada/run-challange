@@ -41,7 +41,7 @@ export interface ChallengeData {
   id:string; organizationId?:string; name:string; description?:string; createdBy?:string; avatarUrl?:string;
   avatarPublicId?:string; kind:ChallengeKind; activityType:ActivityType; goal:number;
   startDate:string; endDate:string; state:ChallengeState; participantCount?:number;
-  sharedProgress?:number; winnerId?:string; goalReachedAt?:FirestoreTimestamp;
+  sharedProgress?:number; winnerId?:string; goalReached?:boolean; goalReachedAt?:FirestoreTimestamp;
 }
 
 export interface ChallengeParticipant {
