@@ -140,7 +140,7 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
       for(let start=0;start<all.length;start+=450){
         const batch=adminDb.batch();
         for(const p of all.slice(start,start+450)){
-          const original=participants.docs.find((d:any)=>d.id===p.id);
+          const original=participants.docs.find((d: any)=>d.id===p.id);
           if(!original)continue;
           batch.set(original.ref,{result:Number(p.result||0),targetReachedAt:p.targetReachedAt||null,finalResult:Number(p.result||0),finalRank:start+(all.indexOf(p))+1,finalizedAt:Timestamp.now()},{merge:true});
         }
