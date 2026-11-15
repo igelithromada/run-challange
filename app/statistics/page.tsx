@@ -22,6 +22,12 @@ export default function StatisticsPage() {
   const [avatars, setAvatars] = useState<Record<string, string>>({});
   const [user, setUser] = useState<AuthUser | null>(null);
   const [selectedType, setSelectedType] = useState<ActivityType>("běh");
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
+      if (cached === "běh" || cached === "chůze") setSelectedType(cached);
+    } catch {}
+  }, []);
   const [view, setView] = useState("já");
   const [metric, setMetric] = useState("km");
   const [startDate, setStartDate] = useState("");
@@ -29,23 +35,86 @@ export default function StatisticsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    try {
-      const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
-      if (cached === "běh" || cached === "chůze") setSelectedType(cached);
-    } catch {}
-  }, []);
+    const unsub = onAuthStateChanged(auth, u => { if (!u) router.push("/login"); else setUser(u); });
+    return () => unsub();
+  }, [router]);
+
+  const runsQuery = useMemo(() => filteredRunsQuery(startDate || undefined, endDate || undefined), [startDate, endDate]);
+  const runsState = useSharedFirestoreQuery<RunData>("runs:statistics:" + (startDate || "all") + ":" + (endDate || "all"), runsQuery);
+  const runs = runsState.data;
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, u => {
-      if (!u) router.push("/login");
-      else setUser(u);
-    });
-    if (runsState.loading) {
+    const ids = Array.from(new Set(runs.map(run => run.uid).filter((id): id is string => typeof id === "string" && !!id)));
+    if (!ids.length) { setAvatars({}); return; }
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const next = await getUserAvatars(ids);
+        if (cancelled) return;
+        setAvatars(next);
+      } catch (error) { console.error("Nepodařilo se načíst avatary ve výsledcích", error); }
+    };
+    void load();
+    return () => { cancelled = true; };
+  }, [runs]);
+
+  const filtered = runs.filter(run => {
+    if ((run.type || "běh") !== selectedType) return false;
+    const timestamp = run.timestamp;
+    const date = !timestamp ? new Date(0) : timestamp instanceof Date ? timestamp : "toDate" in timestamp && typeof timestamp.toDate === "function" ? timestamp.toDate() : "seconds" in timestamp && typeof timestamp.seconds === "number" ? new Date(timestamp.seconds * 1000) : new Date(0);
+    if (startDate && new Date(startDate) > date) return false;
+    if (endDate && new Date(endDate + "T23:59") < date) return false;
+    return true;
+  });
+
+  const userMap: Record<string, { name: string; km: number; min: number; avatarUrl?: string }> = {};
+  filtered.forEach(run => {
+    const uid = typeof run.uid === "string" ? run.uid : "";
+    if (!uid) return;
+    const name = run.nickname || run.email?.split("@")[0] || "Anonym";
+    const km = Number(run.km) || 0;
+    const min = Number(run.minuty) || 0;
+    if (!userMap[uid]) userMap[uid] = { name, km: 0, min: 0, avatarUrl: run.avatarUrl || "" };
+    userMap[uid].name = name;
+    if (!userMap[uid].avatarUrl && run.avatarUrl) userMap[uid].avatarUrl = run.avatarUrl;
+    userMap[uid].km += km; userMap[uid].min += min;
+  });
+
+  const userList = Object.entries(userMap).map(([uid, data]) => ({ uid, name: data.name, avatarUrl: avatars[uid] || data.avatarUrl || "", km: data.km, tempo: data.km ? data.min / data.km : 0 })).sort((a,b) => metric === "tempo" ? a.tempo-b.tempo : b.km-a.km);
+  let totalKm = 0, totalMin = 0;
+  if (view === "já") {
+    const mine = filtered.filter(r => r.uid === user?.uid);
+    totalKm = mine.reduce((a,b) => a + Number(b.km || 0), 0);
+    totalMin = mine.reduce((a,b) => a + Number(b.minuty || 0), 0);
+  } else {
+    totalKm = userList.reduce((a,b) => a+b.km,0);
+    totalMin = userList.reduce((a,b) => a+(b.tempo*b.km || 0),0);
+  }
+  const overallMetrics = activityMetrics(filtered.filter(r => view === "já" ? r.uid === user?.uid : true));
+  const avgTempo = overallMetrics.pace;
+  const podiumData = userList;
+  const count = view === "já" ? filtered.filter(r => r.uid === user?.uid).length : userList.length;
+
+  useEffect(() => {
+    if (runsState.error) showAppToast("Výsledky se nepodařilo načíst. Zkus stránku obnovit.", "error");
+  }, [runsState.error]);
+
+  const handleSelect = async (item: string) => {
+    setMenuVisible(false);
+    if (item === "logout") { await signOut(auth); router.push("/login"); return; }
+    if (item === "home") { router.push("/"); return; }
+    if (item === "trainer") { router.push("/trainer"); return; }
+    router.push("/" + (item === "myrun" ? "myruns" : item));
+  };
+
+  if (runsState.loading) {
     return (
       <>
         <Navbar title="Výsledky" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
         <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
-        <main className="container statistics-page"><LoadingSkeleton count={3} /></main>
+        <main className="container statistics-page">
+          <LoadingSkeleton count={3} />
+        </main>
       </>
     );
   }
@@ -55,6 +124,8 @@ export default function StatisticsPage() {
       <Navbar title="Výsledky" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
       <main className="container statistics-page">
+        {/* Chyba načítání se zobrazuje jednotně přes globální AppToast. */}
+
         <div className="control-caption">Typ aktivity</div>
         <ActivityTypeSelector value={selectedType} onChange={setSelectedType} />
 
@@ -88,33 +159,31 @@ export default function StatisticsPage() {
           </section>
         )}
 
-        {view === "jednotlivci" && (
+        {view !== "já" && (
           <>
             <section className="results-section">
               <div className="results-section-heading"><Trophy size={22}/><div><h2>Stupně vítězů</h2><p>Nejlepší výsledky podle zvoleného období a kritéria.</p></div></div>
               <ul className="results-podium">
-                {podiumData.slice(0,3).map((item, idx) => (
-                  <li key={item.uid} className={`results-podium-item rank-${idx+1}`}>
+                {podiumData.slice(0,3).map((item, idx) => {
+                  const label = item.name;
+                  const avatar = item.avatarUrl;
+                  return <li key={idx} className={`results-podium-item rank-${idx+1}`}>
                     <span className="results-rank-icon"><Medal /></span>
-                    <span className="activity-avatar">{item.avatarUrl ? <img src={item.avatarUrl} alt="" /> : item.name.charAt(0).toUpperCase()}</span>
-                    <span className="results-name">{item.name}</span>
+                    <span className="activity-avatar">{avatar ? <img src={avatar} alt="" /> : label.charAt(0).toUpperCase()}</span>
+                    <span className="results-name">{label}</span>
                     <span className="results-value">{metric === "km" ? `${item.km.toFixed(2)} km` : `${item.tempo.toFixed(2)} min/km`}</span>
-                  </li>
-                ))}
+                  </li>;
+                })}
               </ul>
             </section>
 
             <section className="results-other">
               <div className="results-section-heading"><Users size={22}/><div><h2>Ostatní</h2><p>Další účastníci v pořadí.</p></div></div>
               <ul className="results-podium">
-                {podiumData.slice(3).map((item, idx) => (
-                  <li key={item.uid} className="results-podium-item">
-                    <span className="results-rank-icon"><span>{idx+4}</span></span>
-                    <span className="activity-avatar">{item.name.charAt(0).toUpperCase()}</span>
-                    <span className="results-name">{item.name}</span>
-                    <span className="results-value">{metric === "km" ? `${item.km.toFixed(2)} km` : `${item.tempo.toFixed(2)} min/km`}</span>
-                  </li>
-                ))}
+                {podiumData.slice(3).map((item, idx) => {
+                  const label = item.name;
+                  return <li key={idx} className="results-podium-item"><span className="results-rank-icon"><span>{idx+4}</span></span><span className="activity-avatar">{label.charAt(0).toUpperCase()}</span><span className="results-name">{label}</span><span className="results-value">{metric === "km" ? `${item.km.toFixed(2)} km` : `${item.tempo.toFixed(2)} min/km`}</span></li>;
+                })}
               </ul>
             </section>
           </>
