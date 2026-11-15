@@ -211,11 +211,7 @@ export default function RunForm({ type }: {
         commentCount: 0
       };
 
-      try {
-        await createRun(runData);
-      } catch (error) {
-        throw error;
-      }
+      await createRun(runData);
       reset();
       setShowForm(false);
       showAppToast(
