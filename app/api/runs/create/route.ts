@@ -92,24 +92,52 @@ export async function POST(request: Request) {
 
     const kmField = type === "chůze" ? "walkingKm" : "runningKm";
     const countField = type === "chůze" ? "walkingActivities" : "runningActivities";
-    for (let start=0; start<memberTeamIds.length; start+=450) {
-      const chunk=memberTeamIds.slice(start,start+450);
-      const batch=adminDb.batch();
-      for (const teamId of chunk) {
+    const committedTeamIds: string[] = [];
+    try {
+      for (let start=0; start<memberTeamIds.length; start+=450) {
+        const chunk=memberTeamIds.slice(start,start+450);
+        const batch=adminDb.batch();
+        const existingTeamIds: string[] = [];
+        for (const teamId of chunk) {
+          const teamRef=adminDb.collection("teams").doc(teamId);
+          const contributionRef=teamRef.collection("activityContributions").doc(ref.id);
+          const teamSnap=await teamRef.get();
+          if(!teamSnap.exists) continue;
+          existingTeamIds.push(teamId);
+          batch.set(contributionRef,{
+            activityId:ref.id,userId:decoded.uid,type,km,createdAt:runCreatedAt
+          });
+          batch.update(teamRef,{
+            [`stats.${kmField}`]:FieldValue.increment(km),
+            [`stats.${countField}`]:FieldValue.increment(1)
+          });
+        }
+        if(existingTeamIds.length) {
+          await batch.commit();
+          committedTeamIds.push(...existingTeamIds);
+        }
+      }
+    } catch (teamError) {
+      // The run and team statistics must not diverge if a later team batch fails.
+      // Roll back only contributions that this request actually committed.
+      for (const teamId of committedTeamIds) {
         const teamRef=adminDb.collection("teams").doc(teamId);
         const contributionRef=teamRef.collection("activityContributions").doc(ref.id);
-        const teamSnap=await teamRef.get();
-        if(!teamSnap.exists) continue;
-        batch.set(contributionRef,{
-          activityId:ref.id,userId:decoded.uid,type,km,createdAt:runCreatedAt
-        });
-        batch.update(teamRef,{
-          [`stats.${kmField}`]:FieldValue.increment(km),
-          [`stats.${countField}`]:FieldValue.increment(1)
+        await adminDb.runTransaction(async tx => {
+          const [teamSnap, contributionSnap] = await Promise.all([tx.get(teamRef), tx.get(contributionRef)]);
+          if (!contributionSnap.exists) return;
+          tx.delete(contributionRef);
+          if (teamSnap.exists) {
+            tx.update(teamRef,{
+              [`stats.${kmField}`]:FieldValue.increment(-km),
+              [`stats.${countField}`]:FieldValue.increment(-1)
+            });
+          }
         });
       }
-      if(chunk.length) await batch.commit();
-    };
+      await adminDb.recursiveDelete(ref);
+      throw teamError;
+    }
     await reconcileChallengesForUser(adminDb, decoded.uid);
     return NextResponse.json({ ok: true, id: ref.id });
   } catch (error) {
