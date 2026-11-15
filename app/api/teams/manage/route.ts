@@ -57,7 +57,10 @@ export async function POST(request: Request) {
         tx.set(memberRef(adminDb,teamId,uid),{userId:uid,joinedAt:now,active:true,leaveAt:null},{merge:true});
         const historyRef=ref.collection("membershipHistory").doc();
         tx.create(historyRef,{userId:uid,joinedAt:now,active:true});
-        tx.update(ref,{memberCount:FieldValue.increment(1)});
+        tx.update(ref,{
+          memberCount:FieldValue.increment(1),
+          ...(team.managerId ? {} : {managerId:uid})
+        });
       });
       return NextResponse.json({ok:true});
     }
