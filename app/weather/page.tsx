@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { auth } from "../lib/firebase";
 import type { WeatherHour, WeatherResponse } from "../lib/weather";
 import { Cloud, Wind, Droplets, RefreshCw } from "lucide-react";
 import Navbar from "../components/Navbar";
