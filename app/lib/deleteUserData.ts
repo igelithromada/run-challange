@@ -120,9 +120,9 @@ async function removeUserFromChallenges(adminDb: Firestore, uid: string) {
   }
 
   // Reconcile active challenges once after the account is removed.
-  if ([...challengeStates.values()].some(state => state === "active")) {
-    await reconcileChallengesForUser(adminDb, uid);
-  }
+  // Reconciliation is intentionally done after all participant states are persisted.
+  // It also handles active challenges whose participant count reached zero/one.
+  await reconcileChallengesForUser(adminDb, uid);
 
   return participantSnapshot.size;
 }
