@@ -110,9 +110,25 @@ export async function POST(request: Request) {
       await adminDb.runTransaction(async tx=>{
         const teamSnap=await tx.get(ref);
         const targetSnap=await tx.get(memberRef(adminDb,teamId,newManagerId));
+        const currentSnap=await tx.get(memberRef(adminDb,teamId,uid));
         if(!teamSnap.exists || teamSnap.data()?.managerId!==uid) throw new Error("NOT_MANAGER");
         if(!targetSnap.exists || targetSnap.data()?.active===false) throw new Error("TARGET_NOT_MEMBER");
+
+        const now = Timestamp.now();
         tx.update(ref,{managerId:newManagerId});
+
+        if (body?.leaveCurrentManager === true) {
+          if (!currentSnap.exists || currentSnap.data()?.active === false) throw new Error("CURRENT_MANAGER_NOT_MEMBER");
+          tx.update(memberRef(adminDb,teamId,uid),{active:false,leaveAt:now});
+          const history = await tx.get(
+            ref.collection("membershipHistory")
+              .where("userId","==",uid)
+              .where("active","==",true)
+              .limit(1)
+          );
+          history.docs.forEach((d:any)=>tx.update(d.ref,{active:false,leaveAt:now}));
+          tx.update(ref,{memberCount:FieldValue.increment(-1)});
+        }
       });
       return NextResponse.json({ok:true});
     }
@@ -135,6 +151,7 @@ export async function POST(request: Request) {
       UNAUTHORIZED:["Nejsi přihlášen.",401],TEAM_NAME_TAKEN:["Tým s tímto názvem už existuje.",409],
       TEAM_CREATE_LIMIT:["Můžeš vytvořit nejvýše 5 týmů.",409],
       NOT_MANAGER:["Správu může převést jen současný správce.",403],
+      CURRENT_MANAGER_NOT_MEMBER:["Současný správce už není členem týmu.",409],
       TARGET_NOT_MEMBER:["Nový správce musí být členem týmu.",400]
     };
     const [text,status]=map[message]||["Operaci týmu se nepodařilo dokončit.",500];
