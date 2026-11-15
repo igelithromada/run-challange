@@ -42,6 +42,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ok:true,team:{id:team.id,name,description}});
     }
 
+    if (action === "listMine") {
+      const pageSize = Math.min(10, Math.max(1, Number(body?.pageSize) || 10));
+      const page = Math.max(1, Number(body?.page) || 1);
+      const memberships = await adminDb.collectionGroup("members")
+        .where("userId", "==", uid)
+        .where("active", "==", true)
+        .get();
+      const ids = [...new Set(memberships.docs.map((d: any) => d.ref.parent.parent?.id).filter(Boolean))];
+      const teamSnapshots = await Promise.all(ids.map((id: string) => adminDb.collection("teams").doc(id).get()));
+      const items = teamSnapshots
+        .filter((snap: any) => snap.exists)
+        .map((snap: any) => ({ id: snap.id, ...snap.data() }))
+        .sort((a: any, b: any) => String(a.name || "").localeCompare(String(b.name || ""), "cs"));
+      const start = (page - 1) * pageSize;
+      return NextResponse.json({ ok: true, items: items.slice(start, start + pageSize), hasMore: start + pageSize < items.length });
+    }
+
     const teamId = String(body?.teamId || "");
     if (!teamId) return NextResponse.json({error:"Chybí tým."},{status:400});
     const ref = teamRef(adminDb,teamId);
