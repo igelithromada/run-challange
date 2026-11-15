@@ -86,8 +86,17 @@ export async function fetchAllRuns(pageSize = 500): Promise<RunData[]> {
 }
 
 export async function createRun(data: NewRunData): Promise<string> {
-  const snapshot = await addDoc(runsCollection(), data);
-  return snapshot.id;
+  const user = auth.currentUser;
+  if (!user) throw new Error("Nejsi přihlášen.");
+  const token = await user.getIdToken(true);
+  const response = await fetch("/api/runs/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ run: data }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || "Záznam se nepodařilo uložit.");
+  return String(result.id || "");
 }
 
 export async function updateRun(id: string, data: Partial<RunData>): Promise<void> {
