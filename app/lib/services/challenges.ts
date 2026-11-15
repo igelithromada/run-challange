@@ -3,7 +3,7 @@ import { db } from "../firebase";
 import type { ChallengeData } from "../../types";
 
 export function allChallengesQuery(): Query {
-  return query(collection(db, "challenges"), orderBy("name", "asc"));
+  return query(collection(db, "challenges"));
 }
 
 export async function getChallenge(id: string): Promise<ChallengeData | null> {
