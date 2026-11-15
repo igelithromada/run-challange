@@ -23,16 +23,19 @@ export async function POST(request: Request) {
 
     const km = Number(data.km);
     const minuty = Number(data.minuty);
-    const tempo = Number(data.tempo);
     const type = data.type === "běh" || data.type === "chůze" ? normalizeActivityType(data.type) : "";
     if (
       !Number.isFinite(km) || km <= 0 || km > 1000 ||
       !Number.isFinite(minuty) || minuty <= 0 || minuty > 24 * 60 ||
-      !Number.isFinite(tempo) || tempo <= 0 || tempo > 60 ||
       !type
     ) {
       return NextResponse.json({ error: "Aktivita obsahuje neplatné údaje." }, { status: 400 });
     }
+
+    const profileSnapshot = await adminDb.collection("publicProfiles").doc(decoded.uid).get();
+    const profileData = profileSnapshot.exists ? profileSnapshot.data() || {} : {};
+    const safeNickname = typeof profileData.nickname === "string" ? profileData.nickname.trim().slice(0, 40) : "";
+    const safeAvatarUrl = typeof profileData.avatarUrl === "string" ? profileData.avatarUrl : "";
 
     const requestedTeamId = typeof data.teamId === "string" && data.teamId.trim() ? data.teamId.trim() : null;
     let teamId: string | null = requestedTeamId;
@@ -88,10 +91,10 @@ export async function POST(request: Request) {
     const timestamp = typeof data.timestamp === "string" ? new Date(data.timestamp) : new Date();
     const safeData = {
       uid: decoded.uid,
-      email: typeof data.email === "string" ? data.email : decoded.email || "",
-      nickname: typeof data.nickname === "string" ? data.nickname : "",
-      avatarUrl: typeof data.avatarUrl === "string" ? data.avatarUrl : "",
-      km, minuty, tempo: tempo.toFixed(2), type,
+      email: decoded.email || "",
+      nickname: safeNickname,
+      avatarUrl: safeAvatarUrl,
+      km, minuty, tempo: (minuty / km).toFixed(2), type,
       description: typeof data.description === "string" ? data.description.trim().slice(0, 500) : "",
       timestamp: Number.isNaN(timestamp.getTime()) ? new Date() : timestamp,
       imageUrls: Array.isArray(data.imageUrls)
