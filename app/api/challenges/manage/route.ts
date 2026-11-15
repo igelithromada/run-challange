@@ -91,6 +91,7 @@ export async function POST(request:Request){
         if(data.createdBy!==uid)throw new Error("NOT_OWNER");
         if(data.state!=="planned")throw new Error("CHALLENGE_LOCKED");
         const participants=await tx.get(ref.collection("participants"));
+        if(participants.size>450) throw new Error("CHALLENGE_TOO_LARGE_TO_DELETE");
         participants.docs.forEach(d=>tx.delete(d.ref));
         tx.delete(ref);
         tx.delete(adminDb.collection("challengeNames").doc(data.nameKey));
@@ -132,7 +133,7 @@ export async function POST(request:Request){
     return NextResponse.json({error:"Operace výzvy zatím není dostupná."},{status:400});
   }catch(error){
     const m=error instanceof Error?error.message:"";
-    const map:any={UNAUTHORIZED:["Nejsi přihlášen.",401],CHALLENGE_NAME_TAKEN:["Výzva s tímto názvem už existuje.",409],CHALLENGE_CREATE_LIMIT:["Můžeš vytvořit nejvýše 5 aktivních nebo plánovaných výzev.",409],CHALLENGE_NOT_FOUND:["Výzva nebyla nalezena.",404],CHALLENGE_LOCKED:["Tato výzva je uzamčená.",409],NOT_OWNER:["Tuto výzvu může upravovat nebo mazat jen její autor.",403]};
+    const map:any={UNAUTHORIZED:["Nejsi přihlášen.",401],CHALLENGE_NAME_TAKEN:["Výzva s tímto názvem už existuje.",409],CHALLENGE_CREATE_LIMIT:["Můžeš vytvořit nejvýše 5 aktivních nebo plánovaných výzev.",409],CHALLENGE_NOT_FOUND:["Výzva nebyla nalezena.",404],CHALLENGE_LOCKED:["Tato výzva je uzamčená.",409],CHALLENGE_TOO_LARGE_TO_DELETE:["Výzvu s příliš velkým počtem účastníků nelze touto operací bezpečně smazat.",409],NOT_OWNER:["Tuto výzvu může upravovat nebo mazat jen její autor.",403]};
     const [msg,status]=map[m]||["Operaci výzvy se nepodařilo dokončit.",500];
     console.error("POST /api/challenges/manage:",error);
     return NextResponse.json({error:msg},{status});
