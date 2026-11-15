@@ -121,6 +121,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const { adminDb, decoded } = await requireApiUser(request);
+    const rate = await consumeRateLimit(adminDb, request, "social", 120);
+    if (!rate.allowed) return NextResponse.json({ error: "Příliš mnoho požadavků. Zkus to později." }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
     const body = await request.json().catch(() => ({}));
     const runId = typeof body?.runId === "string" ? body.runId.trim() : "";
     const action = typeof body?.action === "string" ? body.action : "";
