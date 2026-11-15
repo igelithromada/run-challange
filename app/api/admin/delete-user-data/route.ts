@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import type { DocumentReference } from "firebase-admin/firestore";
+import { FieldValue, type DocumentReference } from "firebase-admin/firestore";
 import { requireAdmin, authErrorResponse } from "../../../lib/apiAuth";
 import { collectCloudinaryPublicIds, deleteCloudinaryImages, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
+import { reconcileChallengesForUser } from "../../../lib/challenges/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,12 +57,43 @@ export async function POST(request: Request) {
     }
 
     const refs = runsSnapshot.docs.map((item) => item.ref);
+    const runIds = refs.map(ref => ref.id);
+    for (let start = 0; start < runIds.length; start += 30) {
+      const ids = runIds.slice(start, start + 30);
+      const contributions = await adminDb.collectionGroup("activityContributions")
+        .where("activityId", "in", ids)
+        .get();
+      for (let i = 0; i < contributions.docs.length; i += 400) {
+        const batch = adminDb.batch();
+        for (const contribution of contributions.docs.slice(i, i + 400)) {
+          const data = contribution.data() || {};
+          const teamRef = contribution.ref.parent.parent;
+          if (!teamRef) continue;
+          const teamSnap = await teamRef.get();
+          const type = data.type === "chůze" ? "chůze" : "běh";
+          const km = Number(data.km) || 0;
+          const kmField = type === "chůze" ? "walkingKm" : "runningKm";
+          const countField = type === "chůze" ? "walkingActivities" : "runningActivities";
+          if (teamSnap.exists) {
+            batch.update(teamRef, {
+              [`stats.${kmField}`]: FieldValue.increment(-km),
+              [`stats.${countField}`]: FieldValue.increment(-1),
+            });
+          }
+          batch.delete(contribution.ref);
+        }
+        await batch.commit();
+      }
+    }
+    // Runs must be gone before reconciliation; otherwise challenge results
+    // would still include activities that this cleanup is about to delete.
     for (const ref of refs) await deleteRunComments(ref);
     for (let i = 0; i < refs.length; i += 450) {
       const batch = adminDb.batch();
       refs.slice(i, i + 450).forEach((ref) => batch.delete(ref));
       await batch.commit();
     }
+    await reconcileChallengesForUser(adminDb, uid);
 
     await adminDb.collection("users").doc(uid).set(
       {

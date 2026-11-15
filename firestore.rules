@@ -35,13 +35,11 @@ service cloud.firestore {
               "avatarPublicId",
               "theme",
               "customColor",
+              "gradientEnabled",
               "themeUpdatedAt",
               "hapticsEnabled",
               "defaultActivity",
               "confirmDelete",
-              "teamId",
-              "joinedTeam",
-              "teamIdsByType",
               "progressGoals",
               "progressGoalsByType",
               "personalTrainerPlan",
@@ -70,45 +68,43 @@ service cloud.firestore {
     match /runs/{runId} {
       allow read: if signedIn();
 
-      allow create: if signedIn()
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasAll(["uid", "km", "minuty", "tempo", "timestamp"]);
+      // Aktivity zapisuje a mění pouze server, protože zápis současně
+      // aktualizuje týmové statistiky a výsledky výzev.
+      allow create: if false;
 
       // Vlastník může upravovat pouze skutečně editovatelná pole aktivity.
       // Sociální počítadla, autora, vlastníka a tým spravuje aplikace/server.
-      allow update: if isAdmin()
-        || (signedIn()
-          && resource.data.uid == request.auth.uid
-          && request.resource.data.uid == request.auth.uid
-          && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly([
-              "km",
-              "minuty",
-              "tempo",
-              "timestamp",
-              "description",
-              "imageUrl",
-              "imageUrls",
-              "imagePublicIds"
-            ]));
+      allow update: if isAdmin();
 
-      allow delete: if isAdmin()
-        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow delete: if isAdmin();
     }
 
     match /teams/{teamId} {
       allow read: if signedIn();
+      allow create, update, delete: if false;
+    }
 
-      allow create: if signedIn()
-        && request.resource.data.createdBy == request.auth.uid;
+    match /teams/{teamId}/members/{memberId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
 
-      allow update: if isAdmin()
-        || (signedIn()
-          && resource.data.createdBy == request.auth.uid
-          && request.resource.data.createdBy == resource.data.createdBy);
+    match /teamNames/{nameKey} {
+      allow read, write: if false;
+    }
 
-      allow delete: if isAdmin()
-        || (signedIn() && resource.data.createdBy == request.auth.uid);
+    match /challenges/{challengeId} {
+      allow read: if signedIn();
+      allow create, update, delete: if false;
+    }
+
+    match /challenges/{challengeId}/participants/{participantId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /challengeNames/{nameKey} {
+      allow read, write: if false;
     }
 
     match /{document=**} {

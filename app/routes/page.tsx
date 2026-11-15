@@ -213,10 +213,10 @@ export default function RoutesPage() {
         )}
 
         <style>{`
-          .routes-sort-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:.45rem;margin:0 0 1rem;flex-wrap:wrap}
+          .routes-sort-toolbar{display:flex;align-items:center;justify-content:center;gap:.45rem;margin:0 0 1rem;flex-wrap:wrap}
           .routes-sort-toolbar button{min-height:40px;padding:.45rem .8rem;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(255,255,255,.08);color:inherit;font-weight:700;cursor:pointer}
           .routes-sort-toolbar button.active{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.38)}
-          .routes-admin-toolbar{display:flex;justify-content:flex-end;margin-bottom:1rem}
+          .routes-admin-toolbar{display:flex;justify-content:center;margin:0 0 1rem}
           .routes-admin-form-panel{margin-bottom:1rem}
           .route-admin-actions{display:flex;gap:.5rem;margin-top:.8rem}
           .route-admin-actions button{min-width:0;flex:1}
@@ -237,25 +237,19 @@ export default function RoutesPage() {
           .route-card-main-button:hover{background:rgba(255,255,255,.04)}
           .route-map-preview-button:focus-visible{outline:2px solid rgba(255,255,255,.9);outline-offset:3px}
           .route-detail-backdrop{position:fixed;inset:0;z-index:5000;display:flex;align-items:stretch;justify-content:center;padding:0;background:rgba(8,16,22,.72);backdrop-filter:blur(10px)}
-          .route-detail-modal{width:min(900px,100%);height:100%;overflow:auto;box-sizing:border-box;padding:1rem; background:linear-gradient(180deg,rgba(40,62,73,.98),rgba(28,44,54,.99));color:white}
-          .route-detail-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.8rem}
+          .route-detail-modal{width:min(900px,100%);height:100dvh;max-height:100dvh;overflow:hidden;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;box-sizing:border-box;padding:1rem;background:linear-gradient(180deg,rgba(40,62,73,.98),rgba(28,44,54,.99));color:white}
+          .route-detail-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.35rem}
           .route-detail-header span{font-size:.72rem;opacity:.7}
           .route-detail-header h2{margin:.15rem 0;font-size:1.45rem}
           .route-detail-header p{margin:0;opacity:.75}
           .route-detail-header>button{flex:0 0 44px;width:44px;height:44px;border:1px solid rgba(255,255,255,.18);border-radius:14px;background:rgba(255,255,255,.12);color:white;font-size:1.8rem;line-height:1;cursor:pointer}
-          .route-detail-description{margin:.8rem 0;line-height:1.5;opacity:.86}
-          .route-detail-map .route-map-shell{height:calc(100vh - 270px);min-height:360px;margin-top:.8rem;border-radius:18px}
-          .route-detail-actions{margin-top:.8rem;padding-bottom:.4rem}
+          .route-detail-description{margin:.35rem 0 .55rem;line-height:1.4;opacity:.86;overflow:auto;max-height:4.2rem}
+          .route-detail-map{min-height:0;display:flex}
+          .route-detail-map .route-map-shell{height:100%;min-height:0;flex:1;margin-top:.25rem;border-radius:18px}
+          .route-detail-actions{margin-top:.55rem;padding:0 0 .15rem}
           .route-detail-actions a{min-height:48px}
-          @media(max-width:620px){.routes-disabled-row{align-items:stretch;flex-direction:column}.routes-disabled-actions{width:100%}.routes-disabled-actions button{flex:1;min-width:0}}\n          @media(max-width:520px){.route-detail-modal{padding:.75rem}.route-detail-map .route-map-shell{height:calc(100vh - 250px);min-height:300px}.route-detail-header h2{font-size:1.25rem}}
-        `}</style>
-        <div className="routes-toolbar">
-          <div className="routes-sort-toolbar" aria-label="Řazení tras">
-            <button type="button" className={routeSort === "shortest" ? "active" : ""} onClick={() => setRouteSort("shortest")}>Nejkratší</button>
-            <button type="button" className={routeSort === "longest" ? "active" : ""} onClick={() => setRouteSort("longest")}>Nejdelší</button>
-          </div>
-        </div>
-
+          @media(max-width:620px){.routes-disabled-row{align-items:stretch;flex-direction:column}.routes-disabled-actions{width:100%}.routes-disabled-actions button{flex:1;min-width:0}}
+          @media(max-width:520px){.route-detail-modal{padding:.75rem}.route-detail-header h2{font-size:1.25rem}.route-detail-actions{margin-top:.4rem}.route-detail-actions a{min-height:44px}}        `}</style>
         {adminAccess === "allowed" && !showRouteForm && (
           <div className="routes-admin-toolbar">
             <button type="button" className="route-admin-add" onClick={() => { resetRouteForm(); setShowRouteForm(true); setRouteName(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
@@ -263,6 +257,13 @@ export default function RoutesPage() {
             </button>
           </div>
         )}
+
+        <div className="routes-toolbar">
+          <div className="routes-sort-toolbar" aria-label="Řazení tras">
+            <button type="button" className={routeSort === "shortest" ? "active" : ""} onClick={() => setRouteSort("shortest")}>Nejkratší</button>
+            <button type="button" className={routeSort === "longest" ? "active" : ""} onClick={() => setRouteSort("longest")}>Nejdelší</button>
+          </div>
+        </div>
 
         {adminAccess === "allowed" && adminRoutes.some(route => route.disabled) && (
           <section className="tile routes-disabled-panel">

@@ -8,7 +8,7 @@ import Sidebar from "../components/Sidebar";
 import { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
-import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, Smartphone, Bell, Heart, MessageCircle, Moon, Sun, Square } from "lucide-react";
+import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, Smartphone, Bell, Heart, MessageCircle, Moon } from "lucide-react";
 import { registerTrainerPush, removeTrainerPush } from "../lib/pushNotifications";
 import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
@@ -18,6 +18,8 @@ import { getUserProfile, saveUserSettings } from "../lib/services/users";
 
 const DEFAULT_COLOR = "#36D1DC";
 const DEFAULT_ACTIVITY_KEY = "dolni-lhota-default-activity-v1";
+const SUPPORTED_THEMES = new Set(["default", "dark", "auto", "weather", "custom"]);
+const normalizeTheme = (value: unknown) => typeof value === "string" && SUPPORTED_THEMES.has(value) ? value : "default";
 
 export default function SettingsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -47,7 +49,7 @@ export default function SettingsPage() {
       if (cachedHaptics !== null) setHapticsEnabledState(cachedHaptics !== "false");
       const cached = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
       if (cached) {
-        setTheme(cached.theme || "default");
+        setTheme(normalizeTheme(cached.theme));
         setCustomColor(cached.customColor || DEFAULT_COLOR);
         setGradientEnabled(cached.gradientEnabled !== false);
       }
@@ -62,7 +64,7 @@ export default function SettingsPage() {
       try {
         const data = await getUserProfile(user.uid);
         if (data) {
-          const remoteTheme = data.theme || "default";
+          const remoteTheme = normalizeTheme(data.theme);
           const remoteColor = data.customColor || DEFAULT_COLOR;
           const remoteGradient = data.gradientEnabled !== false;
           const remoteHaptics = data.hapticsEnabled !== false;
@@ -116,16 +118,27 @@ export default function SettingsPage() {
 
   const saveSettings = async (patch: Record<string, unknown>) => {
     const activeUserId = userId || auth.currentUser?.uid;
-    if (!activeUserId) throw new Error("Nejsi přihlášen.");
+    const currentUser = auth.currentUser;
+    if (!activeUserId || !currentUser) throw new Error("Nejsi přihlášen.");
     setSaving(true);
     try {
       const themeChanged = "theme" in patch || "customColor" in patch || "gradientEnabled" in patch;
-      await saveUserSettings(activeUserId, {
-        theme,
-        customColor,
-        gradientEnabled,
-        ...patch,
-      }, themeChanged);
+      if (themeChanged) {
+        const token = await currentUser.getIdToken(true);
+        const response = await fetch("/api/settings/appearance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            theme: patch.theme ?? theme,
+            customColor: patch.customColor ?? customColor,
+            gradientEnabled: patch.gradientEnabled ?? gradientEnabled,
+          }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Vzhled se nepodařilo uložit.");
+        return;
+      }
+      await saveUserSettings(activeUserId, { ...patch });
       if ("defaultActivity" in patch) {
         await mergePublicProfile(activeUserId, { activityType: defaultActivity });
       }
@@ -155,11 +168,15 @@ export default function SettingsPage() {
   };
 
   const handleGradientChange = async (enabled: boolean) => {
+    const previous = gradientEnabled;
     setGradientEnabled(enabled);
     try {
+      await applyTheme(theme, customColor, enabled);
       await saveSettings({ gradientEnabled: enabled });
       flash(enabled ? "Gradient zapnutý" : "Gradient vypnutý");
     } catch (error) {
+      setGradientEnabled(previous);
+      await applyTheme(theme, customColor, previous);
       console.error("Nepodařilo se uložit gradient", error);
       flash("Nastavení gradientu se nepodařilo uložit", "error");
     }
@@ -319,11 +336,7 @@ export default function SettingsPage() {
 
           <div className="theme-options">
             <ThemeItem icon={<Moon size={19}/>} color="#000000" active={theme === "dark"} onClick={() => void handleThemeChange("dark")} text="Čistý černý" />
-            <ThemeItem icon={<Sun size={19}/>} color="linear-gradient(180deg,#f7fbff,#dbeafe)" active={theme === "light"} onClick={() => void handleThemeChange("light")} text="Světlý režim" />
-            <ThemeItem icon={<Square size={19}/>} color="#ffffff" active={theme === "white"} onClick={() => void handleThemeChange("white")} text="Čistý světlý" />
             <ThemeItem icon={<Palette size={19}/>} color="linear-gradient(180deg,#36D1DC,#5B86E5)" active={theme === "default"} onClick={() => void handleThemeChange("default")} text="Výchozí vzhled" />
-            <ThemeItem color="linear-gradient(180deg,#2980b9,#2c3e50)" active={theme === "man"} onClick={() => void handleThemeChange("man")} text="Muž" />
-            <ThemeItem color="linear-gradient(180deg,#ff7eb3,#ff758c)" active={theme === "woman"} onClick={() => void handleThemeChange("woman")} text="Žena" />
             <ThemeItem icon={<Clock3 size={19}/>} color="linear-gradient(180deg,#4facfe,#1b2430)" active={theme === "auto"} onClick={() => void handleThemeChange("auto")} text="Podle času" />
             <ThemeItem icon={<CloudSun size={19}/>} color="linear-gradient(180deg,#ffd166,#4facfe)" active={theme === "weather"} onClick={() => void handleThemeChange("weather")} text="Podle počasí" />
           </div>

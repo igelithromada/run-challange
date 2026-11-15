@@ -87,7 +87,9 @@ export default function UserPage() {
     window.location.assign(paths[item] || "/");
   };
 
-  const profileName = userInfo.nickname || "Uživatel";
+  const runNickname = runs.find(run => typeof run.nickname === "string" && run.nickname.trim())?.nickname?.trim() || "";
+  const runEmailName = runs.find(run => typeof run.email === "string" && run.email.trim())?.email?.split("@")[0]?.trim() || "";
+  const profileName = userInfo.nickname || runNickname || runEmailName || "Uživatel";
   const filteredRuns = runs.filter(run => (run.type || "běh") === selectedType);
 
   const showRunImages = (images: string[], fallback: string) => {

@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut, updatePassword } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import { UserRound, Mail, KeyRound, LogOut, ShieldCheck } from "lucide-react";
+import { UserRound, Mail, KeyRound, LogOut, Trash2, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getUserProfile } from "../lib/services/users";
 import { invalidatePublicProfileCache } from "../lib/services/publicProfiles";
@@ -24,6 +24,8 @@ export default function ProfilePage() {
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [savingNickname, setSavingNickname] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async user => {
@@ -172,6 +174,24 @@ export default function ProfilePage() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    const user = auth.currentUser;
+    if (!user) { flash("Nejsi přihlášen.", "error"); return; }
+    setDeletingAccount(true);
+    try {
+      const token = await user.getIdToken(true);
+      const response = await fetch("/api/account/delete", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Účet se nepodařilo smazat.");
+      await signOut(auth);
+      router.replace("/login");
+    } catch (error) {
+      setDeletingAccount(false);
+      setDeleteOpen(false);
+      flash(error instanceof Error ? error.message : "Účet se nepodařilo smazat.", "error");
+    }
+  };
+
   const handleLogout = async () => {
     await signOut(auth);
     router.replace("/login");
@@ -204,11 +224,7 @@ export default function ProfilePage() {
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
 
       <main className="container profile-page">
-        <header className="profile-header">
-          <span className="routes-eyebrow">MŮJ ÚČET</span>
-          <h1>Profil</h1>
-          <p>Osobní údaje a přihlášení máš nyní oddělené od nastavení aplikace.</p>
-        </header>
+
 
         <section className="tile profile-card">
           <div className="settings-section-heading">
@@ -289,18 +305,32 @@ export default function ProfilePage() {
           </button>
         </section>
 
-        <section className="tile profile-security-card">
-          <div className="settings-section-heading">
-            <ShieldCheck size={22} />
-            <div>
-              <h2>Bezpečnost účtu</h2>
-              <p>Odhlášení je záměrně mimo hlavní navigaci, aby nepůsobilo jako běžná položka aplikace.</p>
-            </div>
-          </div>
+        <section className="tile profile-account-actions">
           <button type="button" className="profile-logout-button" onClick={() => void handleLogout()}>
             <LogOut size={19} />
             Odhlásit se
           </button>
+
+          <button type="button" className="profile-delete-account-button" onClick={() => setDeleteOpen(true)} disabled={deletingAccount}>
+            <Trash2 size={19} />
+            Smazat účet
+          </button>
+
+          {deleteOpen && (
+            <div className="profile-delete-confirm">
+              <div className="profile-delete-confirm-heading">
+                <AlertTriangle size={22} />
+                <div>
+                  <h3>Trvale smazat účet?</h3>
+                  <p>Tato akce je nevratná. Smaže se přihlášení, profil, všechny tvoje aktivity, fotografie, komentáře, označení To se mi líbí, upozornění a členství v týmech. Pokud jsi zakladatel týmu, tým bude také odstraněn.</p>
+                </div>
+              </div>
+              <div className="profile-delete-confirm-actions">
+                <button type="button" className="tile-button profile-delete-cancel" onClick={() => setDeleteOpen(false)} disabled={deletingAccount}>Zrušit</button>
+                <button type="button" className="tile-button profile-delete-confirm-button" onClick={() => void handleDeleteAccount()} disabled={deletingAccount}>{deletingAccount ? "Mažu účet…" : "Ano, trvale smazat účet"}</button>
+              </div>
+            </div>
+          )}
         </section>
       </main>
     </>

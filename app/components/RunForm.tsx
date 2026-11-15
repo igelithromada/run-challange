@@ -164,8 +164,8 @@ export default function RunForm({ type }: {
       setError("Pro uložení záznamu se nejprve přihlas.");
       return;
     }
-    if (!navigator.onLine && files.length > 0) {
-      setError("Fotografie lze přidat jen s připojením k internetu. Záznam můžeš uložit offline bez fotografií.");
+    if (!navigator.onLine) {
+      setError("Pro uložení aktivity je potřeba připojení k internetu.");
       return;
     }
 
@@ -182,27 +182,19 @@ export default function RunForm({ type }: {
         if (uploaded.publicId) imagePublicIds.push(uploaded.publicId);
       }
 
-      setUploadStatus(navigator.onLine ? "Ukládám aktivitu…" : "Ukládám aktivitu offline…");
+      setUploadStatus("Ukládám aktivitu…");
 
       let userData: Record<string, unknown> = {};
       try {
         const profile = await getUserProfile(user.uid);
         if (profile) userData = profile as unknown as Record<string, unknown>;
       } catch {
-        // Firestore může při offline režimu načtení profilu odmítnout.
-        // Samotný zápis lze i tak zařadit do lokální fronty Firestore.
+        // Profil není pro vytvoření aktivity povinný.
       }
-
-      const teamIdsByType = (typeof userData.teamIdsByType === "object" && userData.teamIdsByType !== null)
-        ? userData.teamIdsByType as Record<string, unknown>
-        : {};
-      const selectedTeamId = typeof teamIdsByType[type] === "string"
-        ? teamIdsByType[type] as string
-        : (type === "běh" && typeof userData.teamId === "string" ? userData.teamId : null);
 
       const runData = {
         uid: user.uid,
-        email: user.email || undefined,
+        email: user.email || "",
         nickname: typeof userData.nickname === "string" ? userData.nickname : "",
         avatarUrl: typeof userData.avatarUrl === "string" ? userData.avatarUrl : "",
         km: kmVal,
@@ -213,38 +205,13 @@ export default function RunForm({ type }: {
         timestamp: new Date(activityDate),
         imageUrls,
         imagePublicIds,
-        ...(selectedTeamId ? { teamId: selectedTeamId } : {}),
         activityType: type,
         likedBy: [],
         likeCount: 0,
         commentCount: 0
       };
 
-      try {
-        // Primární cesta zachovává Firestore offline podporu.
-        await createRun(runData);
-      } catch (firestoreError) {
-        const firestoreCode = firestoreError && typeof firestoreError === "object" && "code" in firestoreError
-          ? String((firestoreError as { code?: unknown }).code || "")
-          : "";
-
-        // Pokud produkční Firestore Rules nejsou aktuálně synchronizované,
-        // uložíme aktivitu přes zabezpečený serverový endpoint.
-        if (!firestoreCode.includes("permission-denied") || !navigator.onLine) throw firestoreError;
-
-        const token = await user.getIdToken(true);
-        const response = await fetch("/api/runs/create", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ run: runData }),
-        });
-        const result = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(result.error || "Aktivitu se nepodařilo uložit.");
-      }
-
+      await createRun(runData);
       reset();
       setShowForm(false);
       showAppToast(
