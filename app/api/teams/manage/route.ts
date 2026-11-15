@@ -59,9 +59,13 @@ export async function POST(request: Request) {
       const page = Math.max(1, Number(body?.page) || 1);
       const memberships = await adminDb.collectionGroup("members")
         .where("userId", "==", uid)
-        .where("active", "==", true)
         .get();
-      const ids = [...new Set(memberships.docs.map((d: any) => d.ref.parent.parent?.id).filter(Boolean))];
+      const ids = [...new Set(
+        memberships.docs
+          .filter((d: any) => d.data()?.active === true)
+          .map((d: any) => d.ref.parent.parent?.id)
+          .filter(Boolean)
+      )];
       const teamSnapshots = await Promise.all(ids.map((id: string) => adminDb.collection("teams").doc(id).get()));
       const items = teamSnapshots
         .filter((snap: any) => snap.exists)
