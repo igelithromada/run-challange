@@ -184,7 +184,7 @@ export default function TeamDetailPage() {
 
   if (!team) return null;
 
-  const stats = team.stats || {};
+  const stats = team.stats || { runningKm: 0, runningActivities: 0, walkingKm: 0, walkingActivities: 0 };
   const otherMembers = members.filter(member => member.id !== user?.uid);
 
   return (
