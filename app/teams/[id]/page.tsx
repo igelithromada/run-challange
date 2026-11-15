@@ -23,7 +23,6 @@ export default function TeamDetailPage() {
   const [team,setTeam]=useState<TeamData|null>(null);
   const [members,setMembers]=useState<Member[]>([]);
   const [user,setUser]=useState<import("firebase/auth").User|null>(null);
-  const [goal,setGoal]=useState("500");
   const [avatarUrl,setAvatarUrl]=useState("");
   const [avatarPublicId,setAvatarPublicId]=useState("");
   const [saving,setSaving]=useState(false);
@@ -39,7 +38,6 @@ export default function TeamDetailPage() {
       setTeam(data);
       const memberIds = data.memberIds?.length ? data.memberIds : (data.createdBy ? [data.createdBy] : []);
       setIsMember(memberIds.includes(uid));
-      setGoal(String(Number(data.challengeGoalKm) || 500));
       setAvatarUrl(data.avatarUrl || "");
       setAvatarPublicId(data.avatarPublicId || "");
 
@@ -98,38 +96,18 @@ export default function TeamDetailPage() {
   };
 
   const save=async()=>{
-    if(!isOwner) return;
-    const value=Number(goal.replace(",","."));
-    if(!Number.isFinite(value)||value<=0){showAppToast("Zadej platný cíl.","error");return;}
+    if(!isOwner)return;
     setSaving(true);
     try{
-      const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error("Nejsi přihlášen.");
-      const token = await currentUser.getIdToken(true);
-      const response = await fetch("/api/teams/manage", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          action: "update",
-          teamId: id,
-          challengeGoalKm: value,
-          avatarUrl,
-          avatarPublicId,
-        }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "Nastavení se nepodařilo uložit.");
-      setTeam(previous => previous ? {
-        ...previous,
-        challengeGoalKm: value,
-        avatarUrl,
-        avatarPublicId,
-      } : previous);
+      const currentUser=auth.currentUser;
+      if(!currentUser) throw new Error("Nejsi přihlášen.");
+      const token=await currentUser.getIdToken(true);
+      const response=await fetch("/api/teams/manage",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({action:"update",teamId:id,avatarUrl,avatarPublicId})});
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(result.error||"Nastavení se nepodařilo uložit.");
+      setTeam(previous=>previous?{...previous,avatarUrl,avatarPublicId}:previous);
       showAppToast("Nastavení týmu bylo uloženo.","success");
-    }catch(e){console.error(e);showAppToast(e instanceof Error ? e.message : "Nastavení se nepodařilo uložit.","error");}
+    }catch(e){console.error(e);showAppToast(e instanceof Error?e.message:"Nastavení se nepodařilo uložit.","error");}
     finally{setSaving(false);}
   };
 
@@ -184,16 +162,15 @@ export default function TeamDetailPage() {
   return <>
     <Navbar title={team?.name||"Tým"} onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
     <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/>
-    <main className="container team-detail-page">
+    <main className="container team-detail-page">\n      <button type="button" className="run-primary-button" onClick={()=>router.push("/challenges")}>Výzvy</button>
       <button className="ui-icon-button team-back-button" type="button" onClick={()=>router.push("/teams")} aria-label="Zpět na týmy" title="Zpět na týmy"><ArrowLeft size={19}/></button>
       <header className="team-detail-header">
         <div className="team-detail-avatar">{avatarUrl?<img src={cloudinaryImageUrl(avatarUrl,160)} alt="Avatar týmu"/>:<Users size={30}/>}</div>
-        <div><span className="progress-eyebrow">TÝM PRO {teamType==="běh"?"BĚH":"CHŮZI"}</span><h1>{team?.name}</h1><p>{members.length} {members.length===1?"účastník":"účastníků"} · cíl {Number(team?.challengeGoalKm)||500} km</p></div>
+        <div><span className="progress-eyebrow">TÝM PRO {teamType==="běh"?"BĚH":"CHŮZI"}</span><h1>{team?.name}</h1><p>{members.length} {members.length===1?"člen":"členů"} · tým není automatická soutěž</p></div>
       </header>
 
       {isOwner && <section className="tile team-settings-card">
-        <div className="progress-section-title"><Save/><div><h2>Nastavení týmu</h2><p>Uprav cíl měsíční výzvy a avatar, který se zobrazí u týmu.</p></div></div>
-        <label className="team-detail-field">Cíl měsíční týmové výzvy (km)<input type="number" min="0.1" step="1" value={goal} onChange={e=>setGoal(e.target.value)}/></label>
+        <div className="progress-section-title"><Save/><div><h2>Nastavení týmu</h2><p>Spravuj pouze údaje týmu. Soutěže se vytvářejí samostatně v sekci Výzvy.</p></div></div>
         <label className="team-avatar-upload"><Camera size={18}/><span>{avatarUrl?"Změnit avatar týmu":"Přidat avatar týmu"}</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadAvatar}/></label>
         <button className="run-primary-button team-save-button" onClick={()=>void save()} disabled={saving}><Save size={18}/>{saving?"Ukládám…":"Uložit nastavení"}</button>
 
