@@ -34,9 +34,10 @@ export async function getTeam(teamId: string): Promise<TeamData | null> {
 
 export async function getActiveTeamIdsForUser(userId: string): Promise<string[]> {
   const snapshot = await getDocs(
-    query(collectionGroup(db, "members"), where("userId", "==", userId), where("active", "==", true))
+    query(collectionGroup(db, "members"), where("userId", "==", userId))
   );
   return snapshot.docs
+    .filter(item => item.data()?.active === true)
     .map(item => item.ref.parent.parent?.id || "")
     .filter(Boolean);
 }
