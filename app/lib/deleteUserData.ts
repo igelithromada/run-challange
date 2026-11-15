@@ -77,15 +77,10 @@ async function removeUserNotifications(adminDb: Firestore, uid: string) {
 
 async function removeUserFromChallenges(adminDb: Firestore, uid: string) {
   const participantSnapshot = await adminDb.collectionGroup("participants").where("userId", "==", uid).get();
-  const affectedActiveChallengeIds: string[] = [];
 
   for (let i = 0; i < participantSnapshot.docs.length; i += 400) {
     const batch = adminDb.batch();
     for (const participant of participantSnapshot.docs.slice(i, i + 400)) {
-      const challengeRef = participant.ref.parent.parent;
-      if (!challengeRef) continue;
-      const data = participant.data() || {};
-      if (data.active === true) affectedActiveChallengeIds.push(challengeRef.id);
       batch.set(participant.ref, {
         active: false,
         leftAt: FieldValue.serverTimestamp(),
@@ -95,27 +90,13 @@ async function removeUserFromChallenges(adminDb: Firestore, uid: string) {
     await batch.commit();
   }
 
-  // Recalculate shared active challenges after the user's participation is removed.
-  for (const challengeId of [...new Set(affectedActiveChallengeIds)]) {
-    await reconcileChallengesForUser(adminDb, uid).catch(() => undefined);
-    const challengeRef = adminDb.collection("challenges").doc(challengeId);
-    const challenge = await challengeRef.get();
-    if (!challenge.exists || challenge.data()?.kind !== "sharedDistance" || challenge.data()?.state !== "active") continue;
-    const activeParticipants = await challengeRef.collection("participants").where("active", "==", true).get();
-    let shared = 0;
-    for (const participant of activeParticipants.docs) {
-      const runs = await adminDb.collection("runs").where("uid", "==", participant.id)
-        .where("type", "==", challenge.data()?.activityType).get();
-      const joinedAt = participant.data()?.joinedAt;
-      const joinedMillis = joinedAt?.toMillis ? joinedAt.toMillis() : 0;
-      for (const run of runs.docs) {
-        const timestamp = run.data()?.timestamp;
-        const millis = timestamp?.toMillis ? timestamp.toMillis() : new Date(timestamp).getTime();
-        if (millis >= joinedMillis) shared += Number(run.data()?.km || 0);
-      }
-    }
-    await challengeRef.update({ sharedProgress: shared });
+  // Reconcile all active challenges once after the account is removed.
+  // This recalculates shared goals without repeatedly scanning the same
+  // challenges for every participant document.
+  if (participantSnapshot.size > 0) {
+    await reconcileChallengesForUser(adminDb, uid);
   }
+
   return participantSnapshot.size;
 }
 
