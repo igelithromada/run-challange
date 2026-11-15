@@ -117,22 +117,30 @@ async function cleanupTeamsForDeletedUser(adminDb: Firestore, uid: string) {
       if (typeof team.avatarPublicId === "string" && isUserCloudinaryPublicId(team.avatarPublicId, uid)) {
         publicIds.push(team.avatarPublicId);
       }
+      if (typeof team.avatarUrl === "string") {
+        publicIds.push(...collectCloudinaryPublicIds([team.avatarUrl], uid));
+      }
 
-      const batch = adminDb.batch();
-      memberIds.forEach(memberId => {
-        const memberRef = adminDb.collection("users").doc(memberId);
-        batch.set(
-          memberRef,
-          {
-            [`teamIdsByType.${team.type === "chůze" ? "chůze" : "běh"}`]: null,
-            ...(team.type === "běh" ? { teamId: null, joinedTeam: null } : {}),
-          },
-          { merge: true }
-        );
-      });
-      batch.delete(teamSnapshot.ref);
-      await batch.commit();
+      // Firestore batches are limited to 500 writes. Clear member references
+      // in chunks, then remove the team and any descendants.
+      for (let i = 0; i < memberIds.length; i += 450) {
+        const batch = adminDb.batch();
+        memberIds.slice(i, i + 450).forEach(memberId => {
+          const memberRef = adminDb.collection("users").doc(memberId);
+          batch.set(
+            memberRef,
+            {
+              [`teamIdsByType.${team.type === "chůze" ? "chůze" : "běh"}`]: null,
+              ...(team.type === "běh" ? { teamId: null, joinedTeam: null } : {}),
+            },
+            { merge: true }
+          );
+        });
+        await batch.commit();
+      }
+
       await deleteSubcollections(teamSnapshot.ref);
+      await teamSnapshot.ref.delete();
       deletedTeams++;
       removedMemberships += memberIds.length;
     } else {
