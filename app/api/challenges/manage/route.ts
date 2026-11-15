@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { requireUser } from "../../../lib/apiAuth";
 import { normalizeName, normalizeDescription, isChallengeKind, isValidChallengeGoal, isValidDateOnly, normalizeActivityType } from "../../../lib/validation";
+import { reconcileChallengesForUser } from "../../../lib/challenges/server";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -76,6 +77,7 @@ export async function POST(request:Request){
           tx.update(ref,{participantCount:FieldValue.increment(-1)});
         }
       });
+      if(action==="join" || action==="leave") await reconcileChallengesForUser(adminDb,uid);
       return NextResponse.json({ok:true});
     }
 
@@ -105,8 +107,10 @@ export async function POST(request:Request){
       if(!nextName||!isChallengeKind(nextKind)||!isValidChallengeGoal(nextKind,nextGoal)||!isValidDateOnly(nextStart)||!isValidDateOnly(nextEnd)||nextEnd<nextStart)return NextResponse.json({error:"Výzva má neplatné údaje."},{status:400});
       const today=localDateString();
       if(nextStart<today)return NextResponse.json({error:"Výzvu nelze naplánovat do minulosti."},{status:400});
-      const maxStart=new Date(); maxStart.setDate(maxStart.getDate()+90);
-      if(nextStart>maxStart.toISOString().slice(0,10))return NextResponse.json({error:"Výzvu lze vytvořit nejvýše 90 dní dopředu."},{status:400});
+      const maxStartDate = new Date(`${localDateString()}T12:00:00`);
+      maxStartDate.setDate(maxStartDate.getDate()+90);
+      const maxStart = new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(maxStartDate);
+      if(nextStart>maxStart)return NextResponse.json({error:"Výzvu lze vytvořit nejvýše 90 dní dopředu."},{status:400});
       await adminDb.runTransaction(async tx=>{
         const snap=await tx.get(ref);
         if(!snap.exists)throw new Error("CHALLENGE_NOT_FOUND");
