@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { FieldValue } from "firebase-admin/firestore";
 import type { DocumentReference } from "firebase-admin/firestore";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { collectCloudinaryPublicIds, deleteCloudinaryImages, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
@@ -66,10 +67,34 @@ export async function DELETE(request: Request) {
       cloudinaryResult = { deleted: 0, failed: safePublicIds };
     }
 
+    // Team contribution records are the bookkeeping layer for lifetime team
+    // statistics. Remove exactly the contribution created with this activity.
+    const contributions = await user.adminDb
+      .collectionGroup("activityContributions")
+      .where("activityId", "==", runId)
+      .get();
+
+    const batch = user.adminDb.batch();
+    contributions.docs.forEach(contribution => {
+      const data = contribution.data() || {};
+      const teamRef = contribution.ref.parent.parent;
+      if (!teamRef) return;
+      const type = data.type === "chůze" ? "chůze" : "běh";
+      const km = Number(data.km) || 0;
+      const kmField = type === "chůze" ? "walkingKm" : "runningKm";
+      const countField = type === "chůze" ? "walkingActivities" : "runningActivities";
+      batch.update(teamRef, {
+        [`stats.${kmField}`]: FieldValue.increment(-km),
+        [`stats.${countField}`]: FieldValue.increment(-1),
+      });
+      batch.delete(contribution.ref);
+    });
+
     // The activity itself is authoritative data. Never leave it undeletable
     // because a remote image cleanup failed.
     await deleteRunComments(runRef);
-    await runRef.delete();
+    batch.delete(runRef);
+    await batch.commit();
 
     return NextResponse.json({
       ok: true,
