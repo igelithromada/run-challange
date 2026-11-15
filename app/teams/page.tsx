@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Plus, Users } from "lucide-react";
+import { ChevronRight, Plus, Users, X } from "lucide-react";
 import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -25,6 +25,7 @@ export default function TeamsPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [creating, setCreating] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   const [page, setPage] = useState(1);
   const [teams, setTeams] = useState<TeamData[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(true);
@@ -187,34 +188,28 @@ export default function TeamsPage() {
           <p>Najdi lidi se stejným zájmem o pohyb, nebo založ vlastní tým.</p>
         </header>
 
-        <section className="tile teams-create">
-          <div className="teams-section-heading">
-            <div>
-              <h2>Vytvořit tým</h2>
-              <p>Každý tým je veřejný a po vytvoření se stáváš jeho správcem.</p>
+        {!showCreate ? (
+          <button type="button" className="run-primary-button teams-create-launch" onClick={() => setShowCreate(true)}>
+            <Plus size={18} /> Vytvořit tým
+          </button>
+        ) : (
+          <section className="tile teams-create">
+            <div className="teams-section-heading">
+              <div>
+                <h2>Vytvořit tým</h2>
+                <p>Každý tým je veřejný a po vytvoření se stáváš jeho správcem.</p>
+              </div>
+              <button type="button" className="ui-icon-button" onClick={() => setShowCreate(false)} aria-label="Zavřít formulář"><X size={18} /></button>
             </div>
-          </div>
-          <div className="teams-create-form">
-            <input
-              type="text"
-              maxLength={40}
-              placeholder="Název týmu"
-              value={name}
-              onChange={event => setName(event.target.value)}
-              onKeyDown={event => { if (event.key === "Enter") void createTeam(); }}
-            />
-            <input
-              type="text"
-              maxLength={200}
-              placeholder="Krátký popis (volitelné)"
-              value={description}
-              onChange={event => setDescription(event.target.value)}
-            />
-            <button className="run-primary-button" onClick={() => void createTeam()} disabled={!name.trim() || creating}>
-              <Plus size={18} /> {creating ? "Vytvářím…" : "Vytvořit tým"}
-            </button>
-          </div>
-        </section>
+            <div className="teams-create-form">
+              <input type="text" maxLength={40} placeholder="Název týmu" value={name} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") void createTeam(); }} />
+              <input type="text" maxLength={200} placeholder="Krátký popis (volitelné)" value={description} onChange={event => setDescription(event.target.value)} />
+              <button className="run-primary-button" onClick={() => void createTeam()} disabled={!name.trim() || creating}>
+                <Plus size={18} /> {creating ? "Vytvářím…" : "Vytvořit tým"}
+              </button>
+            </div>
+          </section>
+        )}
 
         <div className="teams-tabs" role="tablist" aria-label="Týmy">
           <button className={tab === "mine" ? "active" : ""} onClick={() => setTab("mine")} role="tab" aria-selected={tab === "mine"}>
