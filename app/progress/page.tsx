@@ -98,8 +98,6 @@ export default function ProgressPage() {
 
   const personalQuery = useMemo(() => userRunsQuery(uid || "__no_user__"), [uid]);
   const personalState = useSharedFirestoreQuery<ProgressActivity>("progress:personal:" + (uid || "none"), personalQuery);
-  const runs = useMemo(() => personalState.data, [personalState.data]);
-
   const mine = useMemo(() => personalState.data, [personalState.data]);
   const selected = useMemo(() => mine.filter(run => (run.type || "běh") === goalType), [mine, goalType]);
   const now = new Date();
