@@ -155,7 +155,7 @@ export default function StatisticsPage() {
 
         {view === "já" && (
           <section className="tile result-my-position">
-            <div className="results-position-row"><span><Trophy size={20}/> Pořadí mezi jednotlivci</span><strong>{myPos || "—"}.</strong></div>
+            <div className="results-position-row"><span><Trophy size={20}/> Tvé výsledky</span><strong>{count}</strong></div>
           </section>
         )}
 
