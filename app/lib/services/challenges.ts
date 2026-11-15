@@ -69,3 +69,8 @@ export async function fetchChallengeParticipantsPage(
     hasMore: snapshot.docs.length === pageSize,
   };
 }
+
+export async function getChallengeParticipant(id: string, userId: string) {
+  const snap = await getDoc(doc(db, "challenges", id, "participants", userId));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
