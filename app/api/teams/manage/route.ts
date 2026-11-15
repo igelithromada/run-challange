@@ -134,13 +134,17 @@ export async function POST(request: Request) {
     }
 
     if (action === "delete") {
-      if(team.managerId!==uid) return NextResponse.json({error:"Tým může smazat jen jeho správce."},{status:403});
-      const membersSnap=await ref.collection("members").get();
-      const batch=adminDb.batch();
-      membersSnap.docs.forEach((d:any)=>batch.delete(d.ref));
-      batch.delete(ref);
-      if(team.nameKey) batch.delete(adminDb.collection("teamNames").doc(team.nameKey));
-      await batch.commit();
+      let nameKey="";
+      await adminDb.runTransaction(async tx=>{
+        const snap=await tx.get(ref);
+        if(!snap.exists) throw new Error("TEAM_NOT_FOUND");
+        const data=snap.data()||{};
+        if(data.managerId!==uid) throw new Error("NOT_MANAGER");
+        nameKey=String(data.nameKey||"");
+        tx.update(ref,{deleting:true});
+      });
+      await adminDb.recursiveDelete(ref);
+      if(nameKey) await adminDb.collection("teamNames").doc(nameKey).delete().catch(()=>undefined);
       return NextResponse.json({ok:true});
     }
 
@@ -149,7 +153,7 @@ export async function POST(request: Request) {
     const message=error instanceof Error?error.message:"";
     const map:any={
       UNAUTHORIZED:["Nejsi přihlášen.",401],TEAM_NAME_TAKEN:["Tým s tímto názvem už existuje.",409],
-      TEAM_CREATE_LIMIT:["Můžeš vytvořit nejvýše 5 týmů.",409],
+      TEAM_CREATE_LIMIT:["Můžeš vytvořit nejvýše 5 týmů.",409],TEAM_NOT_FOUND:["Tým nebyl nalezen.",404],
       NOT_MANAGER:["Správu může převést jen současný správce.",403],
       CURRENT_MANAGER_NOT_MEMBER:["Současný správce už není členem týmu.",409],
       TARGET_NOT_MEMBER:["Nový správce musí být členem týmu.",400]
