@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { auth } from "../lib/firebase";
 import { ImagePlus, MapPin, Plus, Save, X } from "lucide-react";
 import { showAppToast } from "./AppToast";
-import { createRun } from "../lib/services/runs";
 import { getUserProfile } from "../lib/services/users";
 import ActivityRecorder from "./ActivityRecorder";
 
@@ -221,17 +220,6 @@ export default function RunForm({ type }: {
       };
 
       try {
-        // Primární cesta zachovává Firestore offline podporu.
-        await createRun(runData);
-      } catch (firestoreError) {
-        const firestoreCode = firestoreError && typeof firestoreError === "object" && "code" in firestoreError
-          ? String((firestoreError as { code?: unknown }).code || "")
-          : "";
-
-        // Pokud produkční Firestore Rules nejsou aktuálně synchronizované,
-        // uložíme aktivitu přes zabezpečený serverový endpoint.
-        if (!firestoreCode.includes("permission-denied") || !navigator.onLine) throw firestoreError;
-
         const token = await user.getIdToken(true);
         const response = await fetch("/api/runs/create", {
           method: "POST",
@@ -243,14 +231,14 @@ export default function RunForm({ type }: {
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Aktivitu se nepodařilo uložit.");
+      } catch (saveError) {
+        throw saveError;
       }
 
       reset();
       setShowForm(false);
       showAppToast(
-        navigator.onLine
-          ? `${activityPast} úspěšně uložena.`
-          : `${activityPast} uložena offline a po připojení se synchronizuje.`,
+        `${activityPast} úspěšně uložena.`,
         "success"
       );
     } catch (err) {
