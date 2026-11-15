@@ -24,6 +24,9 @@ export default function TeamsPage() {
   const [tab, setTab] = useState<Tab>("all");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarPublicId, setAvatarPublicId] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [page, setPage] = useState(1);
@@ -75,6 +78,18 @@ export default function TeamsPage() {
     return result;
   };
 
+  const uploadTeamImage = async (file: File) => {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Povolené jsou pouze JPG, PNG a WebP.");
+    if (file.size <= 0 || file.size > 5 * 1024 * 1024) throw new Error("Obrázek může mít maximálně 5 MB.");
+    if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
+    const token = await auth.currentUser.getIdToken();
+    const form = new FormData(); form.append("file", file);
+    const response = await fetch("/api/media/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || typeof result.secureUrl !== "string") throw new Error(result.error || "Nahrání obrázku selhalo.");
+    setAvatarUrl(result.secureUrl); setAvatarPublicId(typeof result.publicId === "string" ? result.publicId : "");
+  };
+
   const createTeam = async () => {
     const trimmedName = name.trim();
     if (!trimmedName || !user || creating) return;
@@ -83,9 +98,10 @@ export default function TeamsPage() {
       const result = await teamRequest("create", {
         name: trimmedName,
         description: description.trim(),
+        avatarUrl, avatarPublicId,
       });
       setName("");
-      setDescription("");
+      setDescription(""); setAvatarUrl(""); setAvatarPublicId("");
       await refreshMemberships(user.uid);
       showAppToast("Tým byl vytvořen.", "success");
       if (result.team?.id) router.push("/teams/" + result.team.id);
@@ -204,7 +220,8 @@ export default function TeamsPage() {
             <div className="teams-create-form">
               <input type="text" maxLength={40} placeholder="Název týmu" value={name} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") void createTeam(); }} />
               <input type="text" maxLength={200} placeholder="Krátký popis (volitelné)" value={description} onChange={event => setDescription(event.target.value)} />
-              <button className="run-primary-button" onClick={() => void createTeam()} disabled={!name.trim() || creating}>
+              <label className="team-avatar-upload"><Users size={18} /><span>{avatarUrl ? "Obrázek vybrán" : "Přidat obrázek (volitelné)"}</span><input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingImage || creating} onChange={async event => { const file=event.target.files?.[0]; event.target.value=""; if(!file)return; setUploadingImage(true); try { await uploadTeamImage(file); showAppToast("Obrázek byl nahrán.","success"); } catch(error) { showAppToast(error instanceof Error ? error.message : "Obrázek se nepodařilo nahrát.","error"); } finally { setUploadingImage(false); } }} /></label>
+              <button className="run-primary-button" onClick={() => void createTeam()} disabled={!name.trim() || creating || uploadingImage}>
                 <Plus size={18} /> {creating ? "Vytvářím…" : "Vytvořit tým"}
               </button>
             </div>
