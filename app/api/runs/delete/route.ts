@@ -3,6 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import type { DocumentReference } from "firebase-admin/firestore";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { collectCloudinaryPublicIds, deleteCloudinaryImages, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
+import { reconcileChallengesForUser } from "../../../lib/challenges/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -95,6 +96,7 @@ export async function DELETE(request: Request) {
     await deleteRunComments(runRef);
     batch.delete(runRef);
     await batch.commit();
+    await reconcileChallengesForUser(user.adminDb, data.uid);
 
     return NextResponse.json({
       ok: true,
