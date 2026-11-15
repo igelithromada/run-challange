@@ -42,7 +42,7 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
     }
     if (id === "challenges") {
       onClose();
-      router.push("/progress#team-challenges");
+      router.push("/challenges");
       return;
     }
     onSelect(id);
