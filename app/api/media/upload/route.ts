@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { isUserCloudinaryPublicId, userCloudinaryPrefix } from "../../../lib/cloudinaryAdmin";
+import { consumeRateLimit } from "../../../lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +23,9 @@ function signUpload(params: Record<string, string>, secret: string) {
 
 export async function POST(request: Request) {
   try {
-    const { decoded } = await requireUser(request);
+    const { decoded, adminDb } = await requireUser(request);
+    const rate = await consumeRateLimit(adminDb, request, "media-upload", 20);
+    if (!rate.allowed) return NextResponse.json({ error: "Příliš mnoho nahrávání. Zkus to později." }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } };
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
     const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
     const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
