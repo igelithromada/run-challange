@@ -51,6 +51,7 @@ export async function POST(request:Request){
         tx.create(challenge,{name,nameKey:key(name),description,createdBy:uid,kind,activityType,goal,startDate,endDate,startMonth:startMonth(startDate),state:startDate===today?"active":"planned",participantCount:1,sharedProgress:0,avatarUrl:typeof body?.avatarUrl==="string"?body.avatarUrl:"",avatarPublicId:typeof body?.avatarPublicId==="string"?body.avatarPublicId:"",createdAt:Timestamp.now()});
         tx.create(challenge.collection("participants").doc(uid),{userId:uid,joinedAt:Timestamp.now(),active:true});
               });
+      await reconcileChallengesForUser(adminDb, uid);
       return NextResponse.json({ok:true,id:challenge.id});
     }
 
