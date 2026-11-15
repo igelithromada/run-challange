@@ -95,7 +95,13 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
     const participants=await ref.collection("participants").where("active","==",true).get();
     if(challenge.kind==="sharedDistance") {
       const shared=participants.docs.reduce((sum:number,d:any)=>sum+Number(d.data()?.result||0),0);
-      await ref.update({state:"completed",completedAt:Timestamp.now(),sharedProgress:shared});
+      const batch=adminDb.batch();
+      for (const participant of participants.docs) {
+        const data=participant.data()||{};
+        batch.set(participant.ref,{finalResult:Number(data.result||0),finalizedAt:Timestamp.now()},{merge:true});
+      }
+      batch.update(ref,{state:"completed",completedAt:Timestamp.now(),sharedProgress:shared,goalReached:shared>=Number(challenge.goal||0)});
+      await batch.commit();
     } else {
       const target=Number(challenge.goal||0);
       const reached=participants.docs.map((d:any)=>({id:d.id,...d.data()}))
@@ -106,8 +112,25 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
           if(ta!==tb)return ta-tb;
           return Number(b.result||0)-Number(a.result||0);
         });
-      const all=participants.docs.map((d:any)=>({id:d.id,...d.data()})).sort((a:any,b:any)=>Number(b.result||0)-Number(a.result||0));
-      await ref.update({state:"completed",completedAt:Timestamp.now(),winnerId:(reached[0]||all[0])?.id||null,goalReached:reached.length>0});
+      const all=participants.docs.map((d:any)=>({id:d.id,...d.data()})).sort((a:any,b:any)=>{
+        const diff=Number(b.result||0)-Number(a.result||0);
+        if(diff!==0)return diff;
+        const ta=a.targetReachedAt?.toMillis ? a.targetReachedAt.toMillis() : Number.MAX_SAFE_INTEGER;
+        const tb=b.targetReachedAt?.toMillis ? b.targetReachedAt.toMillis() : Number.MAX_SAFE_INTEGER;
+        return ta-tb;
+      });
+      const winner=(reached[0]||all[0])?.id||null;
+      const rankOrdered=all;
+      const batch=adminDb.batch();
+      rankOrdered.forEach((participant:any,index:number)=>{
+        batch.set(participants.docs.find((d:any)=>d.id===participant.id).ref,{
+          finalResult:Number(participant.result||0),
+          finalRank:index+1,
+          finalizedAt:Timestamp.now()
+        },{merge:true});
+      });
+      batch.update(ref,{state:"completed",completedAt:Timestamp.now(),winnerId:winner,goalReached:reached.length>0});
+      await batch.commit();
     }
   }
 }
