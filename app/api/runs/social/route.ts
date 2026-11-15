@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldPath, FieldValue, type Firestore } from "firebase-admin/firestore";
 import { requireUser as requireApiUser, authErrorResponse } from "../../../lib/apiAuth";
-import { consumeRateLimit } from "../../../lib/rateLimit";
+import { consumeRateLimit } from "../../../../lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
