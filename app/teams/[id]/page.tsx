@@ -162,7 +162,7 @@ export default function TeamDetailPage() {
   return <>
     <Navbar title={team?.name||"Tým"} onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
     <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/>
-    <main className="container team-detail-page">\n      <button type="button" className="run-primary-button" onClick={()=>router.push("/challenges")}>Výzvy</button>
+    <main className="container team-detail-page">
       <button className="ui-icon-button team-back-button" type="button" onClick={()=>router.push("/teams")} aria-label="Zpět na týmy" title="Zpět na týmy"><ArrowLeft size={19}/></button>
       <header className="team-detail-header">
         <div className="team-detail-avatar">{avatarUrl?<img src={cloudinaryImageUrl(avatarUrl,160)} alt="Avatar týmu"/>:<Users size={30}/>}</div>
