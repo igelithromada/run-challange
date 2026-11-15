@@ -16,7 +16,7 @@ import { MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
 import { showAppToast } from "../components/AppToast";
 import type { RunData as BaseRunData, ActivityType } from "../types";
-import { fetchOlderRuns, latestUserRunsQuery, updateRun } from "../lib/services/runs";
+import { fetchOlderRuns, latestUserRunsQuery } from "../lib/services/runs";
 import { getUserProfile } from "../lib/services/users";
 
 type RunData = BaseRunData;
@@ -211,8 +211,21 @@ export default function MyRunsPage() {
         updates.imageUrl = uploaded.secureUrl;
         if (uploaded.publicId) updates.imagePublicIds = [...(current?.imagePublicIds || []), uploaded.publicId];
       }
-      await updateRun(id, updates);
-      setLocalUpdates(previous => ({ ...previous, [id]: { ...(previous[id] || {}), ...updates } }));
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const token = await currentUser.getIdToken(true);
+      const response = await fetch("/api/runs/update", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ runId: id, updates }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Záznam se nepodařilo upravit.");
+      const serverUpdates = result.updates && typeof result.updates === "object" ? result.updates : updates;
+      setLocalUpdates(previous => ({ ...previous, [id]: { ...(previous[id] || {}), ...serverUpdates } }));
       setEditingId(null); setFile(null);
     } catch (err) {
       console.error(err); setActionError(err instanceof Error ? err.message : "Záznam se nepodařilo upravit.");
