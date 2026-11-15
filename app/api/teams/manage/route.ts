@@ -68,24 +68,30 @@ export async function POST(request: Request) {
 
     if (action === "join") {
       await adminDb.runTransaction(async tx => {
+        const teamSnap = await tx.get(ref);
+        if (!teamSnap.exists) throw new Error("TEAM_NOT_FOUND");
+        const currentTeam = teamSnap.data() || {};
         const m = await tx.get(memberRef(adminDb,teamId,uid));
         if (m.exists && m.data()?.active !== false) return;
-        const now=Timestamp.now();
+        const now = Timestamp.now();
         tx.set(memberRef(adminDb,teamId,uid),{userId:uid,joinedAt:now,active:true,leaveAt:null},{merge:true});
         const historyRef=ref.collection("membershipHistory").doc();
         tx.create(historyRef,{userId:uid,joinedAt:now,active:true});
         tx.update(ref,{
           memberCount:FieldValue.increment(1),
-          ...(team.managerId ? {} : {managerId:uid})
+          ...(currentTeam.managerId ? {} : {managerId:uid})
         });
       });
       return NextResponse.json({ok:true});
     }
 
     if (action === "leave") {
-      if (team.managerId === uid) return NextResponse.json({error:"Nejdřív předej správu týmu jinému členovi."},{status:409});
       await adminDb.runTransaction(async tx => {
-        const m=await tx.get(memberRef(adminDb,teamId,uid));
+        const teamSnap = await tx.get(ref);
+        const m = await tx.get(memberRef(adminDb,teamId,uid));
+        if (!teamSnap.exists) throw new Error("TEAM_NOT_FOUND");
+        const currentTeam = teamSnap.data() || {};
+        if (currentTeam.managerId === uid) throw new Error("MANAGER_MUST_TRANSFER");
         if (!m.exists || m.data()?.active === false) return;
         const now=Timestamp.now();
         tx.set(memberRef(adminDb,teamId,uid),{active:false,leaveAt:now},{merge:true});
@@ -97,27 +103,39 @@ export async function POST(request: Request) {
     }
 
     if (action === "rename" || action === "edit") {
-      if (team.managerId !== uid) return NextResponse.json({error:"Tým může upravovat jen jeho správce."},{status:403});
-      const updates:any={};
-      if (action === "rename" || body.name !== undefined) {
-        const name=normalizeTeamName(body?.name);
-        if(!name) return NextResponse.json({error:"Zadej název týmu."},{status:400});
-        const nameKey=normalizeKey(name);
-        if(nameKey!==team.nameKey){
-          const oldNameRef=adminDb.collection("teamNames").doc(String(team.nameKey||""));
-          const newNameRef=adminDb.collection("teamNames").doc(nameKey);
-          await adminDb.runTransaction(async tx=>{
-            const existing=await tx.get(newNameRef);
-            if(existing.exists) throw new Error("TEAM_NAME_TAKEN");
-            tx.delete(oldNameRef); tx.create(newNameRef,{teamId,createdAt:team.createdAt||Timestamp.now()});
-            tx.update(ref,{name,nameKey});
-          });
-        } else await ref.set({name},{merge:true});
+      const nextName = action === "rename" || body.name !== undefined ? normalizeTeamName(body?.name) : "";
+      if ((action === "rename" || body.name !== undefined) && !nextName) {
+        return NextResponse.json({error:"Zadej název týmu."},{status:400});
       }
-      if(body.description!==undefined) updates.description=normalizeDescription(body.description);
-      if(body.avatarUrl!==undefined) updates.avatarUrl=typeof body.avatarUrl==="string"?body.avatarUrl:"";
-      if(body.avatarPublicId!==undefined) updates.avatarPublicId=typeof body.avatarPublicId==="string"?body.avatarPublicId:"";
-      if(Object.keys(updates).length) await ref.set(updates,{merge:true});
+      const nextDescription = body.description !== undefined ? normalizeDescription(body.description) : undefined;
+      const nextAvatarUrl = body.avatarUrl !== undefined ? (typeof body.avatarUrl==="string" ? body.avatarUrl : "") : undefined;
+      const nextAvatarPublicId = body.avatarPublicId !== undefined ? (typeof body.avatarPublicId==="string" ? body.avatarPublicId : "") : undefined;
+
+      await adminDb.runTransaction(async tx => {
+        const teamSnap = await tx.get(ref);
+        if (!teamSnap.exists) throw new Error("TEAM_NOT_FOUND");
+        const currentTeam = teamSnap.data() || {};
+        if (currentTeam.managerId !== uid) throw new Error("NOT_MANAGER");
+
+        const updates:any = {};
+        if (nextName) {
+          const nextKey = normalizeKey(nextName);
+          const oldKey = String(currentTeam.nameKey || "");
+          if (nextKey !== oldKey) {
+            const newNameRef = adminDb.collection("teamNames").doc(nextKey);
+            const existing = await tx.get(newNameRef);
+            if (existing.exists) throw new Error("TEAM_NAME_TAKEN");
+            if (oldKey) tx.delete(adminDb.collection("teamNames").doc(oldKey));
+            tx.create(newNameRef,{teamId,createdAt:currentTeam.createdAt||Timestamp.now()});
+            updates.name = nextName;
+            updates.nameKey = nextKey;
+          }
+        }
+        if (nextDescription !== undefined) updates.description = nextDescription;
+        if (nextAvatarUrl !== undefined) updates.avatarUrl = nextAvatarUrl;
+        if (nextAvatarPublicId !== undefined) updates.avatarPublicId = nextAvatarPublicId;
+        if (Object.keys(updates).length) tx.update(ref,updates);
+      });
       return NextResponse.json({ok:true});
     }
 
@@ -175,6 +193,7 @@ export async function POST(request: Request) {
       UNAUTHORIZED:["Nejsi přihlášen.",401],TEAM_NAME_TAKEN:["Tým s tímto názvem už existuje.",409],
       TEAM_CREATE_LIMIT:["Můžeš vytvořit nejvýše 5 týmů.",409],TEAM_NOT_FOUND:["Tým nebyl nalezen.",404],
       NOT_MANAGER:["Správu může převést jen současný správce.",403],
+      MANAGER_MUST_TRANSFER:["Nejdřív předej správu týmu jinému členovi.",409],
       CURRENT_MANAGER_NOT_MEMBER:["Současný správce už není členem týmu.",409],
       TARGET_NOT_MEMBER:["Nový správce musí být členem týmu.",400]
     };
