@@ -1,6 +1,6 @@
 
 import { NextResponse } from "next/server";
-import { Timestamp } from "firebase-admin/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { normalizeActivityType } from "../../../lib/validation";
 import { cloudinaryPublicIdFromUrl, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
@@ -42,13 +42,14 @@ export async function POST(request: Request) {
     const activeMemberships = await adminDb
       .collectionGroup("members")
       .where("userId", "==", decoded.uid)
-      .where("active", "==", true)
       .get();
 
-    const memberTeamIds = [...new Set(activeMemberships.docs.map(snapshot => {
-      const parent = snapshot.ref.parent.parent;
-      return parent ? parent.id : "";
-    }).filter(Boolean))];
+    const memberTeamIds = [...new Set(activeMemberships.docs
+      .filter(snapshot => snapshot.data()?.active === true)
+      .map(snapshot => {
+        const parent = snapshot.ref.parent.parent;
+        return parent ? parent.id : "";
+      }).filter(Boolean))];
 
     const safeData = {
       uid: decoded.uid,
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
       avatarUrl: typeof data.avatarUrl === "string" ? data.avatarUrl : "",
       km, minuty, tempo: tempo.toFixed(2), type,
       description: typeof data.description === "string" ? data.description.trim().slice(0, 500) : "",
-      timestamp: Number.isNaN(timestamp.getTime()) ? createdAt : timestamp,
+      timestamp: typeof data.timestamp === "string" && !Number.isNaN(new Date(data.timestamp).getTime()) ? new Date(data.timestamp) : createdAt,
       imageUrls: Array.isArray(data.imageUrls)
         ? data.imageUrls
             .filter((x): x is string => typeof x === "string")
@@ -81,8 +82,7 @@ export async function POST(request: Request) {
 
     const ref = adminDb.collection("runs").doc();
     const runCreatedAt = Timestamp.now();
-    safeData.timestamp = safeData.timestamp instanceof Date ? safeData.timestamp : createdAt;
-    const batch = adminDb.batch();
+        const batch = adminDb.batch();
     batch.create(ref, { ...safeData, createdAt: runCreatedAt });
 
     for (const teamId of memberTeamIds) {
@@ -97,12 +97,11 @@ export async function POST(request: Request) {
         km,
         createdAt: runCreatedAt,
       });
-      const stats = teamSnap.data()?.stats || {};
       const kmField = type === "chůze" ? "walkingKm" : "runningKm";
       const countField = type === "chůze" ? "walkingActivities" : "runningActivities";
       batch.update(teamRef, {
-        [`stats.${kmField}`]: Number(stats[kmField] || 0) + km,
-        [`stats.${countField}`]: Number(stats[countField] || 0) + 1,
+        [`stats.${kmField}`]: FieldValue.increment(km),
+        [`stats.${countField}`]: FieldValue.increment(1),
       });
     }
 
