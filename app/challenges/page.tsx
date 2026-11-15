@@ -11,6 +11,7 @@ import LoadingSkeleton from "../components/LoadingSkeleton";
 import { fetchChallengesPage, getActiveChallengeIdsForUser } from "../lib/services/challenges";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { showAppToast } from "../components/AppToast";
+import ActivityTypeSelector from "../components/ActivityTypeSelector";
 
 async function uploadChallengeImage(file: File) {
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Povolené jsou pouze JPG, PNG a WebP.");
@@ -148,7 +149,7 @@ export default function ChallengesPage() {
           <div className="teams-create-form">
             <input maxLength={40} placeholder="Název výzvy" value={name} onChange={e=>setName(e.target.value)}/>
             <input maxLength={200} placeholder="Krátký popis (volitelné)" value={description} onChange={e=>setDescription(e.target.value)}/>
-            <div className="activity-type-switch"><button className={activityType==="běh"?"active":""} onClick={()=>setActivityType("běh")}>🏃 Běh</button><button className={activityType==="chůze"?"active":""} onClick={()=>setActivityType("chůze")}>🚶 Chůze</button></div>
+            <ActivityTypeSelector value={activityType} onChange={setActivityType} ariaLabel="Typ aktivity výzvy" />
             <select value={kind} onChange={e=>setKind(e.target.value as ChallengeKind)}><option value="distance">Vzdálenost</option><option value="activities">Počet aktivit</option><option value="activeDays">Aktivní dny</option><option value="sharedDistance">Společný cíl</option></select>
             <input type="number" min="1" step={kind==="distance"||kind==="sharedDistance"?"0.1":"1"} placeholder={kind==="distance"||kind==="sharedDistance"?"Cíl v km":kind==="activities"?"Počet aktivit":"Počet aktivních dnů"} value={goal} onChange={e=>setGoal(e.target.value)}/>
             <div className="challenge-dates"><label>Od<input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}/></label><label>Do<input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/></label></div>
@@ -157,7 +158,7 @@ export default function ChallengesPage() {
           </div>
         </section>
       )}
-      <div className="activity-type-switch challenge-type-switch"><button className={activityType==="běh"?"active":""} onClick={()=>setActivityType("běh")}>🏃 Běh</button><button className={activityType==="chůze"?"active":""} onClick={()=>setActivityType("chůze")}>🚶 Chůze</button></div>
+      <div className="challenge-type-switch"><ActivityTypeSelector value={activityType} onChange={value=>{setActivityType(value);setPage(1);setCursors([{active: undefined, planned: undefined, completed: undefined}]);}} ariaLabel="Filtr typu aktivity" /></div>
       <div className="challenge-month"><button onClick={()=>shift(-1)} aria-label="Předchozí měsíc"><ChevronLeft/></button><strong>{MONTHS[month.getMonth()]} {month.getFullYear()}</strong><button onClick={()=>shift(1)} aria-label="Další měsíc"><ChevronRight/></button></div>
       {loading?<LoadingSkeleton count={4}/>:error?<div className="tile teams-empty">Výzvy se nepodařilo načíst.</div>:([["active",groups.active],["planned",groups.planned],["completed",groups.completed]] as const).map(([state,items])=><section key={state} className="challenge-group"><h2>{state==="active"?"Aktivní":state==="planned"?"Plánované":"Dokončené"}</h2><div className="teams-grid">{items.map(c=><article key={c.id} className="tile team-card challenge-card" onClick={()=>router.push("/challenges/"+c.id)}>
         <div className="team-card-main"><div className="team-avatar">{c.avatarUrl?<img src={cloudinaryImageUrl(c.avatarUrl,96)} alt=""/>:<Target size={22}/>}</div><div className="team-card-info"><div className="team-card-title-row"><h3>{c.name}</h3>{joinedChallengeIds.has(c.id)&&<span className="challenge-participating">Účastníš se</span>}</div>{c.description&&<p className="team-card-description">{c.description}</p>}<p className="team-card-meta">{kindLabel(c.kind)} · {c.activityType==="běh"?"Běh":"Chůze"} · Autor: {authors[String(c.createdBy||"")]?.nickname || "Uživatel"}</p><div className="team-card-stats"><span>{progress(c)}</span><span>{formatDate(c.startDate)} – {formatDate(c.endDate)}</span></div></div><ChevronRight className="team-card-chevron" size={20}/></div></article>)}</div></section>)}
