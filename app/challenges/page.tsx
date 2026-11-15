@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Plus, Trophy, Target } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trophy, Target, X } from "lucide-react";
 import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -38,6 +38,7 @@ export default function ChallengesPage() {
   const [activityType,setActivityType]=useState<ActivityType>("běh");
   const [month,setMonth]=useState(()=>new Date());
   const [creating,setCreating]=useState(false);
+  const [showCreate,setShowCreate]=useState(false);
   const [name,setName]=useState("");
   const [description,setDescription]=useState("");
   const [kind,setKind]=useState<ChallengeKind>("distance");
@@ -119,18 +120,27 @@ export default function ChallengesPage() {
     <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={item=>{setMenuVisible(false); const routes:any={home:"/",myrun:"/myruns",teams:"/teams",challenges:"/challenges",settings:"/settings",statistics:"/statistics",participants:"/participants",progress:"/progress",trainer:"/trainer",weather:"/weather",admin:"/admin"}; router.push(routes[item]||"/");}}/>
     <main className="container challenges-page">
       <header className="teams-header"><span className="teams-eyebrow">SOUTĚŽ A MOTIVACE</span><h1>Výzvy</h1><p>Zapoj se do výzvy nebo vytvoř vlastní.</p></header>
-      <section className="tile challenges-create">
-        <div className="teams-section-heading"><div><h2>Vytvořit výzvu</h2><p>Výzvy jsou veřejné a po vytvoření se automaticky účastníš.</p></div></div>
-        <div className="teams-create-form">
-          <input maxLength={40} placeholder="Název výzvy" value={name} onChange={e=>setName(e.target.value)}/>
-          <input maxLength={200} placeholder="Krátký popis (volitelné)" value={description} onChange={e=>setDescription(e.target.value)}/>
-          <div className="activity-type-switch"><button className={activityType==="běh"?"active":""} onClick={()=>setActivityType("běh")}>🏃 Běh</button><button className={activityType==="chůze"?"active":""} onClick={()=>setActivityType("chůze")}>🚶 Chůze</button></div>
-          <select value={kind} onChange={e=>setKind(e.target.value as ChallengeKind)}><option value="distance">Vzdálenost</option><option value="activities">Počet aktivit</option><option value="activeDays">Aktivní dny</option><option value="sharedDistance">Společný cíl</option></select>
-          <input type="number" min="1" step={kind==="distance"||kind==="sharedDistance"?"0.1":"1"} placeholder={kind==="distance"||kind==="sharedDistance"?"Cíl v km":kind==="activities"?"Počet aktivit":"Počet aktivních dnů"} value={goal} onChange={e=>setGoal(e.target.value)}/>
-          <div className="challenge-dates"><label>Od<input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}/></label><label>Do<input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/></label></div>
-          <button className="run-primary-button" onClick={()=>void create()} disabled={creating||!name.trim()||!goal||!startDate||!endDate}><Plus size={18}/>{creating?"Vytvářím…":"Vytvořit výzvu"}</button>
-        </div>
-      </section>
+      {!showCreate ? (
+        <button type="button" className="run-primary-button challenges-create-launch" onClick={() => setShowCreate(true)}>
+          <Plus size={18}/> Vytvořit výzvu
+        </button>
+      ) : (
+        <section className="tile challenges-create">
+          <div className="teams-section-heading">
+            <div><h2>Vytvořit výzvu</h2><p>Výzvy jsou veřejné a po vytvoření se automaticky účastníš.</p></div>
+            <button type="button" className="ui-icon-button" onClick={() => setShowCreate(false)} aria-label="Zavřít formulář"><X size={18}/></button>
+          </div>
+          <div className="teams-create-form">
+            <input maxLength={40} placeholder="Název výzvy" value={name} onChange={e=>setName(e.target.value)}/>
+            <input maxLength={200} placeholder="Krátký popis (volitelné)" value={description} onChange={e=>setDescription(e.target.value)}/>
+            <div className="activity-type-switch"><button className={activityType==="běh"?"active":""} onClick={()=>setActivityType("běh")}>🏃 Běh</button><button className={activityType==="chůze"?"active":""} onClick={()=>setActivityType("chůze")}>🚶 Chůze</button></div>
+            <select value={kind} onChange={e=>setKind(e.target.value as ChallengeKind)}><option value="distance">Vzdálenost</option><option value="activities">Počet aktivit</option><option value="activeDays">Aktivní dny</option><option value="sharedDistance">Společný cíl</option></select>
+            <input type="number" min="1" step={kind==="distance"||kind==="sharedDistance"?"0.1":"1"} placeholder={kind==="distance"||kind==="sharedDistance"?"Cíl v km":kind==="activities"?"Počet aktivit":"Počet aktivních dnů"} value={goal} onChange={e=>setGoal(e.target.value)}/>
+            <div className="challenge-dates"><label>Od<input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}/></label><label>Do<input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/></label></div>
+            <button className="run-primary-button" onClick={()=>void create()} disabled={creating||!name.trim()||!goal||!startDate||!endDate}><Plus size={18}/>{creating?"Vytvářím…":"Vytvořit výzvu"}</button>
+          </div>
+        </section>
+      )}
       <div className="activity-type-switch challenge-type-switch"><button className={activityType==="běh"?"active":""} onClick={()=>setActivityType("běh")}>🏃 Běh</button><button className={activityType==="chůze"?"active":""} onClick={()=>setActivityType("chůze")}>🚶 Chůze</button></div>
       <div className="challenge-month"><button onClick={()=>shift(-1)} aria-label="Předchozí měsíc"><ChevronLeft/></button><strong>{MONTHS[month.getMonth()]} {month.getFullYear()}</strong><button onClick={()=>shift(1)} aria-label="Další měsíc"><ChevronRight/></button></div>
       {loading?<LoadingSkeleton count={4}/>:error?<div className="tile teams-empty">Výzvy se nepodařilo načíst.</div>:([["active",groups.active],["planned",groups.planned],["completed",groups.completed]] as const).map(([state,items])=><section key={state} className="challenge-group"><h2>{state==="active"?"Aktivní":state==="planned"?"Plánované":"Dokončené"}</h2><div className="teams-grid">{items.map(c=><article key={c.id} className="tile team-card challenge-card" onClick={()=>router.push("/challenges/"+c.id)}>
