@@ -1,11 +1,29 @@
 import { NextResponse } from "next/server";
 import type { DocumentReference, Firestore, QueryDocumentSnapshot } from "firebase-admin/firestore";
+import { FieldValue } from "firebase-admin/firestore";
 import { requireAdmin, authErrorResponse } from "../../../lib/apiAuth";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
 import { collectCloudinaryPublicIds, deleteCloudinaryImages, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+async function deleteDocuments(refs: DocumentReference[]) {
+  for (let i = 0; i < refs.length; i += 450) {
+    const batch = refs[0]?.firestore.batch();
+    if (!batch) return;
+    refs.slice(i, i + 450).forEach(ref => batch.delete(ref));
+    await batch.commit();
+  }
+}
+
+async function deleteSubcollections(ref: DocumentReference) {
+  const collections = await ref.listCollections();
+  for (const subcollection of collections) {
+    const snapshot = await subcollection.get();
+    await deleteDocuments(snapshot.docs.map(doc => doc.ref));
+  }
+}
 
 async function deleteCommentsByUser(adminDb: Firestore, uid: string) {
   const snapshot = await adminDb.collectionGroup("comments").where("uid", "==", uid).get();
@@ -24,7 +42,7 @@ async function deleteCommentsByUser(adminDb: Firestore, uid: string) {
     const runSnapshot = await runRef.get();
     for (let i = 0; i < comments.length; i += 400) {
       const batch = adminDb.batch();
-      comments.slice(i, i + 400).forEach((comment: QueryDocumentSnapshot) => batch.delete(comment.ref));
+      comments.slice(i, i + 400).forEach(comment => batch.delete(comment.ref));
       if (runSnapshot.exists && i === 0) {
         const currentCount = Number(runSnapshot.data()?.commentCount) || 0;
         batch.update(runRef, { commentCount: Math.max(0, currentCount - comments.length) });
@@ -36,16 +54,94 @@ async function deleteCommentsByUser(adminDb: Firestore, uid: string) {
   return snapshot.size;
 }
 
-async function deleteRunComments(runRef: DocumentReference) {
-  const collections = await runRef.listCollections();
-  for (const subcollection of collections) {
-    const snapshot = await subcollection.get();
-    for (let i = 0; i < snapshot.docs.length; i += 450) {
-      const batch = runRef.firestore.batch();
-      snapshot.docs.slice(i, i + 450).forEach(doc => batch.delete(doc.ref));
+async function removeUserLikes(adminDb: Firestore, uid: string) {
+  const snapshot = await adminDb.collection("runs").where("likedBy", "array-contains", uid).get();
+  for (let i = 0; i < snapshot.docs.length; i += 450) {
+    const batch = adminDb.batch();
+    snapshot.docs.slice(i, i + 450).forEach(run => {
+      const data = run.data();
+      const likedBy = Array.isArray(data.likedBy)
+        ? data.likedBy.filter((value): value is string => typeof value === "string" && value !== uid)
+        : [];
+      batch.update(run.ref, {
+        likedBy,
+        likeCount: likedBy.length,
+      });
+    });
+    await batch.commit();
+  }
+  return snapshot.size;
+}
+
+async function deleteNotificationsForUser(adminDb: Firestore, uid: string) {
+  const [recipient, actor] = await Promise.all([
+    adminDb.collection("notifications").where("recipientUid", "==", uid).get(),
+    adminDb.collection("notifications").where("actorUid", "==", uid).get(),
+  ]);
+
+  const refs = new Map<string, DocumentReference>();
+  [...recipient.docs, ...actor.docs].forEach(doc => refs.set(doc.ref.path, doc.ref));
+  await deleteDocuments([...refs.values()]);
+  return refs.size;
+}
+
+async function deleteUserPushSubscriptions(userRef: DocumentReference) {
+  const collections = await userRef.listCollections();
+  const pushSubscriptions = collections.find(collection => collection.id === "pushSubscriptions");
+  if (!pushSubscriptions) return 0;
+  const snapshot = await pushSubscriptions.get();
+  await deleteDocuments(snapshot.docs.map(doc => doc.ref));
+  return snapshot.size;
+}
+
+async function cleanupTeamsForDeletedUser(adminDb: Firestore, uid: string) {
+  const [memberTeams, ownedTeams] = await Promise.all([
+    adminDb.collection("teams").where("memberIds", "array-contains", uid).get(),
+    adminDb.collection("teams").where("createdBy", "==", uid).get(),
+  ]);
+
+  const teamDocs = new Map<string, QueryDocumentSnapshot>();
+  [...memberTeams.docs, ...ownedTeams.docs].forEach(team => teamDocs.set(team.id, team));
+
+  const publicIds: string[] = [];
+  let deletedTeams = 0;
+  let removedMemberships = 0;
+
+  for (const teamSnapshot of teamDocs.values()) {
+    const team = teamSnapshot.data() || {};
+    const memberIds = Array.isArray(team.memberIds)
+      ? team.memberIds.filter((value): value is string => typeof value === "string")
+      : [];
+
+    if (team.createdBy === uid) {
+      if (typeof team.avatarPublicId === "string" && isUserCloudinaryPublicId(team.avatarPublicId, uid)) {
+        publicIds.push(team.avatarPublicId);
+      }
+
+      const batch = adminDb.batch();
+      memberIds.forEach(memberId => {
+        const memberRef = adminDb.collection("users").doc(memberId);
+        batch.set(
+          memberRef,
+          {
+            [`teamIdsByType.${team.type === "chůze" ? "chůze" : "běh"}`]: null,
+            ...(team.type === "běh" ? { teamId: null, joinedTeam: null } : {}),
+          },
+          { merge: true }
+        );
+      });
+      batch.delete(teamSnapshot.ref);
       await batch.commit();
+      await deleteSubcollections(teamSnapshot.ref);
+      deletedTeams++;
+      removedMemberships += memberIds.length;
+    } else {
+      await teamSnapshot.ref.update({ memberIds: FieldValue.arrayRemove(uid) });
+      removedMemberships++;
     }
   }
+
+  return { deletedTeams, removedMemberships, publicIds };
 }
 
 async function deleteUserData(adminDb: Firestore, uid: string) {
@@ -59,7 +155,9 @@ async function deleteUserData(adminDb: Firestore, uid: string) {
   const userData = userSnapshot.exists ? userSnapshot.data() : undefined;
 
   if (typeof userData?.avatarUrl === "string") imageUrls.push(userData.avatarUrl);
-  if (typeof userData?.avatarPublicId === "string" && isUserCloudinaryPublicId(userData.avatarPublicId, uid)) publicIds.push(userData.avatarPublicId);
+  if (typeof userData?.avatarPublicId === "string" && isUserCloudinaryPublicId(userData.avatarPublicId, uid)) {
+    publicIds.push(userData.avatarPublicId);
+  }
 
   for (const run of runsSnapshot.docs) {
     const data = run.data();
@@ -68,30 +166,47 @@ async function deleteUserData(adminDb: Firestore, uid: string) {
     }
     if (typeof data.imageUrl === "string") imageUrls.push(data.imageUrl);
     if (Array.isArray(data.imagePublicIds)) {
-      publicIds.push(...data.imagePublicIds.filter((value: unknown): value is string => typeof value === "string" && isUserCloudinaryPublicId(value, uid)));
+      publicIds.push(
+        ...data.imagePublicIds.filter(
+          (value: unknown): value is string =>
+            typeof value === "string" && isUserCloudinaryPublicId(value, uid)
+        )
+      );
     }
   }
 
+  const teamCleanup = await cleanupTeamsForDeletedUser(adminDb, uid);
+  publicIds.push(...teamCleanup.publicIds);
   publicIds.push(...collectCloudinaryPublicIds(imageUrls, uid));
-  const cloudinaryResult = await deleteCloudinaryImages(publicIds);
 
+  const cloudinaryResult = await deleteCloudinaryImages(publicIds);
   if (cloudinaryResult.failed.length) {
     throw new Error(`CLOUDINARY_DELETE_FAILED:${cloudinaryResult.failed.length}`);
   }
 
-  const refs = runsSnapshot.docs.map((item) => item.ref);
-  for (let i = 0; i < refs.length; i += 450) {
-    const batch = adminDb.batch();
-    refs.slice(i, i + 450).forEach((ref) => batch.delete(ref));
-    await batch.commit();
-  }
+  const deletedComments = await deleteCommentsByUser(adminDb, uid);
+  const removedLikes = await removeUserLikes(adminDb, uid);
+  const deletedNotifications = await deleteNotificationsForUser(adminDb, uid);
+  const deletedPushSubscriptions = await deleteUserPushSubscriptions(adminDb.collection("users").doc(uid));
 
-  await deleteCommentsByUser(adminDb, uid);
+  // Firestore does not delete subcollections when their parent document is deleted.
+  // Remove them first so a deleted run cannot leave orphaned comments or other descendants.
+  for (const run of runsSnapshot.docs) {
+    await deleteSubcollections(run.ref);
+  }
+  await deleteDocuments(runsSnapshot.docs.map(run => run.ref));
+
   await adminDb.collection("users").doc(uid).delete();
   await adminDb.collection("publicProfiles").doc(uid).delete();
 
   return {
-    deletedRuns: refs.length,
+    deletedRuns: runsSnapshot.size,
+    deletedComments,
+    removedLikes,
+    deletedNotifications,
+    deletedPushSubscriptions,
+    deletedTeams: teamCleanup.deletedTeams,
+    removedTeamMemberships: teamCleanup.removedMemberships,
     deletedImages: cloudinaryResult.deleted,
   };
 }
