@@ -17,7 +17,10 @@ export function isValidChallengeGoal(kind: ChallengeKind, value: unknown): boole
   return kind === "distance" || kind === "sharedDistance" ? n <= 100000 : Number.isInteger(n) && n <= 100000;
 }
 export function isValidDateOnly(value: unknown): value is string {
-  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
 export function isValidRegistrationCode(value: unknown): value is string { return typeof value === "string" && value.trim().length >= 4 && value.trim().length <= 128; }
 
