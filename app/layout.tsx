@@ -1,4 +1,5 @@
 import "./styles.css";
+import "./challenges.css";
 import type { Metadata } from "next";
 import { ReactNode } from "react";
 import ClientLayout from "./ClientLayout";
