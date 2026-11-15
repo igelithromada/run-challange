@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, X, CloudSun, TrendingUp, ListOrdered, Dumbbell, Map, UserRound } from "lucide-react";
+import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, X, CloudSun, TrendingUp, ListOrdered, Dumbbell, Map, UserRound, Target } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { getUserProfile } from "../lib/services/users";
@@ -13,6 +13,7 @@ type SidebarProps = { visible: boolean; onClose: () => void; onSelect: (item: st
 const items = [
   { id: "myrun", label: "Moje aktivity", Icon: Footprints },
   { id: "teams", label: "Týmy", Icon: Users },
+  { id: "challenges", label: "Výzvy", Icon: Target },
   { id: "progress", label: "Můj pokrok", Icon: TrendingUp },
   { id: "trainer", label: "Osobní trenér", Icon: Dumbbell },
   { id: "statistics", label: "Výsledky", Icon: Trophy },
@@ -37,6 +38,11 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
     if (id === "routes") {
       onClose();
       router.push("/routes");
+      return;
+    }
+    if (id === "challenges") {
+      onClose();
+      router.push("/progress#team-challenges");
       return;
     }
     onSelect(id);
