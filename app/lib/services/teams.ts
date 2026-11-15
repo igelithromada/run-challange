@@ -4,8 +4,23 @@ import type { TeamData } from "../../types";
 
 export const teamsCollection = () => collection(db, "teams");
 
-export function allTeamsQuery(): Query {
-  return query(teamsCollection(), orderBy("name", "asc"));
+export function allTeamsQuery(pageSize = 10, cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>): Query {
+  const constraints = cursor
+    ? [orderBy("name", "asc"), startAfter(cursor), limit(pageSize)]
+    : [orderBy("name", "asc"), limit(pageSize)];
+  return query(teamsCollection(), ...constraints);
+}
+
+export async function fetchTeamsPage(
+  pageSize = 10,
+  cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>
+): Promise<{ items: TeamData[]; lastDocument: QueryDocumentSnapshot<DocumentData, DocumentData> | null; hasMore: boolean }> {
+  const snapshot = await getDocs(allTeamsQuery(pageSize, cursor));
+  return {
+    items: snapshot.docs.map(item => ({ id: item.id, ...item.data() } as TeamData)),
+    lastDocument: snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null,
+    hasMore: snapshot.docs.length === pageSize,
+  };
 }
 
 export function teamRef(teamId: string) {
