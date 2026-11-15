@@ -133,7 +133,7 @@ export default function ChallengesPage() {
 
   return <>
     <Navbar title="Výzvy" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
-    <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={item=>{setMenuVisible(false); const routes:any={home:"/",myrun:"/myruns",teams:"/teams",challenges:"/challenges",settings:"/settings",statistics:"/statistics",participants:"/participants",progress:"/progress",trainer:"/trainer",weather:"/weather",admin:"/admin"}; router.push(routes[item]||"/");}}/>
+    <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={item=>{setMenuVisible(false); const routes:any={home:"/",myrun:"/myruns",teams:"/teams",challenges:"/challenges",progress:"/progress",trainer:"/trainer",statistics:"/statistics",participants:"/participants",weather:"/weather",routes:"/routes",settings:"/settings",admin:"/admin"}; router.push(routes[item]||"/");}}/>
     <main className="container challenges-page">
       <header className="teams-header"><span className="teams-eyebrow">SOUTĚŽ A MOTIVACE</span><h1>Výzvy</h1><p>Zapoj se do výzvy nebo vytvoř vlastní.</p></header>
       {!showCreate ? (
