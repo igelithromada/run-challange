@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { FieldValue, Timestamp, type DocumentReference } from "firebase-admin/firestore";
 import { requireUser } from "../../../lib/apiAuth";
 import { normalizeTeamName, normalizeDescription } from "../../../lib/validation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const teamRef = (db:any,id:string) => db.collection("teams").doc(id);
-const memberRef = (db:any,teamId:string,uid:string) => teamRef(db,teamId).collection("members").doc(uid);
+const teamRef = (db:any,id:string): DocumentReference => db.collection("teams").doc(id);
+const memberRef = (db:any,teamId:string,uid:string): DocumentReference => teamRef(db,teamId).collection("members").doc(uid);
 const normalizeKey = (name:string) => name.trim().toLocaleLowerCase("cs-CZ");
 
 export async function POST(request: Request) {
