@@ -89,7 +89,7 @@ export default function ChallengesPage() {
       if (page > 1 && !cursorSet[state]) return [state, {items: [] as ChallengeData[], lastDocument: null, hasMore: false}] as const;
       const result = await fetchChallengesPage(activityType, state, monthStart, monthEnd, 10, cursorSet[state]);
       return [state, result] as const;
-    })).then(results => {
+    })).then(async results => {
       if (cancelled) return;
       const nextGroups = { active: results[0][1].items, planned: results[1][1].items, completed: results[2][1].items };
       setGroups(nextGroups);
