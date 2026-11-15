@@ -11,7 +11,7 @@ import { ActivityType } from "../../components/ActivityTypeSelector";
 import { cloudinaryImageUrl } from "../../lib/imageUrl";
 import type { TeamData, PublicProfileData } from "../../types";
 import { getPublicProfiles } from "../../lib/services/publicProfiles";
-import { getTeam, mergeTeam } from "../../lib/services/teams";
+import { getTeam } from "../../lib/services/teams";
 import { showAppToast } from "../../components/AppToast";
 
 type Member = PublicProfileData;
@@ -103,9 +103,33 @@ export default function TeamDetailPage() {
     if(!Number.isFinite(value)||value<=0){showAppToast("Zadej platný cíl.","error");return;}
     setSaving(true);
     try{
-      await mergeTeam(id,{challengeGoalKm:value,avatarUrl,avatarPublicId});
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const token = await currentUser.getIdToken(true);
+      const response = await fetch("/api/teams/manage", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: "update",
+          teamId: id,
+          challengeGoalKm: value,
+          avatarUrl,
+          avatarPublicId,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Nastavení se nepodařilo uložit.");
+      setTeam(previous => previous ? {
+        ...previous,
+        challengeGoalKm: value,
+        avatarUrl,
+        avatarPublicId,
+      } : previous);
       showAppToast("Nastavení týmu bylo uloženo.","success");
-    }catch(e){console.error(e);showAppToast("Nastavení se nepodařilo uložit.","error");}
+    }catch(e){console.error(e);showAppToast(e instanceof Error ? e.message : "Nastavení se nepodařilo uložit.","error");}
     finally{setSaving(false);}
   };
 
