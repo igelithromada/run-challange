@@ -12,6 +12,7 @@ import { fetchChallengesPage } from "../lib/services/challenges";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { showAppToast } from "../components/AppToast";
 import type { ActivityType, ChallengeData, ChallengeKind } from "../types";
+import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 
 const MONTHS = ["Leden","Únor","Březen","Duben","Květen","Červen","Červenec","Srpen","Září","Říjen","Listopad","Prosinec"];
 
@@ -46,6 +47,9 @@ export default function ChallengesPage() {
   const [groups,setGroups]=useState<Record<ChallengeData["state"], ChallengeData[]>>({active:[],planned:[],completed:[]});
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState<Error|null>(null);
+  const [page,setPage]=useState(1);
+  const [cursors,setCursors]=useState<Array<Record<ChallengeData["state"], QueryDocumentSnapshot<DocumentData, DocumentData>|undefined>>([{}]);
+  const [hasMore,setHasMore]=useState(false);
 
   useEffect(()=>{ const unsub=onAuthStateChanged(auth,u=>{ if(!u){router.push("/login");return;} setUser(u); try{const v=localStorage.getItem("dolni-lhota-default-activity-v1"); if(v==="běh"||v==="chůze")setActivityType(v);}catch{} }); return ()=>unsub(); },[router]);
 
@@ -72,25 +76,31 @@ export default function ChallengesPage() {
   const monthStart = `${key}-01`;
   const monthEndDate = new Date(month.getFullYear(), month.getMonth() + 1, 0);
   const monthEnd = `${monthKey(monthEndDate)}-${String(monthEndDate.getDate()).padStart(2, "0")}`;
-  const shift=(delta:number)=>setMonth(current=>new Date(current.getFullYear(),current.getMonth()+delta,1));
+  const shift=(delta:number)=>{setMonth(current=>new Date(current.getFullYear(),current.getMonth()+delta,1));setPage(1);setCursors([{}]);};
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
+    const cursorSet = cursors[page - 1] || {};
     Promise.all((["active","planned","completed"] as const).map(async state => {
-      const result = await fetchChallengesPage(activityType, state, monthStart, monthEnd, 10);
-      return [state, result.items] as const;
+      const result = await fetchChallengesPage(activityType, state, monthStart, monthEnd, 10, cursorSet[state]);
+      return [state, result] as const;
     })).then(results => {
       if (cancelled) return;
-      setGroups({ active: results[0][1], planned: results[1][1], completed: results[2][1] });
+      setGroups({ active: results[0][1].items, planned: results[1][1].items, completed: results[2][1].items });
+      setHasMore(results.some(([, result]) => result.hasMore));
+      if (results.some(([, result]) => result.lastDocument)) {
+        const next = results.reduce((acc, [state, result]) => ({...acc, [state]: result.lastDocument || undefined}), {} as Record<ChallengeData["state"], QueryDocumentSnapshot<DocumentData, DocumentData>|undefined>);
+        setCursors(current => current.length === page ? [...current, next] : current);
+      }
     }).catch(e => {
       if (!cancelled) setError(e instanceof Error ? e : new Error("Výzvy se nepodařilo načíst."));
     }).finally(() => {
       if (!cancelled) setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [activityType, monthStart, monthEnd]);
+  }, [activityType, monthStart, monthEnd, page]);
 
   return <>
     <Navbar title="Výzvy" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
@@ -111,8 +121,9 @@ export default function ChallengesPage() {
       </section>
       <div className="activity-type-switch challenge-type-switch"><button className={activityType==="běh"?"active":""} onClick={()=>setActivityType("běh")}>🏃 Běh</button><button className={activityType==="chůze"?"active":""} onClick={()=>setActivityType("chůze")}>🚶 Chůze</button></div>
       <div className="challenge-month"><button onClick={()=>shift(-1)} aria-label="Předchozí měsíc"><ChevronLeft/></button><strong>{MONTHS[month.getMonth()]} {month.getFullYear()}</strong><button onClick={()=>shift(1)} aria-label="Další měsíc"><ChevronRight/></button></div>
-      {loading?<LoadingSkeleton count={4}/>:error?<div className="tile teams-empty">Výzvy se nepodařilo načíst.</div>:([["active",groups.active],["planned",groups.planned],["completed",groups.completed]] as const).map(([state,items])=><section key={group.state} className="challenge-group"><h2>{group.state==="active"?"Aktivní":group.state==="planned"?"Plánované":"Dokončené"}</h2><div className="teams-grid">{items.map(c=><article key={c.id} className="tile team-card challenge-card" onClick={()=>router.push("/challenges/"+c.id)}>
+      {loading?<LoadingSkeleton count={4}/>:error?<div className="tile teams-empty">Výzvy se nepodařilo načíst.</div>:([["active",groups.active],["planned",groups.planned],["completed",groups.completed]] as const).map(([state,items])=><section key={state} className="challenge-group"><h2>{state==="active"?"Aktivní":state==="planned"?"Plánované":"Dokončené"}</h2><div className="teams-grid">{items.map(c=><article key={c.id} className="tile team-card challenge-card" onClick={()=>router.push("/challenges/"+c.id)}>
         <div className="team-card-main"><div className="team-avatar">{c.avatarUrl?<img src={cloudinaryImageUrl(c.avatarUrl,96)} alt=""/>:<Target size={22}/>}</div><div className="team-card-info"><div className="team-card-title-row"><h3>{c.name}</h3></div>{c.description&&<p className="team-card-description">{c.description}</p>}<p className="team-card-meta">{kindLabel(c.kind)} · {c.activityType==="běh"?"Běh":"Chůze"}</p><div className="team-card-stats"><span>{progress(c)}</span><span>{formatDate(c.startDate)} – {formatDate(c.endDate)}</span></div></div><ChevronRight className="team-card-chevron" size={20}/></div></article>)}</div></section>)}
+      {!loading&&!error&&(groups.active.length||groups.planned.length||groups.completed.length)&&<div className="challenge-pagination"><button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1}>Předchozí</button><strong>Strana {page}</strong><button onClick={()=>setPage(p=>p+1)} disabled={!hasMore}>Další</button></div>}
       {!loading&&!error&&!groups.active.length&&!groups.planned.length&&!groups.completed.length&&<div className="tile teams-empty"><Trophy size={30}/><strong>V tomto měsíci nejsou žádné výzvy.</strong><p>Zkus jiný měsíc nebo vytvoř vlastní výzvu.</p></div>}
     </main>
   </>;
