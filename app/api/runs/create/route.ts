@@ -4,6 +4,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { normalizeActivityType } from "../../../lib/validation";
 import { cloudinaryPublicIdFromUrl, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
+import { reconcileChallengesForUser } from "../../../lib/challenges/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -106,6 +107,7 @@ export async function POST(request: Request) {
     }
 
     await batch.commit();
+    await reconcileChallengesForUser(adminDb, decoded.uid);
     return NextResponse.json({ ok: true, id: ref.id });
   } catch (error) {
     const authError = authErrorResponse(error);
