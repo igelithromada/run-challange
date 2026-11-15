@@ -69,14 +69,17 @@ export async function POST(request: Request) {
           const data = contribution.data() || {};
           const teamRef = contribution.ref.parent.parent;
           if (!teamRef) continue;
+          const teamSnap = await teamRef.get();
           const type = data.type === "chůze" ? "chůze" : "běh";
           const km = Number(data.km) || 0;
           const kmField = type === "chůze" ? "walkingKm" : "runningKm";
           const countField = type === "chůze" ? "walkingActivities" : "runningActivities";
-          batch.update(teamRef, {
-            [`stats.${kmField}`]: FieldValue.increment(-km),
-            [`stats.${countField}`]: FieldValue.increment(-1),
-          });
+          if (teamSnap.exists) {
+            batch.update(teamRef, {
+              [`stats.${kmField}`]: FieldValue.increment(-km),
+              [`stats.${countField}`]: FieldValue.increment(-1),
+            });
+          }
           batch.delete(contribution.ref);
         }
         await batch.commit();
