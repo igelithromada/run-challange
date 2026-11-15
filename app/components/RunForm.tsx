@@ -32,6 +32,25 @@ const uploadToCloudinary = async (file: File) => {
   };
 };
 
+const deleteUploadedMedia = async (publicIds: string[]) => {
+  if (!publicIds.length) return;
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    const token = await user.getIdToken(true);
+    await fetch("/api/media/delete", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ publicIds }),
+    });
+  } catch (error) {
+    console.warn("Nepodařilo se uklidit neuložené fotografie:", error);
+  }
+};
+
 const localDateTime = () => {
   const now = new Date();
   return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -243,6 +262,7 @@ export default function RunForm({ type }: {
       );
     } catch (err) {
       console.error(err);
+      await deleteUploadedMedia(imagePublicIds);
       const message=translateSaveError(err);
       setError(message);
     } finally {
