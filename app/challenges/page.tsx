@@ -84,7 +84,7 @@ export default function ChallengesPage() {
     setError(null);
     const cursorSet = cursors[page - 1] || {};
     Promise.all((["active","planned","completed"] as const).map(async state => {
-      if (page > 1 && !cursorSet[state]) return [state, {items: [], lastDocument: null, hasMore: false}] as const;
+      if (page > 1 && !cursorSet[state]) return [state, {items: [] as ChallengeData[], lastDocument: null, hasMore: false}] as const;
       const result = await fetchChallengesPage(activityType, state, monthStart, monthEnd, 10, cursorSet[state]);
       return [state, result] as const;
     })).then(results => {
