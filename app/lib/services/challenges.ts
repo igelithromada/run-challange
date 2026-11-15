@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, limit, orderBy, query, where, type Query } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, where, type Query, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
 import { db } from "../firebase";
 import type { ChallengeData } from "../../types";
 
@@ -21,21 +21,25 @@ export async function fetchChallengesPage(
   state: ChallengeData["state"],
   monthStart: string,
   monthEnd: string,
-  pageSize = 10
-): Promise<{ items: ChallengeData[]; hasMore: boolean }> {
-  const snapshot = await getDocs(
-    query(
-      collection(db, "challenges"),
-      where("activityType", "==", activityType),
-      where("state", "==", state),
-      where("startDate", ">=", monthStart),
-      where("startDate", "<=", monthEnd),
-      orderBy("startDate", "asc"),
-      limit(pageSize)
-    )
-  );
+  pageSize = 10,
+  cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>
+): Promise<{ items: ChallengeData[]; lastDocument: QueryDocumentSnapshot<DocumentData, DocumentData> | null; hasMore: boolean }> {
+  const constraints = [
+    where("activityType", "==", activityType),
+    where("state", "==", state),
+    where("startDate", ">=", monthStart),
+    where("startDate", "<=", monthEnd),
+    orderBy("startDate", "asc"),
+    ...(cursor ? [startAfter(cursor)] : []),
+    limit(pageSize),
+  ] as const;
+  const snapshot = await getDocs(query(collection(db, "challenges"), ...constraints));
   const items = snapshot.docs
     .map(d => ({ id: d.id, ...d.data() } as ChallengeData))
     .sort((a, b) => a.name.localeCompare(b.name, "cs"));
-  return { items, hasMore: snapshot.docs.length === pageSize };
+  return {
+    items,
+    lastDocument: snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null,
+    hasMore: snapshot.docs.length === pageSize,
+  };
 }
