@@ -25,12 +25,10 @@ export async function POST(request: Request) {
 
     const km = Number(data.km);
     const minuty = Number(data.minuty);
-    const tempo = Number(data.tempo);
     const type = data.type === "běh" || data.type === "chůze" ? normalizeActivityType(data.type) : "";
     if (
       !Number.isFinite(km) || km <= 0 || km > 1000 ||
       !Number.isFinite(minuty) || minuty <= 0 || minuty > 24 * 60 ||
-      !Number.isFinite(tempo) || tempo <= 0 || tempo > 60 ||
       !type
     ) {
       return NextResponse.json({ error: "Aktivita obsahuje neplatné údaje." }, { status: 400 });
@@ -62,7 +60,7 @@ export async function POST(request: Request) {
       email: decoded.email || "",
       nickname: canonicalNickname,
       avatarUrl: canonicalAvatarUrl,
-      km, minuty, tempo: tempo.toFixed(2), type,
+      km, minuty, tempo: (minuty / km).toFixed(2), type,
       description: typeof data.description === "string" ? data.description.trim().slice(0, 500) : "",
       timestamp: typeof data.timestamp === "string" && !Number.isNaN(new Date(data.timestamp).getTime()) ? new Date(data.timestamp) : createdAt,
       imageUrls: Array.isArray(data.imageUrls)
