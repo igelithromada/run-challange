@@ -105,11 +105,15 @@ async function removeUserFromChallenges(adminDb: Firestore, uid: string) {
           deletedAt: FieldValue.serverTimestamp(),
         }, { merge: true });
       } else {
+        const wasActive = participant.data()?.active === true;
         batch.set(participant.ref, {
           active: false,
           leftAt: FieldValue.serverTimestamp(),
           deletedAt: FieldValue.serverTimestamp(),
         }, { merge: true });
+        if (wasActive && challengeRef) {
+          batch.update(challengeRef, { participantCount: FieldValue.increment(-1) });
+        }
       }
     }
     await batch.commit();
