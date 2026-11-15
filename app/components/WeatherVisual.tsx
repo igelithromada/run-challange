@@ -58,8 +58,8 @@ export default function WeatherVisual({
     >
       {kind === "partly" ? (
         <>
-          <Sun className="weather-sun" size={Math.round(size * .62)} strokeWidth={2.6} />
-          <Cloud className="weather-cloud" size={Math.round(size * .56)} strokeWidth={2} />
+          <Sun className="weather-sun" size={Math.round(size * .58)} strokeWidth={2.7} />
+          <Cloud className="weather-cloud" size={Math.round(size * .58)} strokeWidth={1.9} />
         </>
       ) : (
         <Icon className="weather-visual-icon" size={Math.round(size * .72)} strokeWidth={1.9} />
