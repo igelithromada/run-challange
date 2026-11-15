@@ -43,3 +43,29 @@ export async function fetchChallengesPage(
     hasMore: snapshot.docs.length === pageSize,
   };
 }
+
+export async function fetchChallengeParticipantsPage(
+  id: string,
+  challenge: Pick<ChallengeData, "state" | "kind">,
+  pageSize = 10,
+  cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>
+): Promise<{ items: any[]; lastDocument: QueryDocumentSnapshot<DocumentData, DocumentData> | null; hasMore: boolean }> {
+  const orderField = challenge.state === "completed"
+    ? "finalRank"
+    : challenge.kind === "sharedDistance"
+      ? "joinedAt"
+      : "result";
+  const orderDirection = challenge.state === "completed" || challenge.kind === "sharedDistance" ? "asc" : "desc";
+  const constraints = [
+    where("active", "==", true),
+    orderBy(orderField, orderDirection),
+    ...(cursor ? [startAfter(cursor)] : []),
+    limit(pageSize),
+  ] as const;
+  const snapshot = await getDocs(query(collection(db, "challenges", id, "participants"), ...constraints));
+  return {
+    items: snapshot.docs.map(d => ({ id: d.id, ...d.data() })),
+    lastDocument: snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null,
+    hasMore: snapshot.docs.length === pageSize,
+  };
+}
