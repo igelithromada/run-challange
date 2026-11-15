@@ -75,41 +75,46 @@ async function removeUserNotifications(adminDb: Firestore, uid: string) {
 }
 
 async function removeUserFromTeams(adminDb: Firestore, uid: string) {
-  const [memberSnapshot, ownedSnapshot] = await Promise.all([
-    adminDb.collection("teams").where("memberIds", "array-contains", uid).get(),
-    adminDb.collection("teams").where("createdBy", "==", uid).get(),
-  ]);
+  const membershipSnapshot = await adminDb.collectionGroup("members")
+    .where("userId", "==", uid)
+    .where("active", "==", true)
+    .get();
 
-  const ownedIds = new Set(ownedSnapshot.docs.map(doc => doc.id));
-  const allTeams = new Map<string, QueryDocumentSnapshot>();
-  [...memberSnapshot.docs, ...ownedSnapshot.docs].forEach(doc => allTeams.set(doc.id, doc));
+  let cleaned = 0;
+  for (const member of membershipSnapshot.docs) {
+    const teamRef = member.ref.parent.parent;
+    if (!teamRef) continue;
+    const teamSnap = await teamRef.get();
+    if (!teamSnap.exists) continue;
+    const team = teamSnap.data() || {};
+    const wasManager = team.managerId === uid;
 
-  for (const team of allTeams.values()) {
-    const data = team.data() || {};
-    const type = data.type === "chůze" ? "chůze" : "běh";
-    const memberIds = Array.isArray(data.memberIds)
-      ? data.memberIds.filter((value): value is string => typeof value === "string")
-      : [];
+    const activeMembers = await teamRef.collection("members").where("active", "==", true).get();
+    const replacement = activeMembers.docs.find(d => d.id !== uid);
 
-    if (ownedIds.has(team.id)) {
-      const remaining = memberIds.filter(memberId => memberId !== uid);
-      for (let i = 0; i < remaining.length; i += 450) {
-        const batch = adminDb.batch();
-        remaining.slice(i, i + 450).forEach(memberId => {
-          batch.set(adminDb.collection("users").doc(memberId), {
-            [`teamIdsByType.${type}`]: null,
-            ...(type === "běh" ? { teamId: null, joinedTeam: null } : {}),
-          }, { merge: true });
-        });
-        if (i + 450 >= remaining.length) batch.delete(team.ref);
-        await batch.commit();
+    const batch = adminDb.batch();
+    batch.delete(member.ref);
+
+    if (wasManager) {
+      if (replacement) {
+        batch.update(teamRef, { managerId: replacement.id, memberCount: FieldValue.increment(-1) });
+        batch.set(replacement.ref, { managerTransferredAt: FieldValue.serverTimestamp() }, { merge: true });
+      } else {
+        // The account being deleted is the sole member. Preserve the team and
+        // its historical statistics; the team simply has no current manager.
+        batch.update(teamRef, { managerId: null, memberCount: 0 });
       }
-      if (remaining.length === 0) await team.ref.delete();
     } else {
-      await team.ref.update({ memberIds: FieldValue.arrayRemove(uid) });
+      batch.update(teamRef, { memberCount: FieldValue.increment(-1) });
     }
+
+    await batch.commit();
+    cleaned++;
   }
-  return allTeams.size;
+
+  // Membership history and activityContributions are deliberately preserved:
+  // they are the source of historical team statistics.
+  return cleaned;
 }
 
 export async function deleteUserData(adminDb: Firestore, uid: string) {
