@@ -48,7 +48,7 @@ export default function ChallengesPage() {
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState<Error|null>(null);
   const [page,setPage]=useState(1);
-  const [cursors,setCursors]=useState<Array<Record<ChallengeData["state"], QueryDocumentSnapshot<DocumentData, DocumentData>|undefined>>([{}]);
+  const [cursors,setCursors]=useState<Array<Record<ChallengeData["state"], QueryDocumentSnapshot<DocumentData, DocumentData>|undefined>>>([{}]);
   const [hasMore,setHasMore]=useState(false);
 
   useEffect(()=>{ const unsub=onAuthStateChanged(auth,u=>{ if(!u){router.push("/login");return;} setUser(u); try{const v=localStorage.getItem("dolni-lhota-default-activity-v1"); if(v==="běh"||v==="chůze")setActivityType(v);}catch{} }); return ()=>unsub(); },[router]);
@@ -92,7 +92,7 @@ export default function ChallengesPage() {
       setHasMore(results.some(([, result]) => result.hasMore));
       if (results.some(([, result]) => result.lastDocument)) {
         const next = results.reduce((acc, [state, result]) => ({...acc, [state]: result.lastDocument || undefined}), {} as Record<ChallengeData["state"], QueryDocumentSnapshot<DocumentData, DocumentData>|undefined>);
-        setCursors(current => current.length === page ? [...current, next] : current);
+        setCursors((current: Array<Record<ChallengeData["state"], QueryDocumentSnapshot<DocumentData, DocumentData>|undefined>>) => current.length === page ? [...current, next] : current);
       }
     }).catch(e => {
       if (!cancelled) setError(e instanceof Error ? e : new Error("Výzvy se nepodařilo načíst."));
