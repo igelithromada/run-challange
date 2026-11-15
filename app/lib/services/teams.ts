@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, query, where, orderBy, setDoc, type Query, type SetOptions } from "firebase/firestore";
+import { collection, collectionGroup, doc, getDoc, getDocs, query, where, orderBy, setDoc, type Query, type SetOptions } from "firebase/firestore";
 import { db } from "../firebase";
 import type { TeamData } from "../../types";
 
@@ -19,17 +19,11 @@ export async function getTeam(teamId: string): Promise<TeamData | null> {
 
 export async function getActiveTeamIdsForUser(userId: string): Promise<string[]> {
   const snapshot = await getDocs(
-    query(
-      collection(db, "teams"),
-      where("memberCount", ">", 0)
-    )
+    query(collectionGroup(db, "members"), where("userId", "==", userId), where("active", "==", true))
   );
-  const ids: string[] = [];
-  await Promise.all(snapshot.docs.map(async team => {
-    const member = await getDoc(doc(db, "teams", team.id, "members", userId));
-    if (member.exists() && member.data()?.active === true) ids.push(team.id);
-  }));
-  return ids;
+  return snapshot.docs
+    .map(item => item.ref.parent.parent?.id || "")
+    .filter(Boolean);
 }
 
 export async function getTeamMemberIds(teamId: string): Promise<string[]> {
