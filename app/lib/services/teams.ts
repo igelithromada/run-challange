@@ -1,4 +1,4 @@
-import { collection, collectionGroup, doc, getDoc, getDocs, query, where, orderBy, setDoc, type Query, type SetOptions } from "firebase/firestore";
+import { collection, collectionGroup, doc, getDoc, getDocs, query, where, orderBy, setDoc, limit, startAfter, type Query, type SetOptions, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
 import { db } from "../firebase";
 import type { TeamData } from "../../types";
 
