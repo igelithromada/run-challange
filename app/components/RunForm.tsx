@@ -172,8 +172,8 @@ export default function RunForm({ type }: {
       setError("Zkontroluj datum a čas aktivity.");
       return;
     }
-    if (files.length > 6 || files.some(file => !file.type.startsWith("image/") || file.size > 10 * 1024 * 1024)) {
-      setError("Vyber maximálně 6 obrázků, každý do 10 MB.");
+    if (files.length > 6 || files.some(file => !["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+      setError("Vyber maximálně 6 obrázků ve formátu JPG, PNG nebo WebP, každý do 5 MB.");
       return;
     }
 
@@ -190,9 +190,9 @@ export default function RunForm({ type }: {
     setSaving(true);
     setError("");
 
+    const imagePublicIds: string[] = [];
     try {
       const imageUrls: string[] = [];
-      const imagePublicIds: string[] = [];
       for (let i = 0; i < files.length; i++) {
         setUploadStatus(`Nahrávám fotografie ${i + 1}/${files.length}…`);
         const uploaded = await uploadToCloudinary(files[i]);
@@ -200,7 +200,7 @@ export default function RunForm({ type }: {
         if (uploaded.publicId) imagePublicIds.push(uploaded.publicId);
       }
 
-      setUploadStatus(navigator.onLine ? "Ukládám aktivitu…" : "Ukládám aktivitu offline…");
+      setUploadStatus("Ukládám aktivitu…");
 
       let userData: Record<string, unknown> = {};
       try {
