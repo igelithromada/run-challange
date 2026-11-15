@@ -8,11 +8,11 @@ import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
-import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { showAppToast } from "../components/AppToast";
 import type { TeamData } from "../types";
-import { allTeamsQuery, getActiveTeamIdsForUser } from "../lib/services/teams";
+import { fetchTeamsPage, getActiveTeamIdsForUser } from "../lib/services/teams";
+import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 
 type Tab = "mine" | "all";
 
@@ -26,9 +26,11 @@ export default function TeamsPage() {
   const [description, setDescription] = useState("");
   const [creating, setCreating] = useState(false);
   const [page, setPage] = useState(1);
-
-  const teamsState = useSharedFirestoreQuery<TeamData>("teams:all:v2", useMemo(() => allTeamsQuery(), []));
-  const teams = teamsState.data;
+  const [teams, setTeams] = useState<TeamData[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+  const [teamsError, setTeamsError] = useState<Error | null>(null);
+  const [hasMoreTeams, setHasMoreTeams] = useState(false);
+  const [pageCursors, setPageCursors] = useState<Array<QueryDocumentSnapshot<DocumentData, DocumentData> | null>>([null]);
 
   const refreshMemberships = async (uid: string) => {
     const ids = await getActiveTeamIdsForUser(uid);
@@ -103,18 +105,53 @@ export default function TeamsPage() {
     }
   };
 
-  const visibleTeams = teams.filter(team => tab === "mine" ? myTeamIds.includes(team.id) : true);
-  const pageSize = 10;
-  const pageCount = Math.max(1, Math.ceil(visibleTeams.length / pageSize));
-  const currentPage = Math.min(page, pageCount);
-  const pageTeams = visibleTeams.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pageTeams = tab === "mine" ? teams.filter(team => myTeamIds.includes(team.id)) : teams;
+  const currentPage = page;
+
+  const loadTeamsPage = async (targetPage: number) => {
+    if (tab !== "all") return;
+    setTeamsLoading(true);
+    setTeamsError(null);
+    try {
+      const cursor = pageCursors[targetPage - 1] ?? null;
+      const result = await fetchTeamsPage(10, cursor ?? undefined);
+      setTeams(result.items);
+      setHasMoreTeams(result.hasMore);
+      if (result.lastDocument) {
+        setPageCursors(current => {
+          const next = [...current];
+          next[targetPage] = result.lastDocument;
+          return next;
+        });
+      }
+    } catch (error) {
+      setTeamsError(error instanceof Error ? error : new Error("Týmy se nepodařilo načíst."));
+    } finally {
+      setTeamsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setPage(1);
-  }, [tab]);
+    if (tab === "all") void loadTeamsPage(page);
+  }, [tab, page]);
 
   useEffect(() => {
-    if (teamsState.error) showAppToast("Týmy se nepodařilo načíst. Zkus stránku obnovit.", "error");
+    if (tab === "mine") {
+      setPage(1);
+      setTeamsLoading(true);
+      setTeamsError(null);
+      fetchTeamsPage(10)
+        .then(result => {
+          setTeams(result.items.filter(team => myTeamIds.includes(team.id)));
+          setHasMoreTeams(result.hasMore);
+        })
+        .catch(error => setTeamsError(error instanceof Error ? error : new Error("Týmy se nepodařilo načíst.")))
+        .finally(() => setTeamsLoading(false));
+    }
+  }, [tab, myTeamIds.join(",")]);
+
+  useEffect(() => {
+    if (teamsError) showAppToast("Týmy se nepodařilo načíst. Zkus stránku obnovit.", "error");
   }, [teamsState.error]);
 
   const handleSelect = async (item: string) => {
@@ -182,7 +219,7 @@ export default function TeamsPage() {
           </button>
         </div>
 
-        {teamsState.loading ? (
+        {teamsLoading ? (
           <LoadingSkeleton count={3} />
         ) : teamsState.error ? (
           <div className="tile teams-empty"><strong>Týmy se nepodařilo načíst</strong><p>Zkus stránku obnovit.</p></div>
@@ -231,11 +268,11 @@ export default function TeamsPage() {
               )}
             </section>
 
-            {pageCount > 1 && (
+            {(currentPage > 1 || hasMoreTeams) && (
               <div className="teams-pagination">
-                {Array.from({ length: pageCount }, (_, index) => index + 1).map(number => (
-                  <button key={number} className={number === currentPage ? "active" : ""} onClick={() => setPage(number)}>{number}</button>
-                ))}
+                {currentPage > 1 && <button onClick={() => setPage(value => Math.max(1, value - 1))}>Předchozí</button>}
+                <span>Strana {currentPage}</span>
+                {hasMoreTeams && <button onClick={() => setPage(value => value + 1)}>Další</button>}
               </div>
             )}
           </>
