@@ -138,12 +138,14 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
       });
       const reached=all.filter((p:any)=>Number(p.result||0)>=target);
       const winner=(reached[0]||all[0])?.id||null;
+      const finalRanks = new Map<string, number>();
+      all.forEach((item:any,index:number)=>finalRanks.set(String(item.id), index + 1));
       for(let start=0;start<all.length;start+=450){
         const batch=adminDb.batch();
         for(const p of all.slice(start,start+450)){
           const original=participants.docs.find((d: any)=>d.id===p.id);
           if(!original)continue;
-          const rank = all.findIndex((item:any)=>item.id===p.id) + 1;
+          const rank = finalRanks.get(String(p.id)) || 0;
           batch.set(original.ref,{result:Number(p.result||0),targetReachedAt:p.targetReachedAt||null,finalResult:Number(p.result||0),finalRank:rank,finalizedAt:Timestamp.now()},{merge:true});
         }
         if(start===0) batch.update(ref,{state:"completed",completedAt:Timestamp.now(),winnerId:winner,goalReached:reached.length>0});
