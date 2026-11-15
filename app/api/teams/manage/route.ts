@@ -55,6 +55,8 @@ export async function POST(request: Request) {
         if (m.exists && m.data()?.active !== false) return;
         const now=Timestamp.now();
         tx.set(memberRef(adminDb,teamId,uid),{userId:uid,joinedAt:now,active:true,leaveAt:null},{merge:true});
+        const historyRef=ref.collection("membershipHistory").doc();
+        tx.create(historyRef,{userId:uid,joinedAt:now,active:true});
         tx.update(ref,{memberCount:FieldValue.increment(1)});
       });
       return NextResponse.json({ok:true});
@@ -65,7 +67,10 @@ export async function POST(request: Request) {
       await adminDb.runTransaction(async tx => {
         const m=await tx.get(memberRef(adminDb,teamId,uid));
         if (!m.exists || m.data()?.active === false) return;
-        tx.set(memberRef(adminDb,teamId,uid),{active:false,leaveAt:Timestamp.now()},{merge:true});
+        const now=Timestamp.now();
+        tx.set(memberRef(adminDb,teamId,uid),{active:false,leaveAt:now},{merge:true});
+        const history=await tx.get(ref.collection("membershipHistory").where("userId","==",uid).where("active","==",true).limit(1));
+        history.docs.forEach((d:any)=>tx.update(d.ref,{active:false,leaveAt:now}));
         tx.update(ref,{memberCount:FieldValue.increment(-1)});
       });
       return NextResponse.json({ok:true});
@@ -102,7 +107,13 @@ export async function POST(request: Request) {
       if(!newManagerId || newManagerId===uid) return NextResponse.json({error:"Vyber jiného člena týmu."},{status:400});
       const target=await memberRef(adminDb,teamId,newManagerId).get();
       if(!target.exists || target.data()?.active===false) return NextResponse.json({error:"Nový správce musí být členem týmu."},{status:400});
-      await ref.set({managerId:newManagerId},{merge:true});
+      await adminDb.runTransaction(async tx=>{
+        const teamSnap=await tx.get(ref);
+        const targetSnap=await tx.get(memberRef(adminDb,teamId,newManagerId));
+        if(!teamSnap.exists || teamSnap.data()?.managerId!==uid) throw new Error("NOT_MANAGER");
+        if(!targetSnap.exists || targetSnap.data()?.active===false) throw new Error("TARGET_NOT_MEMBER");
+        tx.update(ref,{managerId:newManagerId});
+      });
       return NextResponse.json({ok:true});
     }
 
@@ -122,7 +133,9 @@ export async function POST(request: Request) {
     const message=error instanceof Error?error.message:"";
     const map:any={
       UNAUTHORIZED:["Nejsi přihlášen.",401],TEAM_NAME_TAKEN:["Tým s tímto názvem už existuje.",409],
-      TEAM_CREATE_LIMIT:["Můžeš vytvořit nejvýše 5 týmů.",409]
+      TEAM_CREATE_LIMIT:["Můžeš vytvořit nejvýše 5 týmů.",409],
+      NOT_MANAGER:["Správu může převést jen současný správce.",403],
+      TARGET_NOT_MEMBER:["Nový správce musí být členem týmu.",400]
     };
     const [text,status]=map[message]||["Operaci týmu se nepodařilo dokončit.",500];
     console.error("POST /api/teams/manage:",error);
