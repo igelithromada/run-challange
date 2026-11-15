@@ -29,7 +29,7 @@ export interface UserData {
 
 export interface TeamStats { runningKm:number; runningActivities:number; walkingKm:number; walkingActivities:number; }
 export interface TeamData {
-  id:string; organizationId?:string; name:string; description?:string; createdBy?:string; managerId?:string;
+  id:string; organizationId?:string; name:string; description?:string; createdBy?:string; managerId?:string; type?:ActivityType; challengeGoalKm?:number;
   avatarUrl?:string; avatarPublicId?:string; memberCount?:number; stats?:TeamStats;
   memberIds?:string[]; // legacy compatibility only; new code should use members subcollection
 }
