@@ -143,6 +143,14 @@ async function removeUserFromTeams(adminDb: Firestore, uid: string) {
 
     const batch = adminDb.batch();
     batch.delete(member.ref);
+    const activeHistory = await teamRef.collection("membershipHistory")
+      .where("userId", "==", uid)
+      .where("active", "==", true)
+      .get();
+    activeHistory.docs.forEach(history => batch.update(history.ref, {
+      active: false,
+      leftAt: FieldValue.serverTimestamp(),
+    }));
 
     if (wasManager) {
       if (replacement) {
