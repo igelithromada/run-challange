@@ -158,7 +158,7 @@ export default function TeamsPage() {
 
   useEffect(() => {
     if (teamsError) showAppToast("Týmy se nepodařilo načíst. Zkus stránku obnovit.", "error");
-  }, [teamsState.error]);
+  }, [teamsError]);
 
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
@@ -227,7 +227,7 @@ export default function TeamsPage() {
 
         {teamsLoading ? (
           <LoadingSkeleton count={3} />
-        ) : teamsState.error ? (
+        ) : teamsError ? (
           <div className="tile teams-empty"><strong>Týmy se nepodařilo načíst</strong><p>Zkus stránku obnovit.</p></div>
         ) : (
           <>
