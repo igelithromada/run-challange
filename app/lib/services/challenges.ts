@@ -27,16 +27,13 @@ export async function fetchChallengesPage(
   const constraints = [
     where("activityType", "==", activityType),
     where("state", "==", state),
-    where("startDate", ">=", monthStart),
-    where("startDate", "<=", monthEnd),
-    orderBy("startDate", "asc"),
+    where("startMonth", "==", monthStart.slice(0, 7)),
+    orderBy("name", "asc"),
     ...(cursor ? [startAfter(cursor)] : []),
     limit(pageSize),
   ] as const;
   const snapshot = await getDocs(query(collection(db, "challenges"), ...constraints));
-  const items = snapshot.docs
-    .map(d => ({ id: d.id, ...d.data() } as ChallengeData))
-    .sort((a, b) => a.name.localeCompare(b.name, "cs"));
+  const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ChallengeData));
   return {
     items,
     lastDocument: snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null,
