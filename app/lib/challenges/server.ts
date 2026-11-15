@@ -110,44 +110,44 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
 
   if((challenge.state==="planned" || challenge.state==="active") && challenge.endDate<today) {
     const participants=await ref.collection("participants").where("active","==",true).get();
+    const finalized=await Promise.all(participants.docs.map(async d=>{
+      const data=d.data()||{};
+      const calculated=await calculateParticipantResult(adminDb,challenge,{...data,userId:d.id});
+      return {doc:d, data:{...data,...calculated}};
+    }));
     if(challenge.kind==="sharedDistance") {
-      const shared=participants.docs.reduce((sum:number,d:any)=>sum+Number(d.data()?.result||0),0);
-      const batch=adminDb.batch();
-      for (const participant of participants.docs) {
-        const data=participant.data()||{};
-        batch.set(participant.ref,{finalResult:Number(data.result||0),finalizedAt:Timestamp.now()},{merge:true});
+      const shared=finalized.reduce((sum:number,p:any)=>sum+Number(p.data.result||0),0);
+      for(let start=0;start<finalized.length;start+=450){
+        const batch=adminDb.batch();
+        for(const p of finalized.slice(start,start+450)){
+          batch.set(p.doc.ref,{result:Number(p.data.result||0),targetReachedAt:p.data.targetReachedAt||null,finalResult:Number(p.data.result||0),finalizedAt:Timestamp.now()},{merge:true});
+        }
+        if(start===0) batch.update(ref,{state:"completed",completedAt:Timestamp.now(),sharedProgress:shared,goalReached:shared>=Number(challenge.goal||0)});
+        await batch.commit();
       }
-      batch.update(ref,{state:"completed",completedAt:Timestamp.now(),sharedProgress:shared,goalReached:shared>=Number(challenge.goal||0)});
-      await batch.commit();
+      if(finalized.length===0) await ref.update({state:"completed",completedAt:Timestamp.now(),sharedProgress:0,goalReached:false});
     } else {
       const target=Number(challenge.goal||0);
-      const reached=participants.docs.map((d:any)=>({id:d.id,...d.data()}))
-        .filter((p:any)=>Number(p.result||0)>=target)
-        .sort((a:any,b:any)=>{
-          const ta=a.targetReachedAt?.toMillis ? a.targetReachedAt.toMillis() : Number.MAX_SAFE_INTEGER;
-          const tb=b.targetReachedAt?.toMillis ? b.targetReachedAt.toMillis() : Number.MAX_SAFE_INTEGER;
-          if(ta!==tb)return ta-tb;
-          return Number(b.result||0)-Number(a.result||0);
-        });
-      const all=participants.docs.map((d:any)=>({id:d.id,...d.data()})).sort((a:any,b:any)=>{
+      const all=finalized.map((p:any)=>({id:p.doc.id,...p.data})).sort((a:any,b:any)=>{
         const diff=Number(b.result||0)-Number(a.result||0);
         if(diff!==0)return diff;
         const ta=a.targetReachedAt?.toMillis ? a.targetReachedAt.toMillis() : Number.MAX_SAFE_INTEGER;
         const tb=b.targetReachedAt?.toMillis ? b.targetReachedAt.toMillis() : Number.MAX_SAFE_INTEGER;
         return ta-tb;
       });
+      const reached=all.filter((p:any)=>Number(p.result||0)>=target);
       const winner=(reached[0]||all[0])?.id||null;
-      const rankOrdered=all;
-      const batch=adminDb.batch();
-      rankOrdered.forEach((participant:any,index:number)=>{
-        batch.set(participants.docs.find((d:any)=>d.id===participant.id).ref,{
-          finalResult:Number(participant.result||0),
-          finalRank:index+1,
-          finalizedAt:Timestamp.now()
-        },{merge:true});
-      });
-      batch.update(ref,{state:"completed",completedAt:Timestamp.now(),winnerId:winner,goalReached:reached.length>0});
-      await batch.commit();
+      for(let start=0;start<all.length;start+=450){
+        const batch=adminDb.batch();
+        for(const p of all.slice(start,start+450)){
+          const original=participants.docs.find((d:any)=>d.id===p.id);
+          if(!original)continue;
+          batch.set(original.ref,{result:Number(p.result||0),targetReachedAt:p.targetReachedAt||null,finalResult:Number(p.result||0),finalRank:start+(all.indexOf(p))+1,finalizedAt:Timestamp.now()},{merge:true});
+        }
+        if(start===0) batch.update(ref,{state:"completed",completedAt:Timestamp.now(),winnerId:winner,goalReached:reached.length>0});
+        await batch.commit();
+      }
+      if(all.length===0) await ref.update({state:"completed",completedAt:Timestamp.now(),winnerId:null,goalReached:false});
     }
   }
 }
