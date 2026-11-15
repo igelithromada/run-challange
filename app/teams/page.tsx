@@ -136,19 +136,25 @@ export default function TeamsPage() {
   }, [tab, page]);
 
   useEffect(() => {
-    if (tab === "mine") {
-      setPage(1);
-      setTeamsLoading(true);
-      setTeamsError(null);
-      fetchTeamsPage(10)
-        .then(result => {
-          setTeams(result.items.filter(team => myTeamIds.includes(team.id)));
-          setHasMoreTeams(result.hasMore);
-        })
-        .catch(error => setTeamsError(error instanceof Error ? error : new Error("Týmy se nepodařilo načíst.")))
-        .finally(() => setTeamsLoading(false));
-    }
-  }, [tab, myTeamIds.join(",")]);
+    if (tab !== "mine" || !auth.currentUser) return;
+    setTeamsLoading(true);
+    setTeamsError(null);
+    const loadMine = async () => {
+      const token = await auth.currentUser!.getIdToken(true);
+      const response = await fetch("/api/teams/manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: "listMine", page, pageSize: 10 }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Týmy se nepodařilo načíst.");
+      setTeams(Array.isArray(result.items) ? result.items : []);
+      setHasMoreTeams(Boolean(result.hasMore));
+    };
+    loadMine()
+      .catch(error => setTeamsError(error instanceof Error ? error : new Error("Týmy se nepodařilo načíst.")))
+      .finally(() => setTeamsLoading(false));
+  }, [tab, page]);
 
   useEffect(() => {
     if (teamsError) showAppToast("Týmy se nepodařilo načíst. Zkus stránku obnovit.", "error");
