@@ -64,7 +64,7 @@ export async function POST(request:Request){
         if(!snap.exists)throw new Error("CHALLENGE_NOT_FOUND");
         const data=snap.data()||{};
         const today=localDateString();
-        if(data.state==="completed")throw new Error("CHALLENGE_LOCKED");
+        if(data.state==="completed" || String(data.endDate||"") < today)throw new Error("CHALLENGE_LOCKED");
         if(action==="join"){
           const existing=await tx.get(member);
           if(existing.exists && existing.data()?.active===true)return;
