@@ -76,7 +76,7 @@ export default function ChallengesPage() {
   const monthStart = `${key}-01`;
   const monthEndDate = new Date(month.getFullYear(), month.getMonth() + 1, 0);
   const monthEnd = `${monthKey(monthEndDate)}-${String(monthEndDate.getDate()).padStart(2, "0")}`;
-  const shift=(delta:number)=>{setMonth(current=>new Date(current.getFullYear(),current.getMonth()+delta,1));setPage(1);setCursors([{}]);};
+  const shift=(delta:number)=>{setMonth(current=>new Date(current.getFullYear(),current.getMonth()+delta,1));setPage(1);setCursors([{active: undefined, planned: undefined, completed: undefined}]);};
 
   useEffect(() => {
     let cancelled = false;
