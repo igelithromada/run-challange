@@ -57,7 +57,10 @@ export async function reconcileChallengesForUser(adminDb:any, userId:string) {
     } else if(challenge.kind==="activeDays") {
       const days=[...new Set(values.map((item:any)=>pragueDate(item.data.timestamp)))];
       result=days.length;
-      if(result>=Number(challenge.goal||0)) targetReachedAt=values.filter((item:any)=>days.indexOf(pragueDate(item.data.timestamp))<Number(challenge.goal)).at(-1)?.data.timestamp||null;
+      if(result>=Number(challenge.goal||0)){
+        const targetDay=days[Number(challenge.goal)-1];
+        targetReachedAt=values.find((item:any)=>pragueDate(item.data.timestamp)===targetDay)?.data.timestamp||null;
+      }
     }
 
     await participantRef.set({result,targetReachedAt:targetReachedAt||null},{merge:true});
