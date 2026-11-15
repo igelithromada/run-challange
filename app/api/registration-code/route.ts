@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { getAdminServices } from "@/lib/firebaseAdmin";
+import { consumeRateLimit } from "@/lib/rateLimit";
 
 function safeEqual(a: string, b: string) {
   const aa = Buffer.from(a, "utf8");
@@ -24,6 +25,10 @@ async function getConfiguredCode() {
 
 export async function POST(request: Request) {
   try {
+    const { adminDb } = getAdminServices();
+    const rate = await consumeRateLimit(adminDb, request, "registration-code", 10);
+    if (!rate.allowed) return Response.json({ error: "Příliš mnoho pokusů. Zkus to později." }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
+
     const expectedCode = await getConfiguredCode();
 
     if (!expectedCode) {
