@@ -49,6 +49,11 @@ export async function PATCH(request:Request){
         const data=contribution.data()||{};
         const teamRef=contribution.ref.parent.parent;
         if(!teamRef)continue;
+        const teamSnap=await teamRef.get();
+        if(!teamSnap.exists){
+          batch.delete(contribution.ref);
+          continue;
+        }
         const oldType=data.type==="chůze"?"chůze":"běh";
         const oldKm=Number(data.km)||0;
         const oldKmField=oldType==="chůze"?"walkingKm":"runningKm";
