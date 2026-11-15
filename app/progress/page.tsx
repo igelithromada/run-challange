@@ -98,11 +98,7 @@ export default function ProgressPage() {
 
   const personalQuery = useMemo(() => userRunsQuery(uid || "__no_user__"), [uid]);
   const personalState = useSharedFirestoreQuery<ProgressActivity>("progress:personal:" + (uid || "none"), personalQuery);
-  const runs = useMemo(() => {
-    const merged = new Map<string, ProgressActivity>();
-    personalState.data.forEach(run => merged.set(run.id, run));
-    return Array.from(merged.values());
-  }, [personalState.data, teamRunsState.data]);
+  const runs = useMemo(() => personalState.data, [personalState.data]);
 
   const mine = useMemo(() => personalState.data, [personalState.data]);
   const selected = useMemo(() => mine.filter(run => (run.type || "běh") === goalType), [mine, goalType]);
@@ -246,11 +242,10 @@ export default function ProgressPage() {
       </section>
 
       <section className="tile progress-challenges">
-        <div className="progress-section-title"><Users/><div><h2>Týmové výzvy</h2><p>Společný měsíční cíl nastavuje zakladatel týmu. Každý kilometr se počítá.</p></div></div>
-        {teamProgress.length===0?<p className="progress-empty">Zatím nejsi členem týmu. Přidej se k některému v sekci Týmy a zapoj se do výzvy.</p>:<div className="progress-team-list">{teamProgress.map(team=><div className="progress-team" key={team.id}><div className="progress-team-heading"><strong>{team.name||"Tým"}</strong><span>{team.km.toFixed(1)} / {team.goalKm} km</span></div><div className="progress-track"><i style={{width:`${team.percent}%`}}/></div><small>{team.percent.toFixed(0)} % splněno</small></div>)}</div>}
-        <button className="progress-link-button" onClick={()=>router.push("/teams")}><Users size={17}/> Zobrazit týmy</button>
+        <div className="progress-section-title"><Users/><div><h2>Výzvy</h2><p>Aktivní výzvy najdeš v samostatné sekci.</p></div></div>
+        <button className="progress-link-button" onClick={()=>router.push("/challenges")}><Users size={17}/> Zobrazit výzvy</button>
       </section>
-      {(personalState.loading || (!!joinedTeamId && teamRunsState.loading)) && <LoadingSkeleton count={2} />}
+      {personalState.loading && <LoadingSkeleton count={2} />}
     </main>
   </>;
 }
