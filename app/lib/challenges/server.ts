@@ -56,7 +56,22 @@ export async function reconcileChallengesForUser(adminDb:any, userId:string) {
     if(challenge.activityType!=="běh"&&challenge.activityType!=="chůze")continue;
     const participantRef=challengeDoc.ref.collection("participants").doc(userId);
     const participant=await participantRef.get();
-    if(!participant.exists||participant.data()?.active!==true)continue;
+    if(!participant.exists||participant.data()?.active!==true){
+      if(challenge.kind==="sharedDistance"){
+        const activeParticipants=await challengeDoc.ref.collection("participants").where("active","==",true).get();
+        let shared=0;
+        const batch=adminDb.batch();
+        for(const p of activeParticipants.docs){
+          const pd=p.data()||{};
+          const calculated=await calculateParticipantResult(adminDb,challenge,{...pd,userId:p.id});
+          shared+=Number(calculated.result||0);
+          batch.set(p.ref,calculated,{merge:true});
+        }
+        batch.update(challengeDoc.ref,{sharedProgress:shared});
+        await batch.commit();
+      }
+      continue;
+    }
     const result=await calculateParticipantResult(adminDb,challenge,{...participant.data(),userId});
     await participantRef.set(result,{merge:true});
     if(challenge.kind==="sharedDistance"){
