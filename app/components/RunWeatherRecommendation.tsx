@@ -119,7 +119,7 @@ export default function RunWeatherRecommendation({
   const content = (
     <section className={`run-weather-recommendation run-weather-${tone}`} aria-live="polite">
       <div className="run-weather-icon">
-        <WeatherIcon size={42} strokeWidth={1.8} />
+        {current ? <WeatherVisual type={current.weatherCondition?.type} size={50} night={isNight} /> : <Icon size={42} strokeWidth={1.8} />}
       </div>
       <div className="run-weather-copy">
         <span className="run-weather-eyebrow"><ActivityIcon /> {activityType === "chůze" ? "Chůze" : "Běh"} · Dolní Lhota</span>
@@ -127,6 +127,7 @@ export default function RunWeatherRecommendation({
           {current && <strong className="run-weather-temperature">{Math.round(temperature)} °C</strong>}
           <strong>{status}</strong>
         </div>
+        {current && <div className="run-weather-condition">{weatherDescription(current.weatherCondition?.type)}</div>}
         <p>{advice}</p>
         {current && <small><Wind size={14} /> vítr {Math.round(wind)} km/h{rainChance > 0 ? ` · srážky ${Math.round(rainChance)} %` : ""}</small>}
         {linkToWeather && <span className="run-weather-more">Podrobné počasí <span aria-hidden="true">→</span></span>}
