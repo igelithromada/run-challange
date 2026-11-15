@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { FieldValue, Timestamp, type Firestore, type DocumentReference } from "firebase-admin/firestore";
 import { requireUser } from "../../lib/apiAuth";
 
 export const runtime = "nodejs";
@@ -23,7 +23,7 @@ function cleanText(value: unknown, max: number) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
-async function materializeChallenge(adminDb: FirebaseFirestore.Firestore, ref: FirebaseFirestore.DocumentReference) {
+async function materializeChallenge(adminDb: Firestore, ref: DocumentReference) {
   const snap = await ref.get();
   if (!snap.exists) return null;
   const data = snap.data() || {};
@@ -124,7 +124,7 @@ async function calculateResults(adminDb: FirebaseFirestore.Firestore, challenge:
       : challenge.type === "activeDays" ? value.days.size
       : challenge.type === "activities" ? value.activities
       : value.km;
-    return { uid, km: Number(value.km.toFixed(2)), activeDays: value.days.size, activities: value.activities, score: Number(score.toFixed?.(2) ?? score), completed: challenge.type === "target" ? value.km >= Number(challenge.targetValue || 0) : false };
+    return { uid, km: Number(value.km.toFixed(2)), activeDays: value.days.size, activities: value.activities, score: typeof score === "number" ? Number(score.toFixed(2)) : Number(score), completed: challenge.type === "target" ? value.km >= Number(challenge.targetValue || 0) : false };
   }).sort((a, b) => b.score - a.score);
 
   if (challenge.scope === "individual") return individual.map((row, i) => ({ ...row, rank: i + 1 }));
