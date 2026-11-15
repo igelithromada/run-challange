@@ -52,11 +52,16 @@ export async function POST(request: Request) {
         return parent ? parent.id : "";
       }).filter(Boolean))];
 
+    const profileSnapshot = await adminDb.collection("users").doc(decoded.uid).get();
+    const profileData = profileSnapshot.exists ? profileSnapshot.data() || {} : {};
+    const canonicalNickname = typeof profileData.nickname === "string" ? profileData.nickname.trim().slice(0, 80) : "";
+    const canonicalAvatarUrl = typeof profileData.avatarUrl === "string" ? profileData.avatarUrl : "";
+
     const safeData = {
       uid: decoded.uid,
-      email: typeof data.email === "string" ? data.email : decoded.email || "",
-      nickname: typeof data.nickname === "string" ? data.nickname : "",
-      avatarUrl: typeof data.avatarUrl === "string" ? data.avatarUrl : "",
+      email: decoded.email || "",
+      nickname: canonicalNickname,
+      avatarUrl: canonicalAvatarUrl,
       km, minuty, tempo: tempo.toFixed(2), type,
       description: typeof data.description === "string" ? data.description.trim().slice(0, 500) : "",
       timestamp: typeof data.timestamp === "string" && !Number.isNaN(new Date(data.timestamp).getTime()) ? new Date(data.timestamp) : createdAt,
