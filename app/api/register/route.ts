@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { getAdminServices } from "../../lib/firebaseAdmin";
-import { consumeRateLimit } from "../../lib/rateLimit";
+import { consumeRateLimit } from "../../../lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
