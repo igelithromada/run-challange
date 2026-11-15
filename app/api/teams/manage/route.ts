@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { FieldValue, Timestamp, type DocumentReference } from "firebase-admin/firestore";
 import { requireUser } from "../../../lib/apiAuth";
 import { normalizeTeamName, normalizeDescription } from "../../../lib/validation";
+import { cloudinaryPublicIdFromUrl, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,6 +10,14 @@ export const dynamic = "force-dynamic";
 const teamRef = (db:any,id:string): DocumentReference => db.collection("teams").doc(id);
 const memberRef = (db:any,teamId:string,uid:string): DocumentReference => teamRef(db,teamId).collection("members").doc(uid);
 const normalizeKey = (name:string) => name.trim().toLocaleLowerCase("cs-CZ");
+function teamImage(body:any, uid:string) {
+  const avatarUrl=typeof body?.avatarUrl==="string"?body.avatarUrl.trim():"";
+  const avatarPublicId=typeof body?.avatarPublicId==="string"?body.avatarPublicId.trim():"";
+  if (!avatarUrl && !avatarPublicId) return {avatarUrl:"",avatarPublicId:""};
+  const parsed=cloudinaryPublicIdFromUrl(avatarUrl);
+  if (!avatarUrl.startsWith("https://res.cloudinary.com/") || !avatarPublicId || !isUserCloudinaryPublicId(avatarPublicId,uid) || parsed!==avatarPublicId) throw new Error("INVALID_TEAM_IMAGE");
+  return {avatarUrl,avatarPublicId};
+}
 
 export async function POST(request: Request) {
   try {
@@ -19,6 +28,7 @@ export async function POST(request: Request) {
 
     if (action === "create") {
       const name = normalizeTeamName(body?.name), description = normalizeDescription(body?.description);
+      const image = teamImage(body, uid);
       if (!name) return NextResponse.json({ error:"Zadej název týmu." }, {status:400});
       const nameKey = normalizeKey(name);
       const userRef = adminDb.collection("users").doc(uid);
@@ -33,7 +43,7 @@ export async function POST(request: Request) {
         if (createdCount >= 5) throw new Error("TEAM_CREATE_LIMIT");
         tx.create(nameRef,{teamId:team.id,createdAt:Timestamp.now()});
         tx.create(team,{
-          name,nameKey,description,createdBy:uid,managerId:uid,avatarUrl:"",avatarPublicId:"",
+          name,nameKey,description,createdBy:uid,managerId:uid,avatarUrl:image.avatarUrl,avatarPublicId:image.avatarPublicId,
           memberCount:1,stats:{runningKm:0,runningActivities:0,walkingKm:0,walkingActivities:0},createdAt:Timestamp.now()
         });
         const joinedAt=Timestamp.now();
@@ -112,6 +122,7 @@ export async function POST(request: Request) {
       const nextDescription = body.description !== undefined ? normalizeDescription(body.description) : undefined;
       const nextAvatarUrl = body.avatarUrl !== undefined ? (typeof body.avatarUrl==="string" ? body.avatarUrl : "") : undefined;
       const nextAvatarPublicId = body.avatarPublicId !== undefined ? (typeof body.avatarPublicId==="string" ? body.avatarPublicId : "") : undefined;
+      const image = (nextAvatarUrl !== undefined || nextAvatarPublicId !== undefined) ? teamImage({ avatarUrl: nextAvatarUrl ?? currentTeam?.avatarUrl ?? "", avatarPublicId: nextAvatarPublicId ?? currentTeam?.avatarPublicId ?? "" }, uid) : undefined;
 
       await adminDb.runTransaction(async tx => {
         const teamSnap = await tx.get(ref);
@@ -134,8 +145,7 @@ export async function POST(request: Request) {
           }
         }
         if (nextDescription !== undefined) updates.description = nextDescription;
-        if (nextAvatarUrl !== undefined) updates.avatarUrl = nextAvatarUrl;
-        if (nextAvatarPublicId !== undefined) updates.avatarPublicId = nextAvatarPublicId;
+        if (image) { updates.avatarUrl = image.avatarUrl; updates.avatarPublicId = image.avatarPublicId; }
         if (Object.keys(updates).length) tx.update(ref,updates);
       });
       return NextResponse.json({ok:true});
@@ -192,7 +202,7 @@ export async function POST(request: Request) {
   } catch(error) {
     const message=error instanceof Error?error.message:"";
     const map:any={
-      UNAUTHORIZED:["Nejsi přihlášen.",401],TEAM_NAME_TAKEN:["Tým s tímto názvem už existuje.",409],
+      UNAUTHORIZED:["Nejsi přihlášen.",401],TEAM_NAME_TAKEN:["Tým s tímto názvem už existuje.",409],INVALID_TEAM_IMAGE:["Obrázek týmu není platný.",400],
       TEAM_CREATE_LIMIT:["Můžeš vytvořit nejvýše 5 týmů.",409],TEAM_NOT_FOUND:["Tým nebyl nalezen.",404],
       NOT_MANAGER:["Správu může převést jen současný správce.",403],
       MANAGER_MUST_TRANSFER:["Nejdřív předej správu týmu jinému členovi.",409],
