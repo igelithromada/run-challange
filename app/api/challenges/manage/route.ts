@@ -31,8 +31,10 @@ export async function POST(request:Request){
       if(!isValidDateOnly(startDate)||!isValidDateOnly(endDate)||endDate<startDate)return NextResponse.json({error:"Zadej platné datumy výzvy."},{status:400});
       const today=localDateString();
       if(startDate<today)return NextResponse.json({error:"Výzvu nelze naplánovat do minulosti."},{status:400});
-      const maxStart=new Date(); maxStart.setDate(maxStart.getDate()+90);
-      if(startDate>maxStart.toISOString().slice(0,10))return NextResponse.json({error:"Výzvu lze vytvořit nejvýše 90 dní dopředu."},{status:400});
+      const maxStartDate = new Date(`${localDateString()}T12:00:00`);
+      maxStartDate.setDate(maxStartDate.getDate()+90);
+      const maxStart = new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).format(maxStartDate);
+      if(startDate>maxStart)return NextResponse.json({error:"Výzvu lze vytvořit nejvýše 90 dní dopředu."},{status:400});
 
       const userRef=adminDb.collection("users").doc(uid);
       const challenge=adminDb.collection("challenges").doc();
