@@ -6,12 +6,12 @@ import type { WeatherHour, WeatherResponse } from "../lib/weather";
 import { Cloud, Wind, Droplets, RefreshCw } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import WeatherVisual from "../components/WeatherVisual";
 
 function isRainType(type = "") {
   const value = type.toUpperCase();
   return value.includes("RAIN") || value.includes("DRIZZLE") || value.includes("THUNDER");
 }
-import WeatherVisual from "../components/WeatherVisual";
 function RainIcon({ size = 22, className = "" }: { size?: number; className?: string }) {
   return <span className={`weather-rain-combo ${className}`} style={{ width: size, height: size }}><Cloud size={size} strokeWidth={1.8} /><Droplets className="weather-rain-drops" size={Math.max(10, Math.round(size * .55))} strokeWidth={2.4} /></span>;
 }
