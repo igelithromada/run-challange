@@ -133,7 +133,8 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
         if(diff!==0)return diff;
         const ta=a.targetReachedAt?.toMillis ? a.targetReachedAt.toMillis() : Number.MAX_SAFE_INTEGER;
         const tb=b.targetReachedAt?.toMillis ? b.targetReachedAt.toMillis() : Number.MAX_SAFE_INTEGER;
-        return ta-tb;
+        if(ta!==tb)return ta-tb;
+        return String(a.id).localeCompare(String(b.id));
       });
       const reached=all.filter((p:any)=>Number(p.result||0)>=target);
       const winner=(reached[0]||all[0])?.id||null;
@@ -142,7 +143,8 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
         for(const p of all.slice(start,start+450)){
           const original=participants.docs.find((d: any)=>d.id===p.id);
           if(!original)continue;
-          batch.set(original.ref,{result:Number(p.result||0),targetReachedAt:p.targetReachedAt||null,finalResult:Number(p.result||0),finalRank:start+(all.indexOf(p))+1,finalizedAt:Timestamp.now()},{merge:true});
+          const rank = all.findIndex((item:any)=>item.id===p.id) + 1;
+          batch.set(original.ref,{result:Number(p.result||0),targetReachedAt:p.targetReachedAt||null,finalResult:Number(p.result||0),finalRank:rank,finalizedAt:Timestamp.now()},{merge:true});
         }
         if(start===0) batch.update(ref,{state:"completed",completedAt:Timestamp.now(),winnerId:winner,goalReached:reached.length>0});
         await batch.commit();
