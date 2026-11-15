@@ -50,6 +50,14 @@ async function calculateParticipantResult(adminDb:any, challenge:any, participan
 }
 
 export async function reconcileChallengesForUser(adminDb:any, userId:string) {
+  const today=pragueDate(new Date());
+  const lifecycle=await adminDb.collection("challenges").where("state","in",["planned","active"]).get();
+  for(const challengeDoc of lifecycle.docs){
+    const data=challengeDoc.data()||{};
+    if ((data.state==="planned" && String(data.startDate||"")<=today) || String(data.endDate||"")<today) {
+      await reconcileChallengeState(adminDb,challengeDoc.id);
+    }
+  }
   const snapshot=await adminDb.collection("challenges").where("state","==","active").get();
   for(const challengeDoc of snapshot.docs){
     const challenge=challengeDoc.data()||{};
