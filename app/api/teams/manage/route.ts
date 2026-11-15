@@ -36,7 +36,9 @@ export async function POST(request: Request) {
           name,nameKey,description,createdBy:uid,managerId:uid,avatarUrl:"",avatarPublicId:"",
           memberCount:1,stats:{runningKm:0,runningActivities:0,walkingKm:0,walkingActivities:0},createdAt:Timestamp.now()
         });
-        tx.create(memberRef(adminDb,team.id,uid),{userId:uid,joinedAt:Timestamp.now(),active:true});
+        const joinedAt=Timestamp.now();
+        tx.create(memberRef(adminDb,team.id,uid),{userId:uid,joinedAt,active:true});
+        tx.create(team.collection("membershipHistory").doc(),{userId:uid,joinedAt,active:true});
         tx.set(userRef,{createdTeamCount:FieldValue.increment(1)},{merge:true});
       });
       return NextResponse.json({ok:true,team:{id:team.id,name,description}});
