@@ -85,13 +85,15 @@ export async function POST(request: Request) {
         await batch.commit();
       }
     }
-    await reconcileChallengesForUser(adminDb, uid);
+    // Runs must be gone before reconciliation; otherwise challenge results
+    // would still include activities that this cleanup is about to delete.
     for (const ref of refs) await deleteRunComments(ref);
     for (let i = 0; i < refs.length; i += 450) {
       const batch = adminDb.batch();
       refs.slice(i, i + 450).forEach((ref) => batch.delete(ref));
       await batch.commit();
     }
+    await reconcileChallengesForUser(adminDb, uid);
 
     await adminDb.collection("users").doc(uid).set(
       {
