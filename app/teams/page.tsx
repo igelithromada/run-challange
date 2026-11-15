@@ -314,7 +314,6 @@ export default function TeamsPage() {
                       <span className="team-type-badge">
                         <ActivityTypeIcon type={selectedType} size={15} /> {selectedType === "běh" ? "Běh" : "Chůze"}
                       </span>
-                      <span>{Number(team.challengeGoalKm) || 500} km / měsíc</span>
                     </div>
                   </div>
 
