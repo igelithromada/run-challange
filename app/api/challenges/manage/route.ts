@@ -8,6 +8,7 @@ export const runtime="nodejs";
 export const dynamic="force-dynamic";
 
 const key=(name:string)=>name.trim().toLocaleLowerCase("cs-CZ");
+const startMonth=(date:string)=>date.slice(0,7);
 
 function localDateString() {
   const now = new Date();
@@ -44,12 +45,12 @@ export async function POST(request:Request){
         const [userSnap,nameSnap]=await Promise.all([tx.get(userRef),tx.get(nameRef)]);
         if(nameSnap.exists)throw new Error("CHALLENGE_NAME_TAKEN");
         const user=userSnap.exists?userSnap.data()||{}:{};
-        if(Number(user.createdChallengeCount||0)>=5)throw new Error("CHALLENGE_CREATE_LIMIT");
+        const activeOrPlannedSnap=await tx.get(adminDb.collection("challenges").where("createdBy","==",uid).where("state","in",["planned","active"]));
+        if(activeOrPlannedSnap.size>=5)throw new Error("CHALLENGE_CREATE_LIMIT");
         tx.create(nameRef,{challengeId:challenge.id,createdAt:Timestamp.now()});
-        tx.create(challenge,{name,nameKey:key(name),description,createdBy:uid,kind,activityType,goal,startDate,endDate,state:startDate===today?"active":"planned",participantCount:1,sharedProgress:0,avatarUrl:typeof body?.avatarUrl==="string"?body.avatarUrl:"",avatarPublicId:typeof body?.avatarPublicId==="string"?body.avatarPublicId:"",createdAt:Timestamp.now()});
+        tx.create(challenge,{name,nameKey:key(name),description,createdBy:uid,kind,activityType,goal,startDate,endDate,startMonth:startMonth(startDate),state:startDate===today?"active":"planned",participantCount:1,sharedProgress:0,avatarUrl:typeof body?.avatarUrl==="string"?body.avatarUrl:"",avatarPublicId:typeof body?.avatarPublicId==="string"?body.avatarPublicId:"",createdAt:Timestamp.now()});
         tx.create(challenge.collection("participants").doc(uid),{userId:uid,joinedAt:Timestamp.now(),active:true});
-        tx.set(userRef,{createdChallengeCount:FieldValue.increment(1)},{merge:true});
-      });
+              });
       return NextResponse.json({ok:true,id:challenge.id});
     }
 
@@ -125,7 +126,7 @@ export async function POST(request:Request){
           tx.delete(adminDb.collection("challengeNames").doc(oldKey));
           tx.create(adminDb.collection("challengeNames").doc(newKey),{challengeId,createdAt:Timestamp.now()});
         }
-        tx.update(ref,{name:nextName,nameKey:newKey,description:nextDescription,kind:nextKind,activityType:nextType,goal:nextGoal,startDate:nextStart,endDate:nextEnd,avatarUrl:typeof body?.avatarUrl==="string"?body.avatarUrl:"",avatarPublicId:typeof body?.avatarPublicId==="string"?body.avatarPublicId:""});
+        tx.update(ref,{name:nextName,nameKey:newKey,description:nextDescription,kind:nextKind,activityType:nextType,goal:nextGoal,startDate:nextStart,endDate:nextEnd,startMonth:startMonth(nextStart),avatarUrl:typeof body?.avatarUrl==="string"?body.avatarUrl:"",avatarPublicId:typeof body?.avatarPublicId==="string"?body.avatarPublicId:""});
       });
       return NextResponse.json({ok:true});
     }
