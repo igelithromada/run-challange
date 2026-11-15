@@ -11,6 +11,18 @@ import LoadingSkeleton from "../components/LoadingSkeleton";
 import { fetchChallengesPage, getActiveChallengeIdsForUser } from "../lib/services/challenges";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { showAppToast } from "../components/AppToast";
+
+async function uploadChallengeImage(file: File) {
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Povolené jsou pouze JPG, PNG a WebP.");
+  if (file.size <= 0 || file.size > 5 * 1024 * 1024) throw new Error("Obrázek může mít maximálně 5 MB.");
+  if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
+  const token = await auth.currentUser.getIdToken();
+  const form = new FormData(); form.append("file", file);
+  const response = await fetch("/api/media/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || typeof data.secureUrl !== "string") throw new Error(data.error || "Obrázek se nepodařilo nahrát.");
+  return { secureUrl: data.secureUrl, publicId: typeof data.publicId === "string" ? data.publicId : "" };
+}
 import type { ActivityType, ChallengeData, ChallengeKind } from "../types";
 import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 
@@ -45,6 +57,9 @@ export default function ChallengesPage() {
   const [goal,setGoal]=useState("");
   const [startDate,setStartDate]=useState("");
   const [endDate,setEndDate]=useState("");
+  const [avatarUrl,setAvatarUrl]=useState("");
+  const [avatarPublicId,setAvatarPublicId]=useState("");
+  const [uploadingImage,setUploadingImage]=useState(false);
   const [groups,setGroups]=useState<Record<ChallengeData["state"], ChallengeData[]>>({active:[],planned:[],completed:[]});
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState<Error|null>(null);
@@ -67,8 +82,8 @@ export default function ChallengesPage() {
     if(!user||creating||!name.trim()||!goal||!startDate||!endDate)return;
     setCreating(true);
     try{
-      const data=await request("create",{name,description,kind,activityType,goal:Number(goal),startDate,endDate});
-      setName("");setDescription("");setGoal("");setStartDate("");setEndDate("");
+      const data=await request("create",{name,description,kind,activityType,goal:Number(goal),startDate,endDate,avatarUrl,avatarPublicId});
+      setName("");setDescription("");setGoal("");setStartDate("");setEndDate("");setAvatarUrl("");setAvatarPublicId("");
       showAppToast("Výzva byla vytvořena.","success");
       if(data.id)router.push("/challenges/"+data.id);
     }catch(e){showAppToast(e instanceof Error?e.message:"Výzvu se nepodařilo vytvořit.","error");}
@@ -137,7 +152,8 @@ export default function ChallengesPage() {
             <select value={kind} onChange={e=>setKind(e.target.value as ChallengeKind)}><option value="distance">Vzdálenost</option><option value="activities">Počet aktivit</option><option value="activeDays">Aktivní dny</option><option value="sharedDistance">Společný cíl</option></select>
             <input type="number" min="1" step={kind==="distance"||kind==="sharedDistance"?"0.1":"1"} placeholder={kind==="distance"||kind==="sharedDistance"?"Cíl v km":kind==="activities"?"Počet aktivit":"Počet aktivních dnů"} value={goal} onChange={e=>setGoal(e.target.value)}/>
             <div className="challenge-dates"><label>Od<input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}/></label><label>Do<input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/></label></div>
-            <button className="run-primary-button" onClick={()=>void create()} disabled={creating||!name.trim()||!goal||!startDate||!endDate}><Plus size={18}/>{creating?"Vytvářím…":"Vytvořit výzvu"}</button>
+            <label className="run-form-field"><span>Obrázek <small>volitelné</small></span><input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingImage||creating} onChange={async e=>{const file=e.target.files?.[0];e.target.value="";if(!file)return;setUploadingImage(true);try{const uploaded=await uploadChallengeImage(file);setAvatarUrl(uploaded.secureUrl);setAvatarPublicId(uploaded.publicId);showAppToast("Obrázek byl nahrán.","success");}catch(err){showAppToast(err instanceof Error?err.message:"Obrázek se nepodařilo nahrát.","error");}finally{setUploadingImage(false);}}}/>{avatarUrl&&<div className="challenge-image-preview"><img src={cloudinaryImageUrl(avatarUrl,160)} alt="Náhled obrázku výzvy"/><button type="button" className="run-secondary-button" onClick={()=>{setAvatarUrl("");setAvatarPublicId("");}}>Odebrat obrázek</button></div>}</label>
+            <button className="run-primary-button" onClick={()=>void create()} disabled={creating||uploadingImage||!name.trim()||!goal||!startDate||!endDate}><Plus size={18}/>{creating?"Vytvářím…":"Vytvořit výzvu"}</button>
           </div>
         </section>
       )}
