@@ -5408,3 +5408,57 @@ html[data-theme="white"] :focus-visible {
 .weather-hour-card .weather-visual-wrap{width:48px!important;height:48px!important;margin:.15rem auto}
 .run-weather-icon .weather-visual-wrap{width:50px!important;height:50px!important}
 .run-weather-condition{font-size:.86rem;font-weight:700;opacity:.88;margin-top:.05rem}
+
+/* Týmy + výzvy: formuláře mají vždy čitelný text i při focus/autofill na Androidu. */
+.teams-create-form input,
+.teams-create-form select,
+.teams-create-form input[type="date"],
+.teams-create-form input[type="number"]{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  caret-color:#fff;
+  color-scheme:dark;
+}
+.teams-create-form select{
+  width:100%;
+  min-height:46px;
+  padding:.75rem 1rem;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:12px;
+  background:rgba(0,0,0,.18);
+  color:#fff!important;
+  font:inherit;
+}
+.teams-create-form input:focus,
+.teams-create-form select:focus{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+.teams-create-form input:-webkit-autofill,
+.teams-create-form input:-webkit-autofill:hover,
+.teams-create-form input:-webkit-autofill:focus{
+  -webkit-text-fill-color:#fff!important;
+  caret-color:#fff;
+}
+
+/* Počasí: společná ikona, žluté slunce a přehled 6 hodin ve 3×2. */
+.weather-current-icon-block{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:.35rem;min-width:118px}
+.weather-current-icon-block>span{font-size:.78rem;opacity:.72;text-align:center;white-space:nowrap}
+.weather-visual-partly{position:relative!important;display:inline-block!important}
+.weather-visual-partly .weather-sun{position:absolute!important;left:2%!important;top:0!important;color:#ffd84d!important;stroke:#ffd84d!important;z-index:0!important}
+.weather-visual-partly .weather-cloud{position:absolute!important;right:0!important;bottom:0!important;color:#fff!important;stroke:#fff!important;z-index:1!important}
+.weather-visual-sun .weather-visual-icon{color:#ffd84d!important;stroke:#ffd84d!important}
+.weather-current-grid{margin-top:0!important}
+.weather-card-heading{justify-content:flex-end!important;min-height:34px}
+.weather-hour-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:.55rem!important}
+.weather-hour-card{min-height:126px!important;padding:.65rem .35rem!important;gap:.3rem!important}
+.weather-hour-time{font-size:.78rem!important;font-weight:750}
+.weather-hour-main{display:flex;align-items:center;justify-content:center;gap:.45rem;min-height:48px}
+.weather-hour-main>strong{font-size:1.2rem!important}
+.weather-hour-card>span,.weather-hour-card>small:last-child{font-size:.72rem!important;opacity:.78}
+@media(max-width:560px){
+  .weather-hour-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .weather-current-main{gap:.75rem!important}
+  .weather-current-icon-block{min-width:105px}
+  .weather-current-icon-block>span{font-size:.7rem}
+}
