@@ -5309,3 +5309,90 @@ html[data-theme="white"] :focus-visible {
 .profile-delete-confirm-button { background:rgba(190,55,70,.78) !important; color:#fff !important; border-color:rgba(255,150,160,.35) !important; }
 .profile-account-actions { padding-bottom:1rem; }
 @media (max-width:520px) { .profile-delete-confirm-actions { grid-template-columns:1fr; } }
+
+/* UI sjednocení: Týmy + Výzvy */
+.activity-type-selector{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;width:100%;margin:.65rem 0 1rem}
+.activity-type-selector button{min-width:0;min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:.45rem;padding:.65rem .8rem;border:1px solid var(--ui-border);border-radius:13px;background:rgba(255,255,255,.08);color:inherit;font:inherit;font-weight:750;cursor:pointer}
+.activity-type-selector button.active{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.38)}
+.activity-type-icon{width:22px;height:22px;flex:0 0 22px;object-fit:contain}
+
+.teams-page,.challenges-page{padding-bottom:2rem}
+.teams-create-launch,.challenges-create-launch{width:100%;margin:.15rem 0 .55rem}
+.teams-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;margin:.55rem 0 1rem}
+.teams-tabs button{min-height:44px;padding:.6rem .8rem;border:1px solid var(--ui-border);border-radius:13px;background:rgba(255,255,255,.08);color:inherit;font:inherit;font-weight:750;cursor:pointer}
+.teams-tabs button.active{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.38)}
+.teams-create,.challenges-create{padding:1.15rem;margin:.65rem 0 1rem}
+.teams-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:.8rem}
+.teams-section-heading>div{min-width:0}
+.teams-section-heading h2{margin:0;font-size:1.2rem}
+.teams-section-heading p{margin:.3rem 0 0;color:var(--ui-muted);line-height:1.45}
+.teams-create-form{display:flex;flex-direction:column;gap:.7rem;margin-top:1rem}
+.teams-create-form>input,.teams-create-form>select,.teams-create-form .challenge-dates input,.team-detail-field input{width:100%;min-width:0;min-height:48px;box-sizing:border-box;padding:.7rem .85rem;border:1px solid var(--ui-border);border-radius:13px;background:rgba(255,255,255,.96);color:#14232c;font:inherit;outline:none}
+.teams-create-form>input:focus,.teams-create-form>select:focus,.teams-create-form .challenge-dates input:focus,.team-detail-field input:focus{border-color:rgba(54,209,220,.65);box-shadow:0 0 0 3px rgba(54,209,220,.14)}
+.teams-create-form>input::placeholder{color:#65727a;opacity:1}
+.teams-create-form>select{appearance:auto}
+.team-avatar-upload{position:relative;display:flex;align-items:center;gap:.55rem;min-height:48px;padding:.65rem .8rem;border:1px dashed var(--ui-border-strong);border-radius:13px;background:rgba(255,255,255,.045);color:inherit;cursor:pointer;font-weight:750}
+.team-avatar-upload input{display:none}
+.teams-create-form>.run-primary-button{width:100%}
+
+.team-card{position:relative;display:flex !important;flex-direction:column !important;gap:.75rem !important;min-height:0 !important;padding:1rem !important;margin:0 !important;overflow:hidden}
+.team-card-main{display:grid;grid-template-columns:54px minmax(0,1fr) 24px;align-items:start;gap:.75rem;min-width:0}
+.team-card-info{min-width:0}
+.team-card-title-row{display:flex;align-items:flex-start;gap:.45rem;min-width:0}
+.team-card h3{min-width:0;flex:1;margin:0 !important;font-size:1.05rem;line-height:1.3;overflow-wrap:anywhere}
+.team-card-description{margin:.25rem 0 0;color:var(--ui-muted);font-size:.78rem;line-height:1.4;overflow-wrap:anywhere}
+.team-card-meta{display:block;margin:.45rem 0 0;padding:0;border:0;border-radius:0;background:transparent;color:var(--ui-muted-strong);font-size:.8rem}
+.team-card-stats{display:flex;flex-direction:column;gap:.25rem;margin-top:.55rem;color:var(--ui-muted);font-size:.76rem;line-height:1.35}
+.team-card-stats span{min-width:0;overflow-wrap:anywhere}
+.team-card-chevron{margin-top:.15rem;color:var(--ui-muted);opacity:.75}
+.team-member-label,.challenge-participating{flex:0 0 auto;padding:.22rem .45rem;border:1px solid rgba(105,230,163,.25);border-radius:999px;background:rgba(105,230,163,.12);color:#a8f1c7;font-size:.62rem;font-weight:800;white-space:nowrap}
+.team-action-button{width:100%;min-height:44px;padding:.65rem .8rem;border:1px solid var(--ui-border-strong);border-radius:13px;background:rgba(255,255,255,.1);color:inherit;font:inherit;font-weight:750;cursor:pointer}
+.team-action-button:hover{background:rgba(255,255,255,.16)}
+.team-action-button:disabled{opacity:.55;cursor:wait}
+.teams-pagination,.challenge-pagination{display:flex;align-items:center;justify-content:center;gap:.55rem;margin:1rem 0 0}
+.teams-pagination button,.challenge-pagination button{min-height:42px;padding:.55rem .8rem;border:1px solid var(--ui-border);border-radius:12px;background:rgba(255,255,255,.08);color:inherit;font:inherit;font-weight:750;cursor:pointer}
+.teams-pagination button:disabled,.challenge-pagination button:disabled{opacity:.45;cursor:not-allowed}
+.teams-pagination strong,.challenge-pagination strong{font-size:.82rem;color:var(--ui-muted)}
+
+.challenge-type-switch{margin:.65rem 0 .45rem}
+.challenge-month{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:.5rem;margin:.25rem 0 1rem}
+.challenge-month button{width:44px;height:44px;display:grid;place-items:center;padding:0;border:1px solid var(--ui-border);border-radius:13px;background:rgba(255,255,255,.08);color:inherit;cursor:pointer}
+.challenge-month button:hover{background:rgba(255,255,255,.14)}
+.challenge-month strong{min-width:0;text-align:center;font-size:1rem}
+.challenge-group{margin:1rem 0}
+.challenge-group>h2{display:flex;align-items:center;gap:.5rem;margin:0 0 .6rem;padding:.15rem;font-size:1.05rem}
+.challenge-group .teams-grid{margin:0}
+.challenge-card{min-height:0 !important}
+.challenge-card .team-card-main{grid-template-columns:54px minmax(0,1fr) 24px}
+.challenge-image-preview{display:grid;grid-template-columns:96px minmax(0,1fr);gap:.65rem;align-items:center;padding:.55rem;border:1px solid var(--ui-border);border-radius:13px;background:rgba(255,255,255,.045)}
+.challenge-image-preview img{width:96px;height:72px;object-fit:cover;border-radius:10px}
+.challenges-create .run-form-field,.challenge-edit-card .run-form-field{gap:.45rem}
+.challenges-create .run-form-field>span,.challenge-edit-card .run-form-field>span{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;color:inherit;font-size:.8rem;font-weight:750}
+.challenges-create .run-form-field>span small,.challenge-edit-card .run-form-field>span small{color:var(--ui-muted);font-size:.7rem}
+.challenges-create input[type=file],.challenge-edit-card input[type=file]{width:100%;min-height:48px;padding:.45rem .55rem;border:1px dashed var(--ui-border-strong);border-radius:13px;background:rgba(255,255,255,.045);color:inherit;font:inherit}
+.challenges-create input[type=file]::file-selector-button,.challenge-edit-card input[type=file]::file-selector-button{min-height:36px;margin-right:.55rem;padding:.45rem .7rem;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.9);color:#14232c;font:inherit;font-weight:700}
+.challenge-dates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem}
+.challenge-dates label{display:flex;flex-direction:column;gap:.35rem;color:inherit;font-size:.8rem;font-weight:750}
+.challenge-edit-card .run-secondary-button,.challenge-edit-card .run-primary-button,.challenge-action-row .run-primary-button,.challenge-action-row .run-danger-button{width:100%}
+.challenge-action-row{display:grid;gap:.7rem;align-items:center}
+.challenge-action-row>strong{display:block;padding:.1rem 0}
+.run-danger-button{min-height:48px;padding:.7rem 1rem;border:1px solid rgba(255,120,130,.32);border-radius:13px;background:rgba(160,55,65,.18);color:#ffd4d8;font:inherit;font-weight:800;cursor:pointer}
+.run-danger-button:disabled{opacity:.5;cursor:not-allowed}
+.challenge-result-note{margin:.5rem 0 .8rem;padding:.65rem .75rem;border:1px solid var(--ui-border);border-radius:12px;background:rgba(255,255,255,.055)}
+.challenge-leaderboard{display:flex;flex-direction:column;gap:.45rem}
+.challenge-row,.challenge-row-current{display:grid;grid-template-columns:32px minmax(0,1fr) auto 20px;align-items:center;gap:.55rem;min-width:0;padding:.7rem .75rem;border:1px solid var(--ui-border);border-radius:12px;background:rgba(255,255,255,.045)}
+.challenge-row-current{border-color:rgba(105,230,163,.3);background:rgba(105,230,163,.1)}
+.challenge-row span{min-width:0;overflow-wrap:anywhere}
+.challenge-row b,.challenge-row-current b{white-space:nowrap}
+.challenge-detail-page{padding-bottom:2rem}
+.back-button{display:inline-flex;align-items:center;gap:.4rem;min-height:42px;margin:0 0 .8rem;padding:.55rem .75rem;border:1px solid var(--ui-border);border-radius:12px;background:rgba(255,255,255,.08);color:inherit;font:inherit;font-weight:750;cursor:pointer}
+.challenge-detail-hero{display:grid;grid-template-columns:64px minmax(0,1fr);align-items:start;gap:.9rem}
+.challenge-detail-hero .team-avatar{width:64px;height:64px;flex-basis:64px}
+.challenge-detail-hero h1{margin:.15rem 0 .3rem;font-size:clamp(1.4rem,6vw,2rem);overflow-wrap:anywhere}
+.challenge-detail-hero p{margin:.25rem 0;color:var(--ui-muted);line-height:1.4}
+.challenge-edit-card{margin-top:1rem}
+.challenge-edit-card .teams-create-form{margin-top:1rem}
+.challenge-edit-card .activity-type-selector{margin:.2rem 0 .15rem}
+.challenge-detail-page .team-avatar img{width:100%;height:100%;object-fit:cover}
+@media(max-width:520px){.teams-create,.challenges-create{padding:.9rem}.team-card{padding:.85rem !important}.team-card-main,.challenge-card .team-card-main{grid-template-columns:46px minmax(0,1fr) 20px;gap:.6rem}.team-avatar{width:46px;height:46px;flex-basis:46px}.team-card-title-row{display:block}.team-card-title-row .team-member-label,.team-card-title-row .challenge-participating{display:inline-block;margin-top:.3rem}.challenge-image-preview{grid-template-columns:82px minmax(0,1fr)}.challenge-image-preview img{width:82px;height:64px}}
+@media(max-width:380px){.teams-tabs{gap:.4rem}.teams-tabs button{font-size:.84rem}.challenge-dates{grid-template-columns:1fr}.challenge-month{grid-template-columns:40px minmax(0,1fr) 40px}.challenge-month button{width:40px;height:40px}.challenge-row,.challenge-row-current{grid-template-columns:28px minmax(0,1fr) auto 18px;gap:.4rem;padding:.6rem}}
