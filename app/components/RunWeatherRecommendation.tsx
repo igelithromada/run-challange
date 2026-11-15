@@ -7,7 +7,7 @@ import { auth } from "../lib/firebase";
 import { getUserProfile } from "../lib/services/users";
 import Link from "next/link";
 import { CloudSun, CloudRain, CloudSnow, Wind, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { ActivityType, ActivityTypeIcon } from "./ActivityTypeSelector";
+import { ActivityType } from "./ActivityTypeSelector";
 import WeatherVisual, { weatherDescription } from "./WeatherVisual";
 
 export default function RunWeatherRecommendation({
@@ -70,7 +70,6 @@ export default function RunWeatherRecommendation({
   const strongWind = activityType === "chůze" ? wind >= 45 : wind >= 40;
   const heavyRain = rain && rainChance >= 60;
   const activityName = activityType === "chůze" ? "chůzi" : "běh";
-  const ActivityIcon = () => <ActivityTypeIcon type={activityType} size={18} />;
 
   let title = "Podmínky vypadají dobře";
   let advice = activityType === "chůze" ? "Ideální čas vyrazit na chůzi." : "Ideální čas vyrazit si zaběhat.";
@@ -122,12 +121,13 @@ export default function RunWeatherRecommendation({
         {current ? <WeatherVisual type={current.weatherCondition?.type} size={50} night={isNight} /> : <Icon size={42} strokeWidth={1.8} />}
       </div>
       <div className="run-weather-copy">
-        <span className="run-weather-eyebrow">Dolní Lhota</span>
+        
         <div className="run-weather-summary">
           {current && <strong className="run-weather-temperature">{Math.round(temperature)} °C</strong>}
           <strong>{status}</strong>
         </div>
         {current && <div className="run-weather-condition">{weatherDescription(current.weatherCondition?.type)}</div>}
+        <span className="run-weather-location">Dolní Lhota</span>
         <p>{advice}</p>
         {current && <small><Wind size={14} /> vítr {Math.round(wind)} km/h{rainChance > 0 ? ` · srážky ${Math.round(rainChance)} %` : ""}</small>}
         {linkToWeather && <span className="run-weather-more">Podrobné počasí <span aria-hidden="true">→</span></span>}
