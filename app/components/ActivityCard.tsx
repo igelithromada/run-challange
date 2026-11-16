@@ -295,8 +295,8 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
             <Camera size={20} /><span>{images.length}</span>
           </button>}
           <span className="activity-actions-spacer" />
-          {onEdit && <button type="button" className="activity-manage-button" onClick={onEdit}><Pencil size={15} /> Upravit</button>}
-          {onDelete && <button type="button" className="activity-manage-button activity-delete-button" onClick={onDelete}><Trash2 size={15} /> Smazat</button>}
+          {onEdit && <button type="button" className="activity-manage-button" onClick={onEdit} aria-label="Upravit záznam" title="Upravit záznam"><Pencil size={18} aria-hidden="true" /></button>}
+          {onDelete && <button type="button" className="activity-manage-button activity-delete-button" onClick={onDelete} aria-label="Smazat záznam" title="Smazat záznam"><Trash2 size={18} aria-hidden="true" /></button>}
         </footer>
       </article>
 
