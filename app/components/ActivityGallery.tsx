@@ -9,7 +9,7 @@ function Thumbnail({ url, index, count, onOpen }: { url: string; index: number; 
   const thumbnail = activityThumbnailUrl(url);
   return <button type="button" className="activity-gallery-thumb" onClick={() => onOpen(index)} aria-label={`Otevřít fotografii ${index + 1} z ${count}`}>
     {thumbnail && !failed
-      ? <img src={thumbnail} width={240} height={160} alt="" loading="lazy" decoding="async" fetchPriority="low" draggable={false} onError={() => setFailed(true)} />
+      ? <img src={thumbnail} alt="" loading="lazy" decoding="async" fetchPriority="low" draggable={false} onError={() => setFailed(true)} />
       : <span className="activity-gallery-placeholder"><Camera size={23} aria-hidden="true" /><small>Zobrazit fotografii</small></span>}
   </button>;
 }
