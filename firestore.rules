@@ -79,6 +79,21 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /challenges/{challengeId} {
+      allow read: if signedIn();
+      allow create, update, delete: if false;
+    }
+
+    match /challenges/{challengeId}/participants/{participantId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /challengeNames/{nameKey} {
+      allow read, write: if false;
+    }
+
+
     match /{document=**} {
       allow read, write: if false;
     }
