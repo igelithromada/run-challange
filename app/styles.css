@@ -5884,3 +5884,7 @@ html[data-theme="white"] .home-activity-badge {
 /* Audit UI: ikony aktivit musí zůstat čitelné i ve světlém režimu. */
 html[data-theme="white"] .activity-type-icon-run,
 html[data-theme="white"] .tile-button .run-profile-icon { filter: brightness(0); }
+
+
+/* Audit UI: seznam vlastních aktivit používá stejný layout bez inline stylů. */
+.myruns-list{display:flex;flex-direction:column;gap:0;}
