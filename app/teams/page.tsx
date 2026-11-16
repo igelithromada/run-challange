@@ -217,13 +217,26 @@ export default function TeamsPage() {
               </div>
               <button type="button" className="ui-icon-button" onClick={() => setShowCreate(false)} aria-label="Zavřít formulář"><X size={18} /></button>
             </div>
-            <div className="teams-create-form">
-              <input type="text" maxLength={40} placeholder="Název týmu" value={name} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") void createTeam(); }} />
-              <input type="text" maxLength={200} placeholder="Krátký popis (volitelné)" value={description} onChange={event => setDescription(event.target.value)} />
-              <label className="team-avatar-upload"><Users size={18} /><span>{avatarUrl ? "Obrázek vybrán" : "Přidat obrázek (volitelné)"}</span><input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingImage || creating} onChange={async event => { const file=event.target.files?.[0]; event.target.value=""; if(!file)return; setUploadingImage(true); try { await uploadTeamImage(file); showAppToast("Obrázek byl nahrán.","success"); } catch(error) { showAppToast(error instanceof Error ? error.message : "Obrázek se nepodařilo nahrát.","error"); } finally { setUploadingImage(false); } }} /></label>
-              <button className="run-primary-button" onClick={() => void createTeam()} disabled={!name.trim() || creating || uploadingImage}>
-                <Plus size={18} /> {creating ? "Vytvářím…" : "Vytvořit tým"}
-              </button>
+            <div className="teams-create-form professional-form">
+              <label className="professional-form-field">
+                <span>Název týmu</span>
+                <input type="text" maxLength={40} placeholder="Např. Dolní Lhota běhá" value={name} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") void createTeam(); }} />
+              </label>
+              <label className="professional-form-field">
+                <span>Popis <small>volitelné</small></span>
+                <textarea maxLength={200} placeholder="Krátce popiš, pro koho je tým určený." value={description} onChange={event => setDescription(event.target.value)} />
+              </label>
+              <label className="professional-form-file">
+                <Users size={19} aria-hidden="true" />
+                <span>{avatarUrl ? "Obrázek vybrán" : "Přidat obrázek"}</span>
+                <span className="professional-file-hint">volitelné</span>
+                <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingImage || creating} onChange={async event => { const file=event.target.files?.[0]; event.target.value=""; if(!file)return; setUploadingImage(true); try { await uploadTeamImage(file); showAppToast("Obrázek byl nahrán.","success"); } catch(error) { showAppToast(error instanceof Error ? error.message : "Obrázek se nepodařilo nahrát.","error"); } finally { setUploadingImage(false); } }} />
+              </label>
+              <div className="professional-form-actions">
+                <button className="run-primary-button" onClick={() => void createTeam()} disabled={!name.trim() || creating || uploadingImage}>
+                  <Plus size={18} /> {creating ? "Vytvářím…" : "Vytvořit tým"}
+                </button>
+              </div>
             </div>
           </section>
         )}
