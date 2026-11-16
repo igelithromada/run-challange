@@ -7,7 +7,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { getUserProfile } from "../lib/services/users";
 import { NAVIGATION_GROUPS, NAVIGATION_ITEMS } from "../lib/navigation";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 type SidebarProps = { visible: boolean; onClose: () => void; onSelect: (item: string) => void };
 
@@ -16,6 +16,7 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
   const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleNavigation = (id: string) => {
     const item = NAVIGATION_ITEMS.find(entry => entry.id === id);
@@ -114,7 +115,7 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
                 <h2 id={`sidebar-group-${group.id}`}>{group.label}</h2>
                 <div className="site-sidebar-grid">
                   {items.map(({ id, label, Icon }) => (
-                    <button key={id} type="button" className="site-sidebar-item" onClick={() => handleNavigation(id)}>
+                    <button key={id} type="button" className={`site-sidebar-item${pathname === item.route || (item.route !== "/" && pathname.startsWith(item.route + "/")) ? " is-active" : ""}`} onClick={() => handleNavigation(id)} aria-current={pathname === item.route || (item.route !== "/" && pathname.startsWith(item.route + "/")) ? "page" : undefined}>
                       <Icon size={22} strokeWidth={2} aria-hidden="true" />
                       <span>{label}</span>
                     </button>
