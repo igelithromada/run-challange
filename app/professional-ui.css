@@ -658,3 +658,5 @@
 .activity-card[id^="run-"] { scroll-margin-top: 86px; }
 html[data-theme="light"] .notification-panel { background: #fff; color: #17232b; }
 html[data-theme="light"] .notification-item.is-unread { background: #edf7fa; }
+.settings-delivery-status { margin: .5rem 0 .65rem; padding: .65rem .75rem; border: 1px solid var(--ui-border); border-radius: 12px; color: var(--ui-muted); font-size: .8rem; line-height: 1.45; }
+.notification-avatar .lucide-heart { color: #ff647d; }

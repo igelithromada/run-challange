@@ -19,7 +19,7 @@ export async function prepareCommunityNotification(db: Firestore, tx: Transactio
   const actorNickname = String(actor?.data()?.nickname || "Uživatel").slice(0, 80);
   return {
     ...event,
-    body: event.body.replace("{actor}", actorNickname),
+    body: event.body.replace(/^\{actor\}/, () => actorNickname),
     actorNickname,
     actorUid: event.actorUid || "",
     type: `community_${event.category}`,

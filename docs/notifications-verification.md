@@ -18,11 +18,13 @@ Větev: `fix-from-working-23e5eed`. Produkční nasazení není součástí toho
 - TypeScript a produkční sestavení: prošly.
 - ESLint: 0 chyb, 69 dosavadních varování; počet se nezvýšil.
 - `npm test`: 26 úspěšných, 1 podmíněný test pravidel vynechán mimo emulátor.
-- Firestore emulátor: 15 úspěšných, včetně skutečných souběžných transakcí, nastavení, ochrany cizí schránky, příjmů členů a životního cyklu. Připomínky trenéra mají test souběžných volání a nezávislých potvrzení dneška/zítřka.
+- Firestore emulátor: 16 úspěšných, včetně skutečných souběžných transakcí, nastavení, ochrany cizí schránky, příjmů členů a životního cyklu. Připomínky trenéra mají test souběžných volání a nezávislých potvrzení dneška/zítřka.
 - Test navigace odmítá cizí URL, kóduje ID a ověřuje jednotlivé typy detailu. Test načtení cílové aktivity pokrývá chůzi, odstraněný záznam a neplatné ID.
 
 ## Nasazení a dosud neověřené části
 
-`vercel.json` používá standardní `crons` místo neplatné sekce `schedules`. Trasy mají kontrolu `CRON_SECRET`, pražský čas se vyhodnocuje uvnitř obsluhy. Metadata projektu obsahují názvy potřebných proměnných VAPID a CRON_SECRET pro preview i produkci; hodnoty tajemství nebyly načítány. Hodinový plán vyžaduje odpovídající podporu tarifu Vercelu a musí projít kontrolou nasazení.
+`vercel.json` používá standardní `crons` místo neplatné sekce `schedules`. Trasy mají kontrolu `CRON_SECRET`, pražský čas se vyhodnocuje uvnitř obsluhy. Metadata projektu obsahují názvy potřebných proměnných VAPID a CRON_SECRET pro preview i produkci; hodnoty tajemství nebyly načítány. Vercel při ověření odmítl hodinové časovače s chybou `cron_jobs_limits_reached`: projekt je na tarifu Hobby. Kompatibilní konfigurace proto provádí denní kontrolu výzev ve 23:05 UTC (00:05 v zimě, 01:05 v létě). Vyhodnocení může běžet i při zpracování aktivit.
+
+Hodinové push připomínky trenéra vyžadují samostatně ověřený plánovač. Nastavení přes autentizované GET API ověřuje příznak `TRAINER_PUSH_SCHEDULER_READY=true` a přítomnost potřebných klíčů. Bez něj zobrazuje nedostupnost, neumožní novou aktivaci ani změnu času, ale zachová uložené volby a dovolí vypnutí. Příznak zatím není nakonfigurovaný; doručování trenéra na produkci proto nelze označit za funkční. Tarif ani přístupová tajemství se neměnila.
 
 Týmy, výzvy a sociální události jsou upozornění **uvnitř aplikace**. Systémový push na zamčený telefon nadále slouží připomínkám trenéra. Doručení na skutečný telefon a vizuální kontrola přihlášených stránek nejsou tímto emulátorovým ověřením nahrazeny. Produkci ponechat na stávající verzi do dokončení těchto kontrol.

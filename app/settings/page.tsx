@@ -38,6 +38,7 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [trainerDeliveryReady, setTrainerDeliveryReady] = useState<boolean | null>(null);
   const [trainerNotifications, setTrainerNotifications] = useState({ enabled: false, today: true, tomorrow: true, todayTime: "07:00", tomorrowTime: "18:00" });
   const [socialNotifications, setSocialNotifications] = useState({ likes: true, comments: true, teams: true, challenges: true });
   const socialBusyRef = useRef(false);
@@ -232,6 +233,20 @@ export default function SettingsPage() {
     }
   };
 
+  useEffect(() => {
+    let active = true;
+    const unsubscribe = onAuthStateChanged(auth, async user => {
+      if (!user) { setTrainerDeliveryReady(false); return; }
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch("/api/settings/trainer-notifications", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+        const data = await response.json();
+        if (active && auth.currentUser?.uid === user.uid) setTrainerDeliveryReady(response.ok && data.deliveryReady === true);
+      } catch { if (active && auth.currentUser?.uid === user.uid) setTrainerDeliveryReady(false); }
+    });
+    return () => { active = false; unsubscribe(); };
+  }, []);
+
   const updateSocialNotifications = async (patch: Partial<typeof socialNotifications>) => {
     if (socialBusyRef.current) return;
     socialBusyRef.current = true;
@@ -273,6 +288,10 @@ export default function SettingsPage() {
   };
 
   const updateTrainerDay = async (mode: "today" | "tomorrow", patch: { enabled?: boolean; time?: string }) => {
+    if (patch.enabled === true && trainerDeliveryReady !== true) {
+      showAppToast("Časované připomínky zatím nejsou dostupné.", "error");
+      return;
+    }
     if (trainerBusyRef.current) return;
     trainerBusyRef.current = true;
     const previous = trainerNotifications;
@@ -395,15 +414,16 @@ export default function SettingsPage() {
 
         <section className="tile settings-notification-section">
           <div className="settings-section-heading"><Bell size={21}/><div><h2>Notifikace osobního trenéra</h2><p>Zapni jen ty typy upozornění, které chceš dostávat, a nastav jejich čas.</p></div></div>
+          {trainerDeliveryReady !== true && <p className="settings-delivery-status" role="status">{trainerDeliveryReady === null ? "Ověřuji dostupnost připomínek…" : "Časované připomínky zatím nejsou dostupné. Uložené nastavení zůstává zachované."}</p>}
           <div className="settings-notification-row settings-trainer-day-row">
             <span className="settings-notification-copy"><span className="settings-notification-title">Dnešní plán</span><small>Ranní upozornění, pokud máš na dnešek naplánovaný trénink.</small></span>
-            <select aria-label="Čas upozornění na dnešní plán" className="settings-time-input" value={trainerNotifications.todayTime} onChange={e => void updateTrainerDay("today", { time: e.target.value })} disabled={notificationBusy}>{Array.from({ length: 24 }, (_, hour) => { const time = `${String(hour).padStart(2, "0")}:00`; return <option key={time} value={time}>{time}</option>; })}</select>
-            <input type="checkbox" checked={trainerNotifications.today} onChange={e => void updateTrainerDay("today", { enabled: e.target.checked })} disabled={notificationBusy} aria-label="Zapnout upozornění na dnešní plán" />
+            <select aria-label="Čas upozornění na dnešní plán" className="settings-time-input" value={trainerNotifications.todayTime} onChange={e => void updateTrainerDay("today", { time: e.target.value })} disabled={notificationBusy || trainerDeliveryReady !== true}>{Array.from({ length: 24 }, (_, hour) => { const time = `${String(hour).padStart(2, "0")}:00`; return <option key={time} value={time}>{time}</option>; })}</select>
+            <input type="checkbox" checked={trainerNotifications.today} onChange={e => void updateTrainerDay("today", { enabled: e.target.checked })} disabled={notificationBusy || (trainerDeliveryReady !== true && !trainerNotifications.today)} aria-label="Zapnout upozornění na dnešní plán" />
           </div>
           <div className="settings-notification-row settings-trainer-day-row">
             <span className="settings-notification-copy"><span className="settings-notification-title">Zítřejší plán</span><small>Večerní upozornění na trénink naplánovaný na další den.</small></span>
-            <select aria-label="Čas upozornění na zítřejší plán" className="settings-time-input" value={trainerNotifications.tomorrowTime} onChange={e => void updateTrainerDay("tomorrow", { time: e.target.value })} disabled={notificationBusy}>{Array.from({ length: 24 }, (_, hour) => { const time = `${String(hour).padStart(2, "0")}:00`; return <option key={time} value={time}>{time}</option>; })}</select>
-            <input type="checkbox" checked={trainerNotifications.tomorrow} onChange={e => void updateTrainerDay("tomorrow", { enabled: e.target.checked })} disabled={notificationBusy} aria-label="Zapnout upozornění na zítřejší plán" />
+            <select aria-label="Čas upozornění na zítřejší plán" className="settings-time-input" value={trainerNotifications.tomorrowTime} onChange={e => void updateTrainerDay("tomorrow", { time: e.target.value })} disabled={notificationBusy || trainerDeliveryReady !== true}>{Array.from({ length: 24 }, (_, hour) => { const time = `${String(hour).padStart(2, "0")}:00`; return <option key={time} value={time}>{time}</option>; })}</select>
+            <input type="checkbox" checked={trainerNotifications.tomorrow} onChange={e => void updateTrainerDay("tomorrow", { enabled: e.target.checked })} disabled={notificationBusy || (trainerDeliveryReady !== true && !trainerNotifications.tomorrow)} aria-label="Zapnout upozornění na zítřejší plán" />
           </div>
         </section>
 

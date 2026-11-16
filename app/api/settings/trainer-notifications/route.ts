@@ -4,6 +4,19 @@ import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// An hourly scheduler is a separate deployment capability, not a device permission.
+export async function GET(request: Request) {
+  try {
+    await requireUser(request);
+    const deliveryReady = process.env.TRAINER_PUSH_SCHEDULER_READY === "true" &&
+      ["VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT", "NEXT_PUBLIC_VAPID_PUBLIC_KEY", "CRON_SECRET"].every(key => Boolean(process.env[key]?.trim()));
+    return NextResponse.json({ deliveryReady }, { headers: { "Cache-Control": "private, no-store" } });
+  } catch (error) {
+    const authError = authErrorResponse(error);
+    return NextResponse.json({ error: authError?.message || "Dostupnost připomínek se nepodařilo ověřit." }, { status: authError?.status || 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { decoded, adminDb } = await requireUser(request);

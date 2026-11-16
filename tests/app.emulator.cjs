@@ -148,3 +148,18 @@ test('registration rate limits are shared by concurrent requests', {skip},async(
  const results=await Promise.all(Array.from({length:3},()=>consumeRateLimit(db,request,'fixture',2)));
  assert.equal(results.filter(value=>value.allowed).length,2);assert.equal(results.filter(value=>!value.allowed).length,1);
 });
+
+test('trainer capability reports missing scheduling honestly without exposing credentials', {skip},async()=>{
+ const keys=['TRAINER_PUSH_SCHEDULER_READY','VAPID_PUBLIC_KEY','VAPID_PRIVATE_KEY','VAPID_SUBJECT','NEXT_PUBLIC_VAPID_PUBLIC_KEY','CRON_SECRET'];
+ const previous=Object.fromEntries(keys.map(key=>[key,process.env[key]]));
+ try {
+  for(const key of keys)process.env[key]='fixture-secret';
+  delete process.env.TRAINER_PUSH_SCHEDULER_READY;
+  assert.deepEqual((await call(prefs,{},'GET')).body,{deliveryReady:false});
+  process.env.TRAINER_PUSH_SCHEDULER_READY='true';
+  assert.deepEqual((await call(prefs,{},'GET')).body,{deliveryReady:true});
+  delete process.env.CRON_SECRET;
+  assert.deepEqual((await call(prefs,{},'GET')).body,{deliveryReady:false});
+  assert.equal((await call(prefs,{},'GET','anonymous')).status,401);
+ }finally{for(const [key,value]of Object.entries(previous))if(value===undefined)delete process.env[key];else process.env[key]=value;}
+});
