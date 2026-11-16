@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "./lib/firebase";
+import { cloudinaryImageUrl } from "./lib/imageUrl";
 import Navbar from "./components/Navbar";
 import { Footprints } from "lucide-react";
 import Sidebar from "./components/Sidebar";
@@ -149,7 +150,7 @@ export default function Page() {
     else router.push("/");
   };
 
-  const handleShowImages = (images: string[], fallback: string) => {
+  const handleShowImages = (images: string[], fallback: string, startIndex = 0) => {
     let urls: string[] = [];
 
     if (Array.isArray(images) && images.length > 0) {
@@ -160,7 +161,7 @@ export default function Page() {
 
     if (urls.length > 0) {
       setShowImages(urls);
-      setCurrentImgIndex(0);
+      setCurrentImgIndex(Math.max(0, Math.min(startIndex, urls.length - 1)));
     }
   };
 
@@ -240,7 +241,7 @@ export default function Page() {
             <span>{currentImgIndex + 1} / {showImages.length}</span>
             <button type="button" className="ui-icon-button" onClick={() => setShowImages(null)} aria-label="Zavřít galerii">×</button>
           </div>
-          <img src={showImages[currentImgIndex]} alt={`Fotografie aktivity ${currentImgIndex + 1}`} onClick={e => e.stopPropagation()} />
+          <img src={cloudinaryImageUrl(showImages[currentImgIndex], 1600)} alt={`Fotografie aktivity ${currentImgIndex + 1}`} onClick={e => e.stopPropagation()} />
           <div className="activity-lightbox-actions" onClick={e => e.stopPropagation()}>
             {showImages.length > 1 ? (
               <button type="button" onClick={handlePrev} aria-label="Předchozí fotografie">‹</button>

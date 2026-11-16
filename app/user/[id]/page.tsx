@@ -95,11 +95,11 @@ export default function UserPage() {
   const profileName = userInfo.nickname || runNickname || runEmailName || "Uživatel";
   const filteredRuns = runs.filter(run => (run.type || "běh") === selectedType);
 
-  const showRunImages = (images: string[], fallback: string) => {
+  const showRunImages = (images: string[], fallback: string, startIndex = 0) => {
     const urls = images.length ? images : fallback ? [fallback] : [];
     if (!urls.length) return;
     setShowImages(urls);
-    setCurrentImageIndex(0);
+    setCurrentImageIndex(Math.max(0, Math.min(startIndex, urls.length - 1)));
   };
 
   return (

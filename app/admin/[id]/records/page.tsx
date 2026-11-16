@@ -96,7 +96,7 @@ export default function RecordsPage() {
             run={{...run, km:run.km??0,minuty:run.minuty??0,tempo:run.tempo??0}}
             activityType={selectedType}
             teamName={null}
-            onPhotosClick={(urls)=>setLightbox({urls,index:0})}
+            onPhotosClick={(urls, _fallback, startIndex = 0)=>setLightbox({urls,index:startIndex})}
             onDelete={()=>void handleDelete(run.id)}
           />;
         })}

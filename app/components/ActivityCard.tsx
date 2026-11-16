@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import ActivityGallery from "./ActivityGallery";
 import { auth } from "../lib/firebase";
 import { Camera, Clock3, Gauge, Heart, MapPin, MessageCircle, Pencil, Trash2, X, Send } from "lucide-react";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
@@ -17,7 +18,7 @@ type SocialComment = { id: string; uid: string; nickname: string; avatarUrl?: st
 type SocialUser = { uid: string; nickname: string; avatarUrl?: string };
 type Props = {
   run: ActivityCardRun; nickname?: string; avatarUrl?: string; teamName?: string | null; teamAvatarUrl?: string;
-  activityType: string; onUserClick?: () => void; onPhotosClick: (images: string[], fallback: string) => void;
+  activityType: string; onUserClick?: () => void; onPhotosClick: (images: string[], fallback: string, startIndex?: number) => void;
   onEdit?: () => void; onDelete?: () => void;
 };
 
@@ -269,6 +270,8 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
           <div><Clock3 size={17} /><strong>{formatTime(run.minuty)}</strong><span>Čas</span></div>
           <div><Gauge size={17} /><strong>{formatTime(run.tempo)} <small>/km</small></strong><span>Tempo</span><div className="activity-pace-bar" aria-label="Orientační škála tempa"><span style={{ left: `${pos}%` }} /></div></div>
         </div>
+
+        {images.length > 0 && <ActivityGallery key={run.id} images={images} onOpen={index => onPhotosClick(images, run.imageUrl || "", index)} />}
 
         <footer className="activity-card-actions activity-social-actions">
           <button
