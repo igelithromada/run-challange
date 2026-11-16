@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { WeatherResponse } from "../lib/weather";
+import { getWeather } from "../lib/weatherClient";
 import { auth } from "../lib/firebase";
 import { getUserProfile } from "../lib/services/users";
 import Link from "next/link";
@@ -38,22 +39,17 @@ export default function RunWeatherRecommendation({
     };
     void resolveType();
     const load = async () => {
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 10000);
       try {
-        const response = await fetch("/api/weather", { signal: controller.signal });
-        if (!response.ok) throw new Error("Počasí se nepodařilo načíst.");
-        const data = await response.json();
+        const data = await getWeather();
         if (active) setWeather(data);
       } catch {
         if (active) setWeather({ configured: false, error: "Počasí se nepodařilo načíst." });
       } finally {
-        window.clearTimeout(timeout);
         if (active) setLoading(false);
       }
     };
     void load();
-    const timer = window.setInterval(load, 30 * 60 * 1000);
+    const timer = window.setInterval(load, 5 * 60 * 1000);
     return () => { active = false; window.clearInterval(timer); };
   }, [type]);
 
