@@ -48,11 +48,18 @@ export default function TeamDetailPage() {
       router.replace("/teams");
       return;
     }
-    const memberIds = await getTeamMemberIds(id);
-    const profiles = await getPublicProfiles(memberIds);
-    const sorted = Object.values(profiles).sort((a, b) =>
-      (a.nickname || "Uživatel").localeCompare(b.nickname || "Uživatel", "cs")
-    );
+    let sorted: PublicProfileData[] = [];
+    try {
+      const memberIds = await getTeamMemberIds(id);
+      const profiles = await getPublicProfiles(memberIds);
+      sorted = Object.values(profiles).sort((a, b) =>
+        (a.nickname || "Uživatel").localeCompare(b.nickname || "Uživatel", "cs")
+      );
+    } catch (memberError) {
+      // Detail týmu nesmí spadnout jen proto, že se nepodařilo načíst
+      // sekundární data členů. Základní tým je samostatně dostupný.
+      console.error("Nepodařilo se načíst členy týmu", memberError);
+    }
     setTeam(data);
     setMembers(sorted);
     setName(data.name || "");

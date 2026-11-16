@@ -10,6 +10,7 @@ import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { showAppToast } from "../components/AppToast";
+import FormField from "../components/FormField";
 import type { TeamData } from "../types";
 import { fetchTeamsPage, getActiveTeamIdsForUser } from "../lib/services/teams";
 import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
@@ -103,8 +104,9 @@ export default function TeamsPage() {
       setName("");
       setDescription(""); setAvatarUrl(""); setAvatarPublicId("");
       await refreshMemberships(user.uid);
+      setShowCreate(false);
+      setPage(1);
       showAppToast("Tým byl vytvořen.", "success");
-      if (result.team?.id) router.push("/teams/" + result.team.id);
     } catch (error) {
       showAppToast(error instanceof Error ? error.message : "Tým se nepodařilo vytvořit.", "error");
     } finally {
@@ -218,14 +220,12 @@ export default function TeamsPage() {
               <button type="button" className="ui-icon-button" onClick={() => setShowCreate(false)} aria-label="Zavřít formulář"><X size={18} /></button>
             </div>
             <div className="teams-create-form professional-form">
-              <label className="professional-form-field">
-                <span>Název týmu</span>
+              <FormField label="Název týmu">
                 <input type="text" maxLength={40} placeholder="Např. Dolní Lhota běhá" value={name} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") void createTeam(); }} />
-              </label>
-              <label className="professional-form-field">
-                <span>Popis <small>volitelné</small></span>
+              </FormField>
+              <FormField label="Popis" hint="volitelné">
                 <textarea maxLength={200} placeholder="Krátce popiš, pro koho je tým určený." value={description} onChange={event => setDescription(event.target.value)} />
-              </label>
+              </FormField>
               <label className="professional-form-file">
                 <Users size={19} aria-hidden="true" />
                 <span>{avatarUrl ? "Obrázek vybrán" : "Přidat obrázek"}</span>

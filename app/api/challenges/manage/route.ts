@@ -55,14 +55,26 @@ export async function POST(request:Request){
         const [userSnap,nameSnap]=await Promise.all([tx.get(userRef),tx.get(nameRef)]);
         if(nameSnap.exists)throw new Error("CHALLENGE_NAME_TAKEN");
         const user=userSnap.exists?userSnap.data()||{}:{};
-        const activeOrPlannedSnap=await tx.get(adminDb.collection("challenges").where("createdBy","==",uid).where("state","in",["planned","active"]));
-        if(activeOrPlannedSnap.size>=5)throw new Error("CHALLENGE_CREATE_LIMIT");
+        const existingSnap=await tx.get(adminDb.collection("challenges").where("createdBy","==",uid));
+        const activeOrPlannedCount=existingSnap.docs.filter(d=>{
+          const state=d.data()?.state;
+          return state==="planned" || state==="active";
+        }).length;
+        if(activeOrPlannedCount>=5)throw new Error("CHALLENGE_CREATE_LIMIT");
         tx.create(nameRef,{challengeId:challenge.id,createdAt:Timestamp.now()});
         tx.create(challenge,{name,nameKey:key(name),description,createdBy:uid,kind,activityType,goal,startDate,endDate,startMonth:startMonth(startDate),state:startDate===today?"active":"planned",participantCount:1,sharedProgress:0,avatarUrl:image.avatarUrl,avatarPublicId:image.avatarPublicId,createdAt:Timestamp.now()});
         tx.create(challenge.collection("participants").doc(uid),{userId:uid,joinedAt:Timestamp.now(),active:true});
               });
       await reconcileChallengesForUser(adminDb, uid);
-      return NextResponse.json({ok:true,id:challenge.id});
+      return NextResponse.json({
+        ok:true,
+        id:challenge.id,
+        challenge:{
+          id:challenge.id,name,description,createdBy:uid,kind,activityType,goal,startDate,endDate,
+          startMonth:startMonth(startDate),state:startDate===today?"active":"planned",
+          participantCount:1,sharedProgress:0,avatarUrl:image.avatarUrl,avatarPublicId:image.avatarPublicId
+        }
+      });
     }
 
     if(action==="join" || action==="leave"){
