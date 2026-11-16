@@ -7,7 +7,8 @@ import { auth } from "../lib/firebase";
 import { getUserProfile } from "../lib/services/users";
 import Link from "next/link";
 import { CloudSun, CloudRain, CloudSnow, Wind, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { ActivityType, ActivityTypeIcon } from "./ActivityTypeSelector";
+import { ActivityType } from "./ActivityTypeSelector";
+import WeatherVisual, { weatherDescription } from "./WeatherVisual";
 
 export default function RunWeatherRecommendation({
   linkToWeather = true,
@@ -69,7 +70,6 @@ export default function RunWeatherRecommendation({
   const strongWind = activityType === "chůze" ? wind >= 45 : wind >= 40;
   const heavyRain = rain && rainChance >= 60;
   const activityName = activityType === "chůze" ? "chůzi" : "běh";
-  const ActivityIcon = () => <ActivityTypeIcon type={activityType} size={18} />;
 
   let title = "Podmínky vypadají dobře";
   let advice = activityType === "chůze" ? "Ideální čas vyrazit na chůzi." : "Ideální čas vyrazit si zaběhat.";
@@ -103,15 +103,38 @@ export default function RunWeatherRecommendation({
       : "Může foukat nebo být chladněji. Přizpůsob oblečení a tempo.";
   }
 
+  const isNight = (() => {
+    if (!current) return false;
+    const hour = new Date().getHours();
+    return hour < 6 || hour >= 20;
+  })();
+  const status = tone === "good"
+    ? "Aktivita je možná"
+    : tone === "caution"
+      ? "Aktivita je možná s opatrností"
+      : tone === "warning"
+        ? "Aktivitu raději zvaž"
+        : "Aktuální podmínky";
   const content = (
     <section className={`run-weather-recommendation run-weather-${tone}`} aria-live="polite">
-      <div className="run-weather-icon"><Icon size={27} /></div>
-      <div className="run-weather-copy">
-        <span className="run-weather-eyebrow"><ActivityIcon /> Doporučení pro {activityType === "chůze" ? "chůzi" : "běh"} · Dolní Lhota</span>
-        <strong>{title}</strong>
+      <div className="run-weather-forecast">
+        <div className="run-weather-forecast-icon">
+          {current
+            ? <WeatherVisual type={current.weatherCondition?.type} size={70} night={isNight} />
+            : <Icon size={48} strokeWidth={1.8} />}
+        </div>
+        <div className="run-weather-forecast-copy">
+          {current && <strong className="run-weather-temperature">{Math.round(temperature)} °C</strong>}
+          <strong className="run-weather-status">{status}</strong>
+          {current && <div className="run-weather-condition">{weatherDescription(current.weatherCondition?.type)}</div>}
+          <span className="run-weather-location">Dolní Lhota</span>
+        </div>
+      </div>
+
+      <div className="run-weather-advice">
         <p>{advice}</p>
-        {current && <small>{Math.round(temperature)} °C · <span className="run-weather-wind"><Wind size={14} /> vítr {Math.round(wind)} km/h</span>{rainChance > 0 ? ` · srážky ${Math.round(rainChance)} %` : ""}</small>}
-        {linkToWeather && <span className="run-weather-more">Podrobná předpověď <span aria-hidden="true">→</span></span>}
+        {current && <small><Wind size={14} /> vítr {Math.round(wind)} km/h{rainChance > 0 ? ` · srážky ${Math.round(rainChance)} %` : ""}</small>}
+        {linkToWeather && <span className="run-weather-more">Podrobné počasí <span aria-hidden="true">→</span></span>}
       </div>
     </section>
   );

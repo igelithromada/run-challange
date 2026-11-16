@@ -10,12 +10,11 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
-import type { RunData, TeamData, LegacyTrainerPlan } from "../types";
+import type { RunData, LegacyTrainerPlan } from "../types";
 import { getUserProfile, mergeUserProfile } from "../lib/services/users";
-import { allTeamsQuery } from "../lib/services/teams";
-import { userRunsQuery, teamRunsQuery } from "../lib/services/runs";
+import { userRunsQuery } from "../lib/services/runs";
 
-type ProgressActivity = Pick<RunData, "id" | "uid" | "km" | "minuty" | "tempo" | "teamId" | "timestamp" | "type">;
+type ProgressActivity = Pick<RunData, "id" | "uid" | "km" | "minuty" | "tempo" | "timestamp" | "type">;
 const asNumber = (value: unknown) => {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
@@ -44,8 +43,6 @@ export default function ProgressPage() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const [uid, setUid] = useState("");
-  const [joinedTeamId, setJoinedTeamId] = useState("");
-  const [teamIdsByType, setTeamIdsByType] = useState<Record<ActivityType, string | null>>({ běh: null, chůze: null });
   const [goalWeekly, setGoalWeekly] = useState("25");
   const [goalMonthly, setGoalMonthly] = useState("100");
   const [goalType, setGoalType] = useState<ActivityType>("běh");
@@ -91,13 +88,6 @@ export default function ProgressPage() {
           setGoalType(initialType);
           setGoalWeekly(String(nextGoals[initialType].weekly));
           setGoalMonthly(String(nextGoals[initialType].monthly));
-          const storedTeams = data.teamIdsByType || {};
-          const nextTeamIds: Record<ActivityType, string | null> = {
-            běh: storedTeams.běh === null ? null : typeof storedTeams.běh === "string" ? storedTeams.běh : (typeof data.teamId === "string" ? data.teamId : null),
-            chůze: typeof storedTeams.chůze === "string" ? storedTeams.chůze : null,
-          };
-          setTeamIdsByType(nextTeamIds);
-          setJoinedTeamId(nextTeamIds[initialType] || "");
         }
       } catch (error) {
         if (active) console.error("Nepodařilo se načíst profil a cíle", error);
@@ -107,18 +97,7 @@ export default function ProgressPage() {
   }, [router]);
 
   const personalQuery = useMemo(() => userRunsQuery(uid || "__no_user__"), [uid]);
-  const teamActivityQuery = useMemo(() => teamRunsQuery(joinedTeamId || "__no_team__"), [joinedTeamId]);
-  const teamsQuery = useMemo(() => allTeamsQuery(), []);
   const personalState = useSharedFirestoreQuery<ProgressActivity>("progress:personal:" + (uid || "none"), personalQuery);
-  const teamRunsState = useSharedFirestoreQuery<ProgressActivity>("progress:team:" + (joinedTeamId || "none"), teamActivityQuery);
-  const teamsState = useSharedFirestoreQuery<TeamData>("teams:all", teamsQuery);
-  const runs = useMemo(() => {
-    const merged = new Map<string, ProgressActivity>();
-    [...personalState.data, ...teamRunsState.data].forEach(run => merged.set(run.id, run));
-    return Array.from(merged.values());
-  }, [personalState.data, teamRunsState.data]);
-  const teams = teamsState.data;
-
   const mine = useMemo(() => personalState.data, [personalState.data]);
   const selected = useMemo(() => mine.filter(run => (run.type || "běh") === goalType), [mine, goalType]);
   const now = new Date();
@@ -181,13 +160,6 @@ export default function ProgressPage() {
     for (let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) days.push(new Date(d));
     return days;
   })();
-
-  const teamProgress = teams.filter(team => team.id === joinedTeamId && Array.isArray(team.memberIds) && team.memberIds.includes(uid)).map(team => {
-    const km = runs.filter(run => (run.type || "běh")===goalType && run.teamId===team.id && activityDate(run).getFullYear()===now.getFullYear() && activityDate(run).getMonth()===now.getMonth())
-      .reduce((sum,run)=>sum+asNumber(run.km),0);
-    const goalKm = asNumber(team.challengeGoalKm) || 500;
-    return { ...team, km, goalKm, percent:Math.min(100,km/goalKm*100) };
-  }).sort((a,b)=>b.km-a.km);
 
   const switchGoalType = (nextType: ActivityType) => {
     setGoalType(nextType);
@@ -267,12 +239,11 @@ export default function ProgressPage() {
         </div>
       </section>
 
-      <section id="team-challenges" className="tile progress-challenges">
-        <div className="progress-section-title"><Users/><div><h2>Týmové výzvy</h2><p>Společný měsíční cíl nastavuje zakladatel týmu. Každý kilometr se počítá.</p></div></div>
-        {teamProgress.length===0?<p className="progress-empty">Zatím nejsi členem týmu. Přidej se k některému v sekci Týmy a zapoj se do výzvy.</p>:<div className="progress-team-list">{teamProgress.map(team=><div className="progress-team" key={team.id}><div className="progress-team-heading"><strong>{team.name||"Tým"}</strong><span>{team.km.toFixed(1)} / {team.goalKm} km</span></div><div className="progress-track"><i style={{width:`${team.percent}%`}}/></div><small>{team.percent.toFixed(0)} % splněno</small></div>)}</div>}
-        <button className="progress-link-button" onClick={()=>router.push("/teams")}><Users size={17}/> Zobrazit týmy</button>
+      <section className="tile progress-challenges">
+        <div className="progress-section-title"><Users/><div><h2>Výzvy</h2><p>Aktivní výzvy najdeš v samostatné sekci.</p></div></div>
+        <button className="progress-link-button" onClick={()=>router.push("/challenges")}><Users size={17}/> Zobrazit výzvy</button>
       </section>
-      {(personalState.loading || (!!joinedTeamId && teamRunsState.loading)) && <LoadingSkeleton count={2} />}
+      {personalState.loading && <LoadingSkeleton count={2} />}
     </main>
   </>;
 }

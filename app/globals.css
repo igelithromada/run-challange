@@ -227,7 +227,7 @@ body {
   .run-weather-icon { flex-basis: 40px; width: 40px; height: 40px; }
 }
 
-/* Záznamy zůstávají přesně ve svém běžném vzhledu i při aktivní animaci počasí. */
+
 html[data-weather="rain"] .activity-card-modern,
 html[data-weather="rain-wind"] .activity-card-modern,
 html[data-weather="snow"] .activity-card-modern,
@@ -1079,23 +1079,103 @@ body > * { position: relative; z-index: 1; }
 .weather-hour-icon.weather-condition-partly path:nth-child(2){stroke:#ffd166}
 
 
-/* Výzvy: samostatné styly, bez změn existujících týmových karet. */
-.challenges-page .challenge-group{margin:1.5rem 0}
-.challenges-page .challenge-group>h2{font-size:1.2rem;margin:0 0 .8rem}
-.challenges-page .challenge-month{display:flex;align-items:center;justify-content:center;gap:1rem;margin:1rem 0}
-.challenges-page .challenge-month button{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border,rgba(128,128,128,.25));border-radius:12px;background:transparent;color:inherit;padding:.5rem;cursor:pointer}
-.challenges-page .challenge-type-switch{margin:1rem 0}
-.challenges-page .challenge-card{cursor:pointer}
-.challenges-page .challenge-card:focus-visible{outline:2px solid currentColor;outline-offset:2px}
-.challenges-page .challenge-participating{font-size:.75rem;font-weight:700;padding:.2rem .5rem;border-radius:999px;background:rgba(42,170,100,.15);color:#28a46b}
-.challenges-page .challenge-dates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem}
-.challenges-page .app-form-field{display:flex;flex-direction:column;gap:.35rem;min-width:0}
-.challenges-page .app-form-field>span{font-weight:650}
-.challenges-page .app-form-field small{margin-left:.4rem;font-weight:400;opacity:.7}
-.challenges-page .app-form-field input,.challenges-page .app-form-field textarea,.challenges-page .app-form-field select{width:100%;max-width:100%;min-width:0;padding:.7rem;border-radius:10px;border:1px solid rgba(128,128,128,.35);background:var(--input-bg,transparent);color:inherit}
-.challenges-page .teams-create-form{display:grid;gap:1rem}
-.challenges-page .professional-form-actions{display:flex;justify-content:flex-end}
-.challenges-page .professional-form-file{display:flex;align-items:center;gap:.5rem;cursor:pointer}
-.challenges-page .professional-form-file input{display:none}
-.challenges-page .challenge-image-preview img{width:96px;height:96px;object-fit:cover;border-radius:12px}
-@media(max-width:480px){.challenges-page .challenge-dates{grid-template-columns:1fr}}
+/* Sdílená formulářová komponenta – stejný základ pro aktivitu, týmy a výzvy */
+.app-form-field {
+  display:flex;
+  flex-direction:column;
+  gap:.45rem;
+  width:100%;
+  color:white;
+  text-align:left;
+  font-size:.86rem;
+  font-weight:700;
+}
+.app-form-field > span {
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:.75rem;
+}
+.app-form-field > span small {
+  color:rgba(255,255,255,.45);
+  font-size:.72rem;
+  font-weight:600;
+}
+.app-form-field input,
+.app-form-field textarea,
+.app-form-field select {
+  width:100%;
+  min-width:0;
+  min-height:56px;
+  box-sizing:border-box;
+  padding:.8rem 1rem;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:16px;
+  background:rgba(255,255,255,.95);
+  color:#14232c;
+  font:inherit;
+  font-size:1rem;
+  outline:none;
+}
+.app-form-field textarea {
+  min-height:120px;
+  resize:vertical;
+  line-height:1.45;
+}
+.app-form-field select {
+  appearance:auto;
+}
+.app-form-field input:focus,
+.app-form-field textarea:focus,
+.app-form-field select:focus {
+  border-color:rgba(255,255,255,.6);
+  box-shadow:0 0 0 3px rgba(54,209,220,.18);
+}
+.app-form-field input::placeholder,
+.app-form-field textarea::placeholder {
+  color:#68757c;
+  opacity:1;
+}
+.professional-form {
+  display:flex;
+  flex-direction:column;
+  gap:.8rem;
+  margin-top:1rem;
+}
+.professional-form-actions {
+  display:flex;
+  width:100%;
+  margin-top:.1rem;
+}
+.professional-form-actions .run-primary-button {
+  width:100%;
+}
+.professional-form-file {
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:.55rem;
+  min-height:58px;
+  padding:.7rem 1rem;
+  border:1px dashed rgba(255,255,255,.35);
+  border-radius:16px;
+  background:rgba(255,255,255,.045);
+  color:white;
+  cursor:pointer;
+  font-weight:700;
+}
+.professional-form-file:hover { background:rgba(255,255,255,.08); }
+.professional-form-file input { display:none; }
+.professional-file-hint {
+  margin-left:auto;
+  color:rgba(255,255,255,.45);
+  font-size:.72rem;
+  font-weight:600;
+}
+.challenge-dates {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.7rem;
+}
+

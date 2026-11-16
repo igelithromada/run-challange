@@ -4582,7 +4582,44 @@ html[data-theme="white"] .route-map-minimal .maplibregl-canvas {
 /* ===== Opravy 13. 11. 2026 ===== */
 .site-navbar-inner{grid-template-columns:44px minmax(0,1fr) 44px 44px!important;}
 @media(max-width:600px){.site-navbar-inner{grid-template-columns:40px minmax(0,1fr) 40px 40px!important;}}
-.weather-card-improved{padding:1rem!important}.weather-card-heading{display:flex;align-items:center;justify-content:space-between;gap:.75rem}.weather-card-heading h2{margin:0;font-size:1.2rem}.weather-card-heading p{margin:.2rem 0 0;opacity:.72;font-size:.85rem}
+.weather-card-improved{padding:1.15rem!important}
+.weather-current-grid{grid-template-columns:1fr!important;gap:.85rem!important}
+.weather-current-main{min-height:150px!important;padding:1.15rem!important;gap:1.1rem!important}
+.weather-temperature{font-size:3.1rem!important}
+.weather-description{font-size:1.15rem!important}
+.weather-current-copy small{font-size:.9rem!important}
+.weather-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:.7rem!important}
+.weather-stat-card{min-height:105px!important;padding:.8rem .55rem!important;grid-template-columns:1fr!important;justify-items:center!important;text-align:center!important;gap:.25rem!important}
+.weather-stat-card svg{width:28px!important;height:28px!important}
+.weather-stat-card strong{font-size:1.08rem!important}
+.weather-stat-card small{font-size:.76rem!important}
+.weather-hour-section h3{font-size:1.15rem!important;margin-top:.35rem!important}
+.weather-hour-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:.65rem!important}
+.weather-hour-card{min-height:118px!important;padding:.75rem .3rem!important;gap:.3rem!important}
+.weather-hour-card>small:first-child{font-size:.82rem!important}
+.weather-hour-card>strong{font-size:1.25rem!important}
+.weather-hour-card>span,.weather-hour-card>small:last-child{font-size:.7rem!important}
+.weather-hour-icon{width:48px!important;height:48px!important}
+.weather-visual-sun .weather-visual-icon{color:#ffd166!important;stroke:#ffd166!important}
+.weather-night-clear .weather-visual-icon{color:#e7edf8!important;stroke:#e7edf8!important}
+@media(max-width:560px){
+  .weather-current-main{min-height:145px!important}
+  .weather-stat-card{min-height:112px!important}
+  .weather-hour-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+.run-weather-recommendation{padding:1rem 1.1rem!important;gap:1rem!important}
+.run-weather-icon{flex:0 0 64px!important;width:64px!important;height:64px!important;border-radius:18px!important}
+.run-weather-icon svg{width:42px!important;height:42px!important}
+.run-weather-copy{display:flex;flex-direction:column;min-width:0}.run-weather-location{font-size:.78rem;opacity:.7;font-weight:650;margin-top:-.05rem}
+.run-weather-summary{display:flex;align-items:baseline;gap:.65rem;flex-wrap:wrap}
+.run-weather-temperature{font-size:1.35rem!important;font-weight:800}
+.run-weather-copy>p{margin:.25rem 0!important}
+.run-weather-copy>small{display:flex!important;align-items:center;gap:.25rem}
+.run-weather-more{margin-top:.35rem!important}
+@media(max-width:420px){
+  .run-weather-recommendation{padding:.9rem!important;gap:.75rem!important}
+  .run-weather-icon{flex-basis:56px!important;width:56px!important;height:56px!important}
+}.weather-card-heading{display:flex;align-items:center;justify-content:space-between;gap:.75rem}.weather-card-heading h2{margin:0;font-size:1.2rem}.weather-card-heading p{margin:.2rem 0 0;opacity:.72;font-size:.85rem}
 .weather-current-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:.65rem;margin:1rem 0 1.05rem}.weather-current-main{display:flex;align-items:center;gap:.85rem;min-width:0;padding:.85rem;border:1px solid rgba(255,255,255,.1);border-radius:16px;background:rgba(255,255,255,.055)}.weather-current-copy{min-width:0;display:flex;flex-direction:column}.weather-temperature{font-size:2.35rem;line-height:1;font-weight:800}.weather-description{margin-top:.3rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.weather-current-copy small{margin-top:.2rem;opacity:.7}.weather-visual{display:block;flex:0 0 auto}.weather-visual-sun{color:#ffd166!important;stroke:#ffd166!important}.weather-visual-partly{position:relative;display:inline-block}.weather-visual-partly .weather-sun{position:absolute;left:0;top:0;color:#ffd166;stroke:#ffd166}.weather-visual-partly .weather-cloud{position:absolute;right:0;bottom:0;color:#fff;stroke:#fff}
 .weather-stat-grid{display:grid;grid-template-columns:1fr;gap:.45rem}.weather-stat-card{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:.35rem;padding:.55rem .6rem;border:1px solid rgba(255,255,255,.09);border-radius:13px;background:rgba(0,0,0,.12);min-width:0}.weather-stat-card svg{justify-self:center}.weather-stat-card strong{font-size:.9rem;white-space:nowrap}.weather-stat-card small{font-size:.7rem;opacity:.7;white-space:nowrap}.weather-hour-section h3{margin:0 0 .55rem;font-size:1rem}.weather-hour-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.45rem}.weather-hour-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.16rem;min-width:0;padding:.55rem .2rem;border-radius:13px;background:rgba(0,0,0,.12);border:1px solid rgba(255,255,255,.06)}.weather-hour-card>small:first-child{font-size:.72rem}.weather-hour-card>strong{font-size:1rem}.weather-hour-card>span,.weather-hour-card>small:last-child{font-size:.62rem;opacity:.72;text-align:center}.weather-source{margin:.75rem 0 0;font-size:.7rem;opacity:.62;text-align:right}.weather-loading,.weather-message{margin:1rem 0 0}.weather-message p{margin:.35rem 0 0;font-size:.86rem;opacity:.72}
 @media(max-width:560px){.weather-current-grid{grid-template-columns:1fr}.weather-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.weather-stat-card{grid-template-columns:1fr;justify-items:center;text-align:center;padding:.6rem .35rem}.weather-stat-card strong,.weather-stat-card small{white-space:normal}}@media(max-width:390px){.weather-hour-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -5149,24 +5186,6 @@ html[data-theme="white"] .navbar {
   box-shadow:0 2px 10px rgba(18,38,52,.06) !important;
 }
 
-/* Překryv počasí nikdy nesmí změnit čitelnost obsahu */
-html[data-theme="white"] .weather-animation-overlay {
-  z-index:0 !important;
-  pointer-events:none !important;
-  opacity:.08 !important;
-}
-html[data-theme="white"] .app-content-layer {
-  position:relative;
-  z-index:1;
-}
-html[data-theme="white"] .activity-card-modern,
-html[data-theme="white"] .tile,
-html[data-theme="white"] .list-tile,
-html[data-theme="white"] .site-navbar,
-html[data-theme="white"] .site-sidebar-panel {
-  position:relative;
-  z-index:1;
-}
 
 /* Stavové a systémové prvky */
 html[data-theme="white"] .network-status,
@@ -5175,6 +5194,35 @@ html[data-theme="white"] .app-toast {
   background:#fff !important;
   border-color:#dbe3e8 !important;
   box-shadow:0 4px 16px rgba(18,38,52,.12) !important;
+}
+
+/* Navigace – stejný barevný systém jako zbytek aplikace a aktivní schéma. */
+.site-sidebar-panel .site-sidebar-profile {
+  background:var(--ui-bg-soft) !important;
+  border-color:var(--ui-border) !important;
+  color:var(--ui-text) !important;
+}
+.site-sidebar-panel .site-sidebar-profile:hover {
+  background:var(--ui-bg-hover) !important;
+}
+.site-sidebar-panel .site-sidebar-profile-icon {
+  background:var(--ui-bg-hover) !important;
+  color:var(--ui-text) !important;
+}
+.site-sidebar-panel > .site-sidebar-item {
+  background:var(--ui-bg) !important;
+  border-color:var(--ui-border) !important;
+  color:var(--ui-text) !important;
+  box-shadow:none !important;
+}
+.site-sidebar-panel > .site-sidebar-item:hover,
+.site-sidebar-panel > .site-sidebar-item:active {
+  background:var(--ui-bg-hover) !important;
+  border-color:var(--ui-border-strong) !important;
+}
+.site-sidebar-panel > .site-sidebar-item.sidebar-close {
+  background:var(--ui-bg-soft) !important;
+  border-color:var(--ui-border) !important;
 }
 
 /* Barevné prvky aplikace nesjednocovat na šedou – jejich barva nese význam. */
@@ -5192,3 +5240,1021 @@ html[data-theme="white"] :focus-visible {
   outline-offset:2px;
 }
 
+
+
+/* Finální sjednocení panelu a účtu – 2026-11-14 */
+.site-sidebar-panel {
+  background: color-mix(in srgb, var(--theme-accent, #36D1DC) 16%, rgba(8,14,20,.94)) !important;
+  border-color: color-mix(in srgb, var(--theme-accent, #36D1DC) 42%, rgba(255,255,255,.18)) !important;
+}
+.site-sidebar-panel .site-sidebar-profile {
+  background: color-mix(in srgb, var(--theme-accent, #36D1DC) 18%, rgba(255,255,255,.08)) !important;
+  border-color: color-mix(in srgb, var(--theme-accent, #36D1DC) 38%, rgba(255,255,255,.14)) !important;
+}
+.site-sidebar-panel .site-sidebar-profile-icon {
+  background: color-mix(in srgb, var(--theme-accent, #36D1DC) 28%, rgba(255,255,255,.08)) !important;
+}
+.site-sidebar-grid > .site-sidebar-item {
+  background: color-mix(in srgb, var(--theme-accent, #36D1DC) 15%, rgba(255,255,255,.08)) !important;
+  border-color: color-mix(in srgb, var(--theme-accent, #36D1DC) 35%, rgba(255,255,255,.14)) !important;
+  min-height: 86px !important;
+  padding: .75rem .45rem !important;
+  font-size: clamp(.86rem, 2.8vw, 1.05rem) !important;
+  box-shadow: 0 5px 14px rgba(0,0,0,.12) !important;
+}
+.site-sidebar-grid > .site-sidebar-item:hover,
+.site-sidebar-grid > .site-sidebar-item:active {
+  background: color-mix(in srgb, var(--theme-accent, #36D1DC) 24%, rgba(255,255,255,.10)) !important;
+  border-color: color-mix(in srgb, var(--theme-accent, #36D1DC) 55%, rgba(255,255,255,.18)) !important;
+}
+.site-sidebar-icon-button {
+  background: color-mix(in srgb, var(--theme-accent, #36D1DC) 18%, rgba(255,255,255,.08)) !important;
+  border-color: color-mix(in srgb, var(--theme-accent, #36D1DC) 36%, rgba(255,255,255,.14)) !important;
+}
+.profile-logout-button { min-height:56px; font-size:1.02rem; }
+.profile-delete-account-button {
+  display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  width:100%; min-height:56px; margin-top:.7rem; padding:.8rem 1rem;
+  border-radius:14px; border:1px solid rgba(235,87,87,.45);
+  background:rgba(235,87,87,.10); color:inherit; font:inherit; font-weight:800; cursor:pointer;
+}
+.profile-delete-account-button:hover { background:rgba(235,87,87,.16); }
+.profile-delete-account-button:disabled,.profile-delete-confirm-button:disabled,.profile-delete-cancel:disabled { opacity:.6; cursor:not-allowed; }
+.profile-delete-confirm { margin-top:.9rem; padding:1rem; border:1px solid rgba(235,87,87,.35); border-radius:16px; background:rgba(235,87,87,.07); }
+.profile-delete-confirm-heading { display:flex; align-items:flex-start; gap:.7rem; }
+.profile-delete-confirm-heading > svg { flex:0 0 auto; color:#ff8b8b; }
+.profile-delete-confirm-heading h3 { margin:0 0 .3rem; font-size:1rem; }
+.profile-delete-confirm-heading p { margin:0; line-height:1.45; color:var(--ui-muted-strong,rgba(255,255,255,.78)); font-size:.82rem; }
+.profile-delete-confirm-actions { display:grid; grid-template-columns:1fr 1.35fr; gap:.6rem; margin-top:.9rem; }
+.profile-delete-confirm-actions .tile-button { max-width:none; min-height:50px; }
+.profile-delete-cancel { background:var(--ui-bg-soft) !important; color:var(--ui-text) !important; border-color:var(--ui-border) !important; }
+.profile-delete-confirm-button { background:rgba(190,55,70,.78) !important; color:#fff !important; border-color:rgba(255,150,160,.35) !important; }
+.profile-account-actions { padding-bottom:1rem; }
+@media (max-width:520px) { .profile-delete-confirm-actions { grid-template-columns:1fr; } }
+
+/* UI sjednocení: Týmy + Výzvy */
+.activity-type-selector{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;width:100%;margin:.65rem 0 1rem}
+.activity-type-selector button{min-width:0;min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:.45rem;padding:.65rem .8rem;border:1px solid var(--ui-border);border-radius:13px;background:rgba(255,255,255,.08);color:inherit;font:inherit;font-weight:750;cursor:pointer}
+.activity-type-selector button.active{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.38)}
+.activity-type-icon{width:22px;height:22px;flex:0 0 22px;object-fit:contain}
+
+.teams-page,.challenges-page{padding-bottom:2rem}
+.teams-create-launch,.challenges-create-launch{width:100%;margin:.15rem 0 .55rem}
+.teams-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;margin:.55rem 0 1rem}
+.teams-tabs button{min-height:44px;padding:.6rem .8rem;border:1px solid var(--ui-border);border-radius:13px;background:rgba(255,255,255,.08);color:inherit;font:inherit;font-weight:750;cursor:pointer}
+.teams-tabs button.active{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.38)}
+.teams-create,.challenges-create{padding:1.15rem;margin:.65rem 0 1rem}
+.teams-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:.8rem}
+.teams-section-heading>div{min-width:0}
+.teams-section-heading h2{margin:0;font-size:1.2rem}
+.teams-section-heading p{margin:.3rem 0 0;color:var(--ui-muted);line-height:1.45}
+.teams-create-form{display:flex;flex-direction:column;gap:.7rem;margin-top:1rem}
+.teams-create-form>input,.teams-create-form>select,.teams-create-form .challenge-dates input,.team-detail-field input{width:100%;min-width:0;min-height:48px;box-sizing:border-box;padding:.7rem .85rem;border:1px solid var(--ui-border);border-radius:13px;background:rgba(255,255,255,.96);color:#14232c;font:inherit;outline:none}
+.teams-create-form>input:focus,.teams-create-form>select:focus,.teams-create-form .challenge-dates input:focus,.team-detail-field input:focus{border-color:rgba(54,209,220,.65);box-shadow:0 0 0 3px rgba(54,209,220,.14)}
+.teams-create-form>input::placeholder{color:#65727a;opacity:1}
+.teams-create-form>select{appearance:auto}
+.team-avatar-upload{position:relative;display:flex;align-items:center;gap:.55rem;min-height:48px;padding:.65rem .8rem;border:1px dashed var(--ui-border-strong);border-radius:13px;background:rgba(255,255,255,.045);color:inherit;cursor:pointer;font-weight:750}
+.team-avatar-upload input{display:none}
+.teams-create-form>.run-primary-button{width:100%}
+
+.team-card{position:relative;display:flex !important;flex-direction:column !important;gap:.75rem !important;min-height:0 !important;padding:1rem !important;margin:0 !important;overflow:hidden}
+.team-card-main{display:grid;grid-template-columns:54px minmax(0,1fr) 24px;align-items:start;gap:.75rem;min-width:0}
+.team-card-info{min-width:0}
+.team-card-title-row{display:flex;align-items:flex-start;gap:.45rem;min-width:0}
+.team-card h3{min-width:0;flex:1;margin:0 !important;font-size:1.05rem;line-height:1.3;overflow-wrap:anywhere}
+.team-card-description{margin:.25rem 0 0;color:var(--ui-muted);font-size:.78rem;line-height:1.4;overflow-wrap:anywhere}
+.team-card-meta{display:block;margin:.45rem 0 0;padding:0;border:0;border-radius:0;background:transparent;color:var(--ui-muted-strong);font-size:.8rem}
+.team-card-stats{display:flex;flex-direction:column;gap:.25rem;margin-top:.55rem;color:var(--ui-muted);font-size:.76rem;line-height:1.35}
+.team-card-stats span{min-width:0;overflow-wrap:anywhere}
+.team-card-chevron{margin-top:.15rem;color:var(--ui-muted);opacity:.75}
+.team-member-label,.challenge-participating{flex:0 0 auto;padding:.22rem .45rem;border:1px solid rgba(105,230,163,.25);border-radius:999px;background:rgba(105,230,163,.12);color:#a8f1c7;font-size:.62rem;font-weight:800;white-space:nowrap}
+.team-action-button{width:100%;min-height:44px;padding:.65rem .8rem;border:1px solid var(--ui-border-strong);border-radius:13px;background:rgba(255,255,255,.1);color:inherit;font:inherit;font-weight:750;cursor:pointer}
+.team-action-button:hover{background:rgba(255,255,255,.16)}
+.team-action-button:disabled{opacity:.55;cursor:wait}
+.teams-pagination,.challenge-pagination{display:flex;align-items:center;justify-content:center;gap:.55rem;margin:1rem 0 0}
+.teams-pagination button,.challenge-pagination button{min-height:42px;padding:.55rem .8rem;border:1px solid var(--ui-border);border-radius:12px;background:rgba(255,255,255,.08);color:inherit;font:inherit;font-weight:750;cursor:pointer}
+.teams-pagination button:disabled,.challenge-pagination button:disabled{opacity:.45;cursor:not-allowed}
+.teams-pagination strong,.challenge-pagination strong{font-size:.82rem;color:var(--ui-muted)}
+
+.challenge-type-switch{margin:.65rem 0 .45rem}
+.challenge-month{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:.5rem;margin:.25rem 0 1rem}
+.challenge-month button{width:44px;height:44px;display:grid;place-items:center;padding:0;border:1px solid var(--ui-border);border-radius:13px;background:rgba(255,255,255,.08);color:inherit;cursor:pointer}
+.challenge-month button:hover{background:rgba(255,255,255,.14)}
+.challenge-month strong{min-width:0;text-align:center;font-size:1rem}
+.challenge-group{margin:1rem 0}
+.challenge-group>h2{display:flex;align-items:center;gap:.5rem;margin:0 0 .6rem;padding:.15rem;font-size:1.05rem}
+.challenge-group .teams-grid{margin:0}
+.challenge-card{min-height:0 !important}
+.challenge-card .team-card-main{grid-template-columns:54px minmax(0,1fr) 24px}
+.challenge-image-preview{display:grid;grid-template-columns:96px minmax(0,1fr);gap:.65rem;align-items:center;padding:.55rem;border:1px solid var(--ui-border);border-radius:13px;background:rgba(255,255,255,.045)}
+.challenge-image-preview img{width:96px;height:72px;object-fit:cover;border-radius:10px}
+.challenges-create .run-form-field,.challenge-edit-card .run-form-field{gap:.45rem}
+.challenges-create .run-form-field>span,.challenge-edit-card .run-form-field>span{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;color:inherit;font-size:.8rem;font-weight:750}
+.challenges-create .run-form-field>span small,.challenge-edit-card .run-form-field>span small{color:var(--ui-muted);font-size:.7rem}
+.challenges-create input[type=file],.challenge-edit-card input[type=file]{width:100%;min-height:48px;padding:.45rem .55rem;border:1px dashed var(--ui-border-strong);border-radius:13px;background:rgba(255,255,255,.045);color:inherit;font:inherit}
+.challenges-create input[type=file]::file-selector-button,.challenge-edit-card input[type=file]::file-selector-button{min-height:36px;margin-right:.55rem;padding:.45rem .7rem;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.9);color:#14232c;font:inherit;font-weight:700}
+.challenge-dates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem}
+.challenge-dates label{display:flex;flex-direction:column;gap:.35rem;color:inherit;font-size:.8rem;font-weight:750}
+.challenge-edit-card .run-secondary-button,.challenge-edit-card .run-primary-button,.challenge-action-row .run-primary-button,.challenge-action-row .run-danger-button{width:100%}
+.challenge-action-row{display:grid;gap:.7rem;align-items:center}
+.challenge-action-row>strong{display:block;padding:.1rem 0}
+.run-danger-button{min-height:48px;padding:.7rem 1rem;border:1px solid rgba(255,120,130,.32);border-radius:13px;background:rgba(160,55,65,.18);color:#ffd4d8;font:inherit;font-weight:800;cursor:pointer}
+.run-danger-button:disabled{opacity:.5;cursor:not-allowed}
+.challenge-result-note{margin:.5rem 0 .8rem;padding:.65rem .75rem;border:1px solid var(--ui-border);border-radius:12px;background:rgba(255,255,255,.055)}
+.challenge-leaderboard{display:flex;flex-direction:column;gap:.45rem}
+.challenge-row,.challenge-row-current{display:grid;grid-template-columns:32px minmax(0,1fr) auto 20px;align-items:center;gap:.55rem;min-width:0;padding:.7rem .75rem;border:1px solid var(--ui-border);border-radius:12px;background:rgba(255,255,255,.045)}
+.challenge-row-current{border-color:rgba(105,230,163,.3);background:rgba(105,230,163,.1)}
+.challenge-row span{min-width:0;overflow-wrap:anywhere}
+.challenge-row b,.challenge-row-current b{white-space:nowrap}
+.challenge-detail-page{padding-bottom:2rem}
+.back-button{display:inline-flex;align-items:center;gap:.4rem;min-height:42px;margin:0 0 .8rem;padding:.55rem .75rem;border:1px solid var(--ui-border);border-radius:12px;background:rgba(255,255,255,.08);color:inherit;font:inherit;font-weight:750;cursor:pointer}
+.challenge-detail-hero{display:grid;grid-template-columns:64px minmax(0,1fr);align-items:start;gap:.9rem}
+.challenge-detail-hero .team-avatar{width:64px;height:64px;flex-basis:64px}
+.challenge-detail-hero h1{margin:.15rem 0 .3rem;font-size:clamp(1.4rem,6vw,2rem);overflow-wrap:anywhere}
+.challenge-detail-hero p{margin:.25rem 0;color:var(--ui-muted);line-height:1.4}
+.challenge-edit-card{margin-top:1rem}
+.challenge-edit-card .teams-create-form{margin-top:1rem}
+.challenge-edit-card .activity-type-selector{margin:.2rem 0 .15rem}
+.challenge-detail-page .team-avatar img{width:100%;height:100%;object-fit:cover}
+@media(max-width:520px){.teams-create,.challenges-create{padding:.9rem}.team-card{padding:.85rem !important}.team-card-main,.challenge-card .team-card-main{grid-template-columns:46px minmax(0,1fr) 20px;gap:.6rem}.team-avatar{width:46px;height:46px;flex-basis:46px}.team-card-title-row{display:block}.team-card-title-row .team-member-label,.team-card-title-row .challenge-participating{display:inline-block;margin-top:.3rem}.challenge-image-preview{grid-template-columns:82px minmax(0,1fr)}.challenge-image-preview img{width:82px;height:64px}}
+@media(max-width:380px){.teams-tabs{gap:.4rem}.teams-tabs button{font-size:.84rem}.challenge-dates{grid-template-columns:1fr}.challenge-month{grid-template-columns:40px minmax(0,1fr) 40px}.challenge-month button{width:40px;height:40px}.challenge-row,.challenge-row-current{grid-template-columns:28px minmax(0,1fr) auto 18px;gap:.4rem;padding:.6rem}}
+
+/* Jednotná ikona počasí: stejný komponent na kartě Počasí i v doporučení. */
+.weather-visual-wrap{position:relative!important;display:inline-block!important;flex:0 0 auto!important;vertical-align:middle}
+.weather-visual-wrap .weather-sun{position:absolute!important;left:0!important;top:0!important;color:#ffd43b!important;stroke:#ffd43b!important;filter:drop-shadow(0 0 1px rgba(255,212,59,.45))}
+.weather-visual-wrap .weather-cloud{position:absolute!important;right:0!important;bottom:0!important;color:#fff!important;stroke:#fff!important}
+.weather-visual-wrap .weather-visual-icon{display:block!important;margin:auto}
+.weather-visual-partly .weather-sun{z-index:1}
+.weather-visual-partly .weather-cloud{z-index:2}
+.weather-current-main .weather-visual-wrap{width:104px!important;height:104px!important}
+.weather-hour-card .weather-visual-wrap{width:48px!important;height:48px!important;margin:.15rem auto}
+.run-weather-icon .weather-visual-wrap{width:50px!important;height:50px!important}
+.run-weather-condition{font-size:.86rem;font-weight:700;opacity:.88;margin-top:.05rem}
+
+/* Týmy + výzvy: formuláře mají vždy čitelný text i při focus/autofill na Androidu. */
+.teams-create-form input,
+.teams-create-form select,
+.teams-create-form input[type="date"],
+.teams-create-form input[type="number"]{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  caret-color:#fff;
+  color-scheme:dark;
+}
+.teams-create-form select{
+  width:100%;
+  min-height:46px;
+  padding:.75rem 1rem;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:12px;
+  background:rgba(0,0,0,.18);
+  color:#fff!important;
+  font:inherit;
+}
+.teams-create-form input:focus,
+.teams-create-form select:focus{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+.teams-create-form input:-webkit-autofill,
+.teams-create-form input:-webkit-autofill:hover,
+.teams-create-form input:-webkit-autofill:focus{
+  -webkit-text-fill-color:#fff!important;
+  caret-color:#fff;
+}
+
+/* Počasí: společná ikona, žluté slunce a přehled 6 hodin ve 3×2. */
+.weather-current-icon-block{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:.35rem;min-width:118px}
+.weather-current-icon-block>span{font-size:.78rem;opacity:.72;text-align:center;white-space:nowrap}
+.weather-visual-partly{position:relative!important;display:inline-block!important}
+.weather-visual-partly .weather-sun{position:absolute!important;left:2%!important;top:0!important;color:#ffd84d!important;stroke:#ffd84d!important;z-index:0!important}
+.weather-visual-partly .weather-cloud{position:absolute!important;right:0!important;bottom:0!important;color:#fff!important;stroke:#fff!important;z-index:1!important}
+.weather-visual-sun .weather-visual-icon{color:#ffd84d!important;stroke:#ffd84d!important}
+.weather-current-grid{margin-top:0!important}
+.weather-card-heading{justify-content:flex-end!important;min-height:34px}
+.weather-hour-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:.55rem!important}
+.weather-hour-card{min-height:126px!important;padding:.65rem .35rem!important;gap:.3rem!important}
+.weather-hour-time{font-size:.78rem!important;font-weight:750}
+.weather-hour-main{display:flex;align-items:center;justify-content:center;gap:.45rem;min-height:48px}
+.weather-hour-main>strong{font-size:1.2rem!important}
+.weather-hour-card>span,.weather-hour-card>small:last-child{font-size:.72rem!important;opacity:.78}
+@media(max-width:560px){
+  .weather-hour-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .weather-current-main{gap:.75rem!important}
+  .weather-current-icon-block{min-width:105px}
+  .weather-current-icon-block>span{font-size:.7rem}
+}
+
+
+/* =====================================================================
+   PRODUCT UI FOUNDATION — 2026-11
+   Jednotná hierarchie, ovládací prvky, mobilní touch targety a focus.
+   Neobsahuje změny datového modelu ani aplikační logiky.
+   ===================================================================== */
+
+:root {
+  --ui-font-size-sm: .82rem;
+  --ui-font-size-xs: .72rem;
+  --ui-control-height: 48px;
+  --ui-touch-target: 44px;
+  --ui-section-gap: 1.15rem;
+  --ui-card-gap: .75rem;
+  --ui-focus-ring: 0 0 0 3px rgba(54,209,220,.18);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"],
+select,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled),
+[role="button"],
+a {
+  touch-action: manipulation;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--theme-accent, #36D1DC);
+  outline-offset: 2px;
+}
+
+.container {
+  padding-bottom: 2rem;
+}
+
+.container > .tile + .tile,
+.container > section + section {
+  margin-top: var(--ui-section-gap);
+}
+
+.tile {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tile > h1:first-child,
+.tile > h2:first-child,
+.tile > h3:first-child {
+  margin-top: 0;
+}
+
+.centered-title {
+  font-size: clamp(1.15rem, 4.5vw, 1.45rem);
+  line-height: 1.25;
+  margin: 1.35rem 0 .75rem;
+  text-align: left;
+}
+
+.activity-empty-state {
+  display: grid;
+  justify-items: center;
+  gap: .35rem;
+  padding: 2rem 1rem;
+  margin-top: .5rem;
+  border: 1px dashed var(--ui-border-strong, rgba(255,255,255,.18));
+  border-radius: var(--card-radius, 18px);
+  background: var(--ui-bg-soft, rgba(255,255,255,.06));
+  text-align: center;
+}
+
+.activity-empty-state strong {
+  margin-top: .15rem;
+  font-size: .98rem;
+}
+
+.activity-empty-state span {
+  color: var(--ui-muted, rgba(255,255,255,.72));
+  font-size: .82rem;
+}
+
+/* Jednotná základna pro primární/sekundární/danger akce. */
+.run-primary-button,
+.run-secondary-button,
+.run-danger-button,
+.tile-button,
+.teams-primary-button,
+.team-action-button,
+.back-button,
+.activity-load-more {
+  min-height: var(--ui-control-height);
+  border-radius: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  transition:
+    transform var(--motion-fast, 140ms) ease,
+    background-color var(--motion-fast, 140ms) ease,
+    border-color var(--motion-fast, 140ms) ease,
+    box-shadow var(--motion-fast, 140ms) ease,
+    opacity var(--motion-fast, 140ms) ease;
+}
+
+.run-primary-button:active:not(:disabled),
+.run-secondary-button:active:not(:disabled),
+.run-danger-button:active:not(:disabled),
+.tile-button:active:not(:disabled),
+.teams-primary-button:active:not(:disabled),
+.team-action-button:active:not(:disabled),
+.back-button:active:not(:disabled),
+.activity-load-more:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.run-primary-button:disabled,
+.run-secondary-button:disabled,
+.run-danger-button:disabled,
+.tile-button:disabled,
+.teams-primary-button:disabled,
+.team-action-button:disabled,
+.back-button:disabled,
+.activity-load-more:disabled {
+  opacity: .52;
+}
+
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+input::placeholder,
+textarea::placeholder {
+  opacity: .65;
+}
+
+.site-navbar-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.site-sidebar-panel {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.site-sidebar-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: inherit;
+}
+
+.site-sidebar-subtitle {
+  display: block;
+  margin-top: .15rem;
+  max-width: 42vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-muted, rgba(255,255,255,.72));
+  font-size: .7rem;
+  font-weight: 500;
+}
+
+.site-sidebar-groups {
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+  min-width: 0;
+  padding: .2rem 0 .4rem;
+}
+
+.site-sidebar-section {
+  min-width: 0;
+}
+
+.site-sidebar-section h2 {
+  margin: 0 0 .45rem;
+  padding: 0 .2rem;
+  color: var(--ui-muted, rgba(255,255,255,.72));
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.site-sidebar-section .site-sidebar-grid {
+  margin: 0;
+}
+
+.site-sidebar-grid > .site-sidebar-item {
+  min-width: 0;
+  min-height: 72px !important;
+}
+
+.site-sidebar-grid > .site-sidebar-item span {
+  overflow-wrap: anywhere;
+}
+
+.site-sidebar-profile-copy {
+  min-width: 0;
+}
+
+.site-sidebar-profile-copy small {
+  display: block;
+  margin-top: .15rem;
+  color: var(--ui-muted, rgba(255,255,255,.72));
+  font-size: .68rem;
+}
+
+@media (max-width: 520px) {
+  .site-sidebar-panel {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .site-sidebar-groups {
+    gap: .7rem;
+  }
+
+  .site-sidebar-section h2 {
+    font-size: .64rem;
+  }
+
+  .site-sidebar-grid > .site-sidebar-item {
+    min-height: 68px !important;
+  }
+
+  .centered-title {
+    margin-top: 1.1rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .site-sidebar-grid {
+    gap: .45rem !important;
+  }
+
+  .site-sidebar-grid > .site-sidebar-item {
+    min-height: 62px !important;
+    font-size: .78rem !important;
+  }
+}
+
+/* Bílý režim: profesionální kontrast a jasná hierarchie bez „slité“ plochy. */
+html[data-theme="white"] {
+  --ui-bg: #ffffff;
+  --ui-bg-soft: #f5f8fa;
+  --ui-bg-hover: #edf3f6;
+  --ui-border: #dbe4e9;
+  --ui-border-strong: #c7d4da;
+  --ui-text: #17232b;
+  --ui-muted: #60717b;
+  --ui-muted-strong: #3f515b;
+  --card-background: #ffffff;
+  --card-border: 1px solid #dbe4e9;
+  --card-shadow: 0 4px 18px rgba(23,35,43,.07);
+}
+
+html[data-theme="white"] body {
+  background: #f4f7f9;
+  color: #17232b;
+}
+
+html[data-theme="white"] .tile,
+html[data-theme="white"] .list-tile,
+html[data-theme="white"] .activity-card-modern {
+  box-shadow: 0 4px 18px rgba(23,35,43,.07);
+}
+
+html[data-theme="white"] .centered-title {
+  color: #17232b;
+}
+
+html[data-theme="white"] .activity-empty-state {
+  background: #f8fafb;
+  border-color: #c7d4da;
+}
+
+html[data-theme="white"] .site-sidebar-section h2 {
+  color: #60717b;
+}
+
+html[data-theme="white"] .site-sidebar-subtitle,
+html[data-theme="white"] .site-sidebar-profile-copy small {
+  color: #60717b;
+}
+
+/* Uživatel musí vždy poznat, co je klikatelné. */
+@media (hover: hover) {
+  button:not(:disabled):hover {
+    filter: brightness(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+
+/* Domovská stránka – jasná hierarchie bez zbytečného dekoru. */
+.home-quick-add,
+.home-activity-feed {
+  min-width: 0;
+}
+
+.home-quick-add {
+  margin-top: .85rem;
+}
+
+.home-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  min-width: 0;
+  margin: 0 0 .65rem;
+}
+
+.home-section-heading > div {
+  min-width: 0;
+}
+
+.home-section-eyebrow {
+  display: block;
+  margin-bottom: .15rem;
+  color: var(--ui-muted, rgba(255,255,255,.72));
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.home-section-heading h2 {
+  margin: 0;
+  font-size: clamp(1.15rem, 4.5vw, 1.4rem);
+  line-height: 1.25;
+}
+
+.home-activity-badge {
+  flex: 0 0 auto;
+  padding: .38rem .65rem;
+  border: 1px solid var(--ui-border, rgba(255,255,255,.1));
+  border-radius: 999px;
+  background: var(--ui-bg-soft, rgba(255,255,255,.08));
+  color: var(--ui-text, #fff);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.home-activity-feed {
+  margin-top: 1.35rem;
+}
+
+.home-feed-heading {
+  margin-bottom: .65rem;
+}
+
+.home-activity-feed .list-container {
+  margin-top: 0;
+}
+
+@media (max-width: 420px) {
+  .home-section-heading {
+    align-items: flex-start;
+  }
+
+  .home-activity-badge {
+    padding: .32rem .55rem;
+  }
+}
+
+html[data-theme="white"] .home-activity-badge {
+  background: #fff;
+  border-color: #dbe4e9;
+  box-shadow: 0 2px 8px rgba(23,35,43,.05);
+}
+
+
+/* Audit UI: ikony aktivit musí zůstat čitelné i ve světlém režimu. */
+html[data-theme="white"] .activity-type-icon-run,
+html[data-theme="white"] .tile-button .run-profile-icon { filter: brightness(0); }
+
+
+/* Audit UI: seznam vlastních aktivit používá stejný layout bez inline stylů. */
+.myruns-list{display:flex;flex-direction:column;gap:0;}
+
+
+/* =====================================================================
+   FINAL VISUAL QA — LIGHT THEME
+   Sjednocení prvků, které měly dříve napevno tmavé pozadí/barvu.
+   ===================================================================== */
+html[data-theme="white"] .activity-card-modern {
+  border-color:#dbe4e9 !important;
+  background:#fff !important;
+  box-shadow:0 5px 20px rgba(23,35,43,.08) !important;
+}
+html[data-theme="white"] .activity-card-top .activity-avatar {
+  background:#eef3f6;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .activity-person > span { color:#17232b; }
+html[data-theme="white"] .activity-person > small { color:#60717b; }
+html[data-theme="white"] .activity-person > small b { color:#3f515b; }
+html[data-theme="white"] .activity-date {
+  color:#3f515b;
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .activity-card-modern .activity-metrics > div {
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .activity-card-modern .activity-metrics svg { color:#3f515b; }
+html[data-theme="white"] .activity-card-modern .activity-metrics > div > span { color:#60717b; }
+html[data-theme="white"] .activity-card-modern .activity-card-actions {
+  border-top-color:#dbe4e9;
+}
+html[data-theme="white"] .activity-card-modern .activity-photos-button,
+html[data-theme="white"] .activity-card-modern .activity-manage-button {
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+  color:#17232b;
+}
+html[data-theme="white"] .activity-card-modern .activity-delete-button {
+  color:#a53b3b;
+  background:#fff4f4;
+  border-color:#edcaca;
+}
+
+html[data-theme="white"] .team-card {
+  border-color:#dbe4e9;
+  background:#fff;
+  box-shadow:0 4px 16px rgba(23,35,43,.06);
+}
+html[data-theme="white"] .team-card-joined {
+  border-color:#a9d8bd;
+  background:#f3fbf6;
+}
+html[data-theme="white"] .team-avatar {
+  background:#eef3f6;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .team-member-label {
+  color:#216b43;
+  background:#e5f6eb;
+}
+html[data-theme="white"] .team-card-actions .team-action-button,
+html[data-theme="white"] .team-card-actions .team-delete-button {
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+  color:#17232b;
+}
+html[data-theme="white"] .team-card-actions .team-delete-button {
+  background:#fff4f4;
+  color:#a53b3b;
+  border-color:#edcaca;
+}
+
+html[data-theme="white"] .teams-create-form input,
+html[data-theme="white"] .teams-create-form select {
+  color:#17232b !important;
+  -webkit-text-fill-color:#17232b !important;
+  background:#fff !important;
+  border-color:#c7d4da;
+  color-scheme:light;
+}
+html[data-theme="white"] .teams-create-form input::placeholder { color:#60717b; }
+html[data-theme="white"] .teams-create-form input:-webkit-autofill,
+html[data-theme="white"] .teams-create-form input:-webkit-autofill:hover,
+html[data-theme="white"] .teams-create-form input:-webkit-autofill:focus {
+  -webkit-text-fill-color:#17232b !important;
+  box-shadow:0 0 0 1000px #fff inset;
+  caret-color:#17232b;
+}
+html[data-theme="white"] .teams-create-form input:focus,
+html[data-theme="white"] .teams-create-form select:focus {
+  border-color:#8aa4b0;
+  box-shadow:var(--ui-focus-ring);
+}
+
+html[data-theme="white"] .weather-current-main,
+html[data-theme="white"] .weather-stat-card,
+html[data-theme="white"] .weather-hour-card {
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .weather-current-main,
+html[data-theme="white"] .weather-stat-card,
+html[data-theme="white"] .weather-hour-card,
+html[data-theme="white"] .weather-current-copy,
+html[data-theme="white"] .weather-card-heading,
+html[data-theme="white"] .weather-hour-section {
+  color:#17232b;
+}
+html[data-theme="white"] .weather-visual-wrap .weather-cloud {
+  color:#60717b !important;
+  stroke:#60717b !important;
+}
+html[data-theme="white"] .weather-visual-sun .weather-visual-icon,
+html[data-theme="white"] .weather-visual-wrap .weather-sun {
+  color:#e7a900 !important;
+  stroke:#e7a900 !important;
+}
+html[data-theme="white"] .weather-hour-card>span,
+html[data-theme="white"] .weather-hour-card>small:last-child,
+html[data-theme="white"] .weather-current-copy small,
+html[data-theme="white"] .weather-card-heading p {
+  color:#60717b;
+}
+
+html[data-theme="white"] .routes-filter button,
+html[data-theme="white"] .routes-group,
+html[data-theme="white"] .route-card {
+  color:#17232b;
+  border-color:#dbe4e9;
+  background:#fff;
+}
+html[data-theme="white"] .routes-filter button {
+  background:#f5f8fa;
+}
+html[data-theme="white"] .routes-filter button.active {
+  background:#e8f0f4;
+  border-color:#b9cbd3;
+}
+html[data-theme="white"] .routes-group-heading { color:#17232b; }
+html[data-theme="white"] .routes-group-icon,
+html[data-theme="white"] .route-card-icon {
+  background:#f0f5f7;
+}
+html[data-theme="white"] .routes-group-copy small,
+html[data-theme="white"] .route-card-info p,
+html[data-theme="white"] .route-card-meta,
+html[data-theme="white"] .routes-note p,
+html[data-theme="white"] .routes-source {
+  color:#60717b;
+}
+html[data-theme="white"] .route-card-title span {
+  background:#edf3f6;
+  color:#3f515b;
+}
+html[data-theme="white"] .route-card-meta strong { color:#17232b; }
+html[data-theme="white"] .route-secondary-action {
+  color:#17232b;
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .route-primary-action {
+  color:#10222a;
+  background:#e8f0f4;
+}
+html[data-theme="white"] .routes-note {
+  color:#17232b;
+}
+
+html[data-theme="white"] .notification-panel {
+  color:#17232b;
+  background:#fff;
+  border-color:#dbe4e9;
+  box-shadow:0 18px 50px rgba(23,35,43,.16);
+}
+html[data-theme="white"] .notification-panel-header,
+html[data-theme="white"] .notification-item {
+  border-color:#e2e9ed;
+}
+html[data-theme="white"] .notification-panel-header button,
+html[data-theme="white"] .notification-item {
+  color:#17232b;
+}
+html[data-theme="white"] .notification-mark-all { color:#16708a; }
+html[data-theme="white"] .notification-item:hover { background:#f5f8fa; }
+html[data-theme="white"] .notification-item.is-unread { background:#edf7fa; }
+html[data-theme="white"] .notification-avatar { background:#eef3f6; }
+html[data-theme="white"] .notification-copy span { color:#3f515b; }
+html[data-theme="white"] .notification-empty { color:#60717b; }
+
+html[data-theme="white"] .trainer-day-modal {
+  background:#fff;
+  color:#17232b;
+  border-color:#dbe4e9;
+  box-shadow:0 24px 80px rgba(23,35,43,.22);
+}
+html[data-theme="white"] .trainer-day-modal-header span,
+html[data-theme="white"] .trainer-day-modal-form>label,
+html[data-theme="white"] .trainer-km-field b {
+  color:#60717b;
+}
+html[data-theme="white"] .trainer-km-field input {
+  background:#f5f8fa;
+  color:#17232b;
+  border-color:#c7d4da;
+  color-scheme:light;
+}
+html[data-theme="white"] .trainer-day-modal-overlay {
+  background:rgba(20,31,38,.46);
+}
+html[data-theme="white"] .trainer-bulk-toggle,
+html[data-theme="white"] .trainer-quick-info,
+html[data-theme="white"] .trainer-bulk-panel {
+  color:#17232b;
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .trainer-bulk-panel input {
+  background:#fff;
+  color:#17232b;
+  border-color:#c7d4da;
+  color-scheme:light;
+}
+
+html[data-theme="white"] .network-status {
+  background:#fff;
+  color:#17232b;
+  border-color:#c7d4da;
+  box-shadow:0 8px 24px rgba(23,35,43,.16);
+}
+html[data-theme="white"] .loading-skeleton-card {
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .activity-load-more {
+  background:#fff;
+  color:#17232b;
+  border-color:#c7d4da;
+}
+
+
+/* Final QA: formuláře a dialogy musí respektovat světlý režim stejně jako karty. */
+html[data-theme="white"] .run-form-panel,
+html[data-theme="white"] .activity-edit-form {
+  background:#fff !important;
+  color:#17232b;
+  border-color:#dbe4e9;
+  box-shadow:0 5px 20px rgba(23,35,43,.08);
+}
+html[data-theme="white"] .activity-edit-form input,
+html[data-theme="white"] .activity-edit-form textarea,
+html[data-theme="white"] .activity-edit-form select,
+html[data-theme="white"] .run-form-panel input,
+html[data-theme="white"] .run-form-panel textarea,
+html[data-theme="white"] .run-form-panel select {
+  background:#fff !important;
+  color:#17232b !important;
+  -webkit-text-fill-color:#17232b !important;
+  border-color:#c7d4da;
+  color-scheme:light;
+}
+html[data-theme="white"] .activity-edit-form input::placeholder,
+html[data-theme="white"] .run-form-panel input::placeholder,
+html[data-theme="white"] .run-form-panel textarea::placeholder {
+  color:#60717b;
+}
+html[data-theme="white"] .route-detail-modal {
+  background:#fff !important;
+  color:#17232b !important;
+}
+html[data-theme="white"] .route-detail-backdrop {
+  background:rgba(20,31,38,.46) !important;
+}
+html[data-theme="white"] .social-modal {
+  background:#fff;
+  color:#17232b;
+  border-color:#dbe4e9;
+  box-shadow:0 24px 70px rgba(23,35,43,.2);
+}
+html[data-theme="white"] .social-modal-header,
+html[data-theme="white"] .social-modal-comment {
+  border-color:#e2e9ed;
+}
+html[data-theme="white"] .social-modal textarea,
+html[data-theme="white"] .social-modal input {
+  background:#fff;
+  color:#17232b;
+  border-color:#c7d4da;
+  color-scheme:light;
+}
+
+
+/* FINAL FORM QA — bílé vstupní buňky musí mít vždy čitelný text a placeholder. */
+.teams-create-form input,
+.teams-create-form select,
+.challenges-create input,
+.challenges-create select,
+.challenges-create textarea {
+  color:#17232b !important;
+  -webkit-text-fill-color:#17232b !important;
+  background:#fff !important;
+  color-scheme:light;
+}
+.teams-create-form input::placeholder,
+.challenges-create input::placeholder,
+.challenges-create textarea::placeholder {
+  color:#667780 !important;
+  opacity:1 !important;
+}
+.challenges-create .challenge-dates label {
+  color:inherit;
+}
+.challenges-create .challenge-dates input {
+  min-height:48px;
+  border:1px solid #c7d4da;
+  border-radius:14px;
+  padding:.75rem .8rem;
+  box-sizing:border-box;
+}
+.challenges-create input:focus,
+.challenges-create select:focus,
+.challenges-create textarea:focus,
+.teams-create-form input:focus,
+.teams-create-form select:focus {
+  outline:none;
+  border-color:#8aa4b0 !important;
+  box-shadow:var(--ui-focus-ring);
+}
+.challenges-create input[type="file"] {
+  color:#17232b !important;
+  -webkit-text-fill-color:#17232b !important;
+}
+
+/* ===== CROSS-SCREEN QA: formuláře + navigace ===== */
+html:not([data-theme="white"]) .teams-create-form input,html:not([data-theme="white"]) .teams-create-form select,html:not([data-theme="white"]) .challenges-create input,html:not([data-theme="white"]) .challenges-create select,html:not([data-theme="white"]) .challenges-create textarea{color:#fff!important;-webkit-text-fill-color:#fff!important;background:rgba(0,0,0,.18)!important;color-scheme:dark}
+html:not([data-theme="white"]) .teams-create-form input::placeholder,html:not([data-theme="white"]) .challenges-create input::placeholder,html:not([data-theme="white"]) .challenges-create textarea::placeholder{color:rgba(255,255,255,.68)!important;opacity:1!important}
+html[data-theme="white"] .teams-create-form input,html[data-theme="white"] .teams-create-form select,html[data-theme="white"] .challenges-create input,html[data-theme="white"] .challenges-create select,html[data-theme="white"] .challenges-create textarea{color:#17232b!important;-webkit-text-fill-color:#17232b!important;background:#fff!important;border-color:#c7d4da;color-scheme:light}
+html[data-theme="white"] .teams-create-form input::placeholder,html[data-theme="white"] .challenges-create input::placeholder,html[data-theme="white"] .challenges-create textarea::placeholder{color:#667780!important;opacity:1!important}
+html:not([data-theme="white"]) .challenges-create .challenge-dates input{color:#fff!important;-webkit-text-fill-color:#fff!important;background:rgba(0,0,0,.18)!important;color-scheme:dark}
+html[data-theme="white"] .site-sidebar-profile{background:#f5f8fa;border-color:#dce3e8;color:#17212b}
+html[data-theme="white"] .site-sidebar-profile-icon{background:#e8eef2}
+html[data-theme="white"] .site-sidebar-profile-copy small,html[data-theme="white"] .site-sidebar-header small{color:#66737d!important}
+html[data-theme="white"] .site-sidebar-item{background:#f5f8fa;border-color:#dce3e8;color:#17212b!important}
+html[data-theme="white"] .site-sidebar-item:hover{background:#eef3f6;border-color:#c7d1d8}
+html[data-theme="white"] .site-sidebar-icon-button{background:#f5f8fa;border-color:#dce3e8;color:#17212b}
+html[data-theme="white"] .site-sidebar-panel{background:#fff!important;border-color:#dce3e8!important}
+html[data-theme="white"] .site-navbar-inner{background:#fff;border-color:#dce3e8;box-shadow:0 8px 24px rgba(18,38,52,.08)}
+html[data-theme="white"] .site-navbar-button{color:#17212b}
+html[data-theme="white"] .site-navbar-button:hover{background:#f1f5f7}
+.teams-create-form input,.teams-create-form select,.challenges-create input,.challenges-create select,.challenges-create textarea{min-height:48px;box-sizing:border-box;border-radius:14px;padding:.75rem .9rem;font:inherit}
+.challenges-create .challenge-dates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}
+.challenges-create .challenge-dates label{display:grid;gap:.35rem;font-size:.8rem;font-weight:700}
+@media(max-width:520px){.challenges-create .challenge-dates{grid-template-columns:1fr 1fr}}
+.teams-header,.progress-header,.participants-header,.admin-header{margin-top:.5rem}
+
+/* Aktivní položka navigace: uživatel vždy vidí, kde se právě nachází. */
+.site-sidebar-item.is-active{background:rgba(255,255,255,.22)!important;border-color:rgba(255,255,255,.34)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 6px 18px rgba(0,0,0,.12)}
+.site-sidebar-item.is-active svg{filter:drop-shadow(0 1px 4px rgba(255,255,255,.16))}
+html[data-theme="white"] .site-sidebar-item.is-active{background:#e8f1f5!important;border-color:#afc4cf!important;color:#10222a!important;box-shadow:inset 0 0 0 1px rgba(16,34,42,.04),0 5px 14px rgba(18,38,52,.08)}
+
+.site-sidebar-profile.is-active{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3)}
+html[data-theme="white"] .site-sidebar-profile.is-active{background:#e8f1f5;border-color:#afc4cf}
+
+/* File inputy: nativní tlačítko nesmí mít bílý text na bílém pozadí. */
+html:not([data-theme="white"]) .teams-create-form input[type="file"]::file-selector-button,
+html:not([data-theme="white"]) .challenges-create input[type="file"]::file-selector-button {
+  min-height:38px;
+  margin-right:.65rem;
+  padding:.45rem .75rem;
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:10px;
+  background:rgba(255,255,255,.14);
+  color:#fff;
+  font:inherit;
+  font-weight:700;
+}
+html[data-theme="white"] .teams-create-form input[type="file"]::file-selector-button,
+html[data-theme="white"] .challenges-create input[type="file"]::file-selector-button {
+  min-height:38px;
+  margin-right:.65rem;
+  padding:.45rem .75rem;
+  border:1px solid #c7d4da;
+  border-radius:10px;
+  background:#eef3f6;
+  color:#17232b;
+  font:inherit;
+  font-weight:700;
+}

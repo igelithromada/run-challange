@@ -38,7 +38,7 @@ async function deleteCloudinaryRaw(publicId: string) {
 
 async function gpxDistanceLabel(file: File) {
   const text = await file.text();
-  const re = /<trkpt\b[^>]*\blat=["']([^"']+)["'][^>]*\blon=["']([^"']+)["'][^>]*>/gi;
+  const re = /<(?:trkpt|rtept)\b[^>]*\blat=["']([^"']+)["'][^>]*\blon=["']([^"']+)["'][^>]*>/gi;
   const points: Array<[number, number]> = [];
   let match: RegExpExecArray | null;
   while ((match = re.exec(text)) !== null) {
@@ -116,7 +116,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  let uploadedPublicId = "";
   try {
     const { decoded, adminDb } = await requireAdmin(request);
     const form = await request.formData();
@@ -132,7 +131,6 @@ export async function POST(request: Request) {
 
     const distance = await gpxDistanceLabel(file);
     const uploaded = await uploadGpx(file, decoded.uid);
-    uploadedPublicId = uploaded.publicId;
     const ref = adminDb.collection("recommendedRoutes").doc();
     await ref.set({
       name, activity: "běh i chůze", description, distance,
@@ -143,7 +141,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ ok: true, id: ref.id });
   } catch (error) {
-    if (uploadedPublicId) await deleteCloudinaryRaw(uploadedPublicId).catch(() => undefined);
     const auth = authErrorResponse(error);
     if (auth) return NextResponse.json({ error: auth.message }, { status: auth.status });
     console.error("POST /api/admin/routes:", error);
@@ -152,7 +149,6 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  let uploadedPublicId = "";
   try {
     const { decoded, adminDb } = await requireAdmin(request);
     const form = await request.formData();
@@ -167,7 +163,6 @@ export async function PUT(request: Request) {
       if (file.size > MAX_GPXS) return NextResponse.json({ error: "GPX může mít maximálně 15 MB." }, { status: 413 });
       if (!file.name.toLowerCase().endsWith(".gpx")) return NextResponse.json({ error: "Nahraj soubor s příponou .gpx." }, { status: 400 });
       uploaded = await uploadGpx(file, decoded.uid);
-      uploadedPublicId = uploaded.publicId;
     }
     const ref = adminDb.collection("recommendedRoutes").doc(id);
     const snapshot = await ref.get();
@@ -187,7 +182,6 @@ export async function PUT(request: Request) {
     if (uploaded && typeof current.gpxPublicId === "string" && current.gpxPublicId) await deleteCloudinaryRaw(current.gpxPublicId);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    if (uploadedPublicId) await deleteCloudinaryRaw(uploadedPublicId).catch(() => undefined);
     const auth = authErrorResponse(error);
     if (auth) return NextResponse.json({ error: auth.message }, { status: auth.status });
     console.error("PUT /api/admin/routes:", error);

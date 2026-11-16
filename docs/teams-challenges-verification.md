@@ -1,21 +1,20 @@
-# Ověření týmů a výzev – 16. 11. 2026
+# Vydání oprav týmů a výzev
 
-Větev: `fix-from-working-23e5eed`. Vzhled ani styly aplikace se nemění.
+Základ vydání je skutečná veřejná verze `c9d62b162ecbbc2170b1cb4dc5e83e7f1db65c75`, zjištěná podle Vercel produkční domény `run-challange.vercel.app`. Původně ověřená větev měla odlišný model členství i další části aplikace; samotné nasazení jejího staršího základu by změnilo design a odstranilo současné funkce.
+
+Vydání zachovává veřejné styly, rozložení, ostatní moduly, členství ve více týmech, předávání správy i týmové statistiky. Opravy jsou přeneseny na tento základ ve větvi `fix-from-working-23e5eed`.
 
 ## Opravy
 
-- Načítání týmů a výzev čeká na přihlášení. Listener týmů se obnoví při změně uživatele.
-- Odchod z týmu respektuje hodnotu `null`; navigace týmů zahrnuje výzvy i trasy.
-- Členství se ověřuje podle skutečných členů týmu. Založení neblokuje osiřelý odkaz v profilu; přestup odstraní duplicitní členství stejného typu.
-- Mazání týmu nejdřív transakčně uzamkne členství a potom čistí pouze odkazy na tento tým. Souběžné připojení nezanechá osiřelé členství.
-- Chybějící veřejný profil neskryje člena týmu ani nezablokuje detail.
-- Stav výzev se aktualizuje při otevření seznamu i detailu. Datum začátku chrání úpravy a mazání i při zastaralém uloženém stavu.
-- Členství u viditelných výzev se čte z konkrétních dokumentů bez požadavku na index collection-group.
-- Názvy výzev s lomítkem mají bezpečný klíč. Limit založených výzev je chráněný proti souběžným požadavkům a nepočítá skončené výzvy.
-- Bodování nepoužívá složený index aktivit, vynechává neplatná a budoucí data a probíhá v transakci s kontrolou členství. Společný součet se vytváří z aktuálních aktivních členů v další transakci.
-- Uzavření výzvy označí stav jako dokončený až po zápisu všech dávek výsledků.
-- Opravené Firestore rules obsahují skutečné nové řádky a chrání členství i při prvním vytvoření profilu.
-- Soubor závislostí odpovídá `package.json`; CI používá čistou instalaci a testuje také tuto větev.
+- Čtení týmů, členství a výzev používá autentizované serverové API. Nevyžaduje nasazení nových klientských pravidel ani collection-group indexů.
+- Načítání týmů čeká na přihlášení, seznam se obnoví po změně členství a chybějící veřejný profil neskryje člena.
+- Odchod a předání správy čtou historii před prvním transakčním zápisem; nevyžadují složený index.
+- Souběžné založení respektuje limit pěti týmů. Mazání blokuje nové členství a atomicky uvolní rezervaci názvu.
+- Aktivity zachovávají přispívání do všech aktuálních týmů. Dávky týmových příspěvků respektují dva zápisy na tým a limit 500 zápisů.
+- Výzvy se aktualizují při otevření, bezpečně zpracují názvy s lomítkem a blokují úpravy podle skutečného data začátku.
+- Bodování všech čtyř cílů respektuje členství, typ aktivity, platné datum a transakční konzistenci. Souběžný výpočet společného cíle neztrácí příspěvky.
+- Uzavření výzvy označí stav jako dokončený až po všech dávkách, ověřeno na 901 účastnících.
+- Selhání následného přepočtu výzev nehlásí uloženou aktivitu jako neuloženou.
 
 ## Kontroly
 
@@ -28,12 +27,6 @@ npm run test:emulator
 npm run build
 ```
 
-`npm test` obsahuje 10 regresních scénářů nad skutečnými API handlery a výpočty s přísnou náhradou Firestore. Test oprávnění se bez emulátoru přeskočí a spouští se samostatně příkazem `test:emulator`.
+Regresní testy používají skutečné API handlery a striktní náhradu Firestore. Integrační testy používají skutečný Firestore emulátor a ověřují souběžné operace, členství ve více týmech, limit týmů a výzev, souběh připojení s mazáním a společný výsledek výzvy. Testy oprávnění ověřují čtení přihlášeného uživatele a zakázané přímé klientské zápisy.
 
-Emulátor ověřuje pravidla čtení a zákazy klientských zápisů, skutečné Firestore transakce při šesti souběžných založeních týmu a výzev, přestup, připojení během mazání týmu a souběžný výpočet společného cíle včetně odchodu člena. Regresní scénáře zahrnují všechny čtyři cíle a uzavření 901 účastníků.
-
-Sestavení, TypeScript, regresní testy a oba testy emulátoru prošly. ESLint končí bez chyb, se 71 varováními ve stávajícím projektu.
-
-## Rozsah ověření
-
-Testy používají izolovaná data a testovací autentizaci. Neproběhl ruční průchod pod skutečným produkčním účtem ani vizuální porovnání přihlášených obrazovek. Produkční aplikace, její data ani nasazená Firestore pravidla se neměnila. Před produkčním vydáním je potřeba ověřit přihlášené obrazovky na preview a publikovat pravidla koordinovaně s aplikací.
+Produkční Firebase pravidla se tímto vydáním nemění. Ruční průchod přihlášenými obrazovkami zůstává oddělený od automatických kontrol a nesmí být vydáván za hotový bez skutečného ověření.

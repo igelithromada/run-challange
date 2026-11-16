@@ -15,8 +15,6 @@ import { RunData } from "./types";
 import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
 import { latestRunsQuery, fetchOlderRuns } from "./lib/services/runs";
 import { getUserProfile } from "./lib/services/users";
-import { allTeamsQuery } from "./lib/services/teams";
-import type { TeamData } from "./types";
 
 export default function Page() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -47,12 +45,29 @@ export default function Page() {
     return () => { active = false; unsubAuth(); };
   }, [router]);
 
+  useEffect(() => {
+    if (!showImages) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setShowImages(null);
+      if (event.key === "ArrowRight" && showImages.length > 1) {
+        setCurrentImgIndex(index => (index + 1) % showImages.length);
+      }
+      if (event.key === "ArrowLeft" && showImages.length > 1) {
+        setCurrentImgIndex(index => (index - 1 + showImages.length) % showImages.length);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showImages]);
+
   const runsQuery = useMemo(() => latestRunsQuery(30), []);
-  const teamsQuery = useMemo(() => allTeamsQuery(), []);
   const runsState = useSharedFirestoreQuery<RunData>("runs:latest:30", runsQuery);
-  const teamsState = useSharedFirestoreQuery<TeamData>("teams:all", teamsQuery);
   const runs = runsState.data;
-  const teams = teamsState.data;
   const allRuns = Array.from(new Map<string, RunData>([...runs, ...olderRuns].map(run => [run.id, run] as const)).values());
 
   useEffect(() => {
@@ -139,24 +154,33 @@ export default function Page() {
 
         <RunWeatherRecommendation type={selectedType} />
 
-        <ActivityTypeSelector value={selectedType} onChange={(value) => { setSelectedType(value); try { localStorage.setItem("dolni-lhota-default-activity-v1", value); } catch {} }} />
+        <section className="home-quick-add" aria-labelledby="home-add-heading">
+          <div className="home-section-heading">
+            <div>
+              <span className="home-section-eyebrow">Nová aktivita</span>
+              <h2 id="home-add-heading">Přidej svůj dnešní pohyb</h2>
+            </div>
+          </div>
+          <ActivityTypeSelector value={selectedType} onChange={(value) => { setSelectedType(value); try { localStorage.setItem("dolni-lhota-default-activity-v1", value); } catch {} }} />
 
-        <div className="run-form-wrap">
-          <RunForm type={selectedType} />
-        </div>
+          <div className="run-form-wrap">
+            <RunForm type={selectedType} />
+          </div>
+        </section>
 
-        <h2 className="centered-title">Poslední záznamy</h2>
+        <section className="home-activity-feed" aria-labelledby="home-feed-heading">
+          <div className="home-section-heading home-feed-heading">
+            <div>
+              <span className="home-section-eyebrow">Komunita</span>
+              <h2 id="home-feed-heading">Poslední záznamy</h2>
+            </div>
+          </div>
         <div className="list-container">
           {runsState.loading ? <LoadingSkeleton count={3} /> : allRuns.filter((run) => (run.type || "běh") === selectedType).map(run => {
-            const team = run.teamId ? teams.find(t => t.id === run.teamId) : null;
-            const teamName = team?.name || (run.teamId ? "?" : null);
-
             return (
               <ActivityCard
                 key={run.id}
                 run={run}
-                teamName={teamName}
-                teamAvatarUrl={team?.avatarUrl || ""}
                 activityType={selectedType}
                 onUserClick={() => router.push(`/user/${run.uid}`)}
                 onPhotosClick={handleShowImages}
@@ -175,6 +199,7 @@ export default function Page() {
             {loadingOlder ? "Načítám starší záznamy…" : "Načíst starší záznamy"}
           </button>
         )}
+        </section>
       </div>
 
       {showImages && (

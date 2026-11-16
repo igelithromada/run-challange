@@ -1,183 +1,183 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-
+import React, { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Users, ChevronRight, Pencil, Check } from "lucide-react";
+import { ChevronRight, Plus, Users, X } from "lucide-react";
 import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import ActivityTypeSelector, { ActivityType, ActivityTypeIcon } from "../components/ActivityTypeSelector";
 import LoadingSkeleton from "../components/LoadingSkeleton";
-import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { showAppToast } from "../components/AppToast";
-import type { TeamData as Team } from "../types";
-import { allTeamsQuery } from "../lib/services/teams";
-import { getUserProfile } from "../lib/services/users";
+import FormField from "../components/FormField";
+import type { TeamData } from "../types";
+import { fetchTeamsPage, getActiveTeamIdsForUser } from "../lib/services/teams";
+import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 
-type TeamMutationResponse = {
-  team?: { id?: string };
-  teamIdsByType?: Partial<Record<ActivityType, string | null>>;
-  error?: string;
-};
+type Tab = "mine" | "all";
 
 export default function TeamsPage() {
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [teamName, setTeamName] = useState("");
-  const [creatingTeam, setCreatingTeam] = useState(false);
-  const [selectedType, setSelectedType] = useState<ActivityType>("běh");
-  useEffect(() => {
-    try {
-      const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
-      if (cached === "běh" || cached === "chůze") setSelectedType(cached);
-    } catch {}
-  }, []);
-  const [teamIdsByType, setTeamIdsByType] = useState<Record<ActivityType, string | null>>({ běh: null, chůze: null });
-  const [user, setUser] = useState<User | null>(null);
-  const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
-  const [editingTeamName, setEditingTeamName] = useState("");
   const router = useRouter();
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [myTeamIds, setMyTeamIds] = useState<string[]>([]);
+  const [tab, setTab] = useState<Tab>("all");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarPublicId, setAvatarPublicId] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [page, setPage] = useState(1);
+  const [teams, setTeams] = useState<TeamData[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+  const [teamsError, setTeamsError] = useState<Error | null>(null);
+  const [hasMoreTeams, setHasMoreTeams] = useState(false);
+  const [pageCursors, setPageCursors] = useState<Array<QueryDocumentSnapshot<DocumentData, DocumentData> | null>>([null]);
+
+  const refreshMemberships = async (uid: string) => {
+    const ids = await getActiveTeamIdsForUser(uid);
+    setMyTeamIds(ids);
+    setTab(ids.length ? "mine" : "all");
+  };
 
   useEffect(() => {
     let active = true;
-
     const unsubscribe = onAuthStateChanged(auth, async currentUser => {
       if (!currentUser) {
-        if (active) router.push("/login");
+        router.push("/login");
         return;
       }
-
-      if (active) setUser(currentUser);
-
+      setUser(currentUser);
       try {
-        const data = await getUserProfile(currentUser.uid);
-        if (!active || !data) return;
-
-        const stored = data.teamIdsByType || {};
-        setTeamIdsByType({
-          běh: stored.běh === null ? null : typeof stored.běh === "string" ? stored.běh : typeof data.teamId === "string" ? data.teamId : null,
-          chůze: typeof stored.chůze === "string" ? stored.chůze : null,
-        });
+        const ids = await getActiveTeamIdsForUser(currentUser.uid);
+        if (!active) return;
+        setMyTeamIds(ids);
+        setTab(ids.length ? "mine" : "all");
       } catch (error) {
-        if (active) console.error("Nepodařilo se načíst týmové nastavení uživatele", error);
+        console.error("Nepodařilo se načíst členství v týmech", error);
       }
     });
-
     return () => {
       active = false;
       unsubscribe();
     };
   }, [router]);
 
-  const teamsQuery = useMemo(() => allTeamsQuery(), []);
-  const teamsState = useSharedFirestoreQuery<Team>(`teams:all:${user?.uid || "anonymous"}`, teamsQuery, !!user);
-  const teams = teamsState.data;
-  const visibleTeams = teams.filter(team => !team.deleting && (team.type === "chůze" ? "chůze" : "běh") === selectedType);
-  const joinedTeamId = teamIdsByType[selectedType];
-  const isActuallyJoined = (team: Team) =>
-    !!user && Array.isArray(team.memberIds) && team.memberIds.includes(user.uid);
-  const joinedTeam = visibleTeams.find(isActuallyJoined) || teams.find(team => team.id === joinedTeamId && isActuallyJoined(team));
-
-  const teamRequest = async (action: string, payload: Record<string, unknown> = {}): Promise<TeamMutationResponse> => {
+  const teamRequest = async (action: string, payload: Record<string, unknown> = {}) => {
     if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
-
     const token = await auth.currentUser.getIdToken(true);
     const response = await fetch("/api/teams/manage", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ action, ...payload }),
     });
-
-    const result = (await response.json().catch(() => ({}))) as TeamMutationResponse;
+    const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.error || "Operaci se nepodařilo dokončit.");
     return result;
   };
 
+  const uploadTeamImage = async (file: File) => {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Povolené jsou pouze JPG, PNG a WebP.");
+    if (file.size <= 0 || file.size > 5 * 1024 * 1024) throw new Error("Obrázek může mít maximálně 5 MB.");
+    if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
+    const token = await auth.currentUser.getIdToken();
+    const form = new FormData(); form.append("file", file);
+    const response = await fetch("/api/media/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || typeof result.secureUrl !== "string") throw new Error(result.error || "Nahrání obrázku selhalo.");
+    setAvatarUrl(result.secureUrl); setAvatarPublicId(typeof result.publicId === "string" ? result.publicId : "");
+  };
+
   const createTeam = async () => {
-    if (!teamName.trim() || !user || creatingTeam) return;
-    setCreatingTeam(true);
+    const trimmedName = name.trim();
+    if (!trimmedName || !user || creating) return;
+    setCreating(true);
     try {
-      const result = await teamRequest("create", { name: teamName.trim(), type: selectedType });
-      const id = result.team?.id;
-      if (id) {
-        setTeamName("");
-        showAppToast("Tým byl vytvořen.", "success");
-        router.push("/teams/" + id);
-      }
+      const result = await teamRequest("create", {
+        name: trimmedName,
+        description: description.trim(),
+        avatarUrl, avatarPublicId,
+      });
+      setName("");
+      setDescription(""); setAvatarUrl(""); setAvatarPublicId("");
+      await refreshMemberships(user.uid);
+      setShowCreate(false);
+      setPage(1);
+      showAppToast("Tým byl vytvořen.", "success");
     } catch (error) {
-      console.error(error);
       showAppToast(error instanceof Error ? error.message : "Tým se nepodařilo vytvořit.", "error");
     } finally {
-      setCreatingTeam(false);
+      setCreating(false);
     }
   };
 
-  const joinTeam = async (team: Team) => {
+  const joinTeam = async (teamId: string) => {
     try {
-      const result = await teamRequest("join", { teamId: team.id });
-      const next = result.teamIdsByType || {};
-      setTeamIdsByType(current => ({ běh: next.běh !== undefined ? next.běh : current.běh, chůze: next.chůze !== undefined ? next.chůze : current.chůze }));
-      showAppToast("Přidal ses do týmu.");
+      await teamRequest("join", { teamId });
+      if (user) await refreshMemberships(user.uid);
+      showAppToast("Přidal ses do týmu.", "success");
     } catch (error) {
       showAppToast(error instanceof Error ? error.message : "Do týmu se nepodařilo přidat.", "error");
     }
   };
 
-  const leaveTeam = async (teamId: string) => {
-    if (!teamId || !user) return;
+  const pageTeams = tab === "mine" ? teams.filter(team => myTeamIds.includes(team.id)) : teams;
+  const currentPage = page;
 
+  const loadTeamsPage = async (targetPage: number) => {
+    if (tab !== "all") return;
+    setTeamsLoading(true);
+    setTeamsError(null);
     try {
-      const result = await teamRequest("leave", { teamId });
-      const next = result.teamIdsByType || {};
-      setTeamIdsByType({ běh: next.běh !== undefined ? next.běh : teamIdsByType.běh, chůze: next.chůze !== undefined ? next.chůze : teamIdsByType.chůze });
-      showAppToast("Z týmu ses odhlásil.");
-    } catch (error) {
-      showAppToast(error instanceof Error ? error.message : "Z týmu se nepodařilo odejít.", "error");
-    }
-  };
-
-  const startEditTeam = (team: Team) => {
-    setEditingTeamId(team.id);
-    setEditingTeamName(team.name || "");
-  };
-
-  const saveTeamName = async (team: Team) => {
-    const name = editingTeamName.trim().slice(0, 60);
-    if (!name || !user || team.createdBy !== user.uid) return;
-
-    try {
-      await teamRequest("rename", { teamId: team.id, name });
-      setEditingTeamId(null);
-      setEditingTeamName("");
-      showAppToast("Název týmu byl uložen.");
-    } catch (error) {
-      console.error(error);
-      showAppToast(error instanceof Error ? error.message : "Název týmu se nepodařilo uložit.", "error");
-    }
-  };
-
-  const deleteTeam = async (team: Team) => {
-    if (team.createdBy !== user?.uid || !window.confirm("Opravdu chceš tento tým smazat?")) return;
-
-    try {
-      await teamRequest("delete", { teamId: team.id });
-      if (joinedTeam?.id === team.id) {
-        setTeamIdsByType(current => ({ ...current, [selectedType]: null }));
+      const cursor = pageCursors[targetPage - 1] ?? null;
+      const result = await fetchTeamsPage(10, cursor ?? undefined);
+      setTeams(result.items);
+      setHasMoreTeams(result.hasMore);
+      if (result.lastDocument) {
+        setPageCursors(current => {
+          const next = [...current];
+          next[targetPage] = result.lastDocument;
+          return next;
+        });
       }
-      showAppToast("Tým byl smazán.");
     } catch (error) {
-      showAppToast(error instanceof Error ? error.message : "Tým se nepodařilo smazat.", "error");
+      setTeamsError(error instanceof Error ? error : new Error("Týmy se nepodařilo načíst."));
+    } finally {
+      setTeamsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (teamsState.error) showAppToast("Týmy se nepodařilo načíst. Zkus stránku obnovit.", "error");
-  }, [teamsState.error]);
+    if (user && tab === "all") void loadTeamsPage(page);
+  }, [tab, page, user, myTeamIds]);
+
+  useEffect(() => {
+    if (tab !== "mine" || !auth.currentUser) return;
+    setTeamsLoading(true);
+    setTeamsError(null);
+    const loadMine = async () => {
+      const token = await auth.currentUser!.getIdToken(true);
+      const response = await fetch("/api/teams/manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: "listMine", page, pageSize: 10 }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Týmy se nepodařilo načíst.");
+      setTeams(Array.isArray(result.items) ? result.items : []);
+      setHasMoreTeams(Boolean(result.hasMore));
+    };
+    loadMine()
+      .catch(error => setTeamsError(error instanceof Error ? error : new Error("Týmy se nepodařilo načíst.")))
+      .finally(() => setTeamsLoading(false));
+  }, [tab, page, user, myTeamIds]);
+
+  useEffect(() => {
+    if (teamsError) showAppToast("Týmy se nepodařilo načíst. Zkus stránku obnovit.", "error");
+  }, [teamsError]);
 
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
@@ -186,22 +186,11 @@ export default function TeamsPage() {
       router.push("/login");
       return;
     }
-
     const routes: Record<string, string> = {
-      home: "/",
-      myrun: "/myruns",
-      teams: "/teams",
-      challenges: "/challenges",
-      routes: "/routes",
-      settings: "/settings",
-      statistics: "/statistics",
-      participants: "/participants",
-      progress: "/progress",
-      trainer: "/trainer",
-      weather: "/weather",
-      admin: "/admin",
+      home: "/", myrun: "/myruns", teams: "/teams", challenges: "/challenges", routes: "/routes", settings: "/settings",
+      statistics: "/statistics", participants: "/participants", progress: "/progress",
+      trainer: "/trainer", weather: "/weather", admin: "/admin",
     };
-
     router.push(routes[item] || "/");
   };
 
@@ -214,171 +203,110 @@ export default function TeamsPage() {
         <header className="teams-header">
           <span className="teams-eyebrow">SPOLEČNĚ ZA POHYBEM</span>
           <h1>Týmy</h1>
-          <p>Vyber si tým podle aktivity. Každý tým má vlastní nastavení, cíl a seznam účastníků.</p>
+          <p>Najdi lidi se stejným zájmem o pohyb, nebo založ vlastní tým.</p>
         </header>
 
-        <section className="tile teams-create">
-          <div className="control-caption">Aktivita týmů</div>
-          <ActivityTypeSelector value={selectedType} onChange={setSelectedType} ariaLabel="Aktivita týmů" />
-          <div className="teams-section-heading">
-            <div>
-              <h2>Vytvořit nový tým</h2>
-              <p>Nový tým bude automaticky určený pro {selectedType}.</p>
+        {!showCreate ? (
+          <button type="button" className="run-primary-button teams-create-launch" onClick={() => setShowCreate(true)}>
+            <Plus size={18} /> Vytvořit tým
+          </button>
+        ) : (
+          <section className="tile teams-create">
+            <div className="teams-section-heading">
+              <div>
+                <h2>Vytvořit tým</h2>
+                <p>Každý tým je veřejný a po vytvoření se stáváš jeho správcem.</p>
+              </div>
+              <button type="button" className="ui-icon-button" onClick={() => setShowCreate(false)} aria-label="Zavřít formulář"><X size={18} /></button>
             </div>
-          </div>
-          <div className="teams-create-form">
-            <input
-              type="text"
-              placeholder="Zadej název týmu"
-              value={teamName}
-              onChange={event => setTeamName(event.target.value)}
-              onKeyDown={event => {
-                if (event.key === "Enter") void createTeam();
-              }}
-            />
-            <button onClick={() => void createTeam()} className="run-primary-button" disabled={!teamName.trim() || creatingTeam}>
-              <Plus size={18} /> Vytvořit tým
-            </button>
-          </div>
-        </section>
+            <div className="teams-create-form professional-form">
+              <FormField label="Název týmu">
+                <input type="text" maxLength={40} placeholder="Např. Dolní Lhota běhá" value={name} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") void createTeam(); }} />
+              </FormField>
+              <FormField label="Popis" hint="volitelné">
+                <textarea maxLength={200} placeholder="Krátce popiš, pro koho je tým určený." value={description} onChange={event => setDescription(event.target.value)} />
+              </FormField>
+              <label className="professional-form-file">
+                <Users size={19} aria-hidden="true" />
+                <span>{avatarUrl ? "Obrázek vybrán" : "Přidat obrázek"}</span>
+                <span className="professional-file-hint">volitelné</span>
+                <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingImage || creating} onChange={async event => { const file=event.target.files?.[0]; event.target.value=""; if(!file)return; setUploadingImage(true); try { await uploadTeamImage(file); showAppToast("Obrázek byl nahrán.","success"); } catch(error) { showAppToast(error instanceof Error ? error.message : "Obrázek se nepodařilo nahrát.","error"); } finally { setUploadingImage(false); } }} />
+              </label>
+              <div className="professional-form-actions">
+                <button className="run-primary-button" onClick={() => void createTeam()} disabled={!name.trim() || creating || uploadingImage}>
+                  <Plus size={18} /> {creating ? "Vytvářím…" : "Vytvořit tým"}
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
 
-        <div className="teams-list-heading">
-          <div>
-            <h2>{selectedType === "běh" ? "Běžecké" : "Chodecké"} týmy</h2>
-            <p>{visibleTeams.length} {visibleTeams.length === 1 ? "tým" : "týmů"}</p>
-          </div>
-          {joinedTeam && (
-            <button className="tile-button team-current-button" onClick={() => router.push("/teams/" + joinedTeam.id)}>
-              <Users size={17} /> Můj tým
-            </button>
-          )}
+        <div className="teams-tabs" role="tablist" aria-label="Týmy">
+          <button className={tab === "mine" ? "active" : ""} onClick={() => setTab("mine")} role="tab" aria-selected={tab === "mine"}>
+            Moje týmy
+          </button>
+          <button className={tab === "all" ? "active" : ""} onClick={() => setTab("all")} role="tab" aria-selected={tab === "all"}>
+            Všechny týmy
+          </button>
         </div>
 
-        {teamsState.loading ? (
+        {teamsLoading ? (
           <LoadingSkeleton count={3} />
-        ) : teamsState.error ? (
-          <div className="tile teams-empty">
-            <strong>Týmy se nepodařilo načíst</strong>
-            <p>Zkus stránku obnovit. Pokud problém přetrvá, zkontroluj připojení.</p>
-          </div>
+        ) : teamsError ? (
+          <div className="tile teams-empty"><strong>Týmy se nepodařilo načíst</strong><p>Zkus stránku obnovit.</p></div>
         ) : (
-        <section className="teams-grid">
-          {visibleTeams.map(team => {
-            const isJoined = isActuallyJoined(team);
-
-
-            return (
-              <article
-                key={team.id}
-                className={`tile team-card ${isJoined ? "team-card-joined" : ""}`}
-                onClick={() => router.push("/teams/" + team.id)}
-              >
-                <div className="team-card-main">
-                  <div className="team-avatar">
-                    {team.avatarUrl ? <img src={cloudinaryImageUrl(team.avatarUrl, 96)} alt="" /> : <Users size={22} />}
-                  </div>
-
-                  <div className="team-card-info">
-                    {editingTeamId === team.id ? (
-                      <div className="team-edit-name" onClick={event => event.stopPropagation()}>
-                        <input
-                          value={editingTeamName}
-                          maxLength={60}
-                          autoFocus
-                          onChange={event => setEditingTeamName(event.target.value)}
-                          onKeyDown={event => {
-                            if (event.key === "Enter") void saveTeamName(team);
-                            if (event.key === "Escape") {
-                              setEditingTeamId(null);
-                              setEditingTeamName("");
-                            }
-                          }}
-                        />
-                        <button type="button" className="run-primary-button team-edit-save-button" onClick={() => void saveTeamName(team)}>
-                          <Check size={17} /> Uložit
-                        </button>
-                        <button
-                          type="button"
-                          className="run-secondary-button team-edit-cancel-button"
-                          onClick={() => {
-                            setEditingTeamId(null);
-                            setEditingTeamName("");
-                          }}
-                        >
-                          Zrušit
-                        </button>
+          <>
+            <section className="teams-grid">
+              {pageTeams.map(team => {
+                const joined = myTeamIds.includes(team.id);
+                const stats = team.stats || { runningKm: 0, runningActivities: 0, walkingKm: 0, walkingActivities: 0 };
+                return (
+                  <article key={team.id} className={`tile team-card ${joined ? "team-card-joined" : ""}`} onClick={() => router.push("/teams/" + team.id)}>
+                    <div className="team-card-main">
+                      <div className="team-avatar">
+                        {team.avatarUrl ? <img src={cloudinaryImageUrl(team.avatarUrl, 96)} alt="" /> : <Users size={22} />}
                       </div>
-                    ) : (
-                      <div className="team-card-title-row">
-                        <h3>{team.name}</h3>
-                        {isJoined && <span className="team-member-label">Tvůj tým</span>}
+                      <div className="team-card-info">
+                        <div className="team-card-title-row">
+                          <h3>{team.name}</h3>
+                          {joined && <span className="team-member-label">Jsi členem</span>}
+                        </div>
+                        {team.description && <p className="team-card-description">{team.description}</p>}
+                        <p className="team-card-meta">{team.memberCount || 0} {(team.memberCount || 0) === 1 ? "člen" : "členů"}</p>
+                        <div className="team-card-stats">
+                          <span>🏃 {Number(stats.runningKm || 0).toFixed(1)} km · {Number(stats.runningActivities || 0)} aktivit</span>
+                          <span>🚶 {Number(stats.walkingKm || 0).toFixed(1)} km · {Number(stats.walkingActivities || 0)} aktivit</span>
+                        </div>
                       </div>
-                    )}
-
-                    <div className="team-card-sub">
-                      <span className="team-type-badge">
-                        <ActivityTypeIcon type={selectedType} size={15} /> {selectedType === "běh" ? "Běh" : "Chůze"}
-                      </span>
-                      <span>{Number(team.challengeGoalKm) || 500} km / měsíc</span>
+                      <ChevronRight className="team-card-chevron" size={20} />
                     </div>
-                  </div>
+                    {!joined && (
+                      <button className="team-action-button" onClick={event => { event.stopPropagation(); void joinTeam(team.id); }}>
+                        Přidat se k týmu
+                      </button>
+                    )}
+                  </article>
+                );
+              })}
 
-                  {editingTeamId !== team.id && <ChevronRight className="team-card-chevron" size={20} />}
+              {!pageTeams.length && (
+                <div className="tile teams-empty">
+                  <Users size={30} />
+                  <strong>{tab === "mine" ? "Zatím nejsi členem žádného týmu" : "Zatím nebyl vytvořen žádný tým"}</strong>
+                  <p>{tab === "mine" ? "Přidej se k existujícímu týmu nebo vytvoř vlastní." : "Vytvoř první tým a začni budovat komunitu."}</p>
+                  {tab === "mine" && <button className="run-primary-button" onClick={() => setTab("all")}>Prohlédnout všechny týmy</button>}
                 </div>
+              )}
+            </section>
 
-                {editingTeamId !== team.id && <div className="team-card-actions">
-                  <button
-                    className={isJoined ? "team-action-button team-leave-button" : "team-action-button"}
-                    onClick={event => {
-                      event.stopPropagation();
-                      if (isJoined) {
-                        if (window.confirm("Opravdu chceš odejít z tohoto týmu?")) void leaveTeam(team.id);
-                      } else {
-                        void joinTeam(team);
-                      }
-                    }}
-                  >
-                    {isJoined ? "Odejít" : "Přidat se"}
-                  </button>
-
-                  {user?.uid === team.createdBy && editingTeamId !== team.id && (
-                    <button
-                      className="team-edit-button"
-                      onClick={event => {
-                        event.stopPropagation();
-                        startEditTeam(team);
-                      }}
-                      aria-label="Upravit tým"
-                    >
-                      <Pencil size={18} />
-                    </button>
-                  )}
-
-                  {user?.uid === team.createdBy && (
-                    <button
-                      className="team-delete-button"
-                      onClick={event => {
-                        event.stopPropagation();
-                        void deleteTeam(team);
-                      }}
-                      aria-label="Smazat tým"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
-                </div>}
-              </article>
-            );
-          })}
-
-          {!visibleTeams.length && (
-            <div className="tile teams-empty">
-              <Users size={30} />
-              <strong>Zatím tu není žádný tým</strong>
-              <p>Vytvoř první tým pro {selectedType}.</p>
-            </div>
-          )}
-        </section>
+            {(currentPage > 1 || hasMoreTeams) && (
+              <div className="teams-pagination">
+                {currentPage > 1 && <button onClick={() => setPage(value => Math.max(1, value - 1))}>Předchozí</button>}
+                <span>Strana {currentPage}</span>
+                {hasMoreTeams && <button onClick={() => setPage(value => value + 1)}>Další</button>}
+              </div>
+            )}
+          </>
         )}
       </main>
     </>

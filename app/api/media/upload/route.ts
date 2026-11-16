@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { isUserCloudinaryPublicId, userCloudinaryPrefix } from "../../../lib/cloudinaryAdmin";
-import { consumeRateLimit } from "../../../../lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,6 +9,16 @@ export const dynamic = "force-dynamic";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const CLOUDINARY_TIMEOUT_MS = 15_000;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+async function hasValidImageSignature(file: File): Promise<boolean> {
+  const header = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  const isJpeg = header.length >= 3 && header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
+  const isPng = header.length >= 8 && header[0] === 0x89 && header[1] === 0x50 && header[2] === 0x4e && header[3] === 0x47
+    && header[4] === 0x0d && header[5] === 0x0a && header[6] === 0x1a && header[7] === 0x0a;
+  const isWebp = header.length >= 12 && header[0] === 0x52 && header[1] === 0x49 && header[2] === 0x46 && header[3] === 0x46
+    && header[8] === 0x57 && header[9] === 0x45 && header[10] === 0x42 && header[11] === 0x50;
+  return isJpeg || isPng || isWebp;
+}
 
 function signUpload(params: Record<string, string>, secret: string) {
   const serialized = Object.entries(params)
@@ -23,9 +32,7 @@ function signUpload(params: Record<string, string>, secret: string) {
 
 export async function POST(request: Request) {
   try {
-    const { decoded, adminDb } = await requireUser(request);
-    const rate = await consumeRateLimit(adminDb, request, "media-upload", 20);
-    if (!rate.allowed) return NextResponse.json({ error: "Příliš mnoho nahrávání. Zkus to později." }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
+    const { decoded } = await requireUser(request);
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
     const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
     const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
@@ -45,6 +52,9 @@ export async function POST(request: Request) {
     }
     if (file.size <= 0 || file.size > MAX_FILE_SIZE) {
       return NextResponse.json({ error: "Obrázek může mít maximálně 5 MB." }, { status: 413 });
+    }
+    if (!(await hasValidImageSignature(file))) {
+      return NextResponse.json({ error: "Soubor neodpovídá povolenému typu obrázku." }, { status: 400 });
     }
 
     const timestamp = Math.floor(Date.now() / 1000).toString();

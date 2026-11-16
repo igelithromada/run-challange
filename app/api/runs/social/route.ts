@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { FieldPath, FieldValue, type Firestore } from "firebase-admin/firestore";
 import { requireUser as requireApiUser, authErrorResponse } from "../../../lib/apiAuth";
-import { consumeRateLimit } from "../../../../lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -122,8 +121,6 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const { adminDb, decoded } = await requireApiUser(request);
-    const rate = await consumeRateLimit(adminDb, request, "social", 120);
-    if (!rate.allowed) return NextResponse.json({ error: "Příliš mnoho požadavků. Zkus to později." }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
     const body = await request.json().catch(() => ({}));
     const runId = typeof body?.runId === "string" ? body.runId.trim() : "";
     const action = typeof body?.action === "string" ? body.action : "";
@@ -178,13 +175,8 @@ export async function POST(request: Request) {
       const result = await adminDb.runTransaction(async transaction => {
         const snapshot = await transaction.get(runRef);
         const data = snapshot.data() || {};
-        const current = Array.isArray(data.likedBy)
-          ? [...new Set(data.likedBy.filter((id): id is string => typeof id === "string"))]
-          : [];
+        const current = Array.isArray(data.likedBy) ? data.likedBy.filter((id): id is string => typeof id === "string") : [];
         const liked = current.includes(decoded.uid);
-        if (!liked && current.length >= MAX_SOCIAL_LIKE_USERS) {
-          throw new Error("LIKE_LIMIT_REACHED");
-        }
         const next = liked ? current.filter(id => id !== decoded.uid) : [...current, decoded.uid];
         transaction.update(runRef, { likedBy: next, likeCount: next.length });
         return { liked: !liked, likeCount: next.length };
@@ -232,7 +224,6 @@ export async function POST(request: Request) {
       comment: { id: commentRef.id, uid: decoded.uid, nickname, avatarUrl, text, mine: true },
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "LIKE_LIMIT_REACHED") return NextResponse.json({ error: "Tento záznam už má maximální počet zobrazených lajků." }, { status: 409 });
     const authError = authErrorResponse(error);
     if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
     console.error("POST /api/runs/social:", error);

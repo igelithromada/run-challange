@@ -12,19 +12,6 @@ import AppToast from "./components/AppToast";
 export default function ClientLayout({ children }: { children: ReactNode }) {
   useThemeLoader();
 
-  useEffect(() => {
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    try {
-      const testMode = localStorage.getItem("dolni-lhota-weather-test-v1");
-      if (testMode) {
-        document.documentElement.setAttribute("data-weather", testMode);
-        document.documentElement.setAttribute("data-windy", testMode === "wind" ? "true" : "false");
-      }
-    } catch {}
-  }, []);
 
   useEffect(() => {
     try {
@@ -189,7 +176,6 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <div className="weather-animation-overlay" aria-hidden="true" />
       <div className="app-content-layer">
         <NetworkStatus />
         <AppToast />

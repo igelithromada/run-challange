@@ -1,9 +1,12 @@
-import { reconcileChallengesForUser } from "../../../lib/challenges/server";
 
 import { NextResponse } from "next/server";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { normalizeActivityType } from "../../../lib/validation";
 import { cloudinaryPublicIdFromUrl, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
+import { reconcileChallengesForUser } from "../../../lib/challenges/server";
+
+import { getActiveTeamMemberships } from "../../../lib/teams/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,61 +36,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Aktivita obsahuje neplatné údaje." }, { status: 400 });
     }
 
-    const profileSnapshot = await adminDb.collection("publicProfiles").doc(decoded.uid).get();
+    // Team membership is no longer selected per activity. Every activity
+    // automatically contributes to every team the user belongs to at the exact
+    // moment the activity is created.
+    const createdAt = new Date();
+    const memberTeamIds = await getActiveTeamMemberships(adminDb, decoded.uid);
+
+    const profileSnapshot = await adminDb.collection("users").doc(decoded.uid).get();
     const profileData = profileSnapshot.exists ? profileSnapshot.data() || {} : {};
-    const safeNickname = typeof profileData.nickname === "string" ? profileData.nickname.trim().slice(0, 40) : "";
-    const safeAvatarUrl = typeof profileData.avatarUrl === "string" ? profileData.avatarUrl : "";
+    const canonicalNickname = typeof profileData.nickname === "string" ? profileData.nickname.trim().slice(0, 80) : "";
+    const canonicalAvatarUrl = typeof profileData.avatarUrl === "string" ? profileData.avatarUrl : "";
 
-    const requestedTeamId = typeof data.teamId === "string" && data.teamId.trim() ? data.teamId.trim() : null;
-    let teamId: string | null = requestedTeamId;
-
-    // Tým je pro formulář implicitní. Starší profily mohou mít teamId/teamIdsByType
-    // nesynchronizované s memberIds, proto při serverovém fallbacku členství ověříme
-    // oběma směry a případně najdeme aktuální tým podle typu aktivity.
-    if (requestedTeamId) {
-      const teamSnapshot = await adminDb.collection("teams").doc(requestedTeamId).get();
-
-      let validTeamId: string | null = null;
-      if (teamSnapshot.exists) {
-        const team = teamSnapshot.data() || {};
-        const teamType = team.type === "chůze" ? "chůze" : "běh";
-        const memberIds = Array.isArray(team.memberIds)
-          ? team.memberIds.filter((value): value is string => typeof value === "string")
-          : [];
-        // The team membership list is authoritative. A stale profile reference
-        // or being the team founder alone must not credit activities to a team.
-        if (teamType === type && memberIds.includes(decoded.uid)) {
-          validTeamId = requestedTeamId;
-        }
-      }
-
-      // Pokud je uložený odkaz na starý/neplatný tým, zkusíme skutečné členství.
-      if (!validTeamId) {
-        const memberTeams = await adminDb
-          .collection("teams")
-          .where("memberIds", "array-contains", decoded.uid)
-          .get();
-        const matchingTeam = memberTeams.docs.find(snapshot => {
-          const team = snapshot.data() || {};
-          return (team.type === "chůze" ? "chůze" : "běh") === type;
-        });
-        if (matchingTeam) validTeamId = matchingTeam.id;
-      }
-
-      // Neplatný/stárlý implicitní teamId nesmí zablokovat uložení aktivity.
-      // Aktivita se uloží bez týmu, pokud se žádné platné členství nepodaří najít.
-      teamId = validTeamId;
-    }
-
-    const timestamp = typeof data.timestamp === "string" ? new Date(data.timestamp) : new Date();
     const safeData = {
       uid: decoded.uid,
       email: decoded.email || "",
-      nickname: safeNickname,
-      avatarUrl: safeAvatarUrl,
+      nickname: canonicalNickname,
+      avatarUrl: canonicalAvatarUrl,
       km, minuty, tempo: (minuty / km).toFixed(2), type,
       description: typeof data.description === "string" ? data.description.trim().slice(0, 500) : "",
-      timestamp: Number.isNaN(timestamp.getTime()) ? new Date() : timestamp,
+      timestamp: typeof data.timestamp === "string" && !Number.isNaN(new Date(data.timestamp).getTime()) ? new Date(data.timestamp) : createdAt,
       imageUrls: Array.isArray(data.imageUrls)
         ? data.imageUrls
             .filter((x): x is string => typeof x === "string")
@@ -103,13 +70,68 @@ export async function POST(request: Request) {
             .filter(publicId => isUserCloudinaryPublicId(publicId, decoded.uid))
             .slice(0, 6)
         : [],
-      teamId,
+      // Legacy field kept only so old UI/data remains readable. It is not used
+      // for team membership logic anymore.
+      teamId: null,
       activityType: type, likedBy: [], likeCount: 0, commentCount: 0,
     };
 
-    const ref = await adminDb.collection("runs").add(safeData);
+    const ref = adminDb.collection("runs").doc();
+    const runCreatedAt = Timestamp.now();
+        const createBatch = adminDb.batch();
+    createBatch.create(ref, { ...safeData, createdAt: runCreatedAt });
+    await createBatch.commit();
+
+    const kmField = type === "chůze" ? "walkingKm" : "runningKm";
+    const countField = type === "chůze" ? "walkingActivities" : "runningActivities";
+    const committedTeamIds: string[] = [];
+    try {
+      for (let start=0; start<memberTeamIds.length; start+=200) {
+        const chunk=memberTeamIds.slice(start,start+200);
+        const batch=adminDb.batch();
+        const existingTeamIds: string[] = [];
+        for (const teamId of chunk) {
+          const teamRef=adminDb.collection("teams").doc(teamId);
+          const contributionRef=teamRef.collection("activityContributions").doc(ref.id);
+          const teamSnap=await teamRef.get();
+          if(!teamSnap.exists) continue;
+          existingTeamIds.push(teamId);
+          batch.set(contributionRef,{
+            activityId:ref.id,userId:decoded.uid,type,km,createdAt:runCreatedAt
+          });
+          batch.update(teamRef,{
+            [`stats.${kmField}`]:FieldValue.increment(km),
+            [`stats.${countField}`]:FieldValue.increment(1)
+          });
+        }
+        if(existingTeamIds.length) {
+          await batch.commit();
+          committedTeamIds.push(...existingTeamIds);
+        }
+      }
+    } catch (teamError) {
+      // The run and team statistics must not diverge if a later team batch fails.
+      // Roll back only contributions that this request actually committed.
+      for (const teamId of committedTeamIds) {
+        const teamRef=adminDb.collection("teams").doc(teamId);
+        const contributionRef=teamRef.collection("activityContributions").doc(ref.id);
+        await adminDb.runTransaction(async tx => {
+          const [teamSnap, contributionSnap] = await Promise.all([tx.get(teamRef), tx.get(contributionRef)]);
+          if (!contributionSnap.exists) return;
+          tx.delete(contributionRef);
+          if (teamSnap.exists) {
+            tx.update(teamRef,{
+              [`stats.${kmField}`]:FieldValue.increment(-km),
+              [`stats.${countField}`]:FieldValue.increment(-1)
+            });
+          }
+        });
+      }
+      await adminDb.recursiveDelete(ref);
+      throw teamError;
+    }
     try { await reconcileChallengesForUser(adminDb, decoded.uid); }
-    catch (error) { console.error("Challenge reconciliation after create failed:", error); }
+    catch(error) { console.error("Aktivita byla uložena, přepočet výzev selhal:",error); }
     return NextResponse.json({ ok: true, id: ref.id });
   } catch (error) {
     const authError = authErrorResponse(error);

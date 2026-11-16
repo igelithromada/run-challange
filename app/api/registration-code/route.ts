@@ -1,6 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
 import { getAdminServices } from "@/lib/firebaseAdmin";
-import { consumeRateLimit } from "@/lib/rateLimit";
 
 function safeEqual(a: string, b: string) {
   const aa = Buffer.from(a, "utf8");
@@ -17,18 +16,17 @@ async function getConfiguredCode() {
   const envCode = process.env.REGISTRATION_CODE?.trim();
   if (!envCode) return null;
 
-  // Veřejné ověření registračního kódu nesmí zapisovat tajný kód do Firestore.
-  // Pokud administrátor ještě nenastavil hodnotu v appConfig, použije se pouze
-  // serverová proměnná prostředí.
+  await adminDb.collection("appConfig").doc("registration").set({
+    code: envCode,
+    updatedAt: new Date(),
+    source: "env",
+  }, { merge: true });
+
   return envCode;
 }
 
 export async function POST(request: Request) {
   try {
-    const { adminDb } = getAdminServices();
-    const rate = await consumeRateLimit(adminDb, request, "registration-code", 10);
-    if (!rate.allowed) return Response.json({ error: "Příliš mnoho pokusů. Zkus to později." }, { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
-
     const expectedCode = await getConfiguredCode();
 
     if (!expectedCode) {

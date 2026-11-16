@@ -46,8 +46,7 @@ function trimCache() {
 /** Sdílí jeden Firestore listener a poslední snapshot mezi obrazovkami. */
 export function useSharedFirestoreQuery<T = Record<string, unknown>>(
   cacheKey: string,
-  source: Query,
-  enabled = true
+  source: Query
 ): SharedQueryState<T> {
   const [local, setLocal] = useState<{ key: string; state: SharedQueryState<T> }>(() => ({
     key: cacheKey,
@@ -60,7 +59,6 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
       : (cache.get(cacheKey)?.state as SharedQueryState<T>) || emptyState<T>();
 
   useEffect(() => {
-    if (!enabled) return;
     let entry = cache.get(cacheKey);
 
     if (!entry) {
@@ -123,7 +121,7 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
 
       trimCache();
     };
-  }, [cacheKey, source, enabled]);
+  }, [cacheKey, source]);
 
-  return enabled ? state : emptyState<T>();
+  return state;
 }

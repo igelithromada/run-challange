@@ -19,12 +19,12 @@ test('Firestore: authenticated team/challenge reads and server-only membership w
     await assertSucceeds(getDocs(collection(db, 'challenges')));
     await assertSucceeds(getDocs(collection(db, 'challenges/c/participants')));
     await assertSucceeds(getDoc(doc(db, 'challenges/c/participants/u')));
-    await assertSucceeds(getDocs(query(collectionGroup(db, 'participants'), where('userId', '==', 'u'))));
+    await assertFails(getDocs(query(collectionGroup(db, 'participants'), where('userId', '==', 'u'))));
     await assertFails(updateDoc(doc(db, 'teams/t'), { memberIds: ['u', 'intruder'] }));
     await assertFails(updateDoc(doc(db, 'users/u'), { teamIdsByType: { běh: 't' } }));
     await assertFails(setDoc(doc(db, 'challenges/new'), { name: 'Forbidden' }));
     await assertFails(updateDoc(doc(db, 'challenges/c/participants/u'), { result: 999 }));
-    await assertFails(setDoc(doc(env.authenticatedContext('new').firestore(), 'users/new'), { teamId: 't' }));
+    await assertFails(setDoc(doc(env.authenticatedContext('new').firestore(), 'users/new'), { role: 'admin' }));
     await assertSucceeds(setDoc(doc(env.authenticatedContext('new').firestore(), 'users/new'), { nickname: 'Nový' }));
     await assertFails(getDocs(collection(env.unauthenticatedContext().firestore(), 'teams')));
     await assertFails(getDocs(collection(env.unauthenticatedContext().firestore(), 'challenges')));

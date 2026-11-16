@@ -1,103 +1,39 @@
-import { collection, collectionGroup, doc, getDoc, getDocs, query, where, type Query, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
-import { db } from "../firebase";
+import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import type { ChallengeData } from "../../types";
+import { readCommunity } from "./community";
 
-export function allChallengesQuery(): Query {
-  return query(collection(db, "challenges"));
-}
-
+type Page<T> = { items: T[]; lastDocument: QueryDocumentSnapshot<DocumentData, DocumentData> | null; hasMore: boolean };
 export async function getChallenge(id: string): Promise<ChallengeData | null> {
-  const snap = await getDoc(doc(db, "challenges", id));
-  return snap.exists() && !snap.data().deleting ? ({ id: snap.id, ...snap.data() } as ChallengeData) : null;
+  return readCommunity("challenge", id);
 }
-
-export async function getChallengeParticipants(id: string) {
-  const snap = await getDocs(query(collection(db, "challenges", id, "participants"), where("active", "==", true)));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+export async function getChallengeParticipants(id: string): Promise<any[]> {
+  return (await readCommunity<any[] | null>("challengeParticipants", id)) || [];
 }
-
-export async function fetchChallengesPage(
-  activityType: ChallengeData["activityType"],
-  state: ChallengeData["state"],
-  monthStart: string,
-  monthEnd: string,
-  pageSize = 10,
-  cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>
-): Promise<{ items: ChallengeData[]; lastDocument: QueryDocumentSnapshot<DocumentData, DocumentData> | null; hasMore: boolean }> {
-  // Avoid a Firestore composite-index dependency here. The challenge
-  // catalogue is intentionally small and the UI already sorts client-side.
-  // Filtering the full collection also correctly includes challenges that
-  // span the selected month but started in a previous month.
-  const snapshot = await getDocs(collection(db, "challenges"));
-  const allItems = snapshot.docs
-    .map(d => ({ id: d.id, ...d.data() } as ChallengeData))
-    .filter(item =>
-      !item.deleting && item.activityType === activityType &&
-      item.state === state &&
-      String(item.startDate || "") <= monthEnd &&
-      String(item.endDate || "") >= monthStart
-    )
-    .sort((a, b) => {
-      const dateCompare = String(a.startDate || "").localeCompare(String(b.startDate || ""));
-      return dateCompare !== 0
-        ? dateCompare
-        : String(a.name || "").localeCompare(String(b.name || ""), "cs");
-    });
-
-  // The query is intentionally kept index-light and sorted client-side.
-  // The current UI presents the complete month result, so do not expose
-  // pagination controls that cannot be backed by a Firestore cursor.
-  void pageSize;
-  void cursor;
-  return {
-    items: allItems,
-    lastDocument: null,
-    hasMore: false,
-  };
-}
-
-export async function fetchChallengeParticipantsPage(
-  id: string,
-  challenge: Pick<ChallengeData, "state" | "kind">,
-  pageSize = 10,
-  cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>
-): Promise<{ items: any[]; lastDocument: QueryDocumentSnapshot<DocumentData, DocumentData> | null; hasMore: boolean }> {
-  const orderField = challenge.state === "completed"
-    ? "finalRank"
-    : challenge.kind === "sharedDistance"
-      ? "joinedAt"
-      : "result";
-  const orderDirection = challenge.state === "completed" || challenge.kind === "sharedDistance" ? "asc" : "desc";
-  const snapshot = await getDocs(
-    query(collection(db, "challenges", id, "participants"), where("active", "==", true))
-  );
-  const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-  items.sort((a: any, b: any) => {
-    const av = Number(a[orderField] ?? 0);
-    const bv = Number(b[orderField] ?? 0);
-    if (av !== bv) return orderDirection === "asc" ? av - bv : bv - av;
-    return String(a.id || "").localeCompare(String(b.id || ""));
-  });
+export async function fetchChallengesPage(activityType: ChallengeData["activityType"], state: ChallengeData["state"], monthStart: string, monthEnd: string, pageSize = 10, cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>): Promise<Page<ChallengeData>> {
+  void pageSize; void cursor;
+  const items = (await readCommunity<ChallengeData[]>("challenges"))
+    .filter(item => !item.deleting && item.activityType === activityType && item.state === state && item.startDate <= monthEnd && item.endDate >= monthStart)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate) || a.name.localeCompare(b.name, "cs") || a.id.localeCompare(b.id));
   return { items, lastDocument: null, hasMore: false };
 }
-
-export async function getChallengeParticipant(id: string, userId: string) {
-  const snap = await getDoc(doc(db, "challenges", id, "participants", userId));
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+function numericValue(value: any) {
+  if (value && typeof value === "object") return Number(value.seconds ?? value._seconds ?? 0) * 1000 + Number(value.nanoseconds ?? value._nanoseconds ?? 0) / 1e6;
+  return Number(value ?? 0);
 }
-
-
+export async function fetchChallengeParticipantsPage(id: string, challenge: Pick<ChallengeData, "state" | "kind">, pageSize = 10, cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>): Promise<Page<any>> {
+  void pageSize; void cursor;
+  const items = await getChallengeParticipants(id);
+  const field = challenge.state === "completed" ? "finalRank" : challenge.kind === "sharedDistance" ? "joinedAt" : "result";
+  const direction = field === "result" ? -1 : 1;
+  items.sort((a, b) => direction * (numericValue(a[field]) - numericValue(b[field])) || (field === "result" ? (numericValue(a.targetReachedAt) || Number.MAX_SAFE_INTEGER) - (numericValue(b.targetReachedAt) || Number.MAX_SAFE_INTEGER) : 0) || a.id.localeCompare(b.id));
+  return { items, lastDocument: null, hasMore: false };
+}
+export async function getChallengeParticipant(id: string, userId: string): Promise<any> {
+  void userId;
+  return readCommunity("challengeMembership", id);
+}
 export async function getActiveChallengeIdsForUser(userId: string, challengeIds?: string[]): Promise<string[]> {
-  if (challengeIds) {
-    const ids = [...new Set(challengeIds)];
-    const memberships = await Promise.all(ids.map(id => getChallengeParticipant(id, userId)));
-    return memberships.flatMap((member, index) => member && "active" in member && member.active === true ? [ids[index]] : []);
-  }
-  const snapshot = await getDocs(
-    query(collectionGroup(db, "participants"), where("userId", "==", userId))
-  );
-  return snapshot.docs
-    .filter(item => item.data()?.active === true)
-    .map(item => item.ref.parent.parent?.id || "")
-    .filter(Boolean);
+  const ids = challengeIds || (await readCommunity<ChallengeData[]>("challenges")).map(item => item.id);
+  const memberships = await Promise.all(ids.map(id => getChallengeParticipant(id, userId)));
+  return ids.filter((_, index) => memberships[index]?.active === true);
 }

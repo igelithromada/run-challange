@@ -21,7 +21,7 @@ service cloud.firestore {
       allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);
       allow create: if signedIn()
         && request.auth.uid == userId
-        && !request.resource.data.keys().hasAny(["role", "blocked", "teamIdsByType", "teamId", "joinedTeam", "challengeCreatedAt"]);
+        && !request.resource.data.keys().hasAny(["role", "blocked"]);
 
       // Users may edit their own profile/preferences, but never elevate themselves
       // or change moderation/account-control fields.
@@ -35,6 +35,7 @@ service cloud.firestore {
               "avatarPublicId",
               "theme",
               "customColor",
+              "gradientEnabled",
               "themeUpdatedAt",
               "hapticsEnabled",
               "defaultActivity",
@@ -65,18 +66,31 @@ service cloud.firestore {
     }
 
     match /runs/{runId} {
-      // Aktivity se zapisují, upravují a mažou výhradně přes serverové
-      // endpointy, kde se znovu ověřuje vlastník, rozsah hodnot a média.
-      // Přímé klientské zápisy jsou záměrně vypnuté.
       allow read: if signedIn();
-      allow create, update, delete: if isAdmin();
+
+      // Aktivity zapisuje a mění pouze server, protože zápis současně
+      // aktualizuje týmové statistiky a výsledky výzev.
+      allow create: if false;
+
+      // Vlastník může upravovat pouze skutečně editovatelná pole aktivity.
+      // Sociální počítadla, autora, vlastníka a tým spravuje aplikace/server.
+      allow update: if isAdmin();
+
+      allow delete: if isAdmin();
     }
 
     match /teams/{teamId} {
-      // Týmové změny (vytvoření, členství, nastavení i mazání) jdou výhradně
-      // přes zabezpečené serverové endpointy. Klient má pouze právo číst.
       allow read: if signedIn();
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /teams/{teamId}/members/{memberId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /teamNames/{nameKey} {
+      allow read, write: if false;
     }
 
     match /challenges/{challengeId} {
@@ -89,16 +103,9 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Collection-group participant lookup for the current user.
-    match /{path=**}/participants/{participantId} {
-      allow read: if signedIn();
-      allow write: if false;
-    }
-
     match /challengeNames/{nameKey} {
       allow read, write: if false;
     }
-
 
     match /{document=**} {
       allow read, write: if false;

@@ -28,7 +28,7 @@ Module._load = function(request, parent, isMain) {
   if (request.endsWith('/apiAuth')) return { requireUser: async () => {
     if (!authenticated) throw new Error('UNAUTHORIZED');
     return { decoded: { uid }, adminDb: db };
-  } };
+  }, authErrorResponse: error => error.message === 'UNAUTHORIZED' ? { status:401, message:'Nejsi přihlášen.' } : null };
   return originalLoad.apply(this, arguments);
 };
 class DB {
@@ -105,30 +105,35 @@ const team = (members, type = 'běh') => ({ name: 'Tým', type, memberIds: membe
 const challenge = (kind = 'distance') => ({ name: 'Test', nameKey: 'test', createdBy:'u', kind, activityType:'běh', goal:10, startDate:day(-4), endDate:day(1), state:'active', participantCount:1 });
 const tsAt = days => new Timestamp(Date.now() + days * 86400000);
 
-test('teams: create repairs a stale profile, but blocks actual duplicate membership', async () => {
-  db = new DB({ 'users/u': { teamIdsByType: { běh:'deleted' } } });
-  assert.equal((await call(teams, { action:'create', name:'Nový', type:'běh' })).status, 200);
-  assert.equal((await call(teams, { action:'create', name:'Další', type:'běh' })).status, 409);
+test('teams: unique names and five-team creation limit', async () => {
+  db=new DB();
+  for(let i=0;i<5;i++)assert.equal((await call(teams,{action:'create',name:'Tým '+i})).status,200);
+  assert.equal((await call(teams,{action:'create',name:'Šestý'})).status,409);
+  assert.equal((await call(teams,{action:'create',name:'Tým 0'})).status,409);
 });
-test('teams: switching repairs duplicate memberships and preserves walking membership', async () => {
-  db = new DB({ 'teams/a':team(['u']), 'teams/b':team(['u']), 'teams/c':team([]), 'teams/w':team(['u'],'chůze'), 'users/u':{teamIdsByType:{běh:'a',chůze:'w'}} });
-  assert.equal((await call(teams,{action:'join',teamId:'c'})).status,200);
-  assert.deepEqual(db.store.get('teams/a').memberIds,[]);
-  assert.deepEqual(db.store.get('teams/b').memberIds,[]);
-  assert.deepEqual(db.store.get('teams/c').memberIds,['u']);
-  assert.deepEqual(db.store.get('teams/w').memberIds,['u']);
-  const leave = await call(teams,{action:'leave',teamId:'c'});
-  assert.equal(leave.body.teamIdsByType.běh,null);
-  assert.equal(leave.body.teamIdsByType.chůze,'w');
-  assert.equal((await call(teams,{action:'leave',teamId:'c'})).status,200);
+test('teams: multiple memberships are preserved and leave reads history before writing', async () => {
+  db=new DB({'teams/a':{name:'A',managerId:'owner',memberCount:1},'teams/b':{name:'B',managerId:'owner',memberCount:0},
+    'teams/a/members/u':{userId:'u',active:true},'teams/a/membershipHistory/h':{userId:'u',active:true}});
+  assert.equal((await call(teams,{action:'join',teamId:'b'})).status,200);
+  assert.equal(db.store.get('teams/a/members/u').active,true);
+  assert.equal((await call(teams,{action:'leave',teamId:'a'})).status,200);
+  assert.equal(db.store.get('teams/a/members/u').active,false);
+  assert.equal(db.store.get('teams/a/membershipHistory/h').active,false);
+  assert.equal(db.store.get('teams/b/members/u').active,true);
 });
-test('teams: deleting rejects joins and deletion clears only references to that team', async () => {
-  db = new DB({ 'teams/a':{...team(['u','v']),deleting:true}, 'users/u':{teamIdsByType:{běh:'b'}}, 'users/v':{teamIdsByType:{běh:'a'},teamId:'a'} });
-  assert.equal((await call(teams,{action:'join',teamId:'a'})).status,409);
+test('teams: transfer management and leave is atomic and index-independent', async () => {
+  db=new DB({'teams/a':{name:'A',managerId:'u',memberCount:2},'teams/a/members/u':{userId:'u',active:true},
+    'teams/a/members/v':{userId:'v',active:true},'teams/a/membershipHistory/h':{userId:'u',active:true}});
+  assert.equal((await call(teams,{action:'transfer',teamId:'a',newManagerId:'v',leaveCurrentManager:true})).status,200);
+  assert.equal(db.store.get('teams/a').managerId,'v');
+  assert.equal(db.store.get('teams/a').memberCount,1);
+  assert.equal(db.store.get('teams/a/members/u').active,false);
+});
+test('teams: deleting rejects joins and recursively removes memberships', async () => {
+  db=new DB({'teams/a':{name:'A',managerId:'u',deleting:true},'teams/a/members/u':{userId:'u',active:true}});
+  assert.equal((await call(teams,{action:'join',teamId:'a'})).status,404);
   assert.equal((await call(teams,{action:'delete',teamId:'a'})).status,200);
-  assert.equal(db.store.get('users/u').teamIdsByType.běh,'b');
-  assert.equal(db.store.get('users/v').teamIdsByType.běh,null);
-  assert.ok(!db.store.has('teams/a'));
+  assert.ok(!db.store.has('teams/a/members/u'));
 });
 test('APIs reject unauthenticated mutations', async () => {
   authenticated=false;
@@ -196,4 +201,22 @@ test('scoring: 901 participants finalize safely, with completion written in the 
     assert.equal(db.store.get('challenges/c').state,'completed');
     assert.deepEqual(db.batchSizes,[450,450,2]);
   }
+});
+
+test('community reads authenticate, hide deleting records and bind membership to caller', async () => {
+  const read = require('../app/api/community/read/route.ts');
+  db = new DB({ 'teams/t': { name:'Tým' }, 'teams/t/members/u':{userId:'u',active:true},
+    'challenges/c':challenge(),'challenges/hidden':{...challenge(),deleting:true},
+    'challenges/c/participants/u':{userId:'u',active:true},'challenges/c/participants/other':{userId:'other',active:false} });
+  assert.deepEqual((await call(read,{resource:'teamMemberships'})).body.data,['t']);
+  const list=await call(read,{resource:'challenges'});
+  assert.equal(list.body.data.length,1);
+  assert.equal((await call(read,{resource:'challenge',id:'hidden'})).body.data,null);
+  const membership=await call(read,{resource:'challengeMembership',id:'c',userId:'other'});
+  assert.equal(membership.body.data.userId,'u');
+  assert.equal((await call(read,{resource:'users',id:'u'})).status,400);
+  assert.equal((await call(read,{resource:'team',id:'../users/u'})).status,400);
+  authenticated=false;
+  try { assert.equal((await call(read,{resource:'challenges'})).status,401); }
+  finally { authenticated=true; }
 });

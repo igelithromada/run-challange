@@ -3,7 +3,7 @@ import type { Firestore } from "firebase-admin/firestore";
 import { getAdminServices } from "./firebaseAdmin";
 
 export class ApiAuthError extends Error {
-  constructor(public readonly code: "UNAUTHORIZED" | "FORBIDDEN") {
+  constructor(public readonly code: "UNAUTHORIZED" | "FORBIDDEN" | "BLOCKED") {
     super(code);
   }
 }
@@ -16,12 +16,16 @@ function bearerToken(request: Request): string {
   return token;
 }
 
-export async function requireUser(request: Request): Promise<{
+export async function requireUser(request: Request, options: { allowBlocked?: boolean } = {}): Promise<{
   decoded: DecodedIdToken;
   adminDb: Firestore;
 }> {
   const { adminAuth, adminDb } = getAdminServices();
   const decoded = await adminAuth.verifyIdToken(bearerToken(request));
+  if (!options.allowBlocked) {
+    const profile = await adminDb.collection("users").doc(decoded.uid).get();
+    if (profile.data()?.blocked === true) throw new ApiAuthError("BLOCKED");
+  }
   return { decoded, adminDb };
 }
 
@@ -29,7 +33,7 @@ export async function requireAdmin(request: Request): Promise<{
   decoded: DecodedIdToken;
   adminDb: Firestore;
 }> {
-  const { decoded, adminDb } = await requireUser(request);
+  const { decoded, adminDb } = await requireUser(request, { allowBlocked: true });
   const profile = await adminDb.collection("users").doc(decoded.uid).get();
   if (profile.data()?.role !== "admin" && decoded.admin !== true) {
     throw new ApiAuthError("FORBIDDEN");
@@ -46,8 +50,8 @@ function isFirebaseAuthError(error: unknown): boolean {
 export function authErrorResponse(error: unknown): { status: number; message: string } | null {
   if (error instanceof ApiAuthError) {
     return {
-      status: error.code === "FORBIDDEN" ? 403 : 401,
-      message: error.code === "FORBIDDEN" ? "Nemáš oprávnění správce." : "Nejsi přihlášen.",
+      status: error.code === "FORBIDDEN" || error.code === "BLOCKED" ? 403 : 401,
+      message: error.code === "BLOCKED" ? "Tento účet je zablokovaný." : error.code === "FORBIDDEN" ? "Nemáš oprávnění správce." : "Nejsi přihlášen.",
     };
   }
 

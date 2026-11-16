@@ -16,7 +16,7 @@ import { MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
 import { showAppToast } from "../components/AppToast";
 import type { RunData as BaseRunData, ActivityType } from "../types";
-import { fetchOlderRuns, latestUserRunsQuery } from "../lib/services/runs";
+import { fetchOlderRuns, latestUserRunsQuery, updateRun } from "../lib/services/runs";
 import { getUserProfile } from "../lib/services/users";
 
 type RunData = BaseRunData;
@@ -211,21 +211,8 @@ export default function MyRunsPage() {
         updates.imageUrl = uploaded.secureUrl;
         if (uploaded.publicId) updates.imagePublicIds = [...(current?.imagePublicIds || []), uploaded.publicId];
       }
-      const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error("Nejsi přihlášen.");
-      const token = await currentUser.getIdToken(true);
-      const response = await fetch("/api/runs/update", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ runId: id, updates }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "Záznam se nepodařilo upravit.");
-      const serverUpdates = result.updates && typeof result.updates === "object" ? result.updates : updates;
-      setLocalUpdates(previous => ({ ...previous, [id]: { ...(previous[id] || {}), ...serverUpdates } }));
+      await updateRun(id, updates);
+      setLocalUpdates(previous => ({ ...previous, [id]: { ...(previous[id] || {}), ...updates } }));
       setEditingId(null); setFile(null);
     } catch (err) {
       console.error(err); setActionError(err instanceof Error ? err.message : "Záznam se nepodařilo upravit.");
@@ -313,7 +300,7 @@ export default function MyRunsPage() {
       </div>
       <h2 className="centered-title">Moje záznamy</h2>
 
-      <div className="list-container" style={{ display:"flex", flexDirection:"column", gap:0 }}>
+      <div className="list-container myruns-list">
         {filteredRuns.map(run => editingId === run.id ? <section key={run.id} className="run-form-panel activity-edit-form" aria-label="Upravit aktivitu">
           <div className="run-form-heading"><div><span className="run-form-eyebrow">ÚPRAVA AKTIVITY</span><h3>Upravit aktivitu</h3></div><button type="button" className="run-form-close" onClick={() => { setEditingId(null); setFile(null); setActionError(""); }} disabled={busy} aria-label="Zavřít formulář">×</button></div>
           <label className="run-form-field"><span>Vzdálenost <small>km</small></span><input type="number" min="0.1" step="0.01" value={km} onChange={e => setKm(e.target.value)} /></label>

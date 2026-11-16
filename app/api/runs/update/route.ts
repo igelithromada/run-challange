@@ -1,106 +1,83 @@
-import { reconcileChallengesForUser } from "../../../lib/challenges/server";
 import { NextResponse } from "next/server";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
-import { isUserCloudinaryPublicId, cloudinaryPublicIdFromUrl } from "../../../lib/cloudinaryAdmin";
+import { isActivityType, normalizeActivityType } from "../../../lib/validation";
+import { reconcileChallengesForUser } from "../../../lib/challenges/server";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime="nodejs";
+export const dynamic="force-dynamic";
 
-export async function PATCH(request: Request) {
-  try {
-    const { decoded, adminDb } = await requireUser(request);
-    const body = await request.json().catch(() => ({}));
-    const runId = typeof body.runId === "string" ? body.runId.trim() : "";
-    const updates = body?.updates;
+export async function PATCH(request:Request){
+  try{
+    const {decoded,adminDb}=await requireUser(request);
+    const body=await request.json().catch(()=>({}));
+    const id=typeof body?.id==="string"?body.id.trim():"";
+    const updates=body?.updates;
+    if(!id || !updates || typeof updates!=="object") return NextResponse.json({error:"Neplatná data úpravy."},{status:400});
 
-    if (!runId || !updates || typeof updates !== "object") {
-      return NextResponse.json({ error: "Neplatná data úpravy." }, { status: 400 });
+    const runRef=adminDb.collection("runs").doc(id);
+    const snap=await runRef.get();
+    if(!snap.exists)return NextResponse.json({error:"Záznam neexistuje."},{status:404});
+    const current=snap.data()||{};
+    if(current.uid!==decoded.uid)return NextResponse.json({error:"Tento záznam nemůžeš upravit."},{status:403});
+
+    const km=Number(updates.km);
+    const minuty=Number(updates.minuty);
+    const timestamp=updates.timestamp instanceof Timestamp ? updates.timestamp :
+      typeof updates.timestamp==="string" && !Number.isNaN(new Date(updates.timestamp).getTime()) ? Timestamp.fromDate(new Date(updates.timestamp)) : null;
+    if(!Number.isFinite(km)||km<=0||km>1000||!Number.isFinite(minuty)||minuty<=0||minuty>1440||!timestamp){
+      return NextResponse.json({error:"Aktivita obsahuje neplatné údaje."},{status:400});
     }
 
-    const runRef = adminDb.collection("runs").doc(runId);
-    const snapshot = await runRef.get();
-    if (!snapshot.exists) return NextResponse.json({ error: "Záznam neexistuje." }, { status: 404 });
-
-    const current = snapshot.data() || {};
-    if (current.uid !== decoded.uid) {
-      return NextResponse.json({ error: "Tento záznam může upravit pouze jeho autor." }, { status: 403 });
+    if (updates.type !== undefined && !isActivityType(updates.type)) {
+      return NextResponse.json({error:"Aktivita obsahuje neplatný typ."},{status:400});
     }
+    const nextType=updates.type===undefined ? (current.type==="chůze"?"chůze":"běh") : normalizeActivityType(updates.type);
+    const tempo=(minuty/km).toFixed(2);
+    const safeUpdate:any={
+      km,minuty,tempo,type:nextType,activityType:nextType,timestamp,
+      description:typeof updates.description==="string"?updates.description.trim().slice(0,500):String(current.description||"")
+    };
 
-    const data = updates as Record<string, unknown>;
-    const km = Number(data.km);
-    const minuty = Number(data.minuty);
-    const type = current.type === "chůze" ? "chůze" : "běh";
-
-    if (!Number.isFinite(km) || km <= 0 || km > 1000 ||
-        !Number.isFinite(minuty) || minuty <= 0 || minuty > 24 * 60) {
-      return NextResponse.json({ error: "Aktivita obsahuje neplatnou vzdálenost nebo čas." }, { status: 400 });
+    const contributions=await adminDb.collectionGroup("activityContributions").where("activityId","==",id).get();
+    const newKmField=nextType==="chůze"?"walkingKm":"runningKm";
+    const newCountField=nextType==="chůze"?"walkingActivities":"runningActivities";
+    for(let start=0;start<contributions.docs.length;start+=225){
+      const chunk=contributions.docs.slice(start,start+225);
+      const batch=adminDb.batch();
+      for(const contribution of chunk){
+        const data=contribution.data()||{};
+        const teamRef=contribution.ref.parent.parent;
+        if(!teamRef)continue;
+        const teamSnap=await teamRef.get();
+        if(!teamSnap.exists){
+          batch.delete(contribution.ref);
+          continue;
+        }
+        const oldType=data.type==="chůze"?"chůze":"běh";
+        const oldKm=Number(data.km)||0;
+        const oldKmField=oldType==="chůze"?"walkingKm":"runningKm";
+        const oldCountField=oldType==="chůze"?"walkingActivities":"runningActivities";
+        batch.update(teamRef,{
+          [`stats.${oldKmField}`]:FieldValue.increment(-oldKm),
+          [`stats.${oldCountField}`]:FieldValue.increment(-1),
+          [`stats.${newKmField}`]:FieldValue.increment(km),
+          [`stats.${newCountField}`]:FieldValue.increment(1)
+        });
+        batch.update(contribution.ref,{type:nextType,km});
+      }
+      await batch.commit();
     }
-
-    const timestamp = data.timestamp instanceof Date
-      ? data.timestamp
-      : typeof data.timestamp === "string"
-        ? new Date(data.timestamp)
-        : new Date();
-
-    if (Number.isNaN(timestamp.getTime())) {
-      return NextResponse.json({ error: "Datum aktivity není platné." }, { status: 400 });
-    }
-
-    const imageUrls = Array.isArray(data.imageUrls)
-      ? data.imageUrls.filter((value): value is string => typeof value === "string").slice(0, 6)
-      : Array.isArray(current.imageUrls)
-        ? current.imageUrls.filter((value): value is string => typeof value === "string").slice(0, 6)
-        : [];
-
-    const imagePublicIds = Array.isArray(data.imagePublicIds)
-      ? data.imagePublicIds
-          .filter((value): value is string => typeof value === "string")
-          .filter(publicId => isUserCloudinaryPublicId(publicId, decoded.uid))
-          .slice(0, 6)
-      : Array.isArray(current.imagePublicIds)
-        ? current.imagePublicIds
-            .filter((value): value is string => typeof value === "string")
-            .filter(publicId => isUserCloudinaryPublicId(publicId, decoded.uid))
-            .slice(0, 6)
-        : [];
-
-    const safeImageUrls = imageUrls.filter(url => {
-      const publicId = cloudinaryPublicIdFromUrl(url);
-      return !!publicId && isUserCloudinaryPublicId(publicId, decoded.uid);
-    });
-
-    await runRef.update({
-      km,
-      minuty,
-      tempo: (minuty / km).toFixed(2),
-      timestamp,
-      description: typeof data.description === "string" ? data.description.trim().slice(0, 500) : String(current.description || ""),
-      imageUrls: safeImageUrls,
-      imageUrl: safeImageUrls[safeImageUrls.length - 1] || "",
-      imagePublicIds,
-      type,
-      activityType: type,
-    });
-
-    try { await reconcileChallengesForUser(adminDb, decoded.uid); }
-    catch (error) { console.error("Challenge reconciliation after update failed:", error); }
-    return NextResponse.json({
-      ok: true,
-      updates: {
-        km,
-        minuty,
-        tempo: (minuty / km).toFixed(2),
-        timestamp,
-        description: typeof data.description === "string" ? data.description.trim().slice(0, 500) : String(current.description || ""),
-        imageUrls: safeImageUrls,
-        imageUrl: safeImageUrls[safeImageUrls.length - 1] || "",
-        imagePublicIds,
-      },
-    });
-  } catch (error) {
-    const authError = authErrorResponse(error);
-    if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
-    console.error("PATCH /api/runs/update:", error);
-    return NextResponse.json({ error: "Aktivitu se nepodařilo upravit." }, { status: 500 });
+    const runBatch=adminDb.batch();
+    runBatch.update(runRef,safeUpdate);
+    await runBatch.commit();
+    try { await reconcileChallengesForUser(adminDb,decoded.uid); }
+    catch(error) { console.error("Aktivita byla uložena, přepočet výzev selhal:",error); }
+    return NextResponse.json({ok:true});
+  }catch(error){
+    const authError=authErrorResponse(error);
+    if(authError)return NextResponse.json({error:authError.message},{status:authError.status});
+    console.error("PATCH /api/runs/update:",error);
+    return NextResponse.json({error:"Záznam se nepodařilo upravit."},{status:500});
   }
 }
