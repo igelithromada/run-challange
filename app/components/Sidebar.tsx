@@ -114,8 +114,8 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
               <section className="site-sidebar-section" key={group.id} aria-labelledby={`sidebar-group-${group.id}`}>
                 <h2 id={`sidebar-group-${group.id}`}>{group.label}</h2>
                 <div className="site-sidebar-grid">
-                  {items.map(({ id, label, Icon }) => (
-                    <button key={id} type="button" className={`site-sidebar-item${pathname === item.route || (item.route !== "/" && pathname.startsWith(item.route + "/")) ? " is-active" : ""}`} onClick={() => handleNavigation(id)} aria-current={pathname === item.route || (item.route !== "/" && pathname.startsWith(item.route + "/")) ? "page" : undefined}>
+                  {items.map(item => { const { id, label, Icon, route } = item; const isActive = pathname === route || (route !== "/" && pathname.startsWith(route + "/")); return (
+                    <button key={id} type="button" className={`site-sidebar-item${isActive ? " is-active" : ""}`} onClick={() => handleNavigation(id)} aria-current={isActive ? "page" : undefined}>
                       <Icon size={22} strokeWidth={2} aria-hidden="true" />
                       <span>{label}</span>
                     </button>
