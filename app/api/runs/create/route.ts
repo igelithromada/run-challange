@@ -1,3 +1,4 @@
+import { reconcileChallengesForUser } from "../../../lib/challenges/server";
 
 import { NextResponse } from "next/server";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
@@ -107,6 +108,8 @@ export async function POST(request: Request) {
     };
 
     const ref = await adminDb.collection("runs").add(safeData);
+    try { await reconcileChallengesForUser(adminDb, decoded.uid); }
+    catch (error) { console.error("Challenge reconciliation after create failed:", error); }
     return NextResponse.json({ ok: true, id: ref.id });
   } catch (error) {
     const authError = authErrorResponse(error);
