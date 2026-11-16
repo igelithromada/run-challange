@@ -1,4 +1,4 @@
-import type { ActivityType } from "../types";
+import type { ActivityType, ChallengeKind } from "../types";
 
 export function isActivityType(value: unknown): value is ActivityType {
   return value === "běh" || value === "chůze";
@@ -10,6 +10,21 @@ export function normalizeActivityType(value: unknown): ActivityType {
 
 export function normalizeTeamName(value: unknown): string {
   return typeof value === "string" ? value.trim().slice(0, 60) : "";
+}
+
+export function isChallengeKind(value: unknown): value is ChallengeKind {
+  return value === "distance" || value === "activities" || value === "activeDays" || value === "sharedDistance";
+}
+export function isValidChallengeGoal(kind: ChallengeKind, value: unknown): boolean {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return false;
+  return kind === "distance" || kind === "sharedDistance" ? n <= 100000 : Number.isInteger(n) && n <= 100000;
+}
+export function isValidDateOnly(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
 
 export function isValidRegistrationCode(value: unknown): value is string {
