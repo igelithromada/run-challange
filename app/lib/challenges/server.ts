@@ -9,19 +9,17 @@ function pragueDate(value: unknown): string {
 
 function inPeriod(date:string,start:string,end:string){return date>=start&&date<=end;}
 
-async function calculateParticipantResult(adminDb:any, challenge:any, participant:any) {
+async function calculateParticipantResult(adminDb:any, challenge:any, participant:any, transaction?:any) {
   const userId=String(participant.userId||"");
   if(!userId)return {result:0,targetReachedAt:null};
-  const runsSnap=await adminDb.collection("runs")
-    .where("uid","==",userId)
-    .where("type","==",challenge.activityType)
-    .get();
+  const runsQuery=adminDb.collection("runs").where("uid","==",userId);
+  const runsSnap=transaction ? await transaction.get(runsQuery) : await runsQuery.get();
   const joinedAt=participant.joinedAt;
   const joinedMillis=joinedAt?.toMillis ? joinedAt.toMillis() : 0;
   const values=runsSnap.docs.map((d:any)=>({id:d.id,data:d.data()})).filter((item:any)=>{
     const timestamp=item.data.timestamp;
     const millis=timestamp?.toMillis ? timestamp.toMillis() : new Date(timestamp).getTime();
-    return millis>=joinedMillis && inPeriod(pragueDate(timestamp),challenge.startDate,challenge.endDate);
+    return item.data.type === challenge.activityType && Number.isFinite(millis) && millis <= Date.now() && millis>=joinedMillis && inPeriod(pragueDate(timestamp),challenge.startDate,challenge.endDate);
   }).sort((a:any,b:any)=>{
     const ta=a.data.timestamp?.toMillis ? a.data.timestamp.toMillis() : new Date(a.data.timestamp).getTime();
     const tb=b.data.timestamp?.toMillis ? b.data.timestamp.toMillis() : new Date(b.data.timestamp).getTime();
@@ -54,50 +52,42 @@ export async function reconcileChallengesForUser(adminDb:any, userId:string) {
   const lifecycle=await adminDb.collection("challenges").where("state","in",["planned","active"]).get();
   for(const challengeDoc of lifecycle.docs){
     const data=challengeDoc.data()||{};
-    if ((data.state==="planned" && String(data.startDate||"")<=today) || String(data.endDate||"")<today) {
+    if (!data.deleting && ((data.state==="planned" && String(data.startDate||"")<=today) || String(data.endDate||"")<today)) {
       await reconcileChallengeState(adminDb,challengeDoc.id);
     }
   }
   const snapshot=await adminDb.collection("challenges").where("state","==","active").get();
   for(const challengeDoc of snapshot.docs){
     const challenge=challengeDoc.data()||{};
+    if(challenge.deleting)continue;
     if(challenge.activityType!=="běh"&&challenge.activityType!=="chůze")continue;
-    const participantRef=challengeDoc.ref.collection("participants").doc(userId);
-    const participant=await participantRef.get();
-    if(!participant.exists||participant.data()?.active!==true){
-      if(challenge.kind==="sharedDistance"){
-        const activeParticipants=await challengeDoc.ref.collection("participants").where("active","==",true).get();
-        let shared=0;
-        for(let start=0;start<activeParticipants.docs.length;start+=400){
-          const batch=adminDb.batch();
-          for(const p of activeParticipants.docs.slice(start,start+400)){
-            const pd=p.data()||{};
-            const calculated=await calculateParticipantResult(adminDb,challenge,{...pd,userId:p.id});
-            shared+=Number(calculated.result||0);
-            batch.set(p.ref,calculated,{merge:true});
-          }
-          await batch.commit();
-        }
-        await challengeDoc.ref.update({sharedProgress:shared});
-      }
-      continue;
-    }
-    const result=await calculateParticipantResult(adminDb,challenge,{...participant.data(),userId});
-    await participantRef.set(result,{merge:true});
+    const recalculate = async (memberId:string) => {
+      const memberRef=challengeDoc.ref.collection("participants").doc(memberId);
+      await adminDb.runTransaction(async (tx:any) => {
+        const [currentChallenge, member]=await Promise.all([tx.get(challengeDoc.ref),tx.get(memberRef)]);
+        const current=currentChallenge.data();
+        if(!current || current.deleting || current.state!=="active" || member.data()?.active!==true)return;
+        // Reading runs inside the transaction prevents an older calculation
+        // overwriting a result after an activity or membership changes.
+        const calculated=await calculateParticipantResult(adminDb,current,{...member.data(),userId:memberId},tx);
+        tx.set(memberRef,calculated,{merge:true});
+      });
+    };
     if(challenge.kind==="sharedDistance"){
-      const participants=await challengeDoc.ref.collection("participants").where("active","==",true).get();
-      let shared=0;
-      for(let start=0;start<participants.docs.length;start+=400){
-        const batch=adminDb.batch();
-        for(const p of participants.docs.slice(start,start+400)){
-          const pd=p.data()||{};
-          const calculated=p.id===userId?result:await calculateParticipantResult(adminDb,challenge,{...pd,userId:p.id});
-          shared+=Number(calculated.result||0);
-          batch.set(p.ref,calculated,{merge:true});
-        }
-        await batch.commit();
-      }
-      await challengeDoc.ref.update({sharedProgress:shared});
+      const members=await challengeDoc.ref.collection("participants").where("active","==",true).get();
+      for(const member of members.docs)await recalculate(member.id);
+      await adminDb.runTransaction(async (tx:any) => {
+        const [currentChallenge,members]=await Promise.all([
+          tx.get(challengeDoc.ref),
+          tx.get(challengeDoc.ref.collection("participants").where("active","==",true)),
+        ]);
+        const current=currentChallenge.data();
+        if(!current || current.deleting || current.state!=="active")return;
+        const shared=members.docs.reduce((sum:number,p:any)=>sum+Number(p.data().result||0),0);
+        tx.update(challengeDoc.ref,{sharedProgress:shared,participantCount:members.size});
+      });
+    }else{
+      await recalculate(userId);
     }
   }
 }
@@ -107,6 +97,7 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
   const snap=await ref.get();
   if(!snap.exists)return;
   const challenge=snap.data()||{};
+  if(challenge.deleting)return;
   const todayParts=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Prague",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
   const get=(type:string)=>todayParts.find(p=>p.type===type)?.value||"";
   const today=`${get("year")}-${get("month")}-${get("day")}`;
@@ -129,7 +120,7 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
         for(const p of finalized.slice(start,start+450)){
           batch.set(p.doc.ref,{result:Number(p.data.result||0),targetReachedAt:p.data.targetReachedAt||null,finalResult:Number(p.data.result||0),finalizedAt:Timestamp.now()},{merge:true});
         }
-        if(start===0) batch.update(ref,{state:"completed",completedAt:Timestamp.now(),sharedProgress:shared,goalReached:shared>=Number(challenge.goal||0)});
+        if(start + 450 >= finalized.length) batch.update(ref,{state:"completed",completedAt:Timestamp.now(),sharedProgress:shared,goalReached:shared>=Number(challenge.goal||0)});
         await batch.commit();
       }
       if(finalized.length===0) await ref.update({state:"completed",completedAt:Timestamp.now(),sharedProgress:0,goalReached:false});
@@ -155,7 +146,7 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
           const rank = finalRanks.get(String(p.id)) || 0;
           batch.set(original.ref,{result:Number(p.result||0),targetReachedAt:p.targetReachedAt||null,finalResult:Number(p.result||0),finalRank:rank,finalizedAt:Timestamp.now()},{merge:true});
         }
-        if(start===0) batch.update(ref,{state:"completed",completedAt:Timestamp.now(),winnerId:winner,goalReached:reached.length>0});
+        if(start + 450 >= all.length) batch.update(ref,{state:"completed",completedAt:Timestamp.now(),winnerId:winner,goalReached:reached.length>0});
         await batch.commit();
       }
       if(all.length===0) await ref.update({state:"completed",completedAt:Timestamp.now(),winnerId:null,goalReached:false});

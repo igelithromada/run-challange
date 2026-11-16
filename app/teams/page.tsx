@@ -72,9 +72,9 @@ export default function TeamsPage() {
   }, [router]);
 
   const teamsQuery = useMemo(() => allTeamsQuery(), []);
-  const teamsState = useSharedFirestoreQuery<Team>("teams:all", teamsQuery);
+  const teamsState = useSharedFirestoreQuery<Team>(`teams:all:${user?.uid || "anonymous"}`, teamsQuery, !!user);
   const teams = teamsState.data;
-  const visibleTeams = teams.filter(team => (team.type === "chůze" ? "chůze" : "běh") === selectedType);
+  const visibleTeams = teams.filter(team => !team.deleting && (team.type === "chůze" ? "chůze" : "běh") === selectedType);
   const joinedTeamId = teamIdsByType[selectedType];
   const isActuallyJoined = (team: Team) =>
     !!user && Array.isArray(team.memberIds) && team.memberIds.includes(user.uid);
@@ -134,7 +134,7 @@ export default function TeamsPage() {
     try {
       const result = await teamRequest("leave", { teamId });
       const next = result.teamIdsByType || {};
-      setTeamIdsByType({ běh: next.běh ?? teamIdsByType.běh, chůze: next.chůze ?? teamIdsByType.chůze });
+      setTeamIdsByType({ běh: next.běh !== undefined ? next.běh : teamIdsByType.běh, chůze: next.chůze !== undefined ? next.chůze : teamIdsByType.chůze });
       showAppToast("Z týmu ses odhlásil.");
     } catch (error) {
       showAppToast(error instanceof Error ? error.message : "Z týmu se nepodařilo odejít.", "error");
@@ -191,6 +191,8 @@ export default function TeamsPage() {
       home: "/",
       myrun: "/myruns",
       teams: "/teams",
+      challenges: "/challenges",
+      routes: "/routes",
       settings: "/settings",
       statistics: "/statistics",
       participants: "/participants",

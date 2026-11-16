@@ -21,7 +21,7 @@ service cloud.firestore {
       allow read: if isAdmin() || (signedIn() && request.auth.uid == userId);
       allow create: if signedIn()
         && request.auth.uid == userId
-        && !request.resource.data.keys().hasAny(["role", "blocked"]);
+        && !request.resource.data.keys().hasAny(["role", "blocked", "teamIdsByType", "teamId", "joinedTeam", "challengeCreatedAt"]);
 
       // Users may edit their own profile/preferences, but never elevate themselves
       // or change moderation/account-control fields.
@@ -89,7 +89,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Collection-group participant lookup for the current user.\n    match /{path=**}/participants/{participantId} {\n      allow read: if signedIn();\n      allow write: if false;\n    }\n\n    match /challengeNames/{nameKey} {
+    // Collection-group participant lookup for the current user.
+    match /{path=**}/participants/{participantId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /challengeNames/{nameKey} {
       allow read, write: if false;
     }
 

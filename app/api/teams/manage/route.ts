@@ -26,8 +26,10 @@ export async function POST(request: Request) {
         const data = userSnap.exists ? userSnap.data() || {} : {};
         const stored = data.teamIdsByType && typeof data.teamIdsByType === "object"
           ? data.teamIdsByType as Record<string, unknown> : {};
-        const existingTeamId = typeof stored[type] === "string" ? String(stored[type]) : "";
-        if (existingTeamId) throw new Error("TEAM_ALREADY_JOINED");
+        const memberships = await transaction.get(adminDb.collection("teams").where("memberIds", "array-contains", decoded.uid));
+        if (memberships.docs.some(team => !team.data().deleting && (team.data().type === "chůze" ? "chůze" : "běh") === type)) {
+          throw new Error("TEAM_ALREADY_JOINED");
+        }
         const next = { ...stored, [type]: teamRef.id };
         transaction.create(teamRef, { name, type, createdBy: decoded.uid, challengeGoalKm: 500, avatarUrl: "", avatarPublicId: "", memberIds: [decoded.uid] });
         transaction.set(userRef, { teamIdsByType: next, ...(type === "běh" ? { teamId: teamRef.id, joinedTeam: teamRef.id } : {}) }, { merge: true });
@@ -36,11 +38,12 @@ export async function POST(request: Request) {
     }
 
     const teamId = String(body?.teamId || "");
-    if (!teamId) return NextResponse.json({ error: "Chybí tým." }, { status: 400 });
+    if (!teamId || teamId.includes("/")) return NextResponse.json({ error: "Chybí tým." }, { status: 400 });
     const teamRef = adminDb.collection("teams").doc(teamId);
     const teamSnap = await teamRef.get();
     if (!teamSnap.exists) return NextResponse.json({ error: "Tým neexistuje." }, { status: 404 });
     const team = teamSnap.data() || {};
+    if (team.deleting && action !== "delete") return NextResponse.json({ error: "Tým se právě maže." }, { status: 409 });
     const type = team.type === "chůze" ? "chůze" : "běh";
 
     if (action === "update") {
@@ -69,10 +72,7 @@ export async function POST(request: Request) {
       }
 
       const previousPublicId = typeof team.avatarPublicId === "string" ? team.avatarPublicId : "";
-      await teamRef.set(
-        { challengeGoalKm, avatarUrl, avatarPublicId },
-        { merge: true }
-      );
+      await teamRef.update({ challengeGoalKm, avatarUrl, avatarPublicId });
 
       if (
         previousPublicId &&
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
       if (team.createdBy !== decoded.uid) return NextResponse.json({ error: "Název může měnit jen zakladatel týmu." }, { status: 403 });
       const name = normalizeTeamName(body?.name);
       if (!name) return NextResponse.json({ error: "Zadej název týmu." }, { status: 400 });
-      await teamRef.set({ name }, { merge: true });
+      await teamRef.update({ name });
       return NextResponse.json({ ok: true, name });
     }
 
@@ -111,26 +111,25 @@ export async function POST(request: Request) {
           : {};
         const currentTeamId = typeof stored[type] === "string" ? String(stored[type]) : "";
 
+        if (targetTeamSnap.data()?.deleting) throw new Error("TEAM_NOT_FOUND");
+
         const targetMemberIds = Array.isArray(targetTeamSnap.data()?.memberIds)
           ? (targetTeamSnap.data()?.memberIds as unknown[]).filter((value): value is string => typeof value === "string")
           : [];
         const isTargetMember = targetMemberIds.includes(decoded.uid);
 
-        if (action === "join" && isTargetMember && currentTeamId === teamId) {
-          return { next: { ...stored, [type]: teamId }, changed: false };
-        }
-
         if (action === "leave" && !isTargetMember && currentTeamId !== teamId) {
           return { next: { ...stored, [type]: currentTeamId || null }, changed: false };
         }
 
-        const oldTeamRef = action === "join" && currentTeamId && currentTeamId !== teamId
-          ? adminDb.collection("teams").doc(currentTeamId)
+        // Repair legacy duplicate memberships using the authoritative member lists.
+        // Read every affected document before performing any transaction writes.
+        const memberships = action === "join"
+          ? await transaction.get(adminDb.collection("teams").where("memberIds", "array-contains", decoded.uid))
           : null;
-        if (oldTeamRef) {
-          const oldTeamSnap = await transaction.get(oldTeamRef);
-          if (oldTeamSnap.exists) {
-            transaction.update(oldTeamRef, { memberIds: FieldValue.arrayRemove(decoded.uid) });
+        for (const oldTeam of memberships?.docs || []) {
+          if (oldTeam.id !== teamId && (oldTeam.data().type === "chůze" ? "chůze" : "běh") === type) {
+            transaction.update(oldTeam.ref, { memberIds: FieldValue.arrayRemove(decoded.uid) });
           }
         }
 
@@ -162,7 +161,17 @@ export async function POST(request: Request) {
 
     if (action === "delete") {
       if (team.createdBy !== decoded.uid) return NextResponse.json({ error: "Tým může smazat jen zakladatel." }, { status: 403 });
-      const memberIds = Array.isArray(team.memberIds) ? team.memberIds.filter((value): value is string => typeof value === "string") : [];
+      // Mark deletion atomically with membership writes, so a concurrent join
+      // cannot be accepted after the member cleanup snapshot was captured.
+      const deletingTeam = await adminDb.runTransaction(async transaction => {
+        const snapshot = await transaction.get(teamRef);
+        if (!snapshot.exists) throw new Error("TEAM_NOT_FOUND");
+        const current = snapshot.data() || {};
+        if (current.createdBy !== decoded.uid) throw new Error("NOT_OWNER");
+        transaction.update(teamRef, { deleting: true });
+        return current;
+      });
+      const memberIds = Array.isArray(deletingTeam.memberIds) ? deletingTeam.memberIds.filter((value: unknown): value is string => typeof value === "string") : [];
       // Only clear references that still point to the deleted team. A member
       // may already have moved elsewhere while the deletion is running.
       for (let i = 0; i < memberIds.length; i += 200) {

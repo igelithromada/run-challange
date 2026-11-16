@@ -46,12 +46,12 @@ export default function TeamDetailPage() {
       try {
         const profiles = await getPublicProfiles(memberIds);
         if (!isActive()) return;
-        setMembers(Object.values(profiles).sort((a, b) =>
+        setMembers(memberIds.map(id => profiles[id] || { id, nickname: "Uživatel" }).sort((a, b) =>
           (a.nickname || "Uživatel").localeCompare(b.nickname || "Uživatel", "cs")
         ));
       } catch (error) {
         console.error("Nepodařilo se načíst profily členů týmu", error);
-        if (isActive()) setMembers([]);
+        if (isActive()) setMembers(memberIds.map(id => ({ id, nickname: "Uživatel" })));
       }
     } finally {
       if (isActive()) setLoading(false);
@@ -165,7 +165,7 @@ export default function TeamDetailPage() {
   const handleSelect=async(item:string)=>{
     setMenuVisible(false);
     if(item==="logout"){await signOut(auth);router.push("/login");return;}
-    const routes:Record<string,string>={home:"/",myrun:"/myruns",teams:"/teams",progress:"/progress",trainer:"/trainer",statistics:"/statistics",participants:"/participants",weather:"/weather",settings:"/settings",admin:"/admin"};
+    const routes:Record<string,string>={home:"/",myrun:"/myruns",teams:"/teams",challenges:"/challenges",routes:"/routes",progress:"/progress",trainer:"/trainer",statistics:"/statistics",participants:"/participants",weather:"/weather",settings:"/settings",admin:"/admin"};
     router.push(routes[item]||"/");
   };
 
@@ -193,7 +193,7 @@ export default function TeamDetailPage() {
       <button className="ui-icon-button team-back-button" type="button" onClick={()=>router.push("/teams")} aria-label="Zpět na týmy" title="Zpět na týmy"><ArrowLeft size={19}/></button>
       <header className="team-detail-header">
         <div className="team-detail-avatar">{avatarUrl?<img src={cloudinaryImageUrl(avatarUrl,160)} alt="Avatar týmu"/>:<Users size={30}/>}</div>
-        <div><span className="progress-eyebrow">TÝM PRO {teamType==="běh"?"BĚH":"CHŮZI"}</span><h1>{team?.name}</h1><p>{members.length} {members.length===1?"účastník":"účastníků"} · cíl {Number(team?.challengeGoalKm)||500} km</p></div>
+        <div><span className="progress-eyebrow">TÝM PRO {teamType==="běh"?"BĚH":"CHŮZI"}</span><h1>{team?.name}</h1><p>{team.memberIds?.length || 0} {team.memberIds?.length===1?"účastník":"účastníků"} · cíl {Number(team?.challengeGoalKm)||500} km</p></div>
       </header>
 
       {isOwner && <section className="tile team-settings-card">

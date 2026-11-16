@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - fix-from-working-23e5eed
   pull_request:
     branches:
       - main
@@ -28,13 +29,25 @@ jobs:
           cache: npm
 
       - name: Instalace a synchronizace závislostí
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Kontrola TypeScriptu
         run: npx tsc --noEmit
 
       - name: Kontrola ESLintu
         run: npm run lint
+
+      - name: Regresní testy týmů a výzev
+        run: npm test
+
+      - name: Nastavení Javy pro Firestore emulátor
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Test oprávnění a souběžných transakcí ve Firestore
+        run: npm run test:emulator
 
       - name: Produkční sestavení
         run: npm run build

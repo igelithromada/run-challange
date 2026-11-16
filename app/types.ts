@@ -102,6 +102,7 @@ export interface UserData {
 }
 
 export interface TeamData {
+  deleting?: boolean;
   id: string;
   organizationId?: string;
   name: string;
@@ -117,6 +118,7 @@ export type ChallengeKind = "distance"|"activities"|"activeDays"|"sharedDistance
 export type ChallengeState = "planned"|"active"|"completed";
 
 export interface ChallengeData {
+  deleting?: boolean;
   id:string; organizationId?:string; name:string; description?:string; createdBy?:string; avatarUrl?:string;
   avatarPublicId?:string; kind:ChallengeKind; activityType:ActivityType; goal:number;
   startDate:string; endDate:string; state:ChallengeState; participantCount?:number;

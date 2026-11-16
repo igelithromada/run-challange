@@ -83,6 +83,7 @@ export default function ChallengesPage() {
       const data=await request("create",{name,description,kind,activityType,goal:Number(goal),startDate,endDate,avatarUrl,avatarPublicId});
       const createdChallenge = data.challenge as ChallengeData | undefined;
       setName("");setDescription("");setGoal("");setStartDate("");setEndDate("");setAvatarUrl("");setAvatarPublicId("");
+      setJoinedChallengeIds(current => new Set([...current, data.id]));
       if (createdChallenge) {
         setGroups(current => ({
           active: createdChallenge.state === "active" ? [createdChallenge, ...current.active.filter(item => item.id !== createdChallenge.id)] : current.active.filter(item => item.id !== createdChallenge.id),
@@ -105,13 +106,14 @@ export default function ChallengesPage() {
   const shift=(delta:number)=>{setMonth(current=>new Date(current.getFullYear(),current.getMonth()+delta,1));};
 
   useEffect(() => {
+    if (!user) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
-    Promise.all((["active","planned","completed"] as const).map(async state => {
+    request("refresh", {}).then(() => Promise.all((["active","planned","completed"] as const).map(async state => {
       const result = await fetchChallengesPage(activityType, state, monthStart, monthEnd, 10);
       return [state, result] as const;
-    })).then(async results => {
+    }))).then(async results => {
       if (cancelled) return;
       const nextGroups = { active: results[0][1].items, planned: results[1][1].items, completed: results[2][1].items };
       setGroups(nextGroups);
@@ -119,7 +121,7 @@ export default function ChallengesPage() {
       const authorIds = allItems.map(item => String(item.createdBy || "")).filter(Boolean);
       const [authorProfiles, joinedIds] = await Promise.allSettled([
         import("../lib/services/publicProfiles").then(({ getPublicProfiles }) => getPublicProfiles(authorIds)),
-        user ? getActiveChallengeIdsForUser(user.uid) : Promise.resolve([]),
+        user ? getActiveChallengeIdsForUser(user.uid, allItems.map(item => item.id)) : Promise.resolve([]),
       ]);
       if (cancelled) return;
       setAuthors(authorProfiles.status === "fulfilled" ? authorProfiles.value : {});

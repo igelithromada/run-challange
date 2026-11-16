@@ -8,7 +8,10 @@ import { cloudinaryPublicIdFromUrl, isUserCloudinaryPublicId } from "../../../li
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
 
-const key=(name:string)=>name.trim().toLocaleLowerCase("cs-CZ");
+const key=(name:string)=>{
+  const value=name.trim().toLocaleLowerCase("cs-CZ").replace(/%/g,"%25").replace(/\//g,"%2F");
+  return value==="." || value===".." ? value.replace(/\./g,"%2E") : value;
+};
 const startMonth=(date:string)=>date.slice(0,7);
 function challengeImage(body:any, uid:string) {
   const avatarUrl=typeof body?.avatarUrl==="string"?body.avatarUrl.trim():"";
@@ -32,6 +35,11 @@ export async function POST(request:Request){
     const body=await request.json().catch(()=>({}));
     const action=String(body?.action||"");
     const uid=decoded.uid;
+
+    if(action==="refresh"){
+      await reconcileChallengesForUser(adminDb,uid);
+      return NextResponse.json({ok:true});
+    }
 
     if(action==="create"){
       const name=normalizeName(body?.name), description=normalizeDescription(body?.description);
@@ -58,9 +66,10 @@ export async function POST(request:Request){
         const existingSnap=await tx.get(adminDb.collection("challenges").where("createdBy","==",uid));
         const activeOrPlannedCount=existingSnap.docs.filter(d=>{
           const state=d.data()?.state;
-          return state==="planned" || state==="active";
+          return !d.data()?.deleting && (state==="planned" || state==="active") && String(d.data()?.endDate || "") >= today;
         }).length;
         if(activeOrPlannedCount>=5)throw new Error("CHALLENGE_CREATE_LIMIT");
+        tx.set(userRef,{challengeCreatedAt:Timestamp.now()},{merge:true});
         tx.create(nameRef,{challengeId:challenge.id,createdAt:Timestamp.now()});
         tx.create(challenge,{name,nameKey:key(name),description,createdBy:uid,kind,activityType,goal,startDate,endDate,startMonth:startMonth(startDate),state:startDate===today?"active":"planned",participantCount:1,sharedProgress:0,avatarUrl:image.avatarUrl,avatarPublicId:image.avatarPublicId,createdAt:Timestamp.now()});
         tx.create(challenge.collection("participants").doc(uid),{userId:uid,joinedAt:Timestamp.now(),active:true});
@@ -81,6 +90,7 @@ export async function POST(request:Request){
     if(action==="join" || action==="leave"){
       const challengeId=String(body?.challengeId||"");
       if(!challengeId)return NextResponse.json({error:"Chybí výzva."},{status:400});
+      if(!challengeId || challengeId.includes("/"))return NextResponse.json({error:"Chybí platné ID výzvy."},{status:400});
       const ref=adminDb.collection("challenges").doc(challengeId);
       const member=ref.collection("participants").doc(uid);
       await adminDb.runTransaction(async tx=>{
@@ -88,7 +98,7 @@ export async function POST(request:Request){
         if(!snap.exists)throw new Error("CHALLENGE_NOT_FOUND");
         const data=snap.data()||{};
         const today=localDateString();
-        if(data.state==="completed" || String(data.endDate||"") < today)throw new Error("CHALLENGE_LOCKED");
+        if(data.deleting || data.state==="completed" || String(data.endDate||"") < today)throw new Error("CHALLENGE_LOCKED");
         if(action==="join"){
           const existing=await tx.get(member);
           if(existing.exists && existing.data()?.active===true)return;
@@ -109,24 +119,27 @@ export async function POST(request:Request){
 
     if(action==="delete"){
       const challengeId=String(body?.challengeId||"");
+      if(!challengeId || challengeId.includes("/"))return NextResponse.json({error:"Chybí platné ID výzvy."},{status:400});
       const ref=adminDb.collection("challenges").doc(challengeId);
-      let nameKey="";
       await adminDb.runTransaction(async tx=>{
         const snap=await tx.get(ref);
         if(!snap.exists)throw new Error("CHALLENGE_NOT_FOUND");
         const data=snap.data()||{};
         if(data.createdBy!==uid)throw new Error("NOT_OWNER");
-        if(data.state!=="planned")throw new Error("CHALLENGE_LOCKED");
-        nameKey=String(data.nameKey||"");
+        if(data.state!=="planned" || String(data.startDate||"")<=localDateString())throw new Error("CHALLENGE_LOCKED");
+        const nameKey=String(data.nameKey||"");
+        const nameRef=nameKey ? adminDb.collection("challengeNames").doc(nameKey) : null;
+        const nameSnap=nameRef ? await tx.get(nameRef) : null;
         tx.update(ref,{deleting:true});
+        if(nameRef && nameSnap?.data()?.challengeId===challengeId) tx.delete(nameRef);
       });
       await adminDb.recursiveDelete(ref);
-      if(nameKey) await adminDb.collection("challengeNames").doc(nameKey).delete().catch(()=>undefined);
       return NextResponse.json({ok:true});
     }
 
     if(action==="edit"){
       const challengeId=String(body?.challengeId||"");
+      if(!challengeId || challengeId.includes("/"))return NextResponse.json({error:"Chybí platné ID výzvy."},{status:400});
       const ref=adminDb.collection("challenges").doc(challengeId);
       const nextName=normalizeName(body?.name), nextDescription=normalizeDescription(body?.description);
       const nextKind=body?.kind, nextType=normalizeActivityType(body?.activityType);
@@ -144,16 +157,18 @@ export async function POST(request:Request){
         if(!snap.exists)throw new Error("CHALLENGE_NOT_FOUND");
         const data=snap.data()||{};
         if(data.createdBy!==uid)throw new Error("NOT_OWNER");
-        if(data.state!=="planned")throw new Error("CHALLENGE_LOCKED");
+        if(data.deleting || data.state!=="planned" || String(data.startDate||"")<=localDateString())throw new Error("CHALLENGE_LOCKED");
         const newKey=key(nextName), oldKey=data.nameKey;
         if(newKey!==oldKey){
           const nameSnap=await tx.get(adminDb.collection("challengeNames").doc(newKey));
           if(nameSnap.exists)throw new Error("CHALLENGE_NAME_TAKEN");
-          tx.delete(adminDb.collection("challengeNames").doc(oldKey));
+          if(oldKey) tx.delete(adminDb.collection("challengeNames").doc(oldKey));
           tx.create(adminDb.collection("challengeNames").doc(newKey),{challengeId,createdAt:Timestamp.now()});
         }
-        tx.update(ref,{name:nextName,nameKey:newKey,description:nextDescription,kind:nextKind,activityType:nextType,goal:nextGoal,startDate:nextStart,endDate:nextEnd,startMonth:startMonth(nextStart),avatarUrl:image.avatarUrl,avatarPublicId:image.avatarPublicId});
+        tx.update(ref,{state:nextStart===today?"active":"planned",name:nextName,nameKey:newKey,description:nextDescription,kind:nextKind,activityType:nextType,goal:nextGoal,startDate:nextStart,endDate:nextEnd,startMonth:startMonth(nextStart),avatarUrl:image.avatarUrl,avatarPublicId:image.avatarPublicId});
       });
+      try { await reconcileChallengesForUser(adminDb,uid); }
+      catch(error) { console.error("Challenge reconciliation after edit failed:",error); }
       return NextResponse.json({ok:true});
     }
 

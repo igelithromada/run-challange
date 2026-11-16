@@ -8,7 +8,7 @@ export function allChallengesQuery(): Query {
 
 export async function getChallenge(id: string): Promise<ChallengeData | null> {
   const snap = await getDoc(doc(db, "challenges", id));
-  return snap.exists() ? ({ id: snap.id, ...snap.data() } as ChallengeData) : null;
+  return snap.exists() && !snap.data().deleting ? ({ id: snap.id, ...snap.data() } as ChallengeData) : null;
 }
 
 export async function getChallengeParticipants(id: string) {
@@ -32,7 +32,7 @@ export async function fetchChallengesPage(
   const allItems = snapshot.docs
     .map(d => ({ id: d.id, ...d.data() } as ChallengeData))
     .filter(item =>
-      item.activityType === activityType &&
+      !item.deleting && item.activityType === activityType &&
       item.state === state &&
       String(item.startDate || "") <= monthEnd &&
       String(item.endDate || "") >= monthStart
@@ -87,7 +87,12 @@ export async function getChallengeParticipant(id: string, userId: string) {
 }
 
 
-export async function getActiveChallengeIdsForUser(userId: string): Promise<string[]> {
+export async function getActiveChallengeIdsForUser(userId: string, challengeIds?: string[]): Promise<string[]> {
+  if (challengeIds) {
+    const ids = [...new Set(challengeIds)];
+    const memberships = await Promise.all(ids.map(id => getChallengeParticipant(id, userId)));
+    return memberships.flatMap((member, index) => member && "active" in member && member.active === true ? [ids[index]] : []);
+  }
   const snapshot = await getDocs(
     query(collectionGroup(db, "participants"), where("userId", "==", userId))
   );
