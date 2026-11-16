@@ -28,7 +28,7 @@ jobs:
           cache: npm
 
       - name: Instalace a synchronizace závislostí
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Kontrola TypeScriptu
         run: npx tsc --noEmit
