@@ -2,26 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Footprints, Users, Trophy, SlidersHorizontal, ShieldCheck, X, CloudSun, TrendingUp, ListOrdered, Dumbbell, Map, UserRound } from "lucide-react";
+import { UserRound, X } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { getUserProfile } from "../lib/services/users";
+import { NAVIGATION_GROUPS, NAVIGATION_ITEMS } from "../lib/navigation";
 import { useRouter } from "next/navigation";
 
 type SidebarProps = { visible: boolean; onClose: () => void; onSelect: (item: string) => void };
-
-const items = [
-  { id: "myrun", label: "Moje aktivity", Icon: Footprints },
-  { id: "teams", label: "Týmy", Icon: Users },
-  { id: "challenges", label: "Výzvy", Icon: Trophy },
-  { id: "progress", label: "Můj pokrok", Icon: TrendingUp },
-  { id: "trainer", label: "Osobní trenér", Icon: Dumbbell },
-  { id: "statistics", label: "Výsledky", Icon: Trophy },
-  { id: "participants", label: "Účastníci", Icon: ListOrdered },
-  { id: "weather", label: "Počasí pro běh", Icon: CloudSun },
-  { id: "routes", label: "Doporučené trasy", Icon: Map },
-  { id: "settings", label: "Nastavení", Icon: SlidersHorizontal },
-];
 
 export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -30,19 +18,11 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
   const router = useRouter();
 
   const handleNavigation = (id: string) => {
-    if (id === "profile") {
-      onClose();
-      router.push("/profile");
-      return;
-    }
-    if (id === "routes") {
-      onClose();
-      router.push("/routes");
-      return;
-    }
-    if (id === "challenges") {
-      onClose();
-      router.push("/challenges");
+    const item = NAVIGATION_ITEMS.find(entry => entry.id === id);
+    if (!item || (item.adminOnly && !isAdmin)) return;
+    onClose();
+    if (item.id === "routes" || item.id === "challenges") {
+      router.push(item.route);
       return;
     }
     onSelect(id);
@@ -102,33 +82,49 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
 
   if (!visible) return null;
 
-  const navigationItems = isAdmin
-    ? [...items, { id: "admin", label: "Administrace", Icon: ShieldCheck }]
-    : items;
-
   return createPortal(
     <div className="site-sidebar-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Navigační nabídka">
       <nav className="site-sidebar-panel" onClick={event => event.stopPropagation()} aria-label="Hlavní navigace">
         <div className="site-sidebar-header">
-          <span>Navigace</span>
+          <div>
+            <span>Navigace</span>
+            <small className="site-sidebar-subtitle">{nickname || email || "Dolní Lhota v pohybu"}</small>
+          </div>
           <button type="button" className="site-sidebar-icon-button" onClick={onClose} aria-label="Zavřít navigaci">
             <X size={20} aria-hidden="true" />
           </button>
         </div>
-        <button type="button" className="site-sidebar-profile" onClick={() => handleNavigation("profile")}>
+
+        <button type="button" className="site-sidebar-profile" onClick={() => { onClose(); router.push("/profile"); }}>
           <span className="site-sidebar-profile-icon"><UserRound size={22} aria-hidden="true" /></span>
           <span className="site-sidebar-profile-copy">
             <strong>Můj účet</strong>
+            <small>Profil, heslo a účet</small>
           </span>
         </button>
-        <div className="site-sidebar-grid">
-          {navigationItems.map(({ id, label, Icon }) => (
-            <button key={id} type="button" className="site-sidebar-item" onClick={() => handleNavigation(id)}>
-              <Icon size={22} strokeWidth={2} aria-hidden="true" />
-              <span>{label}</span>
-            </button>
-          ))}
+
+        <div className="site-sidebar-groups">
+          {NAVIGATION_GROUPS.map(group => {
+            const items = NAVIGATION_ITEMS.filter(item =>
+              item.group === group.id && (!item.adminOnly || isAdmin)
+            );
+            if (!items.length) return null;
+            return (
+              <section className="site-sidebar-section" key={group.id} aria-labelledby={`sidebar-group-${group.id}`}>
+                <h2 id={`sidebar-group-${group.id}`}>{group.label}</h2>
+                <div className="site-sidebar-grid">
+                  {items.map(({ id, label, Icon }) => (
+                    <button key={id} type="button" className="site-sidebar-item" onClick={() => handleNavigation(id)}>
+                      <Icon size={22} strokeWidth={2} aria-hidden="true" />
+                      <span>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
+
         <button type="button" className="site-sidebar-item sidebar-close" onClick={onClose}>
           <X size={20} aria-hidden="true" />
           <span>Zavřít</span>
