@@ -6232,3 +6232,29 @@ html[data-theme="white"] .site-sidebar-item.is-active{background:#e8f1f5!importa
 
 .site-sidebar-profile.is-active{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3)}
 html[data-theme="white"] .site-sidebar-profile.is-active{background:#e8f1f5;border-color:#afc4cf}
+
+/* File inputy: nativní tlačítko nesmí mít bílý text na bílém pozadí. */
+html:not([data-theme="white"]) .teams-create-form input[type="file"]::file-selector-button,
+html:not([data-theme="white"]) .challenges-create input[type="file"]::file-selector-button {
+  min-height:38px;
+  margin-right:.65rem;
+  padding:.45rem .75rem;
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:10px;
+  background:rgba(255,255,255,.14);
+  color:#fff;
+  font:inherit;
+  font-weight:700;
+}
+html[data-theme="white"] .teams-create-form input[type="file"]::file-selector-button,
+html[data-theme="white"] .challenges-create input[type="file"]::file-selector-button {
+  min-height:38px;
+  margin-right:.65rem;
+  padding:.45rem .75rem;
+  border:1px solid #c7d4da;
+  border-radius:10px;
+  background:#eef3f6;
+  color:#17232b;
+  font:inherit;
+  font-weight:700;
+}
