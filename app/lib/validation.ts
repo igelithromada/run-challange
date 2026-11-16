@@ -8,6 +8,14 @@ export function normalizeActivityType(value: unknown): ActivityType {
   return value === "chůze" ? "chůze" : "běh";
 }
 
+export function normalizeName(value: unknown, max = 40): string {
+  return typeof value === "string" ? value.trim().slice(0, max) : "";
+}
+
+export function normalizeDescription(value: unknown): string {
+  return typeof value === "string" ? value.trim().slice(0, 200) : "";
+}
+
 export function normalizeTeamName(value: unknown): string {
   return typeof value === "string" ? value.trim().slice(0, 60) : "";
 }
