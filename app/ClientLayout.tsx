@@ -13,10 +13,6 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   useThemeLoader();
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
-  }, []);
-
-  useEffect(() => {
     try {
       const testMode = localStorage.getItem("dolni-lhota-weather-test-v1");
       if (testMode) {
