@@ -117,17 +117,21 @@ export default function RunWeatherRecommendation({
         : "Aktuální podmínky";
   const content = (
     <section className={`run-weather-recommendation run-weather-${tone}`} aria-live="polite">
-      <div className="run-weather-icon">
-        {current ? <WeatherVisual type={current.weatherCondition?.type} size={50} night={isNight} /> : <Icon size={42} strokeWidth={1.8} />}
-      </div>
-      <div className="run-weather-copy">
-        
-        <div className="run-weather-summary">
-          {current && <strong className="run-weather-temperature">{Math.round(temperature)} °C</strong>}
-          <strong>{status}</strong>
+      <div className="run-weather-forecast">
+        <div className="run-weather-forecast-icon">
+          {current
+            ? <WeatherVisual type={current.weatherCondition?.type} size={70} night={isNight} />
+            : <Icon size={48} strokeWidth={1.8} />}
         </div>
-        {current && <div className="run-weather-condition">{weatherDescription(current.weatherCondition?.type)}</div>}
-        <span className="run-weather-location">Dolní Lhota</span>
+        <div className="run-weather-forecast-copy">
+          {current && <strong className="run-weather-temperature">{Math.round(temperature)} °C</strong>}
+          <strong className="run-weather-status">{status}</strong>
+          {current && <div className="run-weather-condition">{weatherDescription(current.weatherCondition?.type)}</div>}
+          <span className="run-weather-location">Dolní Lhota</span>
+        </div>
+      </div>
+
+      <div className="run-weather-advice">
         <p>{advice}</p>
         {current && <small><Wind size={14} /> vítr {Math.round(wind)} km/h{rainChance > 0 ? ` · srážky ${Math.round(rainChance)} %` : ""}</small>}
         {linkToWeather && <span className="run-weather-more">Podrobné počasí <span aria-hidden="true">→</span></span>}
