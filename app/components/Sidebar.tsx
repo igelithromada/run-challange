@@ -73,7 +73,7 @@ export default function Sidebar({ visible, onClose }: SidebarProps) {
 
   useEffect(() => {
     if (!visible) return;
-    const closeButton = document.querySelector<HTMLButtonElement>(".site-sidebar-panel .sidebar-close");
+    const closeButton = document.querySelector<HTMLButtonElement>(".site-sidebar-header .site-sidebar-icon-button");
     closeButton?.focus();
   }, [visible]);
 

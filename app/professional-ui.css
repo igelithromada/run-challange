@@ -707,3 +707,65 @@ html[data-theme="light"] .notification-item.is-unread { background: #edf7fa; }
   .challenge-summary-card .activity-avatar { grid-column: 1; grid-row: 1 / span 2; width: 38px; height: 38px; min-width: 38px; }
   .challenge-summary-card .challenge-state-label { grid-column: 2; justify-self: start; }
 }
+
+
+/* Navigace: všechny položky mají stejný rozměr napříč skupinami. */
+.site-sidebar-panel {
+  --sidebar-tile-height: 5.25rem;
+  display: flex !important;
+  flex-direction: column;
+  height: auto !important;
+  max-height: calc(100dvh - 24px) !important;
+  padding: .75rem !important;
+  gap: .65rem !important;
+  overflow: hidden !important;
+}
+.site-sidebar-panel > .site-sidebar-header,
+.site-sidebar-panel > .site-sidebar-profile { flex: 0 0 auto; width: 100%; box-sizing: border-box; }
+.site-sidebar-header { position: relative; }
+.site-sidebar-groups {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  gap: .65rem;
+  padding: .2rem 3px .35rem;
+}
+.site-sidebar-section { flex: 0 0 auto; }
+.site-sidebar-section .site-sidebar-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-auto-rows: var(--sidebar-tile-height);
+  align-items: stretch;
+  gap: .5rem !important;
+  overflow: visible;
+}
+.site-sidebar-section .site-sidebar-grid > .site-sidebar-item {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--sidebar-tile-height) !important;
+  min-height: var(--sidebar-tile-height) !important;
+  max-height: var(--sidebar-tile-height);
+  aspect-ratio: auto !important;
+  margin: 0 !important;
+  padding: .5rem .3rem !important;
+  gap: .3rem !important;
+  font-size: .8rem !important;
+}
+.site-sidebar-section .site-sidebar-grid > .site-sidebar-item > svg {
+  width: 1.375rem;
+  height: 1.375rem;
+  flex: 0 0 1.375rem !important;
+}
+.site-sidebar-section .site-sidebar-grid > .site-sidebar-item > span {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.4em;
+  line-height: 1.2 !important;
+  overflow-wrap: anywhere;
+}
+@media (max-height: 620px) {
+  .site-sidebar-panel { --sidebar-tile-height: 4.75rem; }
+}
