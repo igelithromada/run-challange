@@ -168,9 +168,11 @@ test('challenges: edits and deletes are blocked by calendar date even if state i
   assert.equal((await call(challenges,{action:'edit',challengeId:'c',name:'Test',kind:'distance',activityType:'běh',goal:5,startDate:day(1),endDate:day(2)})).status,409);
 });
 test('scoring: all goal types exclude old, future, invalid and other-activity runs', async () => {
+  // These two activities intentionally share one Prague calendar day, even when CI runs near midnight.
+  const activityTime = new Date(day(-1) + 'T12:00:00Z').getTime();
   for (const [kind, expected] of [['distance',11],['sharedDistance',11],['activities',2],['activeDays',1]]) {
     db=new DB({'challenges/c':challenge(kind),'challenges/c/participants/u':{active:true,userId:'u',joinedAt:tsAt(-2)},
-      'runs/a':{uid:'u',type:'běh',km:5,timestamp:tsAt(-1)},'runs/b':{uid:'u',type:'běh',km:6,timestamp:tsAt(-0.99)},
+      'runs/a':{uid:'u',type:'běh',km:5,timestamp:new Timestamp(activityTime)},'runs/b':{uid:'u',type:'běh',km:6,timestamp:new Timestamp(activityTime + 60_000)},
       'runs/old':{uid:'u',type:'běh',km:100,timestamp:tsAt(-3)},'runs/walk':{uid:'u',type:'chůze',km:100,timestamp:tsAt(-1)},
       'runs/future':{uid:'u',type:'běh',km:100,timestamp:tsAt(1)},'runs/invalid':{uid:'u',type:'běh',km:100,timestamp:'invalid'}});
     await scoring.reconcileChallengesForUser(db,'u');
