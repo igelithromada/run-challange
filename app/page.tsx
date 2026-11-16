@@ -13,11 +13,13 @@ import RunWeatherRecommendation from "./components/RunWeatherRecommendation";
 import ActivityTypeSelector from "./components/ActivityTypeSelector";
 import { RunData } from "./types";
 import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
-import { latestRunsQuery, fetchOlderRuns } from "./lib/services/runs";
+import { latestRunsQuery, fetchOlderRuns, fetchRunById } from "./lib/services/runs";
+import { showAppToast } from "./components/AppToast";
 import { getUserProfile } from "./lib/services/users";
 
 export default function Page() {
   const [menuVisible, setMenuVisible] = useState(false);
+  const [notificationRunId, setNotificationRunId] = useState<string | null>(null);
   const [olderRuns, setOlderRuns] = useState<RunData[]>([]);
   const [olderCursor, setOlderCursor] = useState<import("firebase/firestore").QueryDocumentSnapshot | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -36,7 +38,7 @@ export default function Page() {
         const cachedActivity = localStorage.getItem("dolni-lhota-default-activity-v1");
         if (active && (cachedActivity === "běh" || cachedActivity === "chůze")) setSelectedType(cachedActivity);
         const profile = await getUserProfile(user.uid);
-        if (!active || !profile) return;
+        if (!active || !profile || window.location.hash.startsWith("#run-")) return;
         const remoteActivity = profile.defaultActivity === "chůze" ? "chůze" : "běh";
         setSelectedType(remoteActivity);
         try { localStorage.setItem("dolni-lhota-default-activity-v1", remoteActivity); } catch {}
@@ -44,6 +46,36 @@ export default function Page() {
     });
     return () => { active = false; unsubAuth(); };
   }, [router]);
+
+  useEffect(() => {
+    let active = true;
+    let version = 0;
+    const openTarget = async () => {
+      const user = auth.currentUser;
+      const request = ++version;
+      if (!user || !window.location.hash.startsWith("#run-")) return;
+      try {
+        const id = decodeURIComponent(window.location.hash.slice(5));
+        const run = await fetchRunById(id);
+        if (!active || request !== version || auth.currentUser?.uid !== user.uid) return;
+        if (!run) { showAppToast("Tato aktivita už byla odstraněna.", "error"); return; }
+        setOlderRuns(previous => [run, ...previous.filter(item => item.id !== run.id)]);
+        setSelectedType(run.type === "chůze" ? "chůze" : "běh");
+        setNotificationRunId(run.id);
+      } catch {
+        if (active && request === version) showAppToast("Aktivitu z upozornění se nepodařilo načíst.", "error");
+      }
+    };
+    const unsubscribe = onAuthStateChanged(auth, () => { void openTarget(); });
+    window.addEventListener("hashchange", openTarget);
+    return () => { active = false; ++version; unsubscribe(); window.removeEventListener("hashchange", openTarget); };
+  }, []);
+
+  useEffect(() => {
+    if (!notificationRunId) return;
+    const frame = requestAnimationFrame(() => document.getElementById(`run-${notificationRunId}`)?.scrollIntoView({ block: "start" }));
+    return () => cancelAnimationFrame(frame);
+  }, [notificationRunId]);
 
   useEffect(() => {
     if (!showImages) return;

@@ -1,3 +1,4 @@
+import { Timestamp } from "firebase-admin/firestore";
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
@@ -99,6 +100,19 @@ export async function GET(request: Request) {
       const sentKey = `${mode}-${targetKey}-${preferredTime}`;
       if (prefs.lastSentKeys?.[mode] === sentKey || prefs.lastSentKey === sentKey) return;
 
+      // Cron invocations can overlap. A short lease prevents simultaneous delivery
+      // without blocking retries after a crashed worker.
+      const claimed = await adminDb.runTransaction(async tx => {
+        const latest = await tx.get(userDoc.ref);
+        const current = latest.data()?.trainerNotifications;
+        const lock = current?.deliveryLeases?.[mode];
+        if (!current?.enabled || current[mode] === false || current.lastSentKeys?.[mode] === sentKey || current.lastSentKey === sentKey || (lock?.key === sentKey && lock.expiresAt?.toMillis?.() > Date.now())) return false;
+        const currentTime = mode === "today" ? current.todayTime || "07:00" : current.tomorrowTime || "18:00";
+        if (currentTime !== preferredTime) return false;
+        tx.set(userDoc.ref, { trainerNotifications: { deliveryLeases: { [mode]: { key: sentKey, expiresAt: Timestamp.fromMillis(Date.now() + 120_000) } } } }, { merge: true });
+        return true;
+      });
+      if (!claimed) return;
       const subscriptions = await userDoc.ref.collection("pushSubscriptions").get();
       let delivered = false;
       for (const subDoc of subscriptions.docs) {
@@ -121,9 +135,10 @@ export async function GET(request: Request) {
         }
       }
 
-      if (delivered) {
-        await userDoc.ref.set({ trainerNotifications: { lastSentKeys: { [mode]: sentKey } } }, { merge: true });
-      }
+      await userDoc.ref.set({ trainerNotifications: {
+        ...(delivered ? { lastSentKeys: { [mode]: sentKey } } : {}),
+        deliveryLeases: { [mode]: null },
+      } }, { merge: true });
     };
 
     for (const userDoc of snapshot.docs) {

@@ -1,3 +1,4 @@
+import { notifyChallengeState } from "../notifications/community";
 import { FieldValue, Timestamp, type QueryDocumentSnapshot } from "firebase-admin/firestore";
 
 function pragueDate(value: unknown): string {
@@ -103,7 +104,7 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
   const today=`${get("year")}-${get("month")}-${get("day")}`;
 
   if((challenge.state==="planned" || challenge.state==="active") && challenge.startDate<=today && challenge.endDate>=today) {
-    if(challenge.state==="planned") await ref.update({state:"active"});
+    if(challenge.state==="planned") await ref.update({state:"active",notificationPending:true});
   }
 
   if((challenge.state==="planned" || challenge.state==="active") && challenge.endDate<today) {
@@ -120,10 +121,10 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
         for(const p of finalized.slice(start,start+450)){
           batch.set(p.doc.ref,{result:Number(p.data.result||0),targetReachedAt:p.data.targetReachedAt||null,finalResult:Number(p.data.result||0),finalizedAt:Timestamp.now()},{merge:true});
         }
-        if(start + 450 >= finalized.length) batch.update(ref,{state:"completed",completedAt:Timestamp.now(),sharedProgress:shared,goalReached:shared>=Number(challenge.goal||0)});
+        if(start + 450 >= finalized.length) batch.update(ref,{state:"completed",notificationPending:true,completedAt:Timestamp.now(),sharedProgress:shared,goalReached:shared>=Number(challenge.goal||0)});
         await batch.commit();
       }
-      if(finalized.length===0) await ref.update({state:"completed",completedAt:Timestamp.now(),sharedProgress:0,goalReached:false});
+      if(finalized.length===0) await ref.update({state:"completed",notificationPending:true,completedAt:Timestamp.now(),sharedProgress:0,goalReached:false});
     } else {
       const target=Number(challenge.goal||0);
       const all=finalized.map((p:any)=>({id:p.doc.id,...p.data})).sort((a:any,b:any)=>{
@@ -146,10 +147,11 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
           const rank = finalRanks.get(String(p.id)) || 0;
           batch.set(original.ref,{result:Number(p.result||0),targetReachedAt:p.targetReachedAt||null,finalResult:Number(p.result||0),finalRank:rank,finalizedAt:Timestamp.now()},{merge:true});
         }
-        if(start + 450 >= all.length) batch.update(ref,{state:"completed",completedAt:Timestamp.now(),winnerId:winner,goalReached:reached.length>0});
+        if(start + 450 >= all.length) batch.update(ref,{state:"completed",notificationPending:true,completedAt:Timestamp.now(),winnerId:winner,goalReached:reached.length>0});
         await batch.commit();
       }
-      if(all.length===0) await ref.update({state:"completed",completedAt:Timestamp.now(),winnerId:null,goalReached:false});
+      if(all.length===0) await ref.update({state:"completed",notificationPending:true,completedAt:Timestamp.now(),winnerId:null,goalReached:false});
     }
   }
+  await notifyChallengeState(adminDb, challengeId);
 }

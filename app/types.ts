@@ -19,7 +19,7 @@ export interface UserData {
   id:string; organizationId?:string; nickname?:string; email?:string; avatarUrl?:string; theme?:string; customColor?:string;
   gradientEnabled?:boolean; themeUpdatedAt?:FirestoreTimestamp; role?:string; blocked?:boolean; activityType?:ActivityType;
   defaultActivity?:ActivityType; teamId?:string; teamIdsByType?:Partial<Record<ActivityType,string|null>>; challengeGoalKm?:number;
-  hapticsEnabled?:boolean; socialNotifications?:{likes?:boolean;comments?:boolean}; confirmDelete?:boolean;
+  hapticsEnabled?:boolean; socialNotifications?:{likes?:boolean;comments?:boolean;teams?:boolean;challenges?:boolean}; confirmDelete?:boolean;
   trainerNotifications?:{enabled?:boolean;today?:boolean;tomorrow?:boolean;todayTime?:string;tomorrowTime?:string;lastSentKey?:string;lastSentKeys?:Partial<Record<"today"|"tomorrow",string>>};
   progressGoals?:{type?:ActivityType;weekly?:number;monthly?:number};
   progressGoalsByType?:Partial<Record<ActivityType,{weekly?:number;monthly?:number}>>;

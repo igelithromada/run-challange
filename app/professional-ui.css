@@ -613,3 +613,48 @@
   .theme-option { flex-wrap: wrap; }
   .challenges-create .challenge-dates { grid-template-columns: 1fr; }
 }
+
+/* Upozornění: kompaktní panel s vlastním posunem a stále dostupným nastavením. */
+.notification-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: min(620px, calc(100dvh - 88px - env(safe-area-inset-bottom))) !important;
+  border: 1px solid var(--ui-border);
+  border-radius: 16px;
+  background: #142d3a;
+  color: var(--ui-text);
+  box-shadow: 0 12px 35px rgba(0,0,0,.25);
+}
+.notification-panel-header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .65rem .8rem; }
+.notification-panel-header > div { display: grid; gap: .1rem; }
+.notification-panel-header small { color: var(--ui-muted); font-size: .72rem; }
+.notification-panel-header button { min-width: 44px; min-height: 44px; }
+.notification-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; max-height: none !important; }
+.notification-item { display: flex; align-items: flex-start; gap: .6rem; width: 100%; padding: .75rem; text-align: left; color: inherit; border: 0; border-top: 1px solid var(--ui-border); background: transparent; cursor: pointer; }
+.notification-item.is-unread { background: rgba(255,255,255,.06); }
+.notification-avatar { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 11px; background: var(--ui-bg-soft); overflow: hidden; }
+.notification-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.notification-copy { display: grid; gap: .2rem; }
+.notification-copy strong { font-size: .84rem; line-height: 1.35; }
+.notification-copy > span { font-size: .78rem; line-height: 1.4; }
+.notification-copy time { font-size: .68rem; color: var(--ui-muted); }
+.notification-mark-all, .notification-settings, .notification-error button { min-height: 44px; padding: .6rem .8rem; font-size: .8rem; color: inherit; background: var(--ui-bg-soft); border: 0; cursor: pointer; }
+.notification-settings { display: flex; align-items: center; justify-content: center; gap: .45rem; border-top: 1px solid var(--ui-border); flex-shrink: 0; }
+.notification-error { padding: .65rem .8rem; font-size: .8rem; }
+.notification-error button { display: block; width: 100%; margin-top: .4rem; border-radius: 10px; }
+.notification-empty { padding: .8rem; text-align: center; font-size: .85rem; }
+.notification-item:disabled, .notification-mark-all:disabled { opacity: .6; cursor: wait; }
+#notifications { scroll-margin-top: 85px; }
+.settings-notification-section { padding: .85rem !important; }
+.settings-notification-row { min-height: 44px; padding: .65rem .7rem; gap: .65rem; }
+.settings-notification-title { font-size: .9rem; }
+.settings-notification-copy small { line-height: 1.4; }
+.settings-notification-row input[type="checkbox"] { flex-shrink: 0; }
+.team-card-description { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.team-card-stats { flex-direction: row; flex-wrap: wrap; gap: .25rem .75rem; margin-top: .4rem; }
+.team-card-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .5rem; }
+.team-card-title-row h3 { flex: 1 1 auto; }
+.team-card-title-row .team-member-label, .team-card-title-row .challenge-participating { margin-top: 0; }
+.activity-card[id^="run-"] { scroll-margin-top: 86px; }
+html[data-theme="light"] .notification-panel { background: #fff; color: #17232b; }
+html[data-theme="light"] .notification-item.is-unread { background: #edf7fa; }

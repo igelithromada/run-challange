@@ -19,6 +19,8 @@ export async function GET(request: Request) {
         title: data.title || "Nové upozornění",
         body: data.body || "",
         runId: data.runId || "",
+        teamId: data.teamId || "",
+        challengeId: data.challengeId || "",
         actorUid: data.actorUid || "",
         actorNickname: data.actorNickname || "Uživatel",
         actorAvatarUrl: data.actorAvatarUrl || "",
@@ -27,7 +29,7 @@ export async function GET(request: Request) {
       };
     });
 
-    notifications.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+    notifications.sort((a, b) => Number(a.read) - Number(b.read) || String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
     return NextResponse.json({
       notifications: notifications.slice(0, 50),
       unreadCount: notifications.filter(item => !item.read).length,
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
       const snapshot = await adminDb.collection("notifications")
         .where("recipientUid", "==", decoded.uid)
         .get();
-      const unread = snapshot.docs.filter(doc => doc.data()?.read !== true);
+      const unread = snapshot.docs;
       for(let start=0;start<unread.length;start+=450){
         const batch=adminDb.batch();
         unread.slice(start,start+450).forEach(doc=>batch.delete(doc.ref));
@@ -60,7 +62,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    if (!notificationId) return NextResponse.json({ error: "Chybí ID upozornění." }, { status: 400 });
+    if (!notificationId || notificationId.includes("/")) return NextResponse.json({ error: "Chybí ID upozornění." }, { status: 400 });
     const ref = adminDb.collection("notifications").doc(notificationId);
     const snapshot = await ref.get();
     if (!snapshot.exists || snapshot.data()?.recipientUid !== decoded.uid) {

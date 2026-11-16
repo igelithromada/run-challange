@@ -1,3 +1,4 @@
+import { prepareCommunityNotification } from "../../../lib/notifications/community";
 import { NextResponse } from "next/server";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { requireUser } from "../../../lib/apiAuth";
@@ -102,12 +103,22 @@ export async function POST(request:Request){
         if(action==="join"){
           const existing=await tx.get(member);
           if(existing.exists && existing.data()?.active===true)return;
+          const notification = await prepareCommunityNotification(adminDb, tx, {
+            recipientUid: String(data.createdBy || ""), actorUid: uid, category: "challenges", challengeId,
+            title: "Nový účastník výzvy", body: `{actor} se přidal do výzvy „${data.name}“.`,
+          });
           const joinedAt=Timestamp.now();
-          tx.set(member,{userId:uid,joinedAt,active:true,leftAt:null,result:0},{merge:true});
+          if (notification) tx.create(adminDb.collection("notifications").doc(), notification);
+          tx.set(member,{userId:uid,joinedAt,active:true,leftAt:null,result:0,stateNotified:{active:data.state==="active"}},{merge:true});
           tx.update(ref,{participantCount:FieldValue.increment(1)});
         }else{
           const existing=await tx.get(member);
           if(!existing.exists || existing.data()?.active!==true)return;
+          const notification = await prepareCommunityNotification(adminDb, tx, {
+            recipientUid: String(data.createdBy || ""), actorUid: uid, category: "challenges", challengeId,
+            title: "Účastník opustil výzvu", body: `{actor} opustil výzvu „${data.name}“.`,
+          });
+          if (notification) tx.create(adminDb.collection("notifications").doc(), notification);
           tx.update(member,{active:false,leftAt:Timestamp.now(),result:0});
           tx.update(ref,{participantCount:FieldValue.increment(-1)});
         }

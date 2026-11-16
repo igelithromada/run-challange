@@ -1,3 +1,4 @@
+import { prepareCommunityNotification } from "../../../lib/notifications/community";
 import { NextResponse } from "next/server";
 import { FieldValue, Timestamp, type DocumentReference } from "firebase-admin/firestore";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
@@ -85,7 +86,12 @@ export async function POST(request: Request) {
         const currentTeam = teamSnap.data() || {};
         const m = await tx.get(memberRef(adminDb,teamId,uid));
         if (m.exists && m.data()?.active !== false) return;
+        const notification = await prepareCommunityNotification(adminDb, tx, {
+          recipientUid: String(currentTeam.managerId || ""), actorUid: uid, category: "teams", teamId,
+          title: "Nový člen týmu", body: `{actor} se přidal do týmu „${currentTeam.name}“.`,
+        });
         const now = Timestamp.now();
+        if (notification) tx.create(adminDb.collection("notifications").doc(), notification);
         tx.set(memberRef(adminDb,teamId,uid),{userId:uid,joinedAt:now,active:true,leaveAt:null},{merge:true});
         const historyRef=ref.collection("membershipHistory").doc();
         tx.create(historyRef,{userId:uid,joinedAt:now,active:true});
@@ -109,6 +115,11 @@ export async function POST(request: Request) {
         // Keep the leave path independent of a composite Firestore index.
         // The membership history is scoped to one team and filtered in memory.
         const historySnapshot=await tx.get(ref.collection("membershipHistory").where("userId","==",uid));
+        const notification = await prepareCommunityNotification(adminDb, tx, {
+          recipientUid: String(currentTeam.managerId || ""), actorUid: uid, category: "teams", teamId,
+          title: "Člen opustil tým", body: `{actor} opustil tým „${currentTeam.name}“.`,
+        });
+        if (notification) tx.create(adminDb.collection("notifications").doc(), notification);
         tx.set(memberRef(adminDb,teamId,uid),{active:false,leaveAt:now},{merge:true});
         historySnapshot.docs
           .filter((d:any)=>d.data()?.active===true)
@@ -173,6 +184,11 @@ export async function POST(request: Request) {
         const leaving = body?.leaveCurrentManager === true;
         if(leaving && (!currentSnap.exists || currentSnap.data()?.active === false))throw new Error("CURRENT_MANAGER_NOT_MEMBER");
         const history = leaving ? await tx.get(ref.collection("membershipHistory").where("userId","==",uid)) : null;
+        const notification = await prepareCommunityNotification(adminDb, tx, {
+          recipientUid: newManagerId, actorUid: uid, category: "teams", teamId,
+          title: "Převzal jsi správu týmu", body: `Nyní spravuješ tým „${teamSnap.data()?.name}“.`,
+        });
+        if (notification) tx.create(adminDb.collection("notifications").doc(), notification);
         tx.update(ref,{managerId:newManagerId});
         if(leaving){
           tx.update(memberRef(adminDb,teamId,uid),{active:false,leaveAt:now});

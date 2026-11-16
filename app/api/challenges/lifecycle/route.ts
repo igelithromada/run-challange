@@ -1,3 +1,4 @@
+import { notifyChallengeState } from "../../../lib/notifications/community";
 import { NextResponse } from "next/server";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
 import { reconcileChallengeState } from "../../../lib/challenges/server";
@@ -21,6 +22,9 @@ export async function GET(request:Request){
       await reconcileChallengeState(adminDb,doc.id);
       processed++;
     }
+    // Retry unfinished deliveries even when the challenge is already completed.
+    const pending = await adminDb.collection("challenges").where("notificationPending", "==", true).get();
+    for (const doc of pending.docs) await notifyChallengeState(adminDb, doc.id);
     return NextResponse.json({ok:true,processed});
   }catch(error){
     console.error("GET /api/challenges/lifecycle:",error);

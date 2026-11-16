@@ -136,7 +136,7 @@ test('trainer delivery keeps independent sent markers for today and tomorrow', {
   await db.doc('users/scheduled/pushSubscriptions/test').set({endpoint:'https://fcm.googleapis.com/fixture',keys:{auth:'fixture',p256dh:'fixture'}});
   const scheduler=require('../app/api/notifications/trainer/route.ts');
   const request=()=>new Request('https://example.test',{headers:{Authorization:'Bearer '+process.env.CRON_SECRET}});
-  deliveredPush=0;assert.equal((await scheduler.GET(request())).status,200);assert.equal(deliveredPush,2);
+  deliveredPush=0;assert.deepEqual((await Promise.all([scheduler.GET(request()),scheduler.GET(request())])).map(r=>r.status),[200,200]);assert.equal(deliveredPush,2);
   assert.equal((await scheduler.GET(request())).status,200);assert.equal(deliveredPush,2);
   const prefs=(await db.doc('users/scheduled').get()).data().trainerNotifications;
   assert.equal(prefs.enabled,true);assert.ok(prefs.lastSentKeys.today);assert.ok(prefs.lastSentKeys.tomorrow);

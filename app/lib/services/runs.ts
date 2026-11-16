@@ -2,6 +2,7 @@ import { auth } from "../firebase";
 import {
   collection,
   getDocs,
+  getDoc,
   doc,
   limit,
   orderBy,
@@ -128,4 +129,11 @@ export async function fetchOlderRuns(
 
 export function mapRunSnapshot(data: { id: string; data(): Record<string, unknown> }): RunData {
   return { id: data.id, ...data.data() } as RunData;
+}
+
+/** A notification may point outside the currently loaded feed page. */
+export async function fetchRunById(id: string): Promise<RunData | null> {
+  if (!id || id.includes("/")) throw new Error("Neplatné ID aktivity.");
+  const snapshot = await getDoc(doc(db, "runs", id));
+  return snapshot.exists() ? mapRunSnapshot(snapshot) : null;
 }

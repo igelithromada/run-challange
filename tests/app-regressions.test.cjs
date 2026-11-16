@@ -122,3 +122,20 @@ test('shared queries return a stable empty snapshot while authentication is load
   const source={};index=0;const first=hook('runs',source);index=0;const second=hook('runs',source);
   assert.equal(first.data,second.data);assert.equal(first.loading,true);
 });
+
+test('notification navigation is limited to encoded internal detail IDs',()=>{
+ const {notificationTarget}=require('../app/lib/notifications/target.ts');
+ assert.equal(notificationTarget({teamId:'t'}),'/teams/t');
+ assert.equal(notificationTarget({challengeId:'výzva?x=1'}),'/challenges/v%C3%BDzva%3Fx%3D1');
+ assert.equal(notificationTarget({runId:'r'}),'/#run-r');
+ assert.equal(notificationTarget({teamId:'https://evil.example'}),null);
+ assert.equal(notificationTarget({}),null);
+});
+
+test('a notification can load an activity outside the current feed, including walking activities',async()=>{
+ let reads=0;
+ const runs=loadIsolated('app/lib/services/runs.ts',{'../firebase':{auth:{},db:{}},'firebase/firestore':{doc:(_,collection,id)=>({collection,id}),getDoc:async ref=>{reads++;return {id:ref.id,exists:()=>ref.id!=='deleted',data:()=>({type:'chůze',km:3})};}}});
+ const run=await runs.fetchRunById('older-walk');assert.equal(run.id,'older-walk');assert.equal(run.type,'chůze');
+ assert.equal(await runs.fetchRunById('deleted'),null);
+ await assert.rejects(()=>runs.fetchRunById('bad/id'));assert.equal(reads,2);
+});
