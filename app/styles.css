@@ -5799,3 +5799,83 @@ html[data-theme="white"] .site-sidebar-profile-copy small {
     transition-duration: .001ms !important;
   }
 }
+
+
+/* Domovská stránka – jasná hierarchie bez zbytečného dekoru. */
+.home-quick-add,
+.home-activity-feed {
+  min-width: 0;
+}
+
+.home-quick-add {
+  margin-top: .85rem;
+}
+
+.home-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  min-width: 0;
+  margin: 0 0 .65rem;
+}
+
+.home-section-heading > div {
+  min-width: 0;
+}
+
+.home-section-eyebrow {
+  display: block;
+  margin-bottom: .15rem;
+  color: var(--ui-muted, rgba(255,255,255,.72));
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.home-section-heading h2 {
+  margin: 0;
+  font-size: clamp(1.15rem, 4.5vw, 1.4rem);
+  line-height: 1.25;
+}
+
+.home-activity-badge {
+  flex: 0 0 auto;
+  padding: .38rem .65rem;
+  border: 1px solid var(--ui-border, rgba(255,255,255,.1));
+  border-radius: 999px;
+  background: var(--ui-bg-soft, rgba(255,255,255,.08));
+  color: var(--ui-text, #fff);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.home-activity-feed {
+  margin-top: 1.35rem;
+}
+
+.home-feed-heading {
+  margin-bottom: .65rem;
+}
+
+.home-activity-feed .list-container {
+  margin-top: 0;
+}
+
+@media (max-width: 420px) {
+  .home-section-heading {
+    align-items: flex-start;
+  }
+
+  .home-activity-badge {
+    padding: .32rem .55rem;
+  }
+}
+
+html[data-theme="white"] .home-activity-badge {
+  background: #fff;
+  border-color: #dbe4e9;
+  box-shadow: 0 2px 8px rgba(23,35,43,.05);
+}
