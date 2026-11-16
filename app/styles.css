@@ -5888,3 +5888,242 @@ html[data-theme="white"] .tile-button .run-profile-icon { filter: brightness(0);
 
 /* Audit UI: seznam vlastních aktivit používá stejný layout bez inline stylů. */
 .myruns-list{display:flex;flex-direction:column;gap:0;}
+
+
+/* =====================================================================
+   FINAL VISUAL QA — LIGHT THEME
+   Sjednocení prvků, které měly dříve napevno tmavé pozadí/barvu.
+   ===================================================================== */
+html[data-theme="white"] .activity-card-modern {
+  border-color:#dbe4e9 !important;
+  background:#fff !important;
+  box-shadow:0 5px 20px rgba(23,35,43,.08) !important;
+}
+html[data-theme="white"] .activity-card-top .activity-avatar {
+  background:#eef3f6;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .activity-person > span { color:#17232b; }
+html[data-theme="white"] .activity-person > small { color:#60717b; }
+html[data-theme="white"] .activity-person > small b { color:#3f515b; }
+html[data-theme="white"] .activity-date {
+  color:#3f515b;
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .activity-card-modern .activity-metrics > div {
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .activity-card-modern .activity-metrics svg { color:#3f515b; }
+html[data-theme="white"] .activity-card-modern .activity-metrics > div > span { color:#60717b; }
+html[data-theme="white"] .activity-card-modern .activity-card-actions {
+  border-top-color:#dbe4e9;
+}
+html[data-theme="white"] .activity-card-modern .activity-photos-button,
+html[data-theme="white"] .activity-card-modern .activity-manage-button {
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+  color:#17232b;
+}
+html[data-theme="white"] .activity-card-modern .activity-delete-button {
+  color:#a53b3b;
+  background:#fff4f4;
+  border-color:#edcaca;
+}
+
+html[data-theme="white"] .team-card {
+  border-color:#dbe4e9;
+  background:#fff;
+  box-shadow:0 4px 16px rgba(23,35,43,.06);
+}
+html[data-theme="white"] .team-card-joined {
+  border-color:#a9d8bd;
+  background:#f3fbf6;
+}
+html[data-theme="white"] .team-avatar {
+  background:#eef3f6;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .team-member-label {
+  color:#216b43;
+  background:#e5f6eb;
+}
+html[data-theme="white"] .team-card-actions .team-action-button,
+html[data-theme="white"] .team-card-actions .team-delete-button {
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+  color:#17232b;
+}
+html[data-theme="white"] .team-card-actions .team-delete-button {
+  background:#fff4f4;
+  color:#a53b3b;
+  border-color:#edcaca;
+}
+
+html[data-theme="white"] .teams-create-form input,
+html[data-theme="white"] .teams-create-form select {
+  color:#17232b !important;
+  -webkit-text-fill-color:#17232b !important;
+  background:#fff !important;
+  border-color:#c7d4da;
+  color-scheme:light;
+}
+html[data-theme="white"] .teams-create-form input::placeholder { color:#60717b; }
+html[data-theme="white"] .teams-create-form input:-webkit-autofill,
+html[data-theme="white"] .teams-create-form input:-webkit-autofill:hover,
+html[data-theme="white"] .teams-create-form input:-webkit-autofill:focus {
+  -webkit-text-fill-color:#17232b !important;
+  box-shadow:0 0 0 1000px #fff inset;
+  caret-color:#17232b;
+}
+html[data-theme="white"] .teams-create-form input:focus,
+html[data-theme="white"] .teams-create-form select:focus {
+  border-color:#8aa4b0;
+  box-shadow:var(--ui-focus-ring);
+}
+
+html[data-theme="white"] .weather-current-main,
+html[data-theme="white"] .weather-stat-card,
+html[data-theme="white"] .weather-hour-card {
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .weather-current-main,
+html[data-theme="white"] .weather-stat-card,
+html[data-theme="white"] .weather-hour-card,
+html[data-theme="white"] .weather-current-copy,
+html[data-theme="white"] .weather-card-heading,
+html[data-theme="white"] .weather-hour-section {
+  color:#17232b;
+}
+html[data-theme="white"] .weather-visual-wrap .weather-cloud {
+  color:#60717b !important;
+  stroke:#60717b !important;
+}
+html[data-theme="white"] .weather-visual-sun .weather-visual-icon,
+html[data-theme="white"] .weather-visual-wrap .weather-sun {
+  color:#e7a900 !important;
+  stroke:#e7a900 !important;
+}
+html[data-theme="white"] .weather-hour-card>span,
+html[data-theme="white"] .weather-hour-card>small:last-child,
+html[data-theme="white"] .weather-current-copy small,
+html[data-theme="white"] .weather-card-heading p {
+  color:#60717b;
+}
+
+html[data-theme="white"] .routes-filter button,
+html[data-theme="white"] .routes-group,
+html[data-theme="white"] .route-card {
+  color:#17232b;
+  border-color:#dbe4e9;
+  background:#fff;
+}
+html[data-theme="white"] .routes-filter button {
+  background:#f5f8fa;
+}
+html[data-theme="white"] .routes-filter button.active {
+  background:#e8f0f4;
+  border-color:#b9cbd3;
+}
+html[data-theme="white"] .routes-group-heading { color:#17232b; }
+html[data-theme="white"] .routes-group-icon,
+html[data-theme="white"] .route-card-icon {
+  background:#f0f5f7;
+}
+html[data-theme="white"] .routes-group-copy small,
+html[data-theme="white"] .route-card-info p,
+html[data-theme="white"] .route-card-meta,
+html[data-theme="white"] .routes-note p,
+html[data-theme="white"] .routes-source {
+  color:#60717b;
+}
+html[data-theme="white"] .route-card-title span {
+  background:#edf3f6;
+  color:#3f515b;
+}
+html[data-theme="white"] .route-card-meta strong { color:#17232b; }
+html[data-theme="white"] .route-secondary-action {
+  color:#17232b;
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .route-primary-action {
+  color:#10222a;
+  background:#e8f0f4;
+}
+html[data-theme="white"] .routes-note {
+  color:#17232b;
+}
+
+html[data-theme="white"] .notification-panel {
+  color:#17232b;
+  background:#fff;
+  border-color:#dbe4e9;
+  box-shadow:0 18px 50px rgba(23,35,43,.16);
+}
+html[data-theme="white"] .notification-panel-header,
+html[data-theme="white"] .notification-item {
+  border-color:#e2e9ed;
+}
+html[data-theme="white"] .notification-panel-header button,
+html[data-theme="white"] .notification-item {
+  color:#17232b;
+}
+html[data-theme="white"] .notification-mark-all { color:#16708a; }
+html[data-theme="white"] .notification-item:hover { background:#f5f8fa; }
+html[data-theme="white"] .notification-item.is-unread { background:#edf7fa; }
+html[data-theme="white"] .notification-avatar { background:#eef3f6; }
+html[data-theme="white"] .notification-copy span { color:#3f515b; }
+html[data-theme="white"] .notification-empty { color:#60717b; }
+
+html[data-theme="white"] .trainer-day-modal {
+  background:#fff;
+  color:#17232b;
+  border-color:#dbe4e9;
+  box-shadow:0 24px 80px rgba(23,35,43,.22);
+}
+html[data-theme="white"] .trainer-day-modal-header span,
+html[data-theme="white"] .trainer-day-modal-form>label,
+html[data-theme="white"] .trainer-km-field b {
+  color:#60717b;
+}
+html[data-theme="white"] .trainer-km-field input {
+  background:#f5f8fa;
+  color:#17232b;
+  border-color:#c7d4da;
+  color-scheme:light;
+}
+html[data-theme="white"] .trainer-day-modal-overlay {
+  background:rgba(20,31,38,.46);
+}
+html[data-theme="white"] .trainer-bulk-toggle,
+html[data-theme="white"] .trainer-quick-info,
+html[data-theme="white"] .trainer-bulk-panel {
+  color:#17232b;
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .trainer-bulk-panel input {
+  background:#fff;
+  color:#17232b;
+  border-color:#c7d4da;
+  color-scheme:light;
+}
+
+html[data-theme="white"] .network-status {
+  background:#fff;
+  color:#17232b;
+  border-color:#c7d4da;
+  box-shadow:0 8px 24px rgba(23,35,43,.16);
+}
+html[data-theme="white"] .loading-skeleton-card {
+  background:#f5f8fa;
+  border-color:#dbe4e9;
+}
+html[data-theme="white"] .activity-load-more {
+  background:#fff;
+  color:#17232b;
+  border-color:#c7d4da;
+}
