@@ -8,7 +8,7 @@ import Sidebar from "../components/Sidebar";
 import { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
-import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, Smartphone, Bell, Heart, MessageCircle, Moon } from "lucide-react";
+import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, Smartphone, Bell, Heart, MessageCircle, Moon, Sun } from "lucide-react";
 import { registerTrainerPush, removeTrainerPush } from "../lib/pushNotifications";
 import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
@@ -18,8 +18,11 @@ import { getUserProfile, saveUserSettings } from "../lib/services/users";
 
 const DEFAULT_COLOR = "#36D1DC";
 const DEFAULT_ACTIVITY_KEY = "dolni-lhota-default-activity-v1";
-const SUPPORTED_THEMES = new Set(["default", "dark", "auto", "weather", "custom"]);
-const normalizeTheme = (value: unknown) => typeof value === "string" && SUPPORTED_THEMES.has(value) ? value : "default";
+const SUPPORTED_THEMES = new Set(["default", "light", "dark", "auto", "weather", "custom"]);
+const normalizeTheme = (value: unknown) => {
+  if (value === "white") return "light";
+  return typeof value === "string" && SUPPORTED_THEMES.has(value) ? value : "default";
+};
 
 export default function SettingsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -335,8 +338,9 @@ export default function SettingsPage() {
           </label>
 
           <div className="theme-options">
-            <ThemeItem icon={<Moon size={19}/>} color="#000000" active={theme === "dark"} onClick={() => void handleThemeChange("dark")} text="Čistý černý" />
-            <ThemeItem icon={<Palette size={19}/>} color="linear-gradient(180deg,#36D1DC,#5B86E5)" active={theme === "default"} onClick={() => void handleThemeChange("default")} text="Výchozí vzhled" />
+            <ThemeItem icon={<Sun size={19}/>} color="#f4f7f9" active={theme === "light"} onClick={() => void handleThemeChange("light")} text="Světlý" />
+            <ThemeItem icon={<Moon size={19}/>} color="#000000" active={theme === "dark"} onClick={() => void handleThemeChange("dark")} text="Tmavý" />
+            <ThemeItem icon={<Palette size={19}/>} color="linear-gradient(180deg,#36D1DC,#5B86E5)" active={theme === "default"} onClick={() => void handleThemeChange("default")} text="Výchozí" />
             <ThemeItem icon={<Clock3 size={19}/>} color="linear-gradient(180deg,#4facfe,#1b2430)" active={theme === "auto"} onClick={() => void handleThemeChange("auto")} text="Podle času" />
             <ThemeItem icon={<CloudSun size={19}/>} color="linear-gradient(180deg,#ffd166,#4facfe)" active={theme === "weather"} onClick={() => void handleThemeChange("weather")} text="Podle počasí" />
           </div>
