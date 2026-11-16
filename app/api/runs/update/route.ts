@@ -1,3 +1,4 @@
+import { reconcileChallengesForUser } from "../../../lib/challenges/server";
 import { NextResponse } from "next/server";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { isUserCloudinaryPublicId, cloudinaryPublicIdFromUrl } from "../../../lib/cloudinaryAdmin";
@@ -81,6 +82,8 @@ export async function PATCH(request: Request) {
       activityType: type,
     });
 
+    try { await reconcileChallengesForUser(adminDb, decoded.uid); }
+    catch (error) { console.error("Challenge reconciliation after update failed:", error); }
     return NextResponse.json({
       ok: true,
       updates: {
