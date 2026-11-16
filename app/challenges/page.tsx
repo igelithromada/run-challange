@@ -135,15 +135,46 @@ export default function ChallengesPage() {
             <div><h2>Vytvořit výzvu</h2><p>Výzvy jsou veřejné a po vytvoření se automaticky účastníš.</p></div>
             <button type="button" className="ui-icon-button" onClick={() => setShowCreate(false)} aria-label="Zavřít formulář"><X size={18}/></button>
           </div>
-          <div className="teams-create-form">
-            <input maxLength={40} placeholder="Název výzvy" value={name} onChange={e=>setName(e.target.value)}/>
-            <input maxLength={200} placeholder="Krátký popis (volitelné)" value={description} onChange={e=>setDescription(e.target.value)}/>
-            <ActivityTypeSelector value={activityType} onChange={setActivityType} ariaLabel="Typ aktivity výzvy" />
-            <select value={kind} onChange={e=>setKind(e.target.value as ChallengeKind)}><option value="distance">Vzdálenost</option><option value="activities">Počet aktivit</option><option value="activeDays">Aktivní dny</option><option value="sharedDistance">Společný cíl</option></select>
-            <input type="number" min="1" step={kind==="distance"||kind==="sharedDistance"?"0.1":"1"} placeholder={kind==="distance"||kind==="sharedDistance"?"Cíl v km":kind==="activities"?"Počet aktivit":"Počet aktivních dnů"} value={goal} onChange={e=>setGoal(e.target.value)}/>
-            <div className="challenge-dates"><label>Od<input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}/></label><label>Do<input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/></label></div>
-            <label className="run-form-field"><span>Obrázek <small>volitelné</small></span><input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingImage||creating} onChange={async e=>{const file=e.target.files?.[0];e.target.value="";if(!file)return;setUploadingImage(true);try{const uploaded=await uploadChallengeImage(file);setAvatarUrl(uploaded.secureUrl);setAvatarPublicId(uploaded.publicId);showAppToast("Obrázek byl nahrán.","success");}catch(err){showAppToast(err instanceof Error?err.message:"Obrázek se nepodařilo nahrát.","error");}finally{setUploadingImage(false);}}}/>{avatarUrl&&<div className="challenge-image-preview"><img src={cloudinaryImageUrl(avatarUrl,160)} alt="Náhled obrázku výzvy"/><button type="button" className="run-secondary-button" onClick={()=>{setAvatarUrl("");setAvatarPublicId("");}}>Odebrat obrázek</button></div>}</label>
-            <button className="run-primary-button" onClick={()=>void create()} disabled={creating||uploadingImage||!name.trim()||!goal||!startDate||!endDate}><Plus size={18}/>{creating?"Vytvářím…":"Vytvořit výzvu"}</button>
+          <div className="teams-create-form professional-form">
+            <label className="professional-form-field">
+              <span>Název výzvy</span>
+              <input className="professional-input" maxLength={40} placeholder="Např. 50 km za listopad" value={name} onChange={e=>setName(e.target.value)}/>
+            </label>
+            <label className="professional-form-field">
+              <span>Popis <small>volitelné</small></span>
+              <textarea className="professional-input" maxLength={200} placeholder="Krátce popiš cíl a motivaci výzvy." value={description} onChange={e=>setDescription(e.target.value)}/>
+            </label>
+            <div className="professional-form-field">
+              <span>Typ aktivity</span>
+              <ActivityTypeSelector value={activityType} onChange={setActivityType} ariaLabel="Typ aktivity výzvy"/>
+            </div>
+            <label className="professional-form-field">
+              <span>Typ cíle</span>
+              <select value={kind} onChange={e=>setKind(e.target.value as ChallengeKind)}>
+                <option value="distance">Vzdálenost</option>
+                <option value="activities">Počet aktivit</option>
+                <option value="activeDays">Aktivní dny</option>
+                <option value="sharedDistance">Společný cíl</option>
+              </select>
+            </label>
+            <label className="professional-form-field">
+              <span>Cíl</span>
+              <input className="professional-input" type="number" min="1" step={kind==="distance"||kind==="sharedDistance"?"0.1":"1"} placeholder={kind==="distance"||kind==="sharedDistance"?"Např. 50":kind==="activities"?"Např. 10":"Např. 15"} value={goal} onChange={e=>setGoal(e.target.value)}/>
+            </label>
+            <div className="challenge-dates">
+              <label><span>Od</span><input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}/></label>
+              <label><span>Do</span><input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/></label>
+            </div>
+            <label className="professional-form-file">
+              <Plus size={19} aria-hidden="true" />
+              <span>{avatarUrl ? "Obrázek vybrán" : "Přidat obrázek"}</span>
+              <span className="professional-file-hint">volitelné</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingImage||creating} onChange={async e=>{const file=e.target.files?.[0];e.target.value="";if(!file)return;setUploadingImage(true);try{const uploaded=await uploadChallengeImage(file);setAvatarUrl(uploaded.secureUrl);setAvatarPublicId(uploaded.publicId);showAppToast("Obrázek byl nahrán.","success");}catch(err){showAppToast(err instanceof Error?err.message:"Obrázek se nepodařilo nahrát.","error");}finally{setUploadingImage(false);}}}/>
+            </label>
+            {avatarUrl&&<div className="challenge-image-preview"><img src={cloudinaryImageUrl(avatarUrl,160)} alt="Náhled obrázku výzvy"/><button type="button" className="run-secondary-button" onClick={()=>{setAvatarUrl("");setAvatarPublicId("");}}>Odebrat obrázek</button></div>}
+            <div className="professional-form-actions">
+              <button className="run-primary-button" onClick={()=>void create()} disabled={creating||uploadingImage||!name.trim()||!goal||!startDate||!endDate}><Plus size={18}/>{creating?"Vytvářím…":"Vytvořit výzvu"}</button>
+            </div>
           </div>
         </section>
       )}

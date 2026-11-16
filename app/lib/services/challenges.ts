@@ -24,15 +24,19 @@ export async function fetchChallengesPage(
   pageSize = 10,
   cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>
 ): Promise<{ items: ChallengeData[]; lastDocument: QueryDocumentSnapshot<DocumentData, DocumentData> | null; hasMore: boolean }> {
-  const snapshot = await getDocs(query(
-    collection(db, "challenges"),
-    where("activityType", "==", activityType),
-    where("state", "==", state),
-    where("startMonth", "==", monthStart.slice(0, 7))
-  ));
+  // Avoid a Firestore composite-index dependency here. The challenge
+  // catalogue is intentionally small and the UI already sorts client-side.
+  // Filtering the full collection also correctly includes challenges that
+  // span the selected month but started in a previous month.
+  const snapshot = await getDocs(collection(db, "challenges"));
   const allItems = snapshot.docs
     .map(d => ({ id: d.id, ...d.data() } as ChallengeData))
-    .filter(item => String(item.startDate || "") <= monthEnd && String(item.endDate || "") >= monthStart)
+    .filter(item =>
+      item.activityType === activityType &&
+      item.state === state &&
+      String(item.startDate || "") <= monthEnd &&
+      String(item.endDate || "") >= monthStart
+    )
     .sort((a, b) => {
       const dateCompare = String(a.startDate || "").localeCompare(String(b.startDate || ""));
       return dateCompare !== 0

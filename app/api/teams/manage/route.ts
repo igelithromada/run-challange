@@ -111,8 +111,13 @@ export async function POST(request: Request) {
         if (!m.exists || m.data()?.active === false) return;
         const now=Timestamp.now();
         tx.set(memberRef(adminDb,teamId,uid),{active:false,leaveAt:now},{merge:true});
-        const history=await tx.get(ref.collection("membershipHistory").where("userId","==",uid).where("active","==",true).limit(1));
-        history.docs.forEach((d:any)=>tx.update(d.ref,{active:false,leaveAt:now}));
+        // Keep the leave path independent of a composite Firestore index.
+        // The membership history is scoped to one team and filtered in memory.
+        const historySnapshot=await tx.get(ref.collection("membershipHistory").where("userId","==",uid));
+        historySnapshot.docs
+          .filter((d:any)=>d.data()?.active===true)
+          .slice(0,1)
+          .forEach((d:any)=>tx.update(d.ref,{active:false,leaveAt:now}));
         tx.update(ref,{memberCount:FieldValue.increment(-1)});
       });
       return NextResponse.json({ok:true});
