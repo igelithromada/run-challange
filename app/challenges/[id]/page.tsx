@@ -37,9 +37,14 @@ export default function ChallengeDetailPage(){
  const id=String(params.id||"");
  const [menu,setMenu]=useState(false),[user,setUser]=useState<User|null>(null),[challenge,setChallenge]=useState<ChallengeData|null>(null),[participants,setParticipants]=useState<any[]>([]),[profiles,setProfiles]=useState<Record<string,PublicProfileData>>({}),[author,setAuthor]=useState<PublicProfileData|null>(null),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[page,setPage]=useState(1),[cursor,setCursor]=useState<any>(undefined),[pageCursors,setPageCursors]=useState<any[]>([undefined]),[hasMore,setHasMore]=useState(false),[membership,setMembership]=useState<any>(null),[editing,setEditing]=useState(false),[editName,setEditName]=useState(""),[editDescription,setEditDescription]=useState(""),[editKind,setEditKind]=useState<ChallengeData["kind"]>("distance"),[editType,setEditType]=useState<ChallengeData["activityType"]>("běh"),[editGoal,setEditGoal]=useState(""),[editStart,setEditStart]=useState(""),[editEnd,setEditEnd]=useState(""),[editAvatarUrl,setEditAvatarUrl]=useState(""),[editAvatarPublicId,setEditAvatarPublicId]=useState(""),[uploadingImage,setUploadingImage]=useState(false);
  const load=async()=>{if(!id)return;setLoading(true);try{const c=await getChallenge(id);setChallenge(c);if(c){setEditName(c.name);setEditDescription(c.description||"");setEditKind(c.kind);setEditType(c.activityType);setEditGoal(String(c.goal));setEditStart(c.startDate);setEditEnd(c.endDate);setEditAvatarUrl(c.avatarUrl||"");setEditAvatarPublicId(c.avatarPublicId||"");
-        const authorProfile = c.createdBy ? await getPublicProfiles([c.createdBy]) : {};
-        setAuthor(c.createdBy ? authorProfile[c.createdBy] || null : null);
-        if(c.kind==="sharedDistance"){setParticipants([]);setHasMore(false);} else {const result=await fetchChallengeParticipantsPage(id,c,10,pageCursors[page-1]);setParticipants(result.items);setHasMore(result.hasMore);setCursor(result.lastDocument||undefined);setPageCursors(current=>current.length===page?[...current,result.lastDocument||undefined]:current);if(result.items.length)setProfiles(await getPublicProfiles(result.items.map((x:any)=>String(x.userId||x.id))));}
+        try {
+          const authorProfile = c.createdBy ? await getPublicProfiles([c.createdBy]) : {};
+          setAuthor(c.createdBy ? authorProfile[c.createdBy] || null : null);
+        } catch (error) { console.error("Challenge author profile unavailable:", error); setAuthor(null); }
+        if(c.kind==="sharedDistance"){setParticipants([]);setHasMore(false);} else {const result=await fetchChallengeParticipantsPage(id,c,10,pageCursors[page-1]);setParticipants(result.items);setHasMore(result.hasMore);setCursor(result.lastDocument||undefined);setPageCursors(current=>current.length===page?[...current,result.lastDocument||undefined]:current);if(result.items.length) {
+          try { setProfiles(await getPublicProfiles(result.items.map((x:any)=>String(x.userId||x.id)))); }
+          catch (error) { console.error("Challenge participant profiles unavailable:", error); setProfiles({}); }
+        }}
         if(user?.uid) setMembership(await getChallengeParticipant(id,user.uid));
       }}catch(e){console.error(e);showAppToast("Výzvu se nepodařilo načíst.","error")}finally{setLoading(false)}};
  useEffect(()=>{const unsub=onAuthStateChanged(auth,u=>{if(!u){router.push("/login");return;}setUser(u)});return()=>unsub()},[router]);
