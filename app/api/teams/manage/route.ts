@@ -124,7 +124,7 @@ export async function POST(request: Request) {
           return { next: { ...stored, [type]: currentTeamId || null }, changed: false };
         }
 
-        const oldTeamRef = currentTeamId && currentTeamId !== teamId
+        const oldTeamRef = action === "join" && currentTeamId && currentTeamId !== teamId
           ? adminDb.collection("teams").doc(currentTeamId)
           : null;
         if (oldTeamRef) {
@@ -168,7 +168,7 @@ export async function POST(request: Request) {
         memberIds.slice(i, i + 450).forEach(memberId => {
           const memberRef = adminDb.collection("users").doc(memberId);
           batch.set(memberRef, {
-            [`teamIdsByType.${type}`]: null,
+            teamIdsByType: { [type]: null },
             ...(type === "běh" ? { teamId: null, joinedTeam: null } : {}),
           }, { merge: true });
         });
