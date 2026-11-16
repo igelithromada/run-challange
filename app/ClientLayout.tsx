@@ -12,15 +12,6 @@ import AppToast from "./components/AppToast";
 export default function ClientLayout({ children }: { children: ReactNode }) {
   useThemeLoader();
 
-  useEffect(() => {
-    try {
-      const testMode = localStorage.getItem("dolni-lhota-weather-test-v1");
-      if (testMode) {
-        document.documentElement.setAttribute("data-weather", testMode);
-        document.documentElement.setAttribute("data-windy", testMode === "wind" ? "true" : "false");
-      }
-    } catch {}
-  }, []);
 
   useEffect(() => {
     try {
