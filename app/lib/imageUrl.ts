@@ -15,7 +15,7 @@ export function activityThumbnailUrl(url: string): string {
     if (position < 0) return "";
     const prefix = parsed.pathname.slice(0, position + marker.length);
     const asset = parsed.pathname.slice(position + marker.length);
-    const transform = "f_auto,q_auto:eco,c_limit,w_240,h_160/";
+    const transform = "f_auto,q_auto:eco,c_limit,w_640,h_720/";
     // Apply the small output size after existing transformations, before the asset version.
     const version = asset.search(/(?:^|\/)v\d+\//);
     const insertion = version < 0 ? 0 : version + (asset[version] === "/" ? 1 : 0);
