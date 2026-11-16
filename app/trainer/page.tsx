@@ -325,7 +325,7 @@ export default function TrainerPage(){
    <section className="tile trainer-summary-card">
     <div className="progress-section-title"><Target/><div><h2>Plnění měsíce</h2><p>Souhrn skutečného pohybu a plnění naplánovaných tréninků.</p></div></div>
     <div className="trainer-score"><div><span>{monthActualTotal.toFixed(1)} / {monthlyGoal.toFixed(1)} km</span><strong>{percent.toFixed(0)} %</strong></div><div className="progress-track"><i style={{width:`${percent}%`}}/></div></div>
-    <div className="trainer-stats">
+    <div className="trainer-stats metric-strip swipe-rail" tabIndex={0} role="group" aria-label="Souhrn měsíčního plánu, posouvej doleva nebo doprava">
       <div><span>Plán měsíce</span><strong>{plannedTotal.toFixed(1)} km</strong></div>
       <div><span>Měsíční cíl</span><strong>{monthlyGoal.toFixed(0)} km</strong></div>
       <div><span>Naplánované dny</span><strong>{dates.length}</strong></div>

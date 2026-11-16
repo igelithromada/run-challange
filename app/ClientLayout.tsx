@@ -180,6 +180,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
         <NetworkStatus />
         <AppToast />
         {children}
+        <aside className="layout-preview-notice" aria-label="Zkušební verze"><strong>Zkušební rozložení</strong><span>Účet a záznamy jsou společné s ostrou verzí.</span><a href="https://run-challange.vercel.app" target="_blank" rel="noopener noreferrer">Otevřít ostrou verzi ↗</a></aside>
       </div>
     </>
   );

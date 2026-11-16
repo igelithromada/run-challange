@@ -223,15 +223,7 @@ export default function TeamDetailPage() {
           </div>
         </section>
 
-        {isManager && (
-          <section className="tile team-settings-card">
-            <div className="progress-section-title"><Save /><div><h2>Správa týmu</h2><p>Můžeš kdykoli upravit název, popis a obrázek týmu.</p></div></div>
-            <label className="team-detail-field">Název týmu<input value={name} maxLength={40} onChange={e => setName(e.target.value)} /></label>
-            <label className="team-detail-field">Popis<input value={description} maxLength={200} onChange={e => setDescription(e.target.value)} /></label>
-            <label className="team-avatar-upload"><Camera size={18} /><span>{avatarUrl ? "Změnit obrázek týmu" : "Přidat obrázek týmu"}</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadAvatar} /></label>
-            <button className="run-primary-button team-save-button" onClick={() => void save()} disabled={saving}><Save size={18} />{saving ? "Ukládám…" : "Uložit změny"}</button>
-          </section>
-        )}
+
 
         <section className="tile team-members-card">
           <div className="progress-section-title"><Users /><div><h2>Členové</h2><p>Každý člen má vlastní profil.</p></div></div>
@@ -245,6 +237,16 @@ export default function TeamDetailPage() {
             ))}
           </div>
         </section>
+
+        {isManager && (
+          <details className="tile team-settings-card layout-disclosure"><summary>Správa týmu</summary>
+            <div className="progress-section-title"><Save /><div><h2>Správa týmu</h2><p>Můžeš kdykoli upravit název, popis a obrázek týmu.</p></div></div>
+            <label className="team-detail-field">Název týmu<input value={name} maxLength={40} onChange={e => setName(e.target.value)} /></label>
+            <label className="team-detail-field">Popis<input value={description} maxLength={200} onChange={e => setDescription(e.target.value)} /></label>
+            <label className="team-avatar-upload"><Camera size={18} /><span>{avatarUrl ? "Změnit obrázek týmu" : "Přidat obrázek týmu"}</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadAvatar} /></label>
+            <button className="run-primary-button team-save-button" onClick={() => void save()} disabled={saving}><Save size={18} />{saving ? "Ukládám…" : "Uložit změny"}</button>
+          </details>
+        )}
 
         {isMember && (
           <section className="team-management-actions">

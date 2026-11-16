@@ -148,7 +148,7 @@ export default function ParticipantsPage() {
           </div>
         </div>
 
-        <section className="participants-summary">
+        <section className="participants-summary metric-strip swipe-rail" tabIndex={0} aria-label="Souhrn účastníků, posouvej doleva nebo doprava">
           <div className="tile participant-summary-card"><Users size={21}/><span>Účastníci</span><strong>{participants.length}</strong></div>
           <div className="tile participant-summary-card"><Footprints size={21}/><span>Celkem km</span><strong>{totalKm.toFixed(1)} km</strong></div>
           <div className="tile participant-summary-card"><Activity size={21}/><span>Aktivity</span><strong>{totalActivities}</strong></div>
@@ -156,7 +156,7 @@ export default function ParticipantsPage() {
         </section>
 
         <section className="tile participants-list-card">
-          <div className="results-section-heading"><Medal size={22}/><div><h2>Žebříček účastníků</h2><p>Seřazeno podle celkové vzdálenosti.</p></div></div>
+          <div className="results-section-heading"><Medal size={22}/><div><h2>Žebříček účastníků</h2><p>{sortMode === "alpha" ? "Seřazeno podle abecedy." : "Seřazeno podle celkové vzdálenosti."}</p></div></div>
           {loading ? <p className="admin-muted">Načítám výsledky…</p> : runsError ? <div className="participants-empty">{runsError}</div> : participants.length === 0 ? (
             <div className="participants-empty">Zatím nejsou pro {selectedType === "běh" ? "běh" : "chůzi"} žádné záznamy.</div>
           ) : (

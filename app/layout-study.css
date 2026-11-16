@@ -1,0 +1,328 @@
+/* Testovací rozložení. Importuje se pouze v oddělené preview větvi.
+   Jedna karta = jeden záznam, tým, výzva nebo samostatný úkol.
+   Vnitřní údaje používají typografii a oddělovače místo dalších karet. */
+.layout-study {
+  --layout-gap: 1.25rem;
+  --layout-rule: var(--ui-border);
+}
+.layout-study .container { min-width: 0; padding-bottom: 1.5rem; }
+.layout-study .container > * { min-width: 0; }
+.layout-study :is(h1,h2,h3,strong) { overflow-wrap: anywhere; }
+.layout-study :is(button,a,input,select,textarea,summary,[tabindex]):focus-visible {
+  outline: 2px solid var(--ui-info);
+  outline-offset: 3px;
+}
+.layout-study .layout-preview-label {
+  display: block; margin-top: .15rem; font-size: .59rem;
+  font-weight: 500; line-height: 1.2; color: var(--ui-muted);
+}
+.layout-study .layout-preview-notice {
+  box-sizing: border-box; width: min(768px, calc(100% - 2rem));
+  margin: 1rem auto 2rem; padding: .85rem 0;
+  border-top: 1px solid var(--layout-rule);
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem 1rem;
+  font-size: .75rem; line-height: 1.5; color: var(--ui-muted);
+}
+.layout-study .layout-preview-notice strong { color: var(--ui-text); }
+.layout-study .layout-preview-notice a { color: var(--ui-text); text-underline-offset: 3px; }
+
+/* Hierarchie nadpisů: název obrazovky je v navigaci, obsah začíná úkolem. */
+.layout-study :is(.teams-header,.progress-header,.participants-header,.admin-header) {
+  margin: 0 0 1rem; padding: .25rem 0; text-align: left;
+}
+.layout-study :is(.teams-header,.progress-header,.participants-header,.admin-header) > :is(h1,.teams-eyebrow,.progress-eyebrow,.participants-eyebrow,.admin-eyebrow) {
+  display: none;
+}
+.layout-study :is(.teams-header,.progress-header,.participants-header,.admin-header) p {
+  margin: 0; max-width: 56ch; font-size: .85rem; line-height: 1.5; color: var(--ui-muted);
+}
+.layout-study .trainer-page > .progress-header { display: none; }
+.layout-study :is(.home-section-heading,.progress-section-title,.results-section-heading,.settings-section-heading,.admin-section-heading,.teams-section-heading) {
+  margin-bottom: .8rem;
+}
+.layout-study :is(.home-section-heading,.progress-section-title,.results-section-heading,.settings-section-heading,.admin-section-heading,.teams-section-heading) h2 {
+  margin: 0; font-size: 1.05rem; line-height: 1.35;
+}
+.layout-study .home-section-heading { margin-top: 1.25rem; }
+.layout-study .home-quick-add { margin: 1rem 0 1.5rem; }
+.layout-study .home-quick-add .run-form-wrap { margin: .65rem 0 0; }
+.layout-study .home-feed-heading { margin-top: 1.5rem; }
+.layout-study .run-weather-recommendation {
+  background: transparent !important; border: 0 !important;
+  border-bottom: 1px solid var(--layout-rule) !important;
+  border-radius: 0 !important; box-shadow: none !important;
+  padding: .5rem 0 1rem !important;
+}
+.layout-study .run-weather-copy p { line-height: 1.5; }
+.layout-study .run-weather-meta { line-height: 1.5; }
+
+/* Samostatné záznamy zůstávají kartami. Jejich tři metriky jsou jeden celek. */
+.layout-study .activity-card-modern {
+  padding: .9rem !important; border-radius: 18px; box-shadow: none !important;
+}
+.layout-study .activity-card-modern .activity-metrics {
+  gap: 0; margin: .6rem 0; align-items: stretch;
+}
+.layout-study .activity-card-modern .activity-metrics > div {
+  box-sizing: border-box; min-height: 60px !important; padding: .4rem .5rem !important;
+  border: 0 !important; border-radius: 0 !important;
+  background: transparent !important; box-shadow: none !important;
+  align-items: flex-start; justify-content: center; gap: .25rem;
+}
+.layout-study .activity-card-modern .activity-metrics > div + div {
+  border-left: 1px solid var(--layout-rule) !important;
+}
+.layout-study .activity-card-modern .activity-metrics > div > svg { display: none; }
+.layout-study .activity-card-modern .activity-metrics > div > strong {
+  font-size: clamp(.98rem, 3.4vw, 1.2rem) !important; line-height: 1.2;
+}
+.layout-study .activity-card-modern .activity-metrics > div > span {
+  font-size: .7rem; font-weight: 500; line-height: 1.3; color: var(--ui-muted);
+}
+.layout-study .activity-card-modern .activity-pace-bar { width: 100%; max-width: 100px; }
+.layout-study .activity-card-modern .activity-description {
+  padding: .5rem 0; border: 0; font-size: .9rem; line-height: 1.55;
+}
+.layout-study .activity-card-modern .activity-date { font-size: .69rem; color: var(--ui-muted); }
+.layout-study .activity-card-modern .activity-social-actions {
+  margin-top: .35rem; padding-top: .55rem;
+}
+.layout-study .activity-gallery { margin: .25rem 0 .5rem; }
+.layout-study .activity-gallery-track { gap: 6px; }
+/* Fotografie ani předpověď neměníme: zachovávají domluvené posuvy. */
+
+/* Souhrny: společný pás čísel; žádná samostatná dlaždice pro každé číslo. */
+.layout-study .metric-strip {
+  display: grid !important; grid-template-columns: repeat(4,minmax(0,1fr)) !important;
+  align-items: stretch; gap: 0 !important; margin: 1rem 0 !important;
+  padding: .75rem 0; border-top: 1px solid var(--layout-rule); border-bottom: 1px solid var(--layout-rule);
+}
+.layout-study .metric-strip > :is(.tile,div) {
+  box-sizing: border-box; display: flex !important; flex-direction: column;
+  justify-content: flex-start; align-items: flex-start; gap: .35rem;
+  min-width: 0; min-height: 76px !important; margin: 0 !important;
+  padding: .3rem .85rem !important; border: 0 !important; border-radius: 0 !important;
+  background: transparent !important; box-shadow: none !important; text-align: left;
+}
+.layout-study .metric-strip > :is(.tile,div) + :is(.tile,div) {
+  border-left: 1px solid var(--layout-rule) !important;
+}
+.layout-study .metric-strip > :is(.tile,div) > strong {
+  order: 0; font-size: clamp(1rem, 3.6vw, 1.35rem) !important; line-height: 1.3;
+  font-variant-numeric: tabular-nums; color: var(--ui-text);
+}
+.layout-study .metric-strip > :is(.tile,div) > :is(span,small) {
+  order: 1; font-size: .72rem; line-height: 1.4; text-transform: none;
+  letter-spacing: 0; font-weight: 500; color: var(--ui-muted);
+}
+.layout-study .metric-strip > :is(.tile,div) > svg,
+.layout-study .metric-strip .progress-record-icon { display: none !important; }
+.layout-study .stat-summary-grid.metric-strip { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+
+/* Posuv používáme pro související souhrny a odznaky; hlavní seznamy zůstávají svislé. */
+.layout-study .swipe-rail {
+  display: flex !important; flex-wrap: nowrap; min-width: 0; max-width: 100%;
+  overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity; scrollbar-width: thin;
+}
+.layout-study .swipe-rail > * { scroll-snap-align: start; flex-shrink: 0; }
+.layout-study .metric-strip.swipe-rail > :is(.tile,div) { flex: 1 0 23%; }
+.layout-study .progress-badges-grid.swipe-rail { gap: .65rem; padding: .2rem 0 .6rem; }
+.layout-study .progress-badges-grid.swipe-rail > .progress-badge {
+  box-sizing: border-box; flex: 0 0 240px; max-width: 82%;
+  min-height: 106px; padding: .8rem; box-shadow: none;
+}
+.layout-study .progress-badge p { line-height: 1.45; }
+.layout-study .progress-record-grid.metric-strip > .progress-record-item {
+  grid-template-columns: none !important;
+}
+.layout-study .progress-record-grid.metric-strip .progress-record-item strong { grid-column: auto !important; }
+
+/* Sekundární úpravy se otevřou na vyžádání. Původní formuláře a akce zůstávají. */
+.layout-study .layout-disclosure {
+  margin: .8rem 0; border: 0; border-top: 1px solid var(--layout-rule);
+  border-bottom: 1px solid var(--layout-rule); border-radius: 0;
+  background: transparent; box-shadow: none;
+}
+.layout-study .layout-disclosure > summary {
+  box-sizing: border-box; min-height: 48px; padding: .85rem .15rem;
+  cursor: pointer; font-size: .85rem; font-weight: 700; color: var(--ui-text);
+}
+.layout-study .layout-disclosure[open] > summary { margin-bottom: .6rem; }
+.layout-study .layout-disclosure .progress-goal-inputs { margin: .75rem 0; }
+.layout-study .progress-goal-bars { margin: 1rem 0 .5rem; gap: 1rem; }
+.layout-study :is(.trainer-goal-note,.progress-calendar-summary) { line-height: 1.5; color: var(--ui-muted); }
+.layout-study .progress-page > :is(.progress-level,.progress-calendar,.progress-records,.progress-challenges) {
+  padding: 1.1rem 0 !important; margin: .8rem 0;
+  background: transparent !important; border: 0 !important;
+  border-top: 1px solid var(--layout-rule) !important; border-radius: 0 !important; box-shadow: none !important;
+}
+.layout-study .trainer-week-summary > div {
+  background: transparent; border: 0; padding: .5rem 0;
+}
+
+/* Týmy a výzvy: jedna karta pro jeden celek, jasný odkaz na detail. */
+.layout-study .teams-grid { grid-template-columns: minmax(0,1fr) !important; gap: .65rem; }
+.layout-study .team-card { box-shadow: none !important; padding: .9rem; }
+.layout-study .team-card-link { text-decoration: none; color: inherit; }
+.layout-study .team-card-link:focus-visible { border-radius: 8px; }
+.layout-study .team-card-stats {
+  display: grid; gap: .4rem; margin-top: .65rem; padding-top: .55rem;
+  border-top: 1px solid var(--layout-rule);
+}
+.layout-study .team-card-stats .team-activity-stat {
+  background: transparent; border: 0; border-radius: 0; padding: 0;
+  display: flex; align-items: center; gap: .4rem; font-size: .76rem; line-height: 1.45;
+}
+.layout-study .team-card > .team-action-button { margin-top: .75rem; width: auto; }
+.layout-study .team-detail-page > .team-members-card,
+.layout-study .team-detail-page > .team-stats-card {
+  border: 0 !important; border-top: 1px solid var(--layout-rule) !important;
+  border-radius: 0 !important; padding: 1rem 0 !important; background: transparent !important; box-shadow: none !important;
+}
+.layout-study .team-member-row,
+.layout-study .team-stats-rows > div {
+  background: transparent !important; border: 0 !important; border-radius: 0 !important;
+  border-bottom: 1px solid var(--layout-rule) !important; padding: .7rem .1rem !important;
+}
+.layout-study .team-settings-card { padding: 0 0 1rem !important; }
+.layout-study .team-settings-card .progress-section-title { display: none; }
+.layout-study .challenge-group { margin: 1.3rem 0; }
+.layout-study .challenge-group > h2 { font-size: .95rem; margin-bottom: .65rem; }
+.layout-study .challenge-summary-footer { color: var(--ui-muted); font-size: .72rem; }
+.layout-study .challenge-summary-card .challenge-state-label {
+  border-radius: 0; border: 0; background: transparent;
+}
+.layout-study .challenge-detail-page > .challenge-action-row,
+.layout-study .challenge-detail-page > .challenge-edit-card {
+  padding: .75rem 0 !important; background: transparent !important;
+  border: 0 !important; box-shadow: none !important;
+}
+.layout-study :is(.challenge-row,.challenge-row-current) {
+  border: 0; border-bottom: 1px solid var(--layout-rule); border-radius: 0; background: transparent;
+}
+.layout-study .challenge-row-current { box-shadow: inset 3px 0 0 var(--ui-info); }
+
+/* Žebříčky jsou seznam řádků. Data drží zarovnání; výběry jsou kompaktní. */
+.layout-study .participants-list-card {
+  background: transparent !important; border: 0 !important; box-shadow: none !important;
+  padding: 1rem 0 !important;
+}
+.layout-study .participant-row,
+.layout-study .admin-user-row {
+  background: transparent !important; border: 0 !important;
+  border-bottom: 1px solid var(--layout-rule) !important; border-radius: 0 !important;
+  padding: .8rem .15rem; min-height: 64px;
+}
+.layout-study .results-filter-pair {
+  display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .85rem;
+}
+.layout-study .results-filter-pair .tile-group { gap: .3rem; margin: .35rem 0 .65rem; }
+.layout-study .results-filter-pair .tile-button {
+  min-height: 44px; padding: .5rem .4rem; font-size: .8rem;
+  flex-direction: row; gap: .35rem;
+}
+.layout-study .result-period { margin: .4rem 0; }
+.layout-study :is(.date-filter,.activity-date-range .date-filter) {
+  box-shadow: none !important; background: transparent !important; border: 0 !important;
+  padding: .5rem 0 !important; margin: 0;
+}
+.layout-study .results-other .results-podium { display: flex; flex-direction: column; gap: 0; }
+.layout-study .results-other .results-podium-item {
+  display: grid; grid-template-columns: 24px 36px minmax(0,1fr) auto;
+  align-items: center; gap: .5rem; padding: .8rem .1rem;
+  background: transparent; border: 0; border-bottom: 1px solid var(--layout-rule);
+  border-radius: 0; min-height: 60px;
+}
+.layout-study .results-other .activity-avatar { width: 36px; min-width: 36px; height: 36px; }
+.layout-study .results-other :is(.results-name,.results-value) { font-size: .8rem; text-align: left; }
+.layout-study .results-other .results-value { text-align: right; }
+
+/* Nastavení: jeden nadpis pro skupinu, jednotlivé volby jako jednoduché řádky. */
+.layout-study .settings-page { gap: .5rem; }
+.layout-study .settings-page > .tile {
+  background: transparent !important; border: 0 !important;
+  border-bottom: 1px solid var(--layout-rule) !important; border-radius: 0 !important;
+  padding: 1rem 0 !important; box-shadow: none !important;
+}
+.layout-study .settings-notification-row,
+.layout-study .settings-animation-toggle {
+  background: transparent !important; border: 0 !important;
+  border-radius: 0 !important; box-shadow: none !important;
+  padding: .8rem .1rem !important; margin: 0 !important;
+}
+.layout-study .settings-notification-row + .settings-notification-row {
+  border-top: 1px solid var(--layout-rule) !important;
+}
+.layout-study .settings-notification-copy small { line-height: 1.45; }
+.layout-study .theme-options.swipe-rail { gap: .5rem !important; padding-bottom: .5rem; }
+.layout-study .theme-options.swipe-rail > .theme-option {
+  flex: 0 0 126px; min-height: 58px; padding: .65rem .5rem;
+}
+.layout-study .layout-avatar-row {
+  display: flex; gap: .9rem; align-items: center; border-top: 1px solid var(--layout-rule);
+  margin-top: 1rem; padding: 1rem 0 0 !important;
+  background: transparent !important; border-left: 0; border-right: 0; border-bottom: 0; border-radius: 0; box-shadow: none;
+}
+.layout-study .profile-account-actions { background: transparent !important; border: 0 !important; padding: .5rem 0 !important; }
+.layout-study .settings-password-section { padding: 0 0 1rem !important; }
+.layout-study .settings-password-section .settings-section-heading { display: none; }
+
+/* Počasí: hlavní stav bez vnořené karty, statistiky v jednom pásu. */
+.layout-study .weather-current-main {
+  background: transparent !important; border: 0 !important;
+  padding: .5rem 0 !important; border-radius: 0;
+}
+.layout-study .weather-stat-grid {
+  border-top: 1px solid var(--layout-rule); border-bottom: 1px solid var(--layout-rule);
+  gap: 0; padding: .55rem 0;
+}
+.layout-study .weather-stat-card {
+  border: 0 !important; border-radius: 0 !important; background: transparent !important;
+  padding: .55rem .4rem !important; min-height: 96px !important;
+}
+.layout-study .weather-stat-card + .weather-stat-card { border-left: 1px solid var(--layout-rule) !important; }
+.layout-study .weather-current-grid { grid-template-columns: minmax(0,1fr); }
+.layout-study .weather-stat-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.layout-study .weather-stat-card { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+.layout-study .weather-hour-section { margin-top: 1.1rem; }
+/* Navigační tlačítka zachovávají stejné ikony nad popisem a stejné rozměry. */
+
+/* Mapy a formuláře zůstávají samostatnými ovladatelnými bloky. */
+.layout-study .route-card { box-shadow: none !important; margin-bottom: 1rem; }
+.layout-study .route-card-main { margin-bottom: .65rem; }
+.layout-study .route-card-icon { background: transparent; border: 0; }
+.layout-study .route-card-title { align-items: baseline; gap: .5rem; }
+.layout-study .routes-sort-toolbar { margin: 0; }
+.layout-study .routes-toolbar { margin-bottom: .75rem; }
+.layout-study .admin-actions { gap: .55rem; }
+.layout-study .admin-user-list { gap: 0; }
+
+/* Na mobilu jsou 3 souhrny a část čtvrtého vidět bez vysoké mřížky. */
+@media (max-width: 560px) {
+  .layout-study .metric-strip.swipe-rail > :is(.tile,div) { flex: 0 0 30%; }
+  .layout-study .metric-strip > :is(.tile,div) { padding-inline: .6rem !important; }
+  .layout-study .progress-badges-grid.swipe-rail > .progress-badge { flex-basis: 78%; }
+  .layout-study .results-filter-pair { gap: .5rem; }
+  .layout-study .challenge-summary-card .challenge-summary-metrics {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+  .layout-study .challenge-summary-card .challenge-summary-metrics > div:last-child {
+    grid-column: 1 / -1; min-height: 44px !important;
+    border-left: 0 !important; border-top: 1px solid var(--layout-rule) !important;
+    display: flex; flex-direction: row; align-items: baseline; justify-content: space-between;
+    flex-wrap: wrap; gap: .4rem;
+  }
+  .layout-study .challenge-summary-card .challenge-period { font-size: .8rem !important; }
+  .layout-study .layout-avatar-row { align-items: flex-start; }
+  .layout-study .layout-preview-notice { flex-direction: column; gap: .3rem; }
+}
+@media (max-width: 360px) {
+  .layout-study .results-filter-pair { grid-template-columns: minmax(0,1fr); }
+  .layout-study .activity-card-modern { padding: .75rem !important; }
+  .layout-study .metric-strip > :is(.tile,div) > strong { font-size: .98rem !important; }
+}
+/* Animace se v testovacím rozložení nezapínají. */
+.layout-study *, .layout-study *::before, .layout-study *::after {
+  animation: none !important; transition: none !important;
+}

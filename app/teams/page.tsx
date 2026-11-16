@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -262,8 +263,8 @@ export default function TeamsPage() {
                 const joined = myTeamIds.includes(team.id);
                 const stats = team.stats || { runningKm: 0, runningActivities: 0, walkingKm: 0, walkingActivities: 0 };
                 return (
-                  <article key={team.id} className={`tile team-card ${joined ? "team-card-joined" : ""}`} onClick={() => router.push("/teams/" + team.id)}>
-                    <div className="team-card-main">
+                  <article key={team.id} className={`tile team-card ${joined ? "team-card-joined" : ""}`}>
+                    <Link href={`/teams/${encodeURIComponent(team.id)}`} className="team-card-main team-card-link" aria-label={`Otevřít tým ${team.name}`}>
                       <div className="team-avatar">
                         {team.avatarUrl ? <img src={cloudinaryImageUrl(team.avatarUrl, 96)} alt="" /> : <Users size={22} />}
                       </div>
@@ -280,7 +281,7 @@ export default function TeamsPage() {
                         </div>
                       </div>
                       <ChevronRight className="team-card-chevron" size={20} />
-                    </div>
+                    </Link>
                     {!joined && (
                       <button className="team-action-button" onClick={event => { event.stopPropagation(); void joinTeam(team.id); }}>
                         Přidat se k týmu

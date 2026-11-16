@@ -298,7 +298,7 @@ export default function MyRunsPage() {
           {(dateFrom || dateTo) && <button className="date-clear" onClick={() => { setDateFrom(""); setDateTo(""); }}>Zrušit filtr</button>}
         </div>
       </details>
-      <div className="tile-group activity-summary-grid">
+      <div className="tile-group activity-summary-grid metric-strip swipe-rail" tabIndex={0} role="group" aria-label="Souhrn zvolených aktivit, posouvej doleva nebo doprava">
         <div className="tile"><ListChecks/><span>Počet aktivit</span><strong>{filteredRuns.length}</strong></div>
         <div className="tile"><MapPin/><span>Celkem km</span><strong>{totalKm.toFixed(2)} km</strong></div>
         <div className="tile"><Clock3/><span>Čas</span><strong>{(totalMin / 60).toFixed(2)} h</strong></div>

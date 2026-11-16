@@ -132,35 +132,33 @@ export default function StatisticsPage() {
         <div className="control-caption">Typ aktivity</div>
         <ActivityTypeSelector value={selectedType} onChange={setSelectedType} />
 
-        <div className="control-caption">Zobrazit výsledky</div>
+        <div className="results-filter-pair"><div><div className="control-caption">Zobrazit výsledky</div>
         <div className="tile-group">
           <button className={`tile-button ${view === "já" ? "active" : ""}`} onClick={() => setView("já")}><User size={20}/> Já</button>
           <button className={`tile-button ${view === "jednotlivci" ? "active" : ""}`} onClick={() => setView("jednotlivci")}><Users size={20}/> Jednotlivci</button>
         </div>
 
-        <div className="control-caption">Hodnocené podle</div>
+        </div><div><div className="control-caption">Hodnocené podle</div>
         <div className="tile-group">
           <button className={`tile-button ${metric === "km" ? "active" : ""}`} onClick={() => setMetric("km")}>Km</button>
           <button className={`tile-button ${metric === "tempo" ? "active" : ""}`} onClick={() => setMetric("tempo")}>Tempo</button>
         </div>
 
-        <div className="tile date-filter">
+        </div></div>
+        <details className="layout-disclosure result-period"><summary>{startDate || endDate ? "Období · aktivní filtr" : "Období · vše"}</summary><div className="tile date-filter">
           <label className="date-field"><span>Od data</span><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></label>
           <label className="date-field"><span>Do data</span><input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} /></label>
           {(startDate || endDate) && <button className="date-clear" onClick={() => { setStartDate(""); setEndDate(""); }}>Zrušit filtr</button>}
         </div>
 
-        <div className="tile-group stat-summary-grid">
+        </details>
+        <div className="tile-group stat-summary-grid metric-strip" role="group" aria-label="Souhrn výsledků">
           <div className="tile stat-card"><MapPin/><span>Celkem km</span><strong>{totalKm.toFixed(2)} km</strong></div>
           <div className="tile stat-card"><Gauge/><span>Průměrné tempo</span><strong>{formatPace(avgTempo)}</strong></div>
           <div className="tile stat-card"><ListChecks/><span>Počet</span><strong>{count}</strong></div>
         </div>
 
-        {view === "já" && (
-          <section className="tile result-my-position">
-            <div className="results-position-row"><span><Trophy size={20}/> Tvé výsledky</span><strong>{count}</strong></div>
-          </section>
-        )}
+
 
         {view !== "já" && (
           <>

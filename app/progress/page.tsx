@@ -198,15 +198,17 @@ export default function ProgressPage() {
       <section className="progress-goal-settings tile">
         <div className="progress-section-title"><Target/><div><h2>Moje cíle</h2><p>Nastav si vlastní vzdálenost, které chceš dosáhnout.</p></div></div>
         <ActivityTypeSelector value={goalType as ActivityType} onChange={switchGoalType} ariaLabel="Typ cíle" />
+        <div className="progress-goal-bars">
+          <div><div className="progress-bar-heading"><strong>Tento týden</strong><span>{weekKm.toFixed(1)} / {asNumber(goalWeekly)} km</span></div><div className="progress-track"><i style={{width:`${progressWeekly}%`}}/></div></div>
+          <div><div className="progress-bar-heading"><strong>Tento měsíc</strong><span>{monthKm.toFixed(1)} / {asNumber(goalMonthly)} km</span></div><div className="progress-track"><i style={{width:`${progressMonthly}%`}}/></div></div>
+        </div>
+        <details className="layout-disclosure"><summary>Upravit týdenní a měsíční cíl</summary>
         <div className="progress-goal-inputs">
           <label>Týdenní cíl (km)<input type="number" min="0.1" step="0.5" value={goalWeekly} onChange={e=>setGoalWeekly(e.target.value)}/></label>
           <label>Měsíční cíl (km)<input type="number" min="0.1" step="1" value={goalMonthly} onChange={e=>setGoalMonthly(e.target.value)}/></label>
           <button className="progress-save" onClick={saveGoals}><Save size={17}/>{saved?"Uloženo":"Uložit cíle"}</button>
         </div>
-        <div className="progress-goal-bars">
-          <div><div className="progress-bar-heading"><strong>Tento týden</strong><span>{weekKm.toFixed(1)} / {asNumber(goalWeekly)} km</span></div><div className="progress-track"><i style={{width:`${progressWeekly}%`}}/></div></div>
-          <div><div className="progress-bar-heading"><strong>Tento měsíc</strong><span>{monthKm.toFixed(1)} / {asNumber(goalMonthly)} km</span></div><div className="progress-track"><i style={{width:`${progressMonthly}%`}}/></div></div>
-        </div>
+        </details>
         <p className="trainer-goal-note">Osobní trenér používá stejné cíle jako tato stránka. Měsíční cíl je hlavní meta; trenér z něj vychází při plánování týdnů a zbytek můžeš doplnit vlastními aktivitami.</p>
       </section>
 
@@ -219,7 +221,7 @@ export default function ProgressPage() {
 
       <section className="progress-section">
         <div className="progress-section-title"><Award/><div><h2>Odznaky a úspěchy</h2><p>{badges.filter(b=>b.done).length} z {badges.length} získaných odznaků</p></div></div>
-        <div className="progress-badges-grid">{badges.map(badge=><article key={badge.title} className={badge.done?"progress-badge earned":"progress-badge locked"}><span>{badge.done?badge.icon:"🔒"}</span><div><strong>{badge.title}</strong><p>{badge.detail}</p></div>{badge.done?<CheckCircle2 size={18}/>:<Lock size={17}/>}</article>)}</div>
+        <div className="progress-badges-grid swipe-rail" tabIndex={0} role="group" aria-label="Odznaky a úspěchy, posouvej doleva nebo doprava">{badges.map(badge=><article key={badge.title} className={badge.done?"progress-badge earned":"progress-badge locked"}><span>{badge.done?badge.icon:"🔒"}</span><div><strong>{badge.title}</strong><p>{badge.detail}</p></div>{badge.done?<CheckCircle2 size={18}/>:<Lock size={17}/>}</article>)}</div>
       </section>
 
       <section className="tile progress-calendar">
@@ -231,7 +233,7 @@ export default function ProgressPage() {
 
       <section className="tile progress-records">
         <div className="progress-section-title"><Trophy/><div><h2>Osobní rekordy</h2><p>Nejlepší výkony v kategorii {goalType}.</p></div></div>
-        <div className="progress-record-grid">
+        <div className="progress-record-grid metric-strip swipe-rail" tabIndex={0} role="group" aria-label="Osobní rekordy, posouvej doleva nebo doprava">
           <div className="progress-record-item progress-record"><span className="progress-record-icon"><Footprints size={20}/></span><small>Nejdelší aktivita</small><strong>{longest?asNumber(longest.km).toFixed(2)+" km":"—"}</strong></div>
           <div className="progress-record-item progress-record"><span className="progress-record-icon"><Zap size={20}/></span><small>Nejrychlejší tempo</small><strong>{fastest?formatPace(asNumber(fastest.tempo)):"—"}</strong></div>
           <div className="progress-record-item progress-record"><span className="progress-record-icon"><CalendarDays size={20}/></span><small>Nejvíce za měsíc</small><strong>{bestMonth.toFixed(1)} km</strong></div>

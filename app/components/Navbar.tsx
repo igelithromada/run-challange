@@ -48,7 +48,7 @@ export default function Navbar({
         ) : (
           <span className="site-navbar-spacer" aria-hidden="true" />
         )}
-        <div className="site-navbar-title" title={title}>{title}</div>
+        <div className="site-navbar-title" title={title}>{title}<small className="layout-preview-label">Zkušební rozložení</small></div>
         <NotificationsBell />
         <button type="button" className="site-navbar-button" onClick={onMenuClick} aria-label="Otevřít navigaci">
           <Menu size={25} strokeWidth={2.1} aria-hidden="true" />

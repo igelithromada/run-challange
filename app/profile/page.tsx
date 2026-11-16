@@ -257,9 +257,7 @@ export default function ProfilePage() {
               <span>{email || "—"}</span>
             </div>
           </div>
-        </section>
-
-        <section className="tile settings-avatar">
+        <div className="settings-avatar layout-avatar-row">
           <div className="settings-avatar-preview">
             {avatarUrl ? (
               <img src={avatarUrl} alt="Profilový avatar" />
@@ -282,9 +280,10 @@ export default function ProfilePage() {
             </label>
             <small>JPG, PNG nebo WEBP · maximálně 5 MB</small>
           </div>
+        </div>
         </section>
 
-        <section className="tile settings-password-section">
+        <details className="tile settings-password-section layout-disclosure"><summary>Změnit heslo</summary>
           <div className="settings-section-heading">
             <KeyRound size={22} />
             <div>
@@ -305,7 +304,7 @@ export default function ProfilePage() {
           <button type="button" className="tile-button settings-save-button" onClick={() => void handlePasswordChange()} disabled={savingPassword}>
             {savingPassword ? "Měním heslo…" : "Změnit heslo"}
           </button>
-        </section>
+        </details>
 
         <section className="tile profile-account-actions">
           <button type="button" className="profile-logout-button" onClick={() => void handleLogout()}>

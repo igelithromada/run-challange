@@ -382,7 +382,7 @@ export default function SettingsPage() {
             <input type="checkbox" checked={gradientEnabled} onChange={e => void handleGradientChange(e.target.checked)} />
           </label>
 
-          <div className="theme-options">
+          <div className="theme-options swipe-rail" tabIndex={0} role="group" aria-label="Vzhled aplikace, posouvej doleva nebo doprava">
             <ThemeItem icon={<Sun size={19}/>} color="#f4f7f9" active={theme === "light"} onClick={() => void handleThemeChange("light")} text="Světlý" />
             <ThemeItem icon={<Moon size={19}/>} color="#000000" active={theme === "dark"} onClick={() => void handleThemeChange("dark")} text="Tmavý" />
             <ThemeItem icon={<Palette size={19}/>} color="linear-gradient(180deg,#36D1DC,#5B86E5)" active={theme === "default"} onClick={() => void handleThemeChange("default")} text="Výchozí" />
