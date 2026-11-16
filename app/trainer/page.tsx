@@ -268,7 +268,7 @@ export default function TrainerPage(){
    router.push(routes[item]||"/");
  };
 
- if(loading)return <><Navbar title="Osobní trenér" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/><main className="container"><div className="tile"><p>Načítám osobního trenéra…</p></div></main></>;
+ if(loading)return <><Navbar title="Osobní trenér" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/><Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/><main className="container"><div className="tile"><p>Načítám osobního trenéra…</p></div></main></>;
 
  return <>
   <Navbar title="Osobní trenér" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
