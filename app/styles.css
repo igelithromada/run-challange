@@ -6178,3 +6178,45 @@ html[data-theme="white"] .social-modal input {
   border-color:#c7d4da;
   color-scheme:light;
 }
+
+
+/* FINAL FORM QA — bílé vstupní buňky musí mít vždy čitelný text a placeholder. */
+.teams-create-form input,
+.teams-create-form select,
+.challenges-create input,
+.challenges-create select,
+.challenges-create textarea {
+  color:#17232b !important;
+  -webkit-text-fill-color:#17232b !important;
+  background:#fff !important;
+  color-scheme:light;
+}
+.teams-create-form input::placeholder,
+.challenges-create input::placeholder,
+.challenges-create textarea::placeholder {
+  color:#667780 !important;
+  opacity:1 !important;
+}
+.challenges-create .challenge-dates label {
+  color:inherit;
+}
+.challenges-create .challenge-dates input {
+  min-height:48px;
+  border:1px solid #c7d4da;
+  border-radius:14px;
+  padding:.75rem .8rem;
+  box-sizing:border-box;
+}
+.challenges-create input:focus,
+.challenges-create select:focus,
+.challenges-create textarea:focus,
+.teams-create-form input:focus,
+.teams-create-form select:focus {
+  outline:none;
+  border-color:#8aa4b0 !important;
+  box-shadow:var(--ui-focus-ring);
+}
+.challenges-create input[type="file"] {
+  color:#17232b !important;
+  -webkit-text-fill-color:#17232b !important;
+}
