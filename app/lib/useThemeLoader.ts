@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
 import { getUserProfile } from "./services/users";
+import { getWeather } from "./weatherClient";
 
 const CACHE_KEY = "dolni-lhota-theme-v1";
 type ThemeCache = { theme: string; customColor: string; gradientEnabled: boolean; savedAt: number };
@@ -100,16 +101,7 @@ export async function applyTheme(selectedTheme: string, color: string, gradientE
 
   if (activeTheme === "weather") {
     try {
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 8_000);
-      let response: Response;
-      try {
-        response = await fetch("/api/weather", { signal: controller.signal, cache: "no-store" });
-      } finally {
-        window.clearTimeout(timeout);
-      }
-      if (!response.ok) throw new Error("Počasí není dostupné");
-      const data = await response.json();
+      const data = await getWeather();
       const current = data.current;
       if (!current) throw new Error("Chybí aktuální počasí");
 
