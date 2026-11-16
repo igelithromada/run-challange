@@ -154,8 +154,8 @@ export default function RunForm({ type }: {
       setError("Zkontroluj datum a čas aktivity.");
       return;
     }
-    if (files.length > 6 || files.some(file => !file.type.startsWith("image/") || file.size > 10 * 1024 * 1024)) {
-      setError("Vyber maximálně 6 obrázků, každý do 10 MB.");
+    if (files.length > 6 || files.some(file => !file.type.startsWith("image/") || file.size > 5 * 1024 * 1024)) {
+      setError("Vyber maximálně 6 obrázků, každý do 5 MB.");
       return;
     }
 
