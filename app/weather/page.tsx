@@ -4,18 +4,11 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "../lib/firebase";
 import type { WeatherHour, WeatherResponse } from "../lib/weather";
-import { Cloud, Wind, Droplets, RefreshCw } from "lucide-react";
+import { Wind, Droplets, RefreshCw } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import WeatherVisual, { weatherDescription } from "../components/WeatherVisual";
 
-function isRainType(type = "") {
-  const value = type.toUpperCase();
-  return value.includes("RAIN") || value.includes("DRIZZLE") || value.includes("THUNDER");
-}
-function RainIcon({ size = 22, className = "" }: { size?: number; className?: string }) {
-  return <span className={`weather-rain-combo ${className}`} style={{ width: size, height: size }}><Cloud size={size} strokeWidth={1.8} /><Droplets className="weather-rain-drops" size={Math.max(10, Math.round(size * .55))} strokeWidth={2.4} /></span>;
-}
 function hourLabel(item: WeatherHour) {
   const raw = item?.displayDateTime;
   if (raw?.hours !== undefined) return `${String(raw.hours).padStart(2, "0")}:00`;
@@ -91,7 +84,7 @@ export default function WeatherCard() {
               <div className="weather-stat-card"><Droplets className="weather-humidity-icon" size={19} /><strong>{humidity !== undefined ? `${humidity}%` : "—"}</strong><small>Vlhkost</small></div>
             </div>
           </div>
-          {hours.length > 0 && <section className="weather-hour-section"><h3>Předpověď po hodinách</h3><div className="weather-hour-grid">{hours.map((item,index) => { return <div key={item?.interval?.startTime || index} className="weather-hour-card"><small className="weather-hour-time">{hourLabel(item)}</small><div className="weather-hour-main">{isRainType(item?.weatherCondition?.type) ? <RainIcon size={42} className="weather-hour-icon" /> : <WeatherVisual type={item?.weatherCondition?.type} size={48} className="weather-hour-icon" night={(() => { const raw = item?.displayDateTime?.hours; if (raw !== undefined) return raw < 6 || raw >= 20; const date = item?.interval?.startTime ? new Date(item.interval.startTime) : null; const hour = date ? date.getHours() : currentHour; return hour < 6 || hour >= 20; })()} />}<strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong></div><span>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}% déšť` : "—"}</span>{item?.precipitation?.amount !== undefined && item?.precipitation?.amount !== null && <small>{formatMm(item.precipitation.amount)}</small>}</div>; })}</div></section>}
+          {hours.length > 0 && <section className="weather-hour-section"><h3>Předpověď po hodinách</h3><div className="weather-hour-grid">{hours.map((item,index) => { return <div key={item?.interval?.startTime || index} className="weather-hour-card"><small className="weather-hour-time">{hourLabel(item)}</small><div className="weather-hour-main"><WeatherVisual type={item?.weatherCondition?.type} size={48} className="weather-hour-icon" night={(() => { const raw = item?.displayDateTime?.hours; if (raw !== undefined) return raw < 6 || raw >= 20; const date = item?.interval?.startTime ? new Date(item.interval.startTime) : null; const hour = date ? date.getHours() : currentHour; return hour < 6 || hour >= 20; })()} /><strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong></div><span>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}% déšť` : "—"}</span>{item?.precipitation?.amount !== undefined && item?.precipitation?.amount !== null && <small>{formatMm(item.precipitation.amount)}</small>}</div>; })}</div></section>}
           <p className="weather-source">Zdroj: {weather.source || "Google Weather"} · obnoveno {lastUpdated}</p>
         </>
       )}
