@@ -68,15 +68,17 @@ export async function reconcileChallengesForUser(adminDb:any, userId:string) {
       if(challenge.kind==="sharedDistance"){
         const activeParticipants=await challengeDoc.ref.collection("participants").where("active","==",true).get();
         let shared=0;
-        const batch=adminDb.batch();
-        for(const p of activeParticipants.docs){
-          const pd=p.data()||{};
-          const calculated=await calculateParticipantResult(adminDb,challenge,{...pd,userId:p.id});
-          shared+=Number(calculated.result||0);
-          batch.set(p.ref,calculated,{merge:true});
+        for(let start=0;start<activeParticipants.docs.length;start+=400){
+          const batch=adminDb.batch();
+          for(const p of activeParticipants.docs.slice(start,start+400)){
+            const pd=p.data()||{};
+            const calculated=await calculateParticipantResult(adminDb,challenge,{...pd,userId:p.id});
+            shared+=Number(calculated.result||0);
+            batch.set(p.ref,calculated,{merge:true});
+          }
+          await batch.commit();
         }
-        batch.update(challengeDoc.ref,{sharedProgress:shared});
-        await batch.commit();
+        await challengeDoc.ref.update({sharedProgress:shared});
       }
       continue;
     }
@@ -84,15 +86,18 @@ export async function reconcileChallengesForUser(adminDb:any, userId:string) {
     await participantRef.set(result,{merge:true});
     if(challenge.kind==="sharedDistance"){
       const participants=await challengeDoc.ref.collection("participants").where("active","==",true).get();
-      const batch=adminDb.batch(); let shared=0;
-      for(const p of participants.docs){
-        const pd=p.data()||{};
-        const calculated=p.id===userId?result:await calculateParticipantResult(adminDb,challenge,{...pd,userId:p.id});
-        shared+=Number(calculated.result||0);
-        batch.set(p.ref,calculated,{merge:true});
+      let shared=0;
+      for(let start=0;start<participants.docs.length;start+=400){
+        const batch=adminDb.batch();
+        for(const p of participants.docs.slice(start,start+400)){
+          const pd=p.data()||{};
+          const calculated=p.id===userId?result:await calculateParticipantResult(adminDb,challenge,{...pd,userId:p.id});
+          shared+=Number(calculated.result||0);
+          batch.set(p.ref,calculated,{merge:true});
+        }
+        await batch.commit();
       }
-      batch.update(challengeDoc.ref,{sharedProgress:shared});
-      await batch.commit();
+      await challengeDoc.ref.update({sharedProgress:shared});
     }
   }
 }
