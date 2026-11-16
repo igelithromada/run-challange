@@ -1,6 +1,6 @@
 "use client";
 
-import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudSnow, Moon, Sun } from "lucide-react";
+import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudSnow, Droplets, Moon, Sun } from "lucide-react";
 
 function weatherKind(type = "") {
   const value = type.toUpperCase();
@@ -60,6 +60,11 @@ export default function WeatherVisual({
         <>
           <Sun className="weather-sun" size={Math.round(size * .58)} strokeWidth={2.7} />
           <Cloud className="weather-cloud" size={Math.round(size * .58)} strokeWidth={1.9} />
+        </>
+      ) : kind === "rain" || kind === "drizzle" ? (
+        <>
+          <Cloud className="weather-visual-cloud" size={Math.round(size * .72)} strokeWidth={1.9} />
+          <Droplets className="weather-visual-drops" size={Math.max(16, Math.round(size * .46))} strokeWidth={2.5} />
         </>
       ) : (
         <Icon className="weather-visual-icon" size={Math.round(size * .72)} strokeWidth={1.9} />
