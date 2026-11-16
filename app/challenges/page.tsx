@@ -160,8 +160,8 @@ export default function ChallengesPage() {
               <input className="professional-input" type="number" min="1" step={kind==="distance"||kind==="sharedDistance"?"0.1":"1"} placeholder={kind==="distance"||kind==="sharedDistance"?"Např. 50":kind==="activities"?"Např. 10":"Např. 15"} value={goal} onChange={e=>setGoal(e.target.value)}/>
             </FormField>
             <div className="challenge-dates">
-              <label><span>Od</span><input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}/></label>
-              <label><span>Do</span><input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/></label>
+              <FormField label="Od"><input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}/></FormField>
+              <FormField label="Do"><input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/></FormField>
             </div>
             <label className="professional-form-file">
               <Plus size={19} aria-hidden="true" />
