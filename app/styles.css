@@ -5186,24 +5186,6 @@ html[data-theme="white"] .navbar {
   box-shadow:0 2px 10px rgba(18,38,52,.06) !important;
 }
 
-/* Překryv počasí nikdy nesmí změnit čitelnost obsahu */
-html[data-theme="white"] .weather-animation-overlay {
-  z-index:0 !important;
-  pointer-events:none !important;
-  opacity:.08 !important;
-}
-html[data-theme="white"] .app-content-layer {
-  position:relative;
-  z-index:1;
-}
-html[data-theme="white"] .activity-card-modern,
-html[data-theme="white"] .tile,
-html[data-theme="white"] .list-tile,
-html[data-theme="white"] .site-navbar,
-html[data-theme="white"] .site-sidebar-panel {
-  position:relative;
-  z-index:1;
-}
 
 /* Stavové a systémové prvky */
 html[data-theme="white"] .network-status,
