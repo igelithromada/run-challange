@@ -176,7 +176,6 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <div className="weather-animation-overlay" aria-hidden="true" />
       <div className="app-content-layer">
         <NetworkStatus />
         <AppToast />
