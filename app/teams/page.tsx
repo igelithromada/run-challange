@@ -57,7 +57,7 @@ export default function TeamsPage() {
 
         const stored = data.teamIdsByType || {};
         setTeamIdsByType({
-          běh: typeof stored.běh === "string" ? stored.běh : typeof data.teamId === "string" ? data.teamId : null,
+          běh: stored.běh === null ? null : typeof stored.běh === "string" ? stored.běh : typeof data.teamId === "string" ? data.teamId : null,
           chůze: typeof stored.chůze === "string" ? stored.chůze : null,
         });
       } catch (error) {
