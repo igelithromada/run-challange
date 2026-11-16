@@ -106,6 +106,8 @@ export default function TeamsPage() {
       await refreshMemberships(user.uid);
       setShowCreate(false);
       setPage(1);
+      if (tab === "mine") setTab("all");
+      else await loadTeamsPage(1);
       showAppToast("Tým byl vytvořen.", "success");
     } catch (error) {
       showAppToast(error instanceof Error ? error.message : "Tým se nepodařilo vytvořit.", "error");
@@ -124,7 +126,7 @@ export default function TeamsPage() {
     }
   };
 
-  const pageTeams = tab === "mine" ? teams.filter(team => myTeamIds.includes(team.id)) : teams;
+  const pageTeams = teams;
   const currentPage = page;
 
   const loadTeamsPage = async (targetPage: number) => {
@@ -242,10 +244,10 @@ export default function TeamsPage() {
         )}
 
         <div className="teams-tabs" role="tablist" aria-label="Týmy">
-          <button className={tab === "mine" ? "active" : ""} onClick={() => setTab("mine")} role="tab" aria-selected={tab === "mine"}>
+          <button className={tab === "mine" ? "active" : ""} onClick={() => { setPage(1); setTab("mine"); }} role="tab" aria-selected={tab === "mine"}>
             Moje týmy
           </button>
-          <button className={tab === "all" ? "active" : ""} onClick={() => setTab("all")} role="tab" aria-selected={tab === "all"}>
+          <button className={tab === "all" ? "active" : ""} onClick={() => { setPage(1); setTab("all"); }} role="tab" aria-selected={tab === "all"}>
             Všechny týmy
           </button>
         </div>
@@ -294,7 +296,7 @@ export default function TeamsPage() {
                   <Users size={30} />
                   <strong>{tab === "mine" ? "Zatím nejsi členem žádného týmu" : "Zatím nebyl vytvořen žádný tým"}</strong>
                   <p>{tab === "mine" ? "Přidej se k existujícímu týmu nebo vytvoř vlastní." : "Vytvoř první tým a začni budovat komunitu."}</p>
-                  {tab === "mine" && <button className="run-primary-button" onClick={() => setTab("all")}>Prohlédnout všechny týmy</button>}
+                  {tab === "mine" && <button className="run-primary-button" onClick={() => { setPage(1); setTab("all"); }}>Prohlédnout všechny týmy</button>}
                 </div>
               )}
             </section>
