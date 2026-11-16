@@ -87,7 +87,7 @@ function NotificationsBell() {
     const unsubscribe = onAuthStateChanged(auth, user => {
       if (user) {
         void load();
-        timer = setInterval(() => void load(), 20000);
+        timer = setInterval(() => { if (document.visibilityState === "visible") void load(); }, 60000);
       } else {
         if (timer) clearInterval(timer);
         timer = null;
