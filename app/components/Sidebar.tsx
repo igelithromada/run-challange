@@ -106,16 +106,32 @@ export default function Sidebar({ visible, onClose }: SidebarProps) {
               item.group === group.id && (!item.adminOnly || isAdmin)
             );
             if (!items.length) return null;
+
             return (
-              <section className="site-sidebar-section" key={group.id} aria-labelledby={`sidebar-group-${group.id}`}>
+              <section
+                className="site-sidebar-section"
+                key={group.id}
+                aria-labelledby={`sidebar-group-${group.id}`}
+              >
                 <h2 id={`sidebar-group-${group.id}`}>{group.label}</h2>
                 <div className="site-sidebar-grid">
-                  {items.map(item => { const { id, label, Icon, route } = item; const isActive = pathname === route || (route !== "/" && pathname.startsWith(route + "/")); return (
-                    <button key={id} type="button" className={`site-sidebar-item${isActive ? " is-active" : ""}`} onClick={() => handleNavigation(id)} aria-current={isActive ? "page" : undefined}>
-                      <Icon size={22} strokeWidth={2} aria-hidden="true" />
-                      <span>{label}</span>
-                    </button>
-                  ))}
+                  {items.map(item => {
+                    const { id, label, Icon, route } = item;
+                    const isActive = pathname === route || (route !== "/" && pathname.startsWith(route + "/"));
+
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        className={`site-sidebar-item${isActive ? " is-active" : ""}`}
+                        onClick={() => handleNavigation(id)}
+                        aria-current={isActive ? "page" : undefined}
+                      >
+                        <Icon size={22} strokeWidth={2} aria-hidden="true" />
+                        <span>{label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </section>
             );
