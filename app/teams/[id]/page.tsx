@@ -19,6 +19,7 @@ export default function TeamDetailPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [team, setTeam] = useState<TeamData | null>(null);
   const [members, setMembers] = useState<PublicProfileData[]>([]);
+  const [memberIds, setMemberIds] = useState<string[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -49,9 +50,10 @@ export default function TeamDetailPage() {
       return;
     }
     let sorted: PublicProfileData[] = [];
+    let activeIds: string[] = [];
     try {
-      const memberIds = await getTeamMemberIds(id);
-      const profiles = await getPublicProfiles(memberIds);
+      activeIds = await getTeamMemberIds(id);
+      const profiles = await getPublicProfiles(activeIds);
       sorted = Object.values(profiles).sort((a, b) =>
         (a.nickname || "Uživatel").localeCompare(b.nickname || "Uživatel", "cs")
       );
@@ -62,6 +64,7 @@ export default function TeamDetailPage() {
     }
     setTeam(data);
     setMembers(sorted);
+    setMemberIds(activeIds);
     setName(data.name || "");
     setDescription(data.description || "");
     setAvatarUrl(data.avatarUrl || "");
@@ -96,7 +99,7 @@ export default function TeamDetailPage() {
   }, [id, router]);
 
   const isManager = team?.managerId === user?.uid;
-  const isMember = !!user && members.some(member => member.id === user.uid);
+  const isMember = !!user && memberIds.includes(user.uid);
 
   const save = async () => {
     if (!isManager || !team) return;
