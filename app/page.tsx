@@ -160,7 +160,6 @@ export default function Page() {
               <span className="home-section-eyebrow">Nová aktivita</span>
               <h2 id="home-add-heading">Přidej svůj dnešní pohyb</h2>
             </div>
-            <span className="home-activity-badge">{selectedType === "běh" ? "Běh" : "Chůze"}</span>
           </div>
           <ActivityTypeSelector value={selectedType} onChange={(value) => { setSelectedType(value); try { localStorage.setItem("dolni-lhota-default-activity-v1", value); } catch {} }} />
 
