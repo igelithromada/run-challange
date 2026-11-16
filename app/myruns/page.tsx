@@ -300,7 +300,7 @@ export default function MyRunsPage() {
       </div>
       <h2 className="centered-title">Moje záznamy</h2>
 
-      <div className="list-container" style={{ display:"flex", flexDirection:"column", gap:0 }}>
+      <div className="list-container myruns-list">
         {filteredRuns.map(run => editingId === run.id ? <section key={run.id} className="run-form-panel activity-edit-form" aria-label="Upravit aktivitu">
           <div className="run-form-heading"><div><span className="run-form-eyebrow">ÚPRAVA AKTIVITY</span><h3>Upravit aktivitu</h3></div><button type="button" className="run-form-close" onClick={() => { setEditingId(null); setFile(null); setActionError(""); }} disabled={busy} aria-label="Zavřít formulář">×</button></div>
           <label className="run-form-field"><span>Vzdálenost <small>km</small></span><input type="number" min="0.1" step="0.01" value={km} onChange={e => setKm(e.target.value)} /></label>
