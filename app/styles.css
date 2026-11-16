@@ -6127,3 +6127,54 @@ html[data-theme="white"] .activity-load-more {
   color:#17232b;
   border-color:#c7d4da;
 }
+
+
+/* Final QA: formuláře a dialogy musí respektovat světlý režim stejně jako karty. */
+html[data-theme="white"] .run-form-panel,
+html[data-theme="white"] .activity-edit-form {
+  background:#fff !important;
+  color:#17232b;
+  border-color:#dbe4e9;
+  box-shadow:0 5px 20px rgba(23,35,43,.08);
+}
+html[data-theme="white"] .activity-edit-form input,
+html[data-theme="white"] .activity-edit-form textarea,
+html[data-theme="white"] .activity-edit-form select,
+html[data-theme="white"] .run-form-panel input,
+html[data-theme="white"] .run-form-panel textarea,
+html[data-theme="white"] .run-form-panel select {
+  background:#fff !important;
+  color:#17232b !important;
+  -webkit-text-fill-color:#17232b !important;
+  border-color:#c7d4da;
+  color-scheme:light;
+}
+html[data-theme="white"] .activity-edit-form input::placeholder,
+html[data-theme="white"] .run-form-panel input::placeholder,
+html[data-theme="white"] .run-form-panel textarea::placeholder {
+  color:#60717b;
+}
+html[data-theme="white"] .route-detail-modal {
+  background:#fff !important;
+  color:#17232b !important;
+}
+html[data-theme="white"] .route-detail-backdrop {
+  background:rgba(20,31,38,.46) !important;
+}
+html[data-theme="white"] .social-modal {
+  background:#fff;
+  color:#17232b;
+  border-color:#dbe4e9;
+  box-shadow:0 24px 70px rgba(23,35,43,.2);
+}
+html[data-theme="white"] .social-modal-header,
+html[data-theme="white"] .social-modal-comment {
+  border-color:#e2e9ed;
+}
+html[data-theme="white"] .social-modal textarea,
+html[data-theme="white"] .social-modal input {
+  background:#fff;
+  color:#17232b;
+  border-color:#c7d4da;
+  color-scheme:light;
+}
