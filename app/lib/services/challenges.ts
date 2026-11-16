@@ -1,0 +1,98 @@
+import { collection, collectionGroup, doc, getDoc, getDocs, query, where, type Query, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
+import { db } from "../firebase";
+import type { ChallengeData } from "../../types";
+
+export function allChallengesQuery(): Query {
+  return query(collection(db, "challenges"));
+}
+
+export async function getChallenge(id: string): Promise<ChallengeData | null> {
+  const snap = await getDoc(doc(db, "challenges", id));
+  return snap.exists() ? ({ id: snap.id, ...snap.data() } as ChallengeData) : null;
+}
+
+export async function getChallengeParticipants(id: string) {
+  const snap = await getDocs(query(collection(db, "challenges", id, "participants"), where("active", "==", true)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function fetchChallengesPage(
+  activityType: ChallengeData["activityType"],
+  state: ChallengeData["state"],
+  monthStart: string,
+  monthEnd: string,
+  pageSize = 10,
+  cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>
+): Promise<{ items: ChallengeData[]; lastDocument: QueryDocumentSnapshot<DocumentData, DocumentData> | null; hasMore: boolean }> {
+  // Avoid a Firestore composite-index dependency here. The challenge
+  // catalogue is intentionally small and the UI already sorts client-side.
+  // Filtering the full collection also correctly includes challenges that
+  // span the selected month but started in a previous month.
+  const snapshot = await getDocs(collection(db, "challenges"));
+  const allItems = snapshot.docs
+    .map(d => ({ id: d.id, ...d.data() } as ChallengeData))
+    .filter(item =>
+      item.activityType === activityType &&
+      item.state === state &&
+      String(item.startDate || "") <= monthEnd &&
+      String(item.endDate || "") >= monthStart
+    )
+    .sort((a, b) => {
+      const dateCompare = String(a.startDate || "").localeCompare(String(b.startDate || ""));
+      return dateCompare !== 0
+        ? dateCompare
+        : String(a.name || "").localeCompare(String(b.name || ""), "cs");
+    });
+
+  // The query is intentionally kept index-light and sorted client-side.
+  // The current UI presents the complete month result, so do not expose
+  // pagination controls that cannot be backed by a Firestore cursor.
+  void pageSize;
+  void cursor;
+  return {
+    items: allItems,
+    lastDocument: null,
+    hasMore: false,
+  };
+}
+
+export async function fetchChallengeParticipantsPage(
+  id: string,
+  challenge: Pick<ChallengeData, "state" | "kind">,
+  pageSize = 10,
+  cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>
+): Promise<{ items: any[]; lastDocument: QueryDocumentSnapshot<DocumentData, DocumentData> | null; hasMore: boolean }> {
+  const orderField = challenge.state === "completed"
+    ? "finalRank"
+    : challenge.kind === "sharedDistance"
+      ? "joinedAt"
+      : "result";
+  const orderDirection = challenge.state === "completed" || challenge.kind === "sharedDistance" ? "asc" : "desc";
+  const snapshot = await getDocs(
+    query(collection(db, "challenges", id, "participants"), where("active", "==", true))
+  );
+  const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  items.sort((a: any, b: any) => {
+    const av = Number(a[orderField] ?? 0);
+    const bv = Number(b[orderField] ?? 0);
+    if (av !== bv) return orderDirection === "asc" ? av - bv : bv - av;
+    return String(a.id || "").localeCompare(String(b.id || ""));
+  });
+  return { items, lastDocument: null, hasMore: false };
+}
+
+export async function getChallengeParticipant(id: string, userId: string) {
+  const snap = await getDoc(doc(db, "challenges", id, "participants", userId));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+
+export async function getActiveChallengeIdsForUser(userId: string): Promise<string[]> {
+  const snapshot = await getDocs(
+    query(collectionGroup(db, "participants"), where("userId", "==", userId))
+  );
+  return snapshot.docs
+    .filter(item => item.data()?.active === true)
+    .map(item => item.ref.parent.parent?.id || "")
+    .filter(Boolean);
+}
