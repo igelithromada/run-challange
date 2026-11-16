@@ -120,13 +120,12 @@ export async function POST(request: Request) {
           : [];
         const isTargetMember = targetMemberIds.includes(decoded.uid);
 
-        if (action === "join" && isTargetMember) {
+        if (action === "join" && isTargetMember && currentTeamId === teamId) {
           return { next: { ...stored, [type]: teamId }, changed: false };
         }
 
-        if (action === "leave" && !isTargetMember) {
-          const next = { ...stored, [type]: currentTeamId === teamId ? null : (currentTeamId || null) };
-          return { next, changed: currentTeamId === teamId };
+        if (action === "leave" && !isTargetMember && currentTeamId !== teamId) {
+          return { next: { ...stored, [type]: currentTeamId || null }, changed: false };
         }
 
         const oldTeamRef = currentTeamId && currentTeamId !== teamId
@@ -140,20 +139,20 @@ export async function POST(request: Request) {
         }
 
         if (action === "join") {
-          transaction.update(teamRef, { memberIds: FieldValue.arrayUnion(decoded.uid) });
+          if (!isTargetMember) transaction.update(teamRef, { memberIds: FieldValue.arrayUnion(decoded.uid) });
         } else {
-          transaction.update(teamRef, { memberIds: FieldValue.arrayRemove(decoded.uid) });
+          if (isTargetMember) transaction.update(teamRef, { memberIds: FieldValue.arrayRemove(decoded.uid) });
         }
 
-        const next = { ...stored, [type]: action === "join" ? teamId : null };
+        const next = { ...stored, [type]: action === "join" ? teamId : (currentTeamId === teamId ? null : currentTeamId || null) };
         transaction.set(
           userRef,
           {
             teamIdsByType: next,
             ...(type === "běh"
               ? {
-                  teamId: action === "join" ? teamId : null,
-                  joinedTeam: action === "join" ? teamId : null,
+                  teamId: next[type],
+                  joinedTeam: next[type],
                 }
               : {}),
           },
