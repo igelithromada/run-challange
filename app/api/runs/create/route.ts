@@ -44,14 +44,7 @@ export async function POST(request: Request) {
     // nesynchronizované s memberIds, proto při serverovém fallbacku členství ověříme
     // oběma směry a případně najdeme aktuální tým podle typu aktivity.
     if (requestedTeamId) {
-      const [teamSnapshot, userSnapshot] = await Promise.all([
-        adminDb.collection("teams").doc(requestedTeamId).get(),
-        adminDb.collection("users").doc(decoded.uid).get(),
-      ]);
-      const userData = userSnapshot.exists ? userSnapshot.data() || {} : {};
-      const teamIdsByType = userData.teamIdsByType && typeof userData.teamIdsByType === "object"
-        ? userData.teamIdsByType as Record<string, unknown>
-        : {};
+      const teamSnapshot = await adminDb.collection("teams").doc(requestedTeamId).get();
 
       let validTeamId: string | null = null;
       if (teamSnapshot.exists) {
@@ -60,12 +53,9 @@ export async function POST(request: Request) {
         const memberIds = Array.isArray(team.memberIds)
           ? team.memberIds.filter((value): value is string => typeof value === "string")
           : [];
-        const profileMembership =
-          teamIdsByType[type] === requestedTeamId
-          || (type === "běh" && userData.teamId === requestedTeamId)
-          || userData.joinedTeam === requestedTeamId;
-
-        if (teamType === type && (memberIds.includes(decoded.uid) || team.createdBy === decoded.uid || profileMembership)) {
+        // The team membership list is authoritative. A stale profile reference
+        // or being the team founder alone must not credit activities to a team.
+        if (teamType === type && memberIds.includes(decoded.uid)) {
           validTeamId = requestedTeamId;
         }
       }
