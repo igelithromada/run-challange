@@ -5879,3 +5879,8 @@ html[data-theme="white"] .home-activity-badge {
   border-color: #dbe4e9;
   box-shadow: 0 2px 8px rgba(23,35,43,.05);
 }
+
+
+/* Audit UI: ikony aktivit musí zůstat čitelné i ve světlém režimu. */
+html[data-theme="white"] .activity-type-icon-run,
+html[data-theme="white"] .tile-button .run-profile-icon { filter: brightness(0); }
