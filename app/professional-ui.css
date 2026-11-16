@@ -1,0 +1,534 @@
+/* Profesionální vizuální sjednocení – 2026-11-16
+   Jediný doplňkový design layer pro počasí, navigaci a formuláře.
+   Neobsahuje žádnou změnu funkční logiky. */
+
+/* ---------- Společný formulářový systém ---------- */
+.professional-form {
+  display: grid;
+  gap: .85rem;
+  width: 100%;
+}
+
+.professional-form-field {
+  display: grid;
+  gap: .38rem;
+  min-width: 0;
+  text-align: left;
+}
+
+.professional-form-field > span,
+.professional-form-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .75rem;
+  color: #fff;
+  font-size: .82rem;
+  line-height: 1.25;
+  font-weight: 750;
+}
+
+.professional-form-field > span small,
+.professional-form-label small {
+  color: rgba(255,255,255,.48);
+  font-size: .72rem;
+  font-weight: 650;
+}
+
+.professional-form input:not([type="file"]),
+.professional-form select,
+.professional-form textarea,
+.teams-create-form input:not([type="file"]),
+.teams-create-form select,
+.challenges-create .professional-input,
+.challenges-create select {
+  width: 100%;
+  min-width: 0;
+  min-height: 52px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: .82rem 1rem;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  outline: none;
+  background: #f5f7f9;
+  color: #26333d;
+  font: inherit;
+  font-weight: 600;
+  box-shadow: none;
+  color-scheme: light;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.professional-form textarea,
+.challenges-create textarea {
+  min-height: 112px;
+  resize: vertical;
+}
+
+.professional-form input::placeholder,
+.professional-form textarea::placeholder,
+.teams-create-form input::placeholder,
+.challenges-create .professional-input::placeholder {
+  color: #74808a;
+  opacity: 1;
+}
+
+.professional-form input:not([type="file"]):focus,
+.professional-form select:focus,
+.professional-form textarea:focus,
+.teams-create-form input:not([type="file"]):focus,
+.teams-create-form select:focus,
+.challenges-create .professional-input:focus,
+.challenges-create select:focus {
+  border-color: rgba(77,163,255,.7);
+  box-shadow: 0 0 0 3px rgba(77,163,255,.12);
+}
+
+.professional-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: .75rem;
+}
+
+.professional-form-actions {
+  display: grid;
+  gap: .55rem;
+  margin-top: .15rem;
+}
+
+.professional-form-file {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  min-height: 52px;
+  padding: .72rem .9rem;
+  border: 1px dashed rgba(255,255,255,.24);
+  border-radius: 16px;
+  background: rgba(255,255,255,.055);
+  color: #fff;
+  cursor: pointer;
+}
+
+.professional-form-file input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.professional-form-file > span {
+  min-width: 0;
+  font-weight: 700;
+}
+
+.professional-form-file .professional-file-hint {
+  margin-left: auto;
+  color: rgba(255,255,255,.55);
+  font-size: .72rem;
+  font-weight: 650;
+}
+
+/* ---------- Navigace ---------- */
+.site-sidebar-panel > .site-sidebar-item,
+.site-sidebar-grid .site-sidebar-item {
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 16px !important;
+  background: rgba(255,255,255,.075) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease !important;
+}
+
+.site-sidebar-grid .site-sidebar-item:hover {
+  background: rgba(255,255,255,.12) !important;
+  border-color: rgba(77,163,255,.48) !important;
+}
+
+.site-sidebar-grid .site-sidebar-item.is-active {
+  background: rgba(77,163,255,.18) !important;
+  border-color: rgba(77,163,255,.72) !important;
+  color: #fff !important;
+  box-shadow: inset 0 0 0 1px rgba(77,163,255,.16) !important;
+}
+
+.site-sidebar-grid .site-sidebar-item:active,
+.site-sidebar-grid .site-sidebar-item:focus {
+  transform: none !important;
+}
+
+.site-sidebar-grid .site-sidebar-item:focus-visible {
+  outline: 2px solid rgba(77,163,255,.82);
+  outline-offset: 2px;
+}
+
+.site-sidebar-panel > .site-sidebar-item.sidebar-close {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.site-sidebar-panel > .site-sidebar-item.sidebar-close:hover {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.1) !important;
+}
+
+/* ---------- Počasí – jedna ikona, jeden vizuální jazyk ---------- */
+.weather-visual-wrap {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  line-height: 1;
+  color: #fff;
+  overflow: visible;
+}
+
+.weather-visual-wrap .weather-visual-icon,
+.weather-visual-wrap .weather-visual-cloud,
+.weather-visual-wrap .weather-visual-drops,
+.weather-visual-wrap .weather-visual-lightning {
+  position: absolute;
+}
+
+.weather-visual-wrap .weather-visual-icon {
+  inset: 14% 14% auto 14%;
+}
+
+.weather-visual-wrap .weather-visual-cloud {
+  left: 3%;
+  bottom: 10%;
+  width: 78%;
+  height: 78%;
+  color: #f4f7fa;
+  stroke: #f4f7fa;
+}
+
+.weather-visual-wrap .weather-visual-drops {
+  right: 0;
+  bottom: -1%;
+  color: #4da3ff;
+  stroke: #4da3ff;
+}
+
+.weather-visual-rain,
+.weather-visual-drizzle {
+  color: #fff;
+}
+
+.weather-visual-storm .weather-visual-icon {
+  color: #ffd166;
+  stroke: #ffd166;
+}
+
+.weather-visual-snow .weather-visual-icon {
+  color: #a9d7ff;
+  stroke: #a9d7ff;
+}
+
+.weather-visual-fog .weather-visual-icon,
+.weather-visual-cloud .weather-visual-icon {
+  color: #e9eef2;
+  stroke: #e9eef2;
+}
+
+.weather-visual-sun .weather-visual-icon {
+  color: #ffd166;
+  stroke: #ffd166;
+}
+
+.weather-visual-wrap .weather-sun {
+  position: absolute;
+  left: 2%;
+  top: 1%;
+  color: #ffd166;
+  stroke: #ffd166;
+}
+
+.weather-visual-wrap .weather-cloud {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+
+.run-weather-recommendation {
+  display: grid !important;
+  grid-template-columns: minmax(210px,.95fr) minmax(0,1.4fr);
+  gap: 1rem !important;
+  align-items: stretch !important;
+  padding: 1rem !important;
+}
+
+.run-weather-forecast {
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  min-width: 0;
+  padding: .25rem .2rem;
+}
+
+.run-weather-forecast-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 72px;
+  width: 72px;
+  height: 72px;
+}
+
+.run-weather-forecast-copy {
+  min-width: 0;
+}
+
+.run-weather-temperature {
+  display: inline-block !important;
+  margin-right: .55rem;
+  font-size: 1.55rem !important;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.run-weather-status {
+  display: inline !important;
+  font-size: 1rem !important;
+  line-height: 1.2;
+}
+
+.run-weather-condition {
+  margin-top: .35rem;
+  font-size: .88rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.92);
+}
+
+.run-weather-location {
+  display: block;
+  margin-top: .16rem;
+  color: rgba(255,255,255,.66);
+  font-size: .72rem;
+}
+
+.run-weather-advice {
+  min-width: 0;
+  padding: .15rem 0 .15rem 1rem;
+  border-left: 1px solid rgba(255,255,255,.15);
+}
+
+.run-weather-advice p {
+  margin: .35rem 0 .5rem !important;
+}
+
+.run-weather-advice small {
+  display: flex !important;
+  align-items: center;
+  gap: .3rem;
+}
+
+.run-weather-more {
+  display: inline-flex !important;
+  margin-top: .55rem;
+  font-weight: 750;
+  text-decoration: underline;
+}
+
+.weather-current-icon-block .weather-visual-wrap {
+  filter: none;
+}
+
+.weather-card .weather-visual-wrap {
+  overflow: visible;
+}
+
+/* ---------- Týmy a výzvy – stejné formuláře jako Přidat záznam ---------- */
+.teams-create,
+.challenges-create {
+  width: 100%;
+  max-width: 620px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding: 1rem !important;
+  border-radius: 20px !important;
+  background: rgba(5,15,24,.38) !important;
+}
+
+.teams-create-form {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: .85rem !important;
+  margin-top: 1rem !important;
+}
+
+.teams-create-form > input:not([type="file"]),
+.teams-create-form > select {
+  min-height: 52px;
+}
+
+.team-avatar-upload {
+  position: relative;
+  display: flex !important;
+  align-items: center;
+  gap: .65rem;
+  min-height: 52px;
+  padding: .72rem .9rem;
+  border: 1px dashed rgba(255,255,255,.24) !important;
+  border-radius: 16px !important;
+  background: rgba(255,255,255,.055) !important;
+  color: #fff !important;
+  cursor: pointer;
+}
+
+.team-avatar-upload input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.team-avatar-upload span {
+  font-weight: 700;
+}
+
+.teams-create .run-primary-button,
+.challenges-create .run-primary-button {
+  width: 100%;
+  max-width: none;
+}
+
+.challenges-create .teams-section-heading,
+.teams-create .teams-section-heading {
+  align-items: flex-start;
+}
+
+.challenges-create .teams-create-form {
+  gap: .85rem !important;
+}
+
+.challenges-create .challenge-dates {
+  display: grid !important;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: .75rem;
+}
+
+.challenges-create .challenge-dates label {
+  display: grid;
+  gap: .38rem;
+  color: #fff;
+  font-size: .82rem;
+  font-weight: 750;
+}
+
+.challenges-create .challenge-dates input {
+  width: 100%;
+  min-height: 52px;
+  box-sizing: border-box;
+  padding: .82rem .9rem;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  background: #f5f7f9;
+  color: #26333d;
+  font: inherit;
+  font-weight: 600;
+  color-scheme: light;
+}
+
+.challenges-create .activity-type-selector {
+  margin: 0 !important;
+}
+
+.challenges-create .run-form-field {
+  margin: 0 !important;
+}
+
+.challenges-create .run-form-field > span {
+  color: #fff;
+}
+
+.challenges-create input[type="file"] {
+  min-height: 52px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: .7rem .8rem;
+  border: 1px dashed rgba(255,255,255,.24);
+  border-radius: 16px;
+  background: rgba(255,255,255,.055);
+  color: #fff;
+  font: inherit;
+}
+
+.challenge-image-preview {
+  display: grid;
+  gap: .55rem;
+  margin-top: .55rem;
+}
+
+.challenge-image-preview img {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+.challenge-image-preview .run-secondary-button {
+  width: 100%;
+}
+
+.challenge-type-switch {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0 .75rem;
+}
+
+.challenge-month {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .7rem;
+  margin: .75rem 0 1.1rem;
+}
+
+.challenge-month button {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 13px;
+  background: rgba(255,255,255,.09);
+  color: #fff;
+  cursor: pointer;
+}
+
+.challenge-month strong {
+  min-width: 150px;
+  text-align: center;
+}
+
+.challenge-group {
+  margin-top: 1.1rem;
+}
+
+.challenge-group > h2 {
+  margin: 0 0 .6rem;
+  font-size: 1rem;
+}
+
+@media (max-width: 620px) {
+  .run-weather-recommendation {
+    grid-template-columns: 1fr !important;
+  }
+
+  .run-weather-advice {
+    padding: .75rem 0 0;
+    border-left: 0;
+    border-top: 1px solid rgba(255,255,255,.15);
+  }
+
+  .professional-form-grid,
+  .challenges-create .challenge-dates {
+    grid-template-columns: 1fr;
+  }
+}
