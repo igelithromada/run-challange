@@ -1,0 +1,854 @@
+/* ========================================================================
+   Dolní Lhota v pohybu — Professional UI system
+   Layered after the legacy stylesheet on purpose: functionality and component
+   markup stay untouched while the visual language is normalized in one place.
+   No decorative animation is introduced here.
+   ======================================================================== */
+
+:root {
+  --ds-font: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ds-bg: #0f1b24;
+  --ds-surface: rgba(18, 32, 43, .88);
+  --ds-surface-2: rgba(24, 42, 55, .92);
+  --ds-surface-soft: rgba(255,255,255,.065);
+  --ds-border: rgba(255,255,255,.13);
+  --ds-border-strong: rgba(255,255,255,.22);
+  --ds-text: #f7fafc;
+  --ds-muted: #aebbc5;
+  --ds-accent: #35a8dc;
+  --ds-accent-strong: #1d83b5;
+  --ds-success: #2dbd76;
+  --ds-warning: #e7ad3f;
+  --ds-danger: #e45b68;
+  --ds-info: #4bb7e7;
+  --ds-radius-sm: 10px;
+  --ds-radius-md: 14px;
+  --ds-radius-lg: 18px;
+  --ds-radius-xl: 22px;
+  --ds-shadow-sm: 0 2px 10px rgba(0,0,0,.12);
+  --ds-shadow-md: 0 8px 28px rgba(0,0,0,.18);
+  --ds-focus: 0 0 0 3px rgba(53,168,220,.22);
+  --ds-control-h: 46px;
+}
+
+html,
+body {
+  font-family: var(--ds-font);
+  color: var(--ds-text);
+}
+
+body {
+  line-height: 1.45;
+}
+
+.app-content-layer {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Global layout / hierarchy ---------- */
+
+.container {
+  width: min(900px, calc(100% - 24px));
+  padding: 5.75rem 0 2.5rem;
+  margin: 0 auto;
+}
+
+.centered-title,
+.teams-header,
+.routes-header,
+.settings-section-heading {
+  text-wrap: balance;
+}
+
+.centered-title h1,
+.teams-header h1,
+.routes-header h1,
+.settings-page h1 {
+  letter-spacing: -.025em;
+}
+
+.centered-title p,
+.teams-header p,
+.routes-header p {
+  color: var(--ds-muted);
+}
+
+.tile,
+.list-tile,
+.activity-card-modern,
+.team-card,
+.teams-create,
+.routes-group,
+.route-card,
+.run-form-panel,
+.settings-page > .tile {
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  box-shadow: var(--ds-shadow-sm);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.tile {
+  margin: .75rem 0;
+}
+
+.tile h1,
+.tile h2,
+.tile h3,
+.tile h4,
+.list-tile h1,
+.list-tile h2,
+.list-tile h3,
+.list-tile h4 {
+  letter-spacing: -.018em;
+}
+
+.tile p,
+.tile small,
+.list-tile small {
+  color: var(--ds-muted);
+}
+
+/* ---------- Buttons: one visual grammar ---------- */
+
+button,
+.tile-button,
+.run-primary-button,
+.run-secondary-button,
+.route-primary-action,
+.route-secondary-action,
+.admin-action-button,
+.team-action-button,
+.team-edit-button,
+.team-delete-button,
+.avatar-upload-button,
+.site-sidebar-item,
+.site-navbar-button {
+  font-family: var(--ds-font);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.run-primary-button,
+.route-primary-action,
+.admin-action-button:not(.danger) {
+  min-height: var(--ds-control-h);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-accent-strong);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 5px 16px rgba(29,131,181,.22);
+}
+
+.run-primary-button:hover,
+.route-primary-action:hover,
+.admin-action-button:not(.danger):hover {
+  background: var(--ds-accent);
+}
+
+.run-secondary-button,
+.route-secondary-action,
+.avatar-upload-button,
+.team-action-button,
+.team-edit-button,
+.team-delete-button {
+  min-height: var(--ds-control-h);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-soft);
+  color: var(--ds-text);
+  font-weight: 650;
+}
+
+.run-secondary-button:hover,
+.route-secondary-action:hover,
+.avatar-upload-button:hover,
+.team-action-button:hover,
+.team-edit-button:hover {
+  background: rgba(255,255,255,.11);
+  border-color: var(--ds-border-strong);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none !important;
+  box-shadow: var(--ds-focus) !important;
+}
+
+button:disabled {
+  opacity: .5;
+}
+
+/* ---------- Activity type selector ---------- */
+
+.tile-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .65rem;
+  width: min(100%, 620px);
+  margin: 1.1rem auto;
+}
+
+.tile-button {
+  width: 100%;
+  max-width: none;
+  min-height: 50px;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-soft);
+  color: var(--ds-text);
+  font-weight: 700;
+}
+
+.tile-button.active {
+  background: rgba(53,168,220,.18);
+  border-color: rgba(53,168,220,.5);
+  color: #dff5ff;
+  box-shadow: none;
+}
+
+/* ---------- Forms: same component language everywhere ---------- */
+
+.run-form-shell {
+  width: min(100%, 620px);
+}
+
+.run-form-panel {
+  width: 100%;
+  padding: clamp(1rem, 3vw, 1.35rem);
+}
+
+.run-form-heading {
+  margin-bottom: 1.1rem;
+}
+
+.run-form-eyebrow,
+.control-caption,
+.teams-eyebrow,
+.social-modal-eyebrow {
+  color: var(--ds-muted);
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.run-form-field,
+.date-field,
+.teams-create-form label,
+.teams-challenge-form label {
+  color: var(--ds-muted);
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.run-form-field input,
+.run-form-field textarea,
+.run-form-field select,
+.date-field input,
+.teams-create-form input,
+.teams-challenge-form input,
+.activity-edit-form input,
+.settings-input,
+.settings-time-input,
+input,
+select,
+textarea {
+  min-height: var(--ds-control-h);
+  box-sizing: border-box;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  background: rgba(0,0,0,.18);
+  color: var(--ds-text);
+  font: inherit;
+}
+
+.run-form-field textarea,
+.activity-edit-form textarea,
+textarea {
+  min-height: 100px;
+  padding: .75rem .85rem;
+  resize: vertical;
+}
+
+.run-form-field input,
+.run-form-field select,
+.date-field input,
+.teams-create-form input,
+.teams-challenge-form input,
+.activity-edit-form input,
+.settings-input,
+.settings-time-input {
+  padding: 0 .85rem;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ds-muted);
+  opacity: .85;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--ds-border-strong);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(53,168,220,.72) !important;
+  background: rgba(0,0,0,.22);
+}
+
+/* ---------- Activity cards ---------- */
+
+.activity-card-modern {
+  overflow: hidden;
+  padding: 0;
+}
+
+.activity-card-top {
+  padding: 1rem 1rem .8rem;
+  border-bottom: 1px solid var(--ds-border);
+}
+
+.activity-person {
+  color: var(--ds-text);
+}
+
+.activity-date {
+  color: var(--ds-muted);
+  font-size: .75rem;
+}
+
+.activity-description {
+  color: var(--ds-muted);
+  line-height: 1.5;
+}
+
+.activity-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: .55rem;
+  padding: .8rem 1rem;
+}
+
+.activity-metrics > div {
+  min-width: 0;
+  padding: .65rem .55rem;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-surface-soft);
+}
+
+.activity-card-actions {
+  min-height: 48px;
+  padding: .7rem 1rem;
+  border-top: 1px solid var(--ds-border);
+}
+
+.activity-manage-button,
+.activity-card-modern .activity-photos-button,
+.social-comment-icon-button {
+  border-radius: 10px;
+  border: 1px solid var(--ds-border);
+  background: transparent;
+  color: var(--ds-muted);
+}
+
+.activity-manage-button:hover,
+.activity-card-modern .activity-photos-button:hover,
+.social-comment-icon-button:hover {
+  color: var(--ds-text);
+  background: var(--ds-surface-soft);
+}
+
+.activity-delete-button,
+.danger {
+  color: #ffdfe2 !important;
+  border-color: rgba(228,91,104,.34) !important;
+  background: rgba(228,91,104,.12) !important;
+}
+
+/* ---------- Routes ---------- */
+
+.routes-page .routes-toolbar,
+.routes-page .routes-sort-toolbar,
+.routes-page .routes-admin-toolbar {
+  gap: .65rem;
+}
+
+.routes-group {
+  padding: 1rem;
+}
+
+.route-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.route-card-main {
+  min-width: 0;
+}
+
+.route-card-info {
+  min-width: 0;
+}
+
+.route-card-title {
+  color: var(--ds-text);
+  font-weight: 750;
+  letter-spacing: -.01em;
+}
+
+.route-distance-after-name,
+.routes-count,
+.route-card-info p,
+.routes-source,
+.routes-disclaimer {
+  color: var(--ds-muted);
+}
+
+.route-card-actions {
+  display: flex;
+  gap: .55rem;
+  padding: .8rem 1rem;
+  border-top: 1px solid var(--ds-border);
+}
+
+.route-primary-action,
+.route-secondary-action {
+  flex: 1 1 0;
+}
+
+.route-detail-modal,
+.social-modal {
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-xl);
+  background: var(--ds-surface-2);
+  box-shadow: var(--ds-shadow-md);
+}
+
+/* ---------- Teams ---------- */
+
+.teams-page {
+  padding-top: 5.75rem;
+}
+
+.teams-create {
+  padding: 1.15rem;
+}
+
+.teams-create-form {
+  gap: .65rem;
+}
+
+.teams-grid {
+  gap: .75rem;
+}
+
+.team-card {
+  padding: 1rem;
+  transition: none;
+}
+
+.team-card-joined {
+  border-color: rgba(45,189,118,.45);
+  background: rgba(45,189,118,.07);
+}
+
+.team-card-title-row {
+  min-width: 0;
+}
+
+.team-card-sub {
+  color: var(--ds-muted);
+}
+
+.team-member-label,
+.team-type-badge {
+  border: 1px solid var(--ds-border);
+  border-radius: 999px;
+  background: var(--ds-surface-soft);
+  color: var(--ds-muted);
+  font-size: .7rem;
+  font-weight: 750;
+}
+
+.team-avatar,
+.teams-current-icon,
+.teams-create-icon {
+  border: 1px solid var(--ds-border);
+  background: var(--ds-surface-soft);
+}
+
+/* ---------- Settings / admin / profile sections ---------- */
+
+.settings-page > .tile,
+.settings-notification-section {
+  padding: 1rem;
+}
+
+.settings-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+}
+
+.settings-section-heading h2,
+.settings-section-heading h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 750;
+}
+
+.settings-notification-row {
+  min-height: 56px;
+  padding: .7rem 0;
+  border-bottom: 1px solid var(--ds-border);
+}
+
+.settings-notification-row:last-child {
+  border-bottom: 0;
+}
+
+.settings-notification-title {
+  font-weight: 700;
+}
+
+.settings-notification-copy {
+  color: var(--ds-muted);
+  font-size: .82rem;
+}
+
+.site-sidebar-overlay,
+.notification-backdrop,
+.route-detail-backdrop,
+.social-modal-backdrop {
+  background: rgba(3,10,15,.68);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.site-sidebar-panel {
+  border: 1px solid var(--ds-border-strong) !important;
+  border-radius: var(--ds-radius-xl) !important;
+  background: rgba(15,27,36,.98) !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,.45) !important;
+}
+
+.site-sidebar-item {
+  border-color: var(--ds-border) !important;
+  border-radius: var(--ds-radius-md) !important;
+  background: var(--ds-surface-soft) !important;
+  color: var(--ds-text) !important;
+  box-shadow: none !important;
+}
+
+.site-sidebar-item:hover,
+.site-sidebar-item.active {
+  background: rgba(53,168,220,.13) !important;
+  border-color: rgba(53,168,220,.42) !important;
+}
+
+.site-sidebar-logout {
+  color: #ffdfe2 !important;
+  background: rgba(228,91,104,.12) !important;
+  border-color: rgba(228,91,104,.3) !important;
+}
+
+.site-navbar {
+  padding: .55rem .75rem;
+}
+
+.site-navbar-inner {
+  min-height: 54px;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  background: rgba(15,27,36,.78);
+  box-shadow: var(--ds-shadow-sm);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  backdrop-filter: blur(18px) saturate(125%);
+}
+
+.site-navbar-title {
+  color: var(--ds-text);
+  font-weight: 750;
+}
+
+.site-navbar-button {
+  border-radius: var(--ds-radius-md);
+  color: var(--ds-text);
+}
+
+.site-navbar-button:hover {
+  background: var(--ds-surface-soft);
+}
+
+/* ---------- Weather: visual accent, never an overlay over controls ---------- */
+
+.weather-animation-overlay {
+  z-index: 0 !important;
+  pointer-events: none !important;
+}
+
+.run-weather-recommendation {
+  border-radius: var(--ds-radius-lg);
+  border: 1px solid var(--ds-border);
+}
+
+.run-weather-copy p,
+.run-weather-copy small,
+.run-weather-eyebrow {
+  color: var(--ds-muted);
+}
+
+/* ---------- Status / feedback ---------- */
+
+.network-status,
+.app-toast {
+  border-radius: var(--ds-radius-md);
+  border: 1px solid var(--ds-border-strong);
+  box-shadow: var(--ds-shadow-md);
+}
+
+.network-status {
+  background: var(--ds-surface-2);
+}
+
+.app-toast {
+  background: var(--ds-surface-2);
+}
+
+/* ---------- Mobile: density without cramped controls ---------- */
+
+@media (max-width: 640px) {
+  .container,
+  .teams-page {
+    width: min(100% - 20px, 900px);
+    padding-top: 5.4rem;
+  }
+
+  .tile-group {
+    gap: .55rem;
+  }
+
+  .activity-metrics {
+    gap: .45rem;
+    padding-inline: .75rem;
+  }
+
+  .activity-metrics > div {
+    padding: .6rem .45rem;
+  }
+
+  .route-card-actions {
+    flex-direction: column;
+  }
+
+  .route-card-actions > * {
+    width: 100%;
+  }
+
+  .site-sidebar-panel {
+    border-radius: 18px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .container,
+  .teams-page {
+    width: min(100% - 16px, 900px);
+  }
+
+  .tile,
+  .run-form-panel,
+  .teams-create {
+    border-radius: 16px;
+  }
+
+  .activity-card-top {
+    padding: .85rem;
+  }
+
+  .activity-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Reduced motion: this layer adds no animation ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ========================================================================
+   Theme contracts
+   ======================================================================== */
+
+html[data-theme="white"] {
+  --ds-bg: #f6f8fa;
+  --ds-surface: #ffffff;
+  --ds-surface-2: #ffffff;
+  --ds-surface-soft: #f4f7f9;
+  --ds-border: #dce3e8;
+  --ds-border-strong: #c6d1d8;
+  --ds-text: #17212b;
+  --ds-muted: #65737d;
+  --ds-accent: #1976a8;
+  --ds-accent-strong: #176a96;
+  --ds-success: #16834d;
+  --ds-warning: #a86d08;
+  --ds-danger: #c93445;
+  --ds-info: #0879b6;
+  --ds-shadow-sm: 0 2px 10px rgba(18,38,52,.07);
+  --ds-shadow-md: 0 12px 36px rgba(18,38,52,.13);
+  --ds-focus: 0 0 0 3px rgba(25,118,168,.18);
+  color-scheme: light;
+}
+
+html[data-theme="white"] body {
+  background: #fff !important;
+  color: var(--ds-text);
+}
+
+html[data-theme="white"] .tile,
+html[data-theme="white"] .list-tile,
+html[data-theme="white"] .activity-card-modern,
+html[data-theme="white"] .team-card,
+html[data-theme="white"] .teams-create,
+html[data-theme="white"] .routes-group,
+html[data-theme="white"] .route-card,
+html[data-theme="white"] .run-form-panel,
+html[data-theme="white"] .settings-page > .tile {
+  background: #fff;
+  box-shadow: var(--ds-shadow-sm);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html[data-theme="white"] input,
+html[data-theme="white"] select,
+html[data-theme="white"] textarea {
+  background: #fff;
+  color: var(--ds-text);
+}
+
+html[data-theme="white"] .tile-button,
+html[data-theme="white"] .run-secondary-button,
+html[data-theme="white"] .route-secondary-action,
+html[data-theme="white"] .avatar-upload-button,
+html[data-theme="white"] .team-action-button,
+html[data-theme="white"] .team-edit-button,
+html[data-theme="white"] .team-delete-button {
+  color: var(--ds-text);
+  background: #fff;
+  border-color: var(--ds-border);
+}
+
+html[data-theme="white"] .tile-button.active {
+  color: #145f84;
+  background: #eaf4f8;
+  border-color: #9bc2d4;
+}
+
+html[data-theme="white"] .activity-metrics > div,
+html[data-theme="white"] .site-sidebar-item {
+  background: #f7f9fa !important;
+  border-color: var(--ds-border) !important;
+}
+
+html[data-theme="white"] .site-navbar-inner,
+html[data-theme="white"] .site-sidebar-panel {
+  background: rgba(255,255,255,.98) !important;
+  color: var(--ds-text) !important;
+  border-color: var(--ds-border) !important;
+}
+
+html[data-theme="white"] .site-navbar-button,
+html[data-theme="white"] .site-sidebar-item {
+  color: var(--ds-text) !important;
+}
+
+html[data-theme="white"] .site-sidebar-item:hover,
+html[data-theme="white"] .site-sidebar-item.active {
+  color: #145f84 !important;
+  background: #edf5f9 !important;
+  border-color: #a8c7d6 !important;
+}
+
+html[data-theme="white"] .activity-card-actions,
+html[data-theme="white"] .activity-card-top,
+html[data-theme="white"] .route-card-actions,
+html[data-theme="white"] .settings-notification-row {
+  border-color: var(--ds-border);
+}
+
+html[data-theme="white"] .network-status,
+html[data-theme="white"] .app-toast,
+html[data-theme="white"] .social-modal,
+html[data-theme="white"] .route-detail-modal {
+  background: #fff;
+  color: var(--ds-text);
+}
+
+html[data-theme="white"] .run-form-eyebrow,
+html[data-theme="white"] .control-caption,
+html[data-theme="white"] .teams-eyebrow,
+html[data-theme="white"] .settings-notification-copy,
+html[data-theme="white"] .activity-date,
+html[data-theme="white"] .activity-description,
+html[data-theme="white"] .run-weather-copy p,
+html[data-theme="white"] .run-weather-copy small {
+  color: var(--ds-muted) !important;
+}
+
+/* Dark theme is intentionally solid and high-contrast. */
+html[data-theme="dark"] {
+  --ds-bg: #0b0d0f;
+  --ds-surface: #151719;
+  --ds-surface-2: #1b1e21;
+  --ds-surface-soft: #202428;
+  --ds-border: #30353a;
+  --ds-border-strong: #444b52;
+  --ds-text: #f4f6f8;
+  --ds-muted: #aab1b8;
+  --ds-accent: #4bb7e7;
+  --ds-accent-strong: #2388b9;
+  --ds-shadow-sm: 0 2px 12px rgba(0,0,0,.22);
+  --ds-shadow-md: 0 16px 50px rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] body {
+  background: #0b0d0f !important;
+}
+
+html[data-theme="dark"] .tile,
+html[data-theme="dark"] .list-tile,
+html[data-theme="dark"] .activity-card-modern,
+html[data-theme="dark"] .team-card,
+html[data-theme="dark"] .teams-create,
+html[data-theme="dark"] .routes-group,
+html[data-theme="dark"] .route-card,
+html[data-theme="dark"] .run-form-panel {
+  background: var(--ds-surface);
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  background: #111315;
+  color: var(--ds-text);
+}
