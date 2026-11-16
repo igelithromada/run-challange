@@ -74,13 +74,6 @@ export default function Page() {
     if (!runsState.loading && runs.length < 30) setHasMore(false);
   }, [runsState.loading, runs.length]);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      ["/myruns", "/statistics", "/teams", "/weather"].forEach(path => router.prefetch(path));
-    }, 1200);
-    return () => window.clearTimeout(timer);
-  }, [router]);
-
   const loadOlderRuns = async () => {
     const cursor = olderCursor || runsState.lastDocument;
     if (!cursor || loadingOlder || !hasMore) return;
