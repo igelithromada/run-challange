@@ -11,7 +11,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 type SidebarProps = { visible: boolean; onClose: () => void; onSelect: (item: string) => void };
 
-export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
+export default function Sidebar({ visible, onClose }: SidebarProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
