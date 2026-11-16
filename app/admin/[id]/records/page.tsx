@@ -75,7 +75,7 @@ export default function RecordsPage() {
     router.push("/"+item);
   };
 
-  if (adminAccess !== "allowed") return <div className="container"><div className="tile">Ověřuji administrátorská oprávnění…</div></div>;
+  if (adminAccess !== "allowed") return <><Navbar title="Záznamy uživatele" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")} /><Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect} /><main className="container"><div className="tile">Ověřuji administrátorská oprávnění…</div></main></>;
 
   return <>
     <Navbar title="Záznamy uživatele" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")} />
