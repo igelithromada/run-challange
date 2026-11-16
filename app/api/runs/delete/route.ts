@@ -1,3 +1,4 @@
+import { reconcileChallengesForUser } from "../../../lib/challenges/server";
 import { NextResponse } from "next/server";
 import type { DocumentReference } from "firebase-admin/firestore";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
@@ -70,6 +71,10 @@ export async function DELETE(request: Request) {
     // because a remote image cleanup failed.
     await deleteRunComments(runRef);
     await runRef.delete();
+    if (typeof data.uid === "string") {
+      try { await reconcileChallengesForUser(user.adminDb, data.uid); }
+      catch (error) { console.error("Challenge reconciliation after delete failed:", error); }
+    }
 
     return NextResponse.json({
       ok: true,
