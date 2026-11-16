@@ -6247,3 +6247,6 @@ html[data-theme="white"] .site-navbar-button:hover{background:#f1f5f7}
 .site-sidebar-item.is-active{background:rgba(255,255,255,.22)!important;border-color:rgba(255,255,255,.34)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 6px 18px rgba(0,0,0,.12)}
 .site-sidebar-item.is-active svg{filter:drop-shadow(0 1px 4px rgba(255,255,255,.16))}
 html[data-theme="white"] .site-sidebar-item.is-active{background:#e8f1f5!important;border-color:#afc4cf!important;color:#10222a!important;box-shadow:inset 0 0 0 1px rgba(16,34,42,.04),0 5px 14px rgba(18,38,52,.08)}
+
+.site-sidebar-profile.is-active{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3)}
+html[data-theme="white"] .site-sidebar-profile.is-active{background:#e8f1f5;border-color:#afc4cf}
