@@ -33,6 +33,10 @@ export async function getTeam(teamId: string): Promise<TeamData | null> {
 }
 
 export async function getActiveTeamIdsForUser(userId: string): Promise<string[]> {
+  // Query only by userId. The previous compound query (userId + active)
+  // required a collection-group composite index and broke team loading on
+  // production when that index was not present. Active membership is cheap
+  // to filter client-side here and keeps this path index-independent.
   const snapshot = await getDocs(
     query(collectionGroup(db, "members"), where("userId", "==", userId))
   );
