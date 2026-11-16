@@ -785,3 +785,5 @@ html[data-theme="light"] .notification-item.is-unread { background: #edf7fa; }
 .activity-gallery-next { right: 4px; }
 .activity-gallery-thumb:focus-visible { outline-offset: -3px; }
 @media (hover: none) { .activity-gallery-arrow { background: rgba(15,23,32,.65); } }
+
+.activity-gallery-arrow:disabled { opacity: 0; pointer-events: none; }

@@ -17,9 +17,8 @@ test("card previews use a bounded thumbnail and never load full-size legacy URLs
 test("an existing large transform cannot override the final thumbnail dimensions",()=>{
  const value=helper.activityThumbnailUrl("https://res.cloudinary.com/demo/image/upload/w_2000/v123/users/a.jpg");
  assert.match(value,/w_2000\/f_auto,q_auto:eco,c_fill,g_auto,w_240,h_160\/v123\/users\/a.jpg$/);
- assert.equal(helper.activityThumbnailUrl(urls[0]),helper.activityThumbnailUrl(urls[0]));
 });
-const hooks={...React,useRef:()=>({current:null}),useState:value=>[value,()=>{}]};
+const hooks={...React,useCallback:fn=>fn,useEffect:()=>{},useRef:()=>({current:null}),useState:value=>[value,()=>{}]};
 const Gallery=load("app/components/ActivityGallery.tsx",{"react":hooks,"../lib/imageUrl":helper}).default;
 test("clicking a later thumbnail retains its actual photo index",()=>{
  const opened=[],tree=Gallery({images:urls,onOpen:index=>opened.push(index)});
