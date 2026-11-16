@@ -45,6 +45,26 @@ export default function Page() {
     return () => { active = false; unsubAuth(); };
   }, [router]);
 
+  useEffect(() => {
+    if (!showImages) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setShowImages(null);
+      if (event.key === "ArrowRight" && showImages.length > 1) {
+        setCurrentImgIndex(index => (index + 1) % showImages.length);
+      }
+      if (event.key === "ArrowLeft" && showImages.length > 1) {
+        setCurrentImgIndex(index => (index - 1 + showImages.length) % showImages.length);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showImages]);
+
   const runsQuery = useMemo(() => latestRunsQuery(30), []);
   const runsState = useSharedFirestoreQuery<RunData>("runs:latest:30", runsQuery);
   const runs = runsState.data;
