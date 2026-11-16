@@ -40,15 +40,15 @@ export async function fetchChallengesPage(
         : String(a.name || "").localeCompare(String(b.name || ""), "cs");
     });
 
-  const offset = Math.max(0, (Number.isFinite(Number(pageSize)) ? Number(pageSize) : 10) * (Number.isFinite(Number(cursor?.id)) ? 0 : 0));
-  // Firestore cursor pagination is intentionally not used here because the
-  // query is sorted client-side. Keep the API contract stable and return the
-  // complete filtered set; the UI can paginate deterministically if needed.
-  void offset;
+  // The query is intentionally kept index-light and sorted client-side.
+  // The current UI presents the complete month result, so do not expose
+  // pagination controls that cannot be backed by a Firestore cursor.
+  void pageSize;
+  void cursor;
   return {
-    items: allItems.slice(0, Math.max(1, pageSize)),
+    items: allItems,
     lastDocument: null,
-    hasMore: allItems.length > Math.max(1, pageSize),
+    hasMore: false,
   };
 }
 
