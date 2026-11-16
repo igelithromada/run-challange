@@ -56,7 +56,7 @@ export default function WeatherCard() {
   };
   const current = weather?.current;
   const condition = current?.weatherCondition;
-  const hours = (weather?.hourly || []).slice(0, 6);
+  const hours = (weather?.hourly || []).slice(0, 12);
   const temperature = current?.temperature?.degrees;
   const feelsLike = current?.feelsLikeTemperature?.degrees;
   const wind = current?.wind?.speed?.value;
@@ -73,7 +73,6 @@ export default function WeatherCard() {
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
       <main className="container weather-page">
         <section className="tile weather-card weather-card-improved" aria-label="Předpověď počasí">
-      <div className="weather-card-heading"><span aria-hidden="true" /><button type="button" className="ui-icon-button weather-refresh-button" onClick={() => void loadWeather(true)} aria-label="Obnovit počasí" title="Obnovit počasí"><RefreshCw size={18} /></button></div>
       {loading && !weather ? <p className="weather-loading">Načítám předpověď…</p> : !weather?.configured ? <div className="weather-message"><strong>Google Počasí čeká na propojení</strong><p>Je potřeba doplnit klíč Google Weather API do nastavení projektu na Vercelu.</p></div> : weather?.error || !current ? <p className="weather-message">{weather?.error || "Předpověď není momentálně dostupná."}</p> : (
         <>
           <div className="weather-current-grid">
@@ -84,10 +83,11 @@ export default function WeatherCard() {
               <div className="weather-stat-card"><Droplets className="weather-humidity-icon" size={19} /><strong>{humidity !== undefined ? `${humidity}%` : "—"}</strong><small>Vlhkost</small></div>
             </div>
           </div>
-          {hours.length > 0 && <section className="weather-hour-section"><h3>Předpověď po hodinách</h3><div className="weather-hour-grid">{hours.map((item,index) => { return <div key={item?.interval?.startTime || index} className="weather-hour-card"><small className="weather-hour-time">{hourLabel(item)}</small><div className="weather-hour-main"><WeatherVisual type={item?.weatherCondition?.type} size={48} className="weather-hour-icon" night={(() => { const raw = item?.displayDateTime?.hours; if (raw !== undefined) return raw < 6 || raw >= 20; const date = item?.interval?.startTime ? new Date(item.interval.startTime) : null; const hour = date ? date.getHours() : currentHour; return hour < 6 || hour >= 20; })()} /><strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong></div><span>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}% déšť` : "—"}</span>{item?.precipitation?.amount !== undefined && item?.precipitation?.amount !== null && <small>{formatMm(item.precipitation.amount)}</small>}</div>; })}</div></section>}
+          {hours.length > 0 && <section className="weather-hour-section"><h3>Předpověď po hodinách</h3><div className="weather-hour-grid weather-hour-scroll" tabIndex={0} role="group" aria-label="Předpověď na 12 hodin, posouvej doleva nebo doprava">{hours.map((item,index) => { return <div key={item?.interval?.startTime || index} className="weather-hour-card"><small className="weather-hour-time">{hourLabel(item)}</small><div className="weather-hour-main"><WeatherVisual type={item?.weatherCondition?.type} size={48} className="weather-hour-icon" night={(() => { const raw = item?.displayDateTime?.hours; if (raw !== undefined) return raw < 6 || raw >= 20; const date = item?.interval?.startTime ? new Date(item.interval.startTime) : null; const hour = date ? date.getHours() : currentHour; return hour < 6 || hour >= 20; })()} /><strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong></div><span>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}% déšť` : "—"}</span>{item?.precipitation?.amount !== undefined && item?.precipitation?.amount !== null && <small>{formatMm(item.precipitation.amount)}</small>}</div>; })}</div></section>}
           <p className="weather-source">Zdroj: {weather.source || "Google Weather"} · obnoveno {lastUpdated}</p>
         </>
       )}
+          <div className="weather-refresh-row"><button type="button" className="ui-icon-button weather-refresh-button" onClick={() => void loadWeather(true)} aria-label="Obnovit počasí" title="Obnovit počasí"><RefreshCw size={18} /></button></div>
         </section>
       </main>
     </>
