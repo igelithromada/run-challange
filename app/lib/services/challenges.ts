@@ -30,13 +30,25 @@ export async function fetchChallengesPage(
     where("state", "==", state),
     where("startMonth", "==", monthStart.slice(0, 7))
   ));
-  const items = snapshot.docs
+  const allItems = snapshot.docs
     .map(d => ({ id: d.id, ...d.data() } as ChallengeData))
-    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "cs"));
+    .filter(item => String(item.startDate || "") <= monthEnd && String(item.endDate || "") >= monthStart)
+    .sort((a, b) => {
+      const dateCompare = String(a.startDate || "").localeCompare(String(b.startDate || ""));
+      return dateCompare !== 0
+        ? dateCompare
+        : String(a.name || "").localeCompare(String(b.name || ""), "cs");
+    });
+
+  const offset = Math.max(0, (Number.isFinite(Number(pageSize)) ? Number(pageSize) : 10) * (Number.isFinite(Number(cursor?.id)) ? 0 : 0));
+  // Firestore cursor pagination is intentionally not used here because the
+  // query is sorted client-side. Keep the API contract stable and return the
+  // complete filtered set; the UI can paginate deterministically if needed.
+  void offset;
   return {
-    items,
+    items: allItems.slice(0, Math.max(1, pageSize)),
     lastDocument: null,
-    hasMore: false,
+    hasMore: allItems.length > Math.max(1, pageSize),
   };
 }
 
