@@ -104,8 +104,9 @@ export default function TeamsPage() {
       setName("");
       setDescription(""); setAvatarUrl(""); setAvatarPublicId("");
       await refreshMemberships(user.uid);
+      setShowCreate(false);
+      setPage(1);
       showAppToast("Tým byl vytvořen.", "success");
-      if (result.team?.id) router.push("/teams/" + result.team.id);
     } catch (error) {
       showAppToast(error instanceof Error ? error.message : "Tým se nepodařilo vytvořit.", "error");
     } finally {
