@@ -65,7 +65,8 @@ export async function POST(request:Request){
         tx.create(challenge,{name,nameKey:key(name),description,createdBy:uid,kind,activityType,goal,startDate,endDate,startMonth:startMonth(startDate),state:startDate===today?"active":"planned",participantCount:1,sharedProgress:0,avatarUrl:image.avatarUrl,avatarPublicId:image.avatarPublicId,createdAt:Timestamp.now()});
         tx.create(challenge.collection("participants").doc(uid),{userId:uid,joinedAt:Timestamp.now(),active:true});
               });
-      await reconcileChallengesForUser(adminDb, uid);
+      try { await reconcileChallengesForUser(adminDb, uid); }
+      catch (error) { console.error("Challenge reconciliation after create failed:", error); }
       return NextResponse.json({
         ok:true,
         id:challenge.id,
@@ -101,7 +102,8 @@ export async function POST(request:Request){
           tx.update(ref,{participantCount:FieldValue.increment(-1)});
         }
       });
-      if(action==="join" || action==="leave") await reconcileChallengesForUser(adminDb,uid);
+      try { await reconcileChallengesForUser(adminDb,uid); }
+      catch (error) { console.error("Challenge reconciliation after membership change failed:", error); }
       return NextResponse.json({ok:true});
     }
 
