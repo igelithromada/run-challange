@@ -37,17 +37,22 @@ export default function TeamDetailPage() {
       if (!isActive()) return;
       if(!data){ router.replace("/teams"); return; }
       setTeam(data);
-      const memberIds = data.memberIds?.length ? data.memberIds : (data.createdBy ? [data.createdBy] : []);
+      const memberIds = Array.isArray(data.memberIds) ? data.memberIds : [];
       setIsMember(memberIds.includes(uid));
       setGoal(String(Number(data.challengeGoalKm) || 500));
       setAvatarUrl(data.avatarUrl || "");
       setAvatarPublicId(data.avatarPublicId || "");
 
-      const profiles = await getPublicProfiles(memberIds);
-      if (!isActive()) return;
-      setMembers(Object.values(profiles).sort((a, b) =>
-        (a.nickname || "Uživatel").localeCompare(b.nickname || "Uživatel", "cs")
-      ));
+      try {
+        const profiles = await getPublicProfiles(memberIds);
+        if (!isActive()) return;
+        setMembers(Object.values(profiles).sort((a, b) =>
+          (a.nickname || "Uživatel").localeCompare(b.nickname || "Uživatel", "cs")
+        ));
+      } catch (error) {
+        console.error("Nepodařilo se načíst profily členů týmu", error);
+        if (isActive()) setMembers([]);
+      }
     } finally {
       if (isActive()) setLoading(false);
     }
