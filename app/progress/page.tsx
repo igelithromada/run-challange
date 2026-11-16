@@ -93,7 +93,7 @@ export default function ProgressPage() {
           setGoalMonthly(String(nextGoals[initialType].monthly));
           const storedTeams = data.teamIdsByType || {};
           const nextTeamIds: Record<ActivityType, string | null> = {
-            běh: typeof storedTeams.běh === "string" ? storedTeams.běh : (typeof data.teamId === "string" ? data.teamId : null),
+            běh: storedTeams.běh === null ? null : typeof storedTeams.běh === "string" ? storedTeams.běh : (typeof data.teamId === "string" ? data.teamId : null),
             chůze: typeof storedTeams.chůze === "string" ? storedTeams.chůze : null,
           };
           setTeamIdsByType(nextTeamIds);
@@ -182,7 +182,7 @@ export default function ProgressPage() {
     return days;
   })();
 
-  const teamProgress = teams.filter(team => team.id === joinedTeamId).map(team => {
+  const teamProgress = teams.filter(team => team.id === joinedTeamId && Array.isArray(team.memberIds) && team.memberIds.includes(uid)).map(team => {
     const km = runs.filter(run => (run.type || "běh")===goalType && run.teamId===team.id && activityDate(run).getFullYear()===now.getFullYear() && activityDate(run).getMonth()===now.getMonth())
       .reduce((sum,run)=>sum+asNumber(run.km),0);
     const goalKm = asNumber(team.challengeGoalKm) || 500;
