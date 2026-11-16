@@ -179,7 +179,7 @@ export default function TeamDetailPage() {
   };
 
   if (loading) {
-    return <><Navbar title="Tým" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} /><main className="container"><div className="tile"><p>Načítám tým…</p></div></main></>;
+    return <><Navbar title="Tým" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} /><Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} /><main className="container"><div className="tile"><p>Načítám tým…</p></div></main></>;
   }
 
   if (!team) return null;
