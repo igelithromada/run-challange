@@ -22,11 +22,7 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
     const item = NAVIGATION_ITEMS.find(entry => entry.id === id);
     if (!item || (item.adminOnly && !isAdmin)) return;
     onClose();
-    if (item.id === "routes" || item.id === "challenges") {
-      router.push(item.route);
-      return;
-    }
-    onSelect(id);
+    router.push(item.route);
   };
 
   useEffect(() => {
