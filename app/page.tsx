@@ -134,13 +134,28 @@ export default function Page() {
 
         <RunWeatherRecommendation type={selectedType} />
 
-        <ActivityTypeSelector value={selectedType} onChange={(value) => { setSelectedType(value); try { localStorage.setItem("dolni-lhota-default-activity-v1", value); } catch {} }} />
+        <section className="home-quick-add" aria-labelledby="home-add-heading">
+          <div className="home-section-heading">
+            <div>
+              <span className="home-section-eyebrow">Nová aktivita</span>
+              <h2 id="home-add-heading">Přidej svůj dnešní pohyb</h2>
+            </div>
+            <span className="home-activity-badge">{selectedType === "běh" ? "Běh" : "Chůze"}</span>
+          </div>
+          <ActivityTypeSelector value={selectedType} onChange={(value) => { setSelectedType(value); try { localStorage.setItem("dolni-lhota-default-activity-v1", value); } catch {} }} />
 
-        <div className="run-form-wrap">
-          <RunForm type={selectedType} />
-        </div>
+          <div className="run-form-wrap">
+            <RunForm type={selectedType} />
+          </div>
+        </section>
 
-        <h2 className="centered-title">Poslední záznamy</h2>
+        <section className="home-activity-feed" aria-labelledby="home-feed-heading">
+          <div className="home-section-heading home-feed-heading">
+            <div>
+              <span className="home-section-eyebrow">Komunita</span>
+              <h2 id="home-feed-heading">Poslední záznamy</h2>
+            </div>
+          </div>
         <div className="list-container">
           {runsState.loading ? <LoadingSkeleton count={3} /> : allRuns.filter((run) => (run.type || "běh") === selectedType).map(run => {
             return (
@@ -165,6 +180,7 @@ export default function Page() {
             {loadingOlder ? "Načítám starší záznamy…" : "Načíst starší záznamy"}
           </button>
         )}
+        </section>
       </div>
 
       {showImages && (
