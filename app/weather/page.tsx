@@ -80,7 +80,7 @@ export default function WeatherCard() {
             <div className="weather-current-main"><div className="weather-current-icon-block"><WeatherVisual type={condition?.type} size={104} className="weather-main-icon" night={currentIsNight} /><span>Dolní Lhota u Ostravy</span></div><div className="weather-current-copy"><strong className="weather-temperature">{Math.round(temperature ?? 0)}°C</strong><span className="weather-description">{weatherDescription(condition?.type)}</span>{feelsLike !== undefined && <small>Pocitově {Math.round(feelsLike)}°C</small>}</div></div>
             <div className="weather-stat-grid">
               <div className="weather-stat-card"><Wind size={19} /><strong>{wind !== undefined ? Math.round(wind) : "—"} {wind !== undefined ? windUnit : ""}</strong><small>Vítr</small></div>
-              <div className="weather-stat-card"><RainIcon size={19} className="weather-stat-icon" /><strong>{rainChance !== undefined ? `${rainChance}%` : "—"}</strong><small>{formatMm(currentRainMm)} · Déšť</small></div>
+              <div className="weather-stat-card"><WeatherVisual type="RAIN" size={24} className="weather-stat-icon" /><strong>{rainChance !== undefined ? `${rainChance}%` : "—"}</strong><small>{formatMm(currentRainMm)} · Déšť</small></div>
               <div className="weather-stat-card"><Droplets className="weather-humidity-icon" size={19} /><strong>{humidity !== undefined ? `${humidity}%` : "—"}</strong><small>Vlhkost</small></div>
             </div>
           </div>
