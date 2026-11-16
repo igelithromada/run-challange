@@ -163,21 +163,33 @@ export async function POST(request: Request) {
     if (action === "delete") {
       if (team.createdBy !== decoded.uid) return NextResponse.json({ error: "Tým může smazat jen zakladatel." }, { status: 403 });
       const memberIds = Array.isArray(team.memberIds) ? team.memberIds.filter((value): value is string => typeof value === "string") : [];
-      for (let i = 0; i < memberIds.length; i += 450) {
-        const batch = adminDb.batch();
-        memberIds.slice(i, i + 450).forEach(memberId => {
-          const memberRef = adminDb.collection("users").doc(memberId);
-          batch.set(memberRef, {
-            teamIdsByType: { [type]: null },
-            ...(type === "běh" ? { teamId: null, joinedTeam: null } : {}),
-          }, { merge: true });
+      // Only clear references that still point to the deleted team. A member
+      // may already have moved elsewhere while the deletion is running.
+      for (let i = 0; i < memberIds.length; i += 200) {
+        const chunk = memberIds.slice(i, i + 200);
+        await adminDb.runTransaction(async transaction => {
+          const refs = chunk.map(memberId => adminDb.collection("users").doc(memberId));
+          const snapshots = await Promise.all(refs.map(ref => transaction.get(ref)));
+          snapshots.forEach((snapshot, index) => {
+            if (!snapshot.exists) return;
+            const profile = snapshot.data() || {};
+            const stored = profile.teamIdsByType && typeof profile.teamIdsByType === "object"
+              ? profile.teamIdsByType as Record<string, unknown> : {};
+            const next = { ...stored };
+            const updates: Record<string, unknown> = {};
+            if (stored[type] === teamId) {
+              next[type] = null;
+              updates.teamIdsByType = next;
+            }
+            if (type === "běh") {
+              if (profile.teamId === teamId) updates.teamId = null;
+              if (profile.joinedTeam === teamId) updates.joinedTeam = null;
+            }
+            if (Object.keys(updates).length) transaction.set(refs[index], updates, { merge: true });
+          });
         });
-        if (i + 450 >= memberIds.length) batch.delete(teamRef);
-        await batch.commit();
       }
-      if (memberIds.length === 0) {
-        await teamRef.delete();
-      }
+      await teamRef.delete();
       return NextResponse.json({ ok: true });
     }
 
