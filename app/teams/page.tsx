@@ -26,6 +26,7 @@ type TeamMutationResponse = {
 export default function TeamsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [teamName, setTeamName] = useState("");
+  const [creatingTeam, setCreatingTeam] = useState(false);
   const [selectedType, setSelectedType] = useState<ActivityType>("běh");
   useEffect(() => {
     try {
@@ -98,19 +99,21 @@ export default function TeamsPage() {
   };
 
   const createTeam = async () => {
-    if (!teamName.trim() || !user) return;
-
+    if (!teamName.trim() || !user || creatingTeam) return;
+    setCreatingTeam(true);
     try {
       const result = await teamRequest("create", { name: teamName.trim(), type: selectedType });
       const id = result.team?.id;
       if (id) {
         setTeamName("");
         showAppToast("Tým byl vytvořen.", "success");
-        router.push("/teams");
+        router.push("/teams/" + id);
       }
     } catch (error) {
       console.error(error);
       showAppToast(error instanceof Error ? error.message : "Tým se nepodařilo vytvořit.", "error");
+    } finally {
+      setCreatingTeam(false);
     }
   };
 
@@ -118,7 +121,7 @@ export default function TeamsPage() {
     try {
       const result = await teamRequest("join", { teamId: team.id });
       const next = result.teamIdsByType || {};
-      setTeamIdsByType({ běh: next.běh ?? teamIdsByType.běh, chůze: next.chůze ?? teamIdsByType.chůze });
+      setTeamIdsByType(current => ({ běh: next.běh !== undefined ? next.běh : current.běh, chůze: next.chůze !== undefined ? next.chůze : current.chůze }));
       showAppToast("Přidal ses do týmu.");
     } catch (error) {
       showAppToast(error instanceof Error ? error.message : "Do týmu se nepodařilo přidat.", "error");
@@ -231,7 +234,7 @@ export default function TeamsPage() {
                 if (event.key === "Enter") void createTeam();
               }}
             />
-            <button onClick={() => void createTeam()} className="run-primary-button" disabled={!teamName.trim()}>
+            <button onClick={() => void createTeam()} className="run-primary-button" disabled={!teamName.trim() || creatingTeam}>
               <Plus size={18} /> Vytvořit tým
             </button>
           </div>
