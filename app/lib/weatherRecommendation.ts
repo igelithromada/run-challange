@@ -18,7 +18,7 @@ export function getActivityWeatherAdvice(current: WeatherPoint | undefined, type
   if (storm || ice || (rain && rainChance >= 60) || strongWind || hot) {
     const advice = storm ? "Bouřka v okolí. Vyčkej na zlepšení počasí."
       : ice ? "Hrozí náledí. Zvaž odložení aktivity."
-      : rain && rainChance >= 60 ? "Výrazný déšť. Zvaž kratší trasu nebo aktivitu odlož."
+      : rain && rainChance >= 60 ? "Déšť může zhoršit povrch. Zvaž kratší trasu."
       : strongWind ? "Silný vítr. Vyhni se otevřeným úsekům."
       : "Je horko. Vyraz raději v chladnější části dne a vezmi si vodu.";
     return result("warning", `${activity} raději zvaž`, advice);
