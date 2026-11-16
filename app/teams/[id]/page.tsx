@@ -5,6 +5,7 @@ import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Camera, Check, Save, Users, Crown, Trash2 } from "lucide-react";
 import { auth } from "../../lib/firebase";
+import { ActivityTypeIcon } from "../../components/ActivityTypeSelector";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import { cloudinaryImageUrl } from "../../lib/imageUrl";
@@ -217,8 +218,8 @@ export default function TeamDetailPage() {
         <section className="tile team-stats-card">
           <div className="progress-section-title"><Users /><div><h2>Statistiky týmu</h2><p>{team.memberCount || 0} {(team.memberCount || 0) === 1 ? "člen" : "členů"}</p></div></div>
           <div className="team-stats-rows">
-            <div>🏃 <strong>Běh</strong><span>{Number(stats.runningKm || 0).toFixed(1)} km · {Number(stats.runningActivities || 0)} aktivit</span></div>
-            <div>🚶 <strong>Chůze</strong><span>{Number(stats.walkingKm || 0).toFixed(1)} km · {Number(stats.walkingActivities || 0)} aktivit</span></div>
+            <div><ActivityTypeIcon type="běh" size={20} /> <strong>Běh</strong><span>{Number(stats.runningKm || 0).toFixed(1)} km · {Number(stats.runningActivities || 0)} aktivit</span></div>
+            <div><ActivityTypeIcon type="chůze" size={20} /> <strong>Chůze</strong><span>{Number(stats.walkingKm || 0).toFixed(1)} km · {Number(stats.walkingActivities || 0)} aktivit</span></div>
           </div>
         </section>
 

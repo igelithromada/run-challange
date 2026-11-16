@@ -1,49 +1,50 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, CloudSun } from "lucide-react";
+import type { ActivityType } from "./ActivityTypeSelector";
 import type { WeatherResponse } from "../lib/weather";
 import { auth } from "../lib/firebase";
 import { getUserProfile } from "../lib/services/users";
-import Link from "next/link";
-import { CloudSun, CloudRain, CloudSnow, Wind, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { ActivityType } from "./ActivityTypeSelector";
+import { getActivityWeatherAdvice } from "../lib/weatherRecommendation";
 import WeatherVisual, { weatherDescription } from "./WeatherVisual";
 
-export default function RunWeatherRecommendation({
-  linkToWeather = true,
-  type,
-}: {
-  linkToWeather?: boolean;
-  type?: ActivityType;
-}) {
+export default function RunWeatherRecommendation({ linkToWeather = true, type }: { linkToWeather?: boolean; type?: ActivityType }) {
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [resolvedType, setResolvedType] = useState<ActivityType>(type || "běh");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (type) return;
     let active = true;
     const resolveType = async () => {
-      if (type) { setResolvedType(type); return; }
       try {
         const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
-        if (cached === "běh" || cached === "chůze") setResolvedType(cached);
+        if (active && (cached === "běh" || cached === "chůze")) setResolvedType(cached);
         const user = auth.currentUser;
         if (user) {
           const profile = await getUserProfile(user.uid);
-          if (profile?.defaultActivity === "chůze") setResolvedType("chůze");
-          else if (profile) setResolvedType("běh");
+          if (active && auth.currentUser?.uid === user.uid && profile) setResolvedType(profile.defaultActivity === "chůze" ? "chůze" : "běh");
         }
       } catch {}
     };
     void resolveType();
-    const load = async () => {
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 10000);
+    return () => { active = false; };
+  }, [type]);
+
+  useEffect(() => {
+    let active = true;
+    let controller: AbortController | null = null;
+    const loadWeather = async () => {
+      controller?.abort();
+      const requestController = new AbortController();
+      controller = requestController;
+      const timeout = window.setTimeout(() => requestController.abort(), 10000);
       try {
-        const response = await fetch("/api/weather", { signal: controller.signal });
-        if (!response.ok) throw new Error("Počasí se nepodařilo načíst.");
-        const data = await response.json();
+        const response = await fetch("/api/weather", { signal: requestController.signal });
+        if (!response.ok) throw new Error("Weather unavailable");
+        const data: WeatherResponse = await response.json();
         if (active) setWeather(data);
       } catch {
         if (active) setWeather({ configured: false, error: "Počasí se nepodařilo načíst." });
@@ -52,91 +53,28 @@ export default function RunWeatherRecommendation({
         if (active) setLoading(false);
       }
     };
-    void load();
-    const timer = window.setInterval(load, 30 * 60 * 1000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [type]);
+    void loadWeather();
+    const timer = window.setInterval(loadWeather, 30 * 60 * 1000);
+    return () => { active = false; controller?.abort(); window.clearInterval(timer); };
+  }, []);
 
-  const current = weather?.current;
-  const condition = String(current?.weatherCondition?.type || "").toUpperCase();
-  const temperature = Number(current?.temperature?.degrees);
-  const wind = Number(current?.wind?.speed?.value || 0);
-  const rainChance = Number(current?.precipitation?.probability?.percent ?? 0);
-  const snow = condition.includes("SNOW") || condition.includes("SLEET");
-  const rain = condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER");
-  const icy = temperature <= 0 && (snow || condition.includes("FREEZ"));
-  const activityType = type ?? resolvedType;
-  const hot = activityType === "chůze" ? temperature >= 30 : temperature >= 28;
-  const strongWind = activityType === "chůze" ? wind >= 45 : wind >= 40;
-  const heavyRain = rain && rainChance >= 60;
-  const activityName = activityType === "chůze" ? "chůzi" : "běh";
-
-  let title = "Podmínky vypadají dobře";
-  let advice = activityType === "chůze" ? "Ideální čas vyrazit na chůzi." : "Ideální čas vyrazit si zaběhat.";
-  let tone = "good";
-  let Icon: LucideIcon = CheckCircle2;
-
-  if (loading && !current) {
-    title = `Zjišťuji podmínky pro ${activityName}`;
-    advice = "Načítám aktuální počasí pro Dolní Lhotu.";
-    tone = "neutral"; Icon = CloudSun;
-  } else if (weather?.error || !current || !Number.isFinite(temperature)) {
-    title = "Doporučení není dostupné";
-    advice = weather?.error || "Aktuální počasí se nepodařilo načíst.";
-    tone = "neutral"; Icon = CloudSun;
-  } else if (icy || heavyRain || strongWind || hot) {
-    title = activityType === "chůze" ? "Chůzi raději zvaž" : "Běh raději zvaž";
-    tone = "warning"; Icon = AlertTriangle;
-    advice = icy ? "Mrzne a sněží – povrch může klouzat. Zvol opatrnou trasu a vhodnou obuv."
-      : heavyRain ? "Déšť může zhoršit viditelnost i povrch cest. Zvaž kratší trasu nebo aktivitu odlož."
-      : strongWind ? "Silný vítr může aktivitu výrazně znepříjemnit. Vyhni se otevřeným úsekům."
-      : activityType === "chůze" ? "Je poměrně horko. Vyraz raději v chladnější části dne a vezmi si vodu."
-      : "Je poměrně horko. Zvol volnější tempo, kratší trasu a doplň tekutiny.";
-  } else if (snow || rain || rainChance >= 40 || temperature < 3 || temperature > 24 || wind >= 25) {
-    title = activityType === "chůze" ? "Chůze je možná, ale s opatrností" : "Běhat se dá, ale s opatrností";
-    tone = "caution";
-    Icon = snow ? CloudSnow : rain ? CloudRain : Wind;
-    advice = snow ? "Sníh může klouzat – obuj boty s dobrou podrážkou a přizpůsob tempo."
-      : rain || rainChance >= 40 ? "Počítej s možností deště. Vezmi si vhodnou vrstvu a dávej pozor na kluzký povrch."
-      : temperature < 3 ? "Je chladno. Vezmi si teplou vrstvu a podle podmínek rukavice."
-      : temperature > 24 ? "Je tepleji. Vyraz nalehko, vezmi si vodu a vyhni se nejteplejší části dne."
-      : "Může foukat nebo být chladněji. Přizpůsob oblečení a tempo.";
-  }
-
-  const isNight = (() => {
-    if (!current) return false;
-    const hour = new Date().getHours();
-    return hour < 6 || hour >= 20;
-  })();
-  const status = tone === "good"
-    ? "Aktivita je možná"
-    : tone === "caution"
-      ? "Aktivita je možná s opatrností"
-      : tone === "warning"
-        ? "Aktivitu raději zvaž"
-        : "Aktuální podmínky";
-  const content = (
-    <section className={`run-weather-recommendation run-weather-${tone}`} aria-live="polite">
-      <div className="run-weather-forecast">
-        <div className="run-weather-forecast-icon">
-          {current
-            ? <WeatherVisual type={current.weatherCondition?.type} size={70} night={isNight} />
-            : <Icon size={48} strokeWidth={1.8} />}
-        </div>
-        <div className="run-weather-forecast-copy">
-          {current && <strong className="run-weather-temperature">{Math.round(temperature)} °C</strong>}
-          <strong className="run-weather-status">{status}</strong>
-          {current && <div className="run-weather-condition">{weatherDescription(current.weatherCondition?.type)}</div>}
-          <span className="run-weather-location">Dolní Lhota</span>
-        </div>
-      </div>
-
-      <div className="run-weather-advice">
-        <p>{advice}</p>
-        {current && <small><Wind size={14} /> vítr {Math.round(wind)} km/h{rainChance > 0 ? ` · srážky ${Math.round(rainChance)} %` : ""}</small>}
-        {linkToWeather && <span className="run-weather-more">Podrobné počasí <span aria-hidden="true">→</span></span>}
-      </div>
-    </section>
-  );
-  return linkToWeather ? <Link href="/weather" className="run-weather-link" aria-label={`Otevřít počasí a doporučení pro ${activityType === "chůze" ? "chůzi" : "běh"}`}>{content}</Link> : content;
+  const current = weather?.error ? undefined : weather?.current;
+  const advice = getActivityWeatherAdvice(current, type ?? resolvedType);
+  const validWeather = Boolean(current && advice.temperature !== null && current.weatherCondition?.type);
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Prague", hour: "2-digit", hourCycle: "h23" }).format(new Date()));
+  const content = <section className={`run-weather-recommendation run-weather-compact run-weather-${advice.tone}`} aria-live="polite">
+    <span className="run-weather-symbol" aria-hidden="true">
+      {validWeather ? <WeatherVisual type={current?.weatherCondition?.type} size={48} night={hour < 6 || hour >= 20} /> : <CloudSun size={32} />}
+    </span>
+    <div className="run-weather-copy">
+      <div className="run-weather-heading"><strong>{loading && !current ? "Načítám počasí" : advice.title}</strong>{linkToWeather && <ChevronRight size={17} aria-hidden="true" />}</div>
+      <p>{loading && !current ? "Zjišťuji podmínky v Dolní Lhotě." : advice.advice}</p>
+      {validWeather && <div className="run-weather-meta">
+        <span>{Math.round(advice.temperature!)} °C · {weatherDescription(current?.weatherCondition?.type)}</span>
+        <span>Vítr {Math.round(advice.wind)} km/h</span>
+        {advice.rainChance > 0 && <span>Srážky {Math.round(advice.rainChance)} %</span>}
+      </div>}
+    </div>
+  </section>;
+  return linkToWeather ? <Link href="/weather" className="run-weather-link" title="Podrobné počasí pro Dolní Lhotu">{content}</Link> : content;
 }

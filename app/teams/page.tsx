@@ -5,6 +5,7 @@ import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Plus, Users, X } from "lucide-react";
 import { auth } from "../lib/firebase";
+import { ActivityTypeIcon } from "../components/ActivityTypeSelector";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
@@ -274,8 +275,8 @@ export default function TeamsPage() {
                         {team.description && <p className="team-card-description">{team.description}</p>}
                         <p className="team-card-meta">{team.memberCount || 0} {(team.memberCount || 0) === 1 ? "člen" : "členů"}</p>
                         <div className="team-card-stats">
-                          <span>🏃 {Number(stats.runningKm || 0).toFixed(1)} km · {Number(stats.runningActivities || 0)} aktivit</span>
-                          <span>🚶 {Number(stats.walkingKm || 0).toFixed(1)} km · {Number(stats.walkingActivities || 0)} aktivit</span>
+                          <span className="team-activity-stat"><ActivityTypeIcon type="běh" size={18} /><span className="sr-only">Běh: </span>{Number(stats.runningKm || 0).toFixed(1)} km · {Number(stats.runningActivities || 0)} aktivit</span>
+                          <span className="team-activity-stat"><ActivityTypeIcon type="chůze" size={18} /><span className="sr-only">Chůze: </span>{Number(stats.walkingKm || 0).toFixed(1)} km · {Number(stats.walkingActivities || 0)} aktivit</span>
                         </div>
                       </div>
                       <ChevronRight className="team-card-chevron" size={20} />

@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Plus, Trophy, Target, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trophy, X } from "lucide-react";
 import { auth } from "../lib/firebase";
+import ChallengeSummaryCard from "../components/ChallengeSummaryCard";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
@@ -30,19 +31,6 @@ import type { ActivityType, ChallengeData, ChallengeKind } from "../types";
 const MONTHS = ["Leden","Únor","Březen","Duben","Květen","Červen","Červenec","Srpen","Září","Říjen","Listopad","Prosinec"];
 
 function monthKey(date: Date) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}`; }
-function formatDate(value: string) { return new Intl.DateTimeFormat("cs-CZ",{day:"numeric",month:"numeric",year:"numeric"}).format(new Date(value+"T12:00:00")); }
-function kindLabel(kind: ChallengeKind) {
-  return kind==="distance" ? "Vzdálenost" : kind==="activities" ? "Počet aktivit" : kind==="activeDays" ? "Aktivní dny" : "Společný cíl";
-}
-function unit(kind: ChallengeKind) { return kind==="distance"||kind==="sharedDistance" ? "km" : kind==="activities" ? "aktivit" : "dnů"; }
-function progress(challenge: ChallengeData) {
-  if (challenge.kind === "sharedDistance") {
-    const value = Number(challenge.sharedProgress || 0);
-    return `${value.toFixed(1)} / ${Number(challenge.goal).toFixed(1)} km`;
-  }
-  const decimals = challenge.kind === "distance" ? 1 : 0;
-  return `Cíl: ${Number(challenge.goal).toFixed(decimals)} ${unit(challenge.kind)}`;
-}
 
 export default function ChallengesPage() {
   const router=useRouter();
@@ -64,7 +52,6 @@ export default function ChallengesPage() {
   const [groups,setGroups]=useState<Record<ChallengeData["state"], ChallengeData[]>>({active:[],planned:[],completed:[]});
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState<Error|null>(null);
-  const [authors,setAuthors]=useState<Record<string, import("../types").PublicProfileData>>({});
   const [joinedChallengeIds,setJoinedChallengeIds]=useState<Set<string>>(new Set());
 
   useEffect(()=>{ const unsub=onAuthStateChanged(auth,u=>{ if(!u){router.push("/login");return;} setUser(u); try{const v=localStorage.getItem("dolni-lhota-default-activity-v1"); if(v==="běh"||v==="chůze")setActivityType(v);}catch{} }); return ()=>unsub(); },[router]);
@@ -118,14 +105,8 @@ export default function ChallengesPage() {
       const nextGroups = { active: results[0][1].items, planned: results[1][1].items, completed: results[2][1].items };
       setGroups(nextGroups);
       const allItems = [...nextGroups.active, ...nextGroups.planned, ...nextGroups.completed];
-      const authorIds = allItems.map(item => String(item.createdBy || "")).filter(Boolean);
-      const [authorProfiles, joinedIds] = await Promise.allSettled([
-        import("../lib/services/publicProfiles").then(({ getPublicProfiles }) => getPublicProfiles(authorIds)),
-        user ? getActiveChallengeIdsForUser(user.uid, allItems.map(item => item.id)) : Promise.resolve([]),
-      ]);
-      if (cancelled) return;
-      setAuthors(authorProfiles.status === "fulfilled" ? authorProfiles.value : {});
-      setJoinedChallengeIds(new Set(joinedIds.status === "fulfilled" ? joinedIds.value : []));
+      const joinedIds = await getActiveChallengeIdsForUser(user.uid, allItems.map(item => item.id));
+      if (!cancelled) setJoinedChallengeIds(new Set(joinedIds));
     }).catch(e => {
       if (!cancelled) setError(e instanceof Error ? e : new Error("Výzvy se nepodařilo načíst."));
     }).finally(() => {
@@ -189,8 +170,7 @@ export default function ChallengesPage() {
       )}
       <div className="challenge-type-switch"><ActivityTypeSelector value={activityType} onChange={value=>setActivityType(value)} ariaLabel="Filtr typu aktivity" /></div>
       <div className="challenge-month"><button onClick={()=>shift(-1)} aria-label="Předchozí měsíc"><ChevronLeft/></button><strong>{MONTHS[month.getMonth()]} {month.getFullYear()}</strong><button onClick={()=>shift(1)} aria-label="Další měsíc"><ChevronRight/></button></div>
-      {loading?<LoadingSkeleton count={4}/>:error?<div className="tile teams-empty">Výzvy se nepodařilo načíst.</div>:([["active",groups.active],["planned",groups.planned],["completed",groups.completed]] as const).map(([state,items])=><section key={state} className="challenge-group"><h2>{state==="active"?"Aktivní":state==="planned"?"Plánované":"Dokončené"}</h2><div className="teams-grid">{items.map(c=><article key={c.id} className="tile team-card challenge-card" onClick={()=>router.push("/challenges/"+c.id)}>
-        <div className="team-card-main"><div className="team-avatar">{c.avatarUrl?<img src={cloudinaryImageUrl(c.avatarUrl,96)} alt=""/>:<Target size={22}/>}</div><div className="team-card-info"><div className="team-card-title-row"><h3>{c.name}</h3>{joinedChallengeIds.has(c.id)&&<span className="challenge-participating">Účastníš se</span>}</div>{c.description&&<p className="team-card-description">{c.description}</p>}<p className="team-card-meta">{kindLabel(c.kind)} · {c.activityType==="běh"?"Běh":"Chůze"} · Autor: {authors[String(c.createdBy||"")]?.nickname || "Uživatel"}</p><div className="team-card-stats"><span>{progress(c)}</span><span>{formatDate(c.startDate)} – {formatDate(c.endDate)}</span></div></div><ChevronRight className="team-card-chevron" size={20}/></div></article>)}</div></section>)}
+      {loading?<LoadingSkeleton count={4}/>:error?<div className="tile teams-empty">Výzvy se nepodařilo načíst.</div>:([["active",groups.active],["planned",groups.planned],["completed",groups.completed]] as const).map(([state,items])=><section key={state} className="challenge-group"><h2>{state==="active"?"Aktivní":state==="planned"?"Plánované":"Dokončené"}</h2><div className="teams-grid">{items.map(c => <ChallengeSummaryCard key={c.id} challenge={c} joined={joinedChallengeIds.has(c.id)} />)}</div></section>)}
       {!loading&&!error&&!groups.active.length&&!groups.planned.length&&!groups.completed.length&&<div className="tile teams-empty"><Trophy size={30}/><strong>V tomto měsíci nejsou žádné výzvy.</strong><p>Zkus jiný měsíc nebo vytvoř vlastní výzvu.</p></div>}
     </main>
   </>;
