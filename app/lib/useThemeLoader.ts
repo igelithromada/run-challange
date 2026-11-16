@@ -89,7 +89,7 @@ export async function applyTheme(selectedTheme: string, color: string, gradientE
   if (!gradientEnabled) {
     const solid =
       activeTheme === "dark" ? "#000000" :
-      activeTheme === "light" ? "#36D1DC" :
+      activeTheme === "light" ? "#f4f7f9" :
       activeTheme === "custom" ? color :
       "#36D1DC";
     gradient = solid;
