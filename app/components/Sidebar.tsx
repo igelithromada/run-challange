@@ -96,7 +96,7 @@ export default function Sidebar({ visible, onClose, onSelect }: SidebarProps) {
           </button>
         </div>
 
-        <button type="button" className="site-sidebar-profile" onClick={() => { onClose(); router.push("/profile"); }}>
+        <button type="button" className={`site-sidebar-profile${pathname === "/profile" ? " is-active" : ""}`} aria-current={pathname === "/profile" ? "page" : undefined} onClick={() => { onClose(); router.push("/profile"); }}>
           <span className="site-sidebar-profile-icon"><UserRound size={22} aria-hidden="true" /></span>
           <span className="site-sidebar-profile-copy">
             <strong>Můj účet</strong>
