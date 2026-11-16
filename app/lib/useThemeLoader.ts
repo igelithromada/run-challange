@@ -63,14 +63,17 @@ export default function useThemeLoader() {
 }
 
 export async function applyTheme(selectedTheme: string, color: string, gradientEnabled = true) {
-  const activeTheme = ["default", "dark", "auto", "weather", "custom"].includes(selectedTheme) ? selectedTheme : "default";
+  const activeTheme = ["default", "light", "white", "dark", "auto", "weather", "custom"].includes(selectedTheme) ? (selectedTheme === "white" ? "light" : selectedTheme) : "default";
   let gradient = "linear-gradient(180deg, #36D1DC, #5B86E5)";
   const root = document.documentElement;
   root.removeAttribute("data-weather");
   root.removeAttribute("data-auto-period");
   root.removeAttribute("data-theme");
 
-  if (activeTheme === "dark") {
+  if (activeTheme === "light") {
+    gradient = "#f4f7f9";
+    root.setAttribute("data-theme", "white");
+  } else if (activeTheme === "dark") {
     gradient = "#000000";
     root.setAttribute("data-theme", "dark");
   } else if (activeTheme === "auto") {
@@ -86,6 +89,7 @@ export async function applyTheme(selectedTheme: string, color: string, gradientE
   if (!gradientEnabled) {
     const solid =
       activeTheme === "dark" ? "#000000" :
+      activeTheme === "light" ? "#36D1DC" :
       activeTheme === "custom" ? color :
       "#36D1DC";
     gradient = solid;
