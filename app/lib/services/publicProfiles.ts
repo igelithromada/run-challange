@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, type SetOptions } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, setDoc, where, documentId, type SetOptions } from "firebase/firestore";
 import { db } from "../firebase";
 import type { PublicProfileData } from "../../types";
 
@@ -48,13 +48,14 @@ export async function mergePublicProfile(
 
 export async function getPublicProfiles(uids: string[]): Promise<Record<string, PublicProfileData>> {
   const uniqueIds = Array.from(new Set(uids.filter(Boolean)));
-  const entries = await Promise.all(uniqueIds.map(async uid => {
-    const profile = await getPublicProfile(uid);
-    return profile ? [uid, profile] as const : null;
-  }));
-
-  return entries.reduce<Record<string, PublicProfileData>>((result, entry) => {
-    if (entry) result[entry[0]] = entry[1];
-    return result;
-  }, {});
+  const result: Record<string, PublicProfileData> = {};
+  for (let index = 0; index < uniqueIds.length; index += 30) {
+    const batch = uniqueIds.slice(index, index + 30);
+    if (!batch.length) continue;
+    const snapshot = await getDocs(query(collection(db, "publicProfiles"), where(documentId(), "in", batch)));
+    snapshot.docs.forEach(item => {
+      result[item.id] = { id: item.id, ...item.data() } as PublicProfileData;
+    });
+  }
+  return result;
 }
