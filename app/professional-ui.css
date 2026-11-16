@@ -585,7 +585,7 @@
 .professional-form textarea { min-height: 88px; }
 .teams-create-form { gap: .65rem !important; margin-top: .65rem !important; }
 .challenge-type-switch { margin: .65rem 0 .5rem; }
-.challenge-month-switcher { margin: .5rem 0 .75rem; }
+.challenge-month { margin: .5rem 0 .75rem; }
 .run-weather-recommendation { gap: .65rem !important; padding: .8rem !important; }
 .run-weather-forecast { gap: .65rem; }
 .run-weather-forecast-icon { width: 54px; height: 54px; flex: 0 0 54px; }
