@@ -5,9 +5,11 @@ import { requireAdmin, authErrorResponse } from "../../../lib/apiAuth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+import { gpxDistanceLabel as distanceFromGpx, MAX_GPX_SIZE } from "../../../lib/gpx";
+
 type AdminRoute = { id: string; isStatic: false; deleted?: boolean; disabled?: boolean; [key: string]: unknown };
 
-const MAX_GPXS = 15 * 1024 * 1024;
+const MAX_GPXS = MAX_GPX_SIZE;
 const CLOUDINARY_TIMEOUT_MS = 20_000;
 
 function signUpload(params: Record<string, string>, secret: string) {
@@ -37,29 +39,9 @@ async function deleteCloudinaryRaw(publicId: string) {
 }
 
 async function gpxDistanceLabel(file: File) {
-  const text = await file.text();
-  const re = /<(?:trkpt|rtept)\b[^>]*\blat=["']([^"']+)["'][^>]*\blon=["']([^"']+)["'][^>]*>/gi;
-  const points: Array<[number, number]> = [];
-  let match: RegExpExecArray | null;
-  while ((match = re.exec(text)) !== null) {
-    const lat = Number(match[1]);
-    const lon = Number(match[2]);
-    if (Number.isFinite(lat) && Number.isFinite(lon)) points.push([lat, lon]);
-  }
-  if (points.length < 2) return "GPX";
-
-  const toRad = (value: number) => value * Math.PI / 180;
-  let meters = 0;
-  for (let i = 1; i < points.length; i++) {
-    const [lat1, lon1] = points[i - 1];
-    const [lat2, lon2] = points[i];
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-    meters += 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  }
-  if (!(meters > 0)) return "GPX";
-  return meters < 1000 ? `${Math.round(meters)} m` : `${(meters / 1000).toFixed(1)} km`;
+  const distance=distanceFromGpx(await file.text());
+  if(distance===null)throw new Error("Soubor neobsahuje platnou GPX trasu alespoň se dvěma body.");
+  return distance;
 }
 
 async function uploadGpx(file: File, uid: string) {
@@ -162,6 +144,7 @@ export async function PUT(request: Request) {
     if (file instanceof File && file.size > 0) {
       if (file.size > MAX_GPXS) return NextResponse.json({ error: "GPX může mít maximálně 15 MB." }, { status: 413 });
       if (!file.name.toLowerCase().endsWith(".gpx")) return NextResponse.json({ error: "Nahraj soubor s příponou .gpx." }, { status: 400 });
+      await gpxDistanceLabel(file);
       uploaded = await uploadGpx(file, decoded.uid);
     }
     const ref = adminDb.collection("recommendedRoutes").doc(id);

@@ -53,7 +53,7 @@ export async function GET(request: Request) {
   try {
     const { adminDb, decoded } = await requireApiUser(request);
     const runId = new URL(request.url).searchParams.get("runId")?.trim();
-    if (!runId) return NextResponse.json({ error: "Chybí ID záznamu." }, { status: 400 });
+    if (!runId || runId.includes("/")) return NextResponse.json({ error: "Chybí ID záznamu." }, { status: 400 });
 
     const run = await adminDb.collection("runs").doc(runId).get();
     if (!run.exists) return NextResponse.json({ error: "Záznam neexistuje." }, { status: 404 });
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const runId = typeof body?.runId === "string" ? body.runId.trim() : "";
     const action = typeof body?.action === "string" ? body.action : "";
-    if (!runId || !["like", "comment", "comment_update", "comment_delete"].includes(action)) {
+    if (!runId || runId.includes("/") || !["like", "comment", "comment_update", "comment_delete"].includes(action)) {
       return NextResponse.json({ error: "Neplatný požadavek." }, { status: 400 });
     }
 
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
 
     if (action === "comment_update" || action === "comment_delete") {
       const commentId = typeof body?.commentId === "string" ? body.commentId.trim() : "";
-      if (!commentId) return NextResponse.json({ error: "Chybí ID komentáře." }, { status: 400 });
+      if (!commentId || commentId.includes("/")) return NextResponse.json({ error: "Chybí ID komentáře." }, { status: 400 });
       const commentRef = runRef.collection("comments").doc(commentId);
       const commentSnapshot = await commentRef.get();
       if (!commentSnapshot.exists) return NextResponse.json({ error: "Komentář neexistuje." }, { status: 404 });
@@ -150,9 +150,11 @@ export async function POST(request: Request) {
       }
 
       await adminDb.runTransaction(async transaction => {
-        const currentRun = await transaction.get(runRef);
-        const currentCount = Number(currentRun.data()?.commentCount) || 0;
+        const [currentRun, currentComment] = await Promise.all([transaction.get(runRef),transaction.get(commentRef)]);
+        if(!currentComment.exists)return;
         transaction.delete(commentRef);
+        if(!currentRun.exists)return;
+        const currentCount = Number(currentRun.data()?.commentCount) || 0;
         transaction.update(runRef, { commentCount: Math.max(0, currentCount - 1) });
       });
       return NextResponse.json({ ok: true });
@@ -182,11 +184,13 @@ export async function POST(request: Request) {
         return { liked: !liked, likeCount: next.length };
       });
       if (result.liked && runData.uid && runData.uid !== decoded.uid) {
+        try {
         const publicProfile = await adminDb.collection("publicProfiles").doc(decoded.uid).get();
         const profile = publicProfile.exists ? publicProfile.data() || {} : {};
         const actorNickname = typeof profile.nickname === "string" && profile.nickname.trim() ? profile.nickname : "Uživatel";
         const actorAvatarUrl = typeof profile.avatarUrl === "string" ? profile.avatarUrl : "";
         await createSocialNotification(adminDb, runData.uid, decoded.uid, actorNickname, actorAvatarUrl, "like", runId);
+        } catch(error) { console.error("Lajk byl uložen, upozornění selhalo:",error); }
       }
       return NextResponse.json(result);
     }
@@ -216,7 +220,8 @@ export async function POST(request: Request) {
     });
 
     if (runData.uid && runData.uid !== decoded.uid) {
-      await createSocialNotification(adminDb, runData.uid, decoded.uid, nickname, avatarUrl, "comment", runId, text);
+      try { await createSocialNotification(adminDb, runData.uid, decoded.uid, nickname, avatarUrl, "comment", runId, text); }
+      catch(error) { console.error("Komentář byl uložen, upozornění selhalo:",error); }
     }
 
     return NextResponse.json({

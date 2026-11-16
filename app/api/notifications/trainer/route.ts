@@ -97,7 +97,7 @@ export async function GET(request: Request) {
       if (!texts.length) return;
 
       const sentKey = `${mode}-${targetKey}-${preferredTime}`;
-      if (prefs.lastSentKey === sentKey) return;
+      if (prefs.lastSentKeys?.[mode] === sentKey || prefs.lastSentKey === sentKey) return;
 
       const subscriptions = await userDoc.ref.collection("pushSubscriptions").get();
       let delivered = false;
@@ -122,7 +122,7 @@ export async function GET(request: Request) {
       }
 
       if (delivered) {
-        await userDoc.ref.set({ trainerNotifications: { ...prefs, lastSentKey: sentKey } }, { merge: true });
+        await userDoc.ref.set({ trainerNotifications: { lastSentKeys: { [mode]: sentKey } } }, { merge: true });
       }
     };
 

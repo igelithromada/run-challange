@@ -5,7 +5,7 @@ import { auth } from "./firebase";
 import { getUserProfile } from "./services/users";
 
 const CACHE_KEY = "dolni-lhota-theme-v1";
-type ThemeCache = { theme: string; customColor: string; gradientEnabled: boolean; savedAt: number };
+type ThemeCache = { theme: string; customColor: string; gradientEnabled: boolean; savedAt: number; uid?: string };
 const defaults: ThemeCache = { theme: "default", customColor: "#36D1DC", gradientEnabled: true, savedAt: 0 };
 
 function readThemeCache(): ThemeCache {
@@ -17,6 +17,7 @@ function readThemeCache(): ThemeCache {
       theme: typeof value.theme === "string" ? value.theme : defaults.theme,
       customColor: typeof value.customColor === "string" ? value.customColor : defaults.customColor,
             gradientEnabled: value.gradientEnabled !== false,
+      uid: typeof value.uid === "string" ? value.uid : "",
       savedAt: typeof value.savedAt === "number" ? value.savedAt : 0
     };
   } catch { return defaults; }
@@ -30,7 +31,7 @@ export default function useThemeLoader() {
     let active = true;
     let userData = readThemeCache();
     // Lokální kopie se aplikuje hned; Firestore ji později případně aktualizuje.
-    void applyTheme(userData.theme, userData.customColor, userData.gradientEnabled);
+    void applyTheme(userData.theme, userData.customColor, userData.gradientEnabled, false);
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) return;
       try {
@@ -40,29 +41,33 @@ export default function useThemeLoader() {
           theme: data.theme || "default",
           customColor: data.customColor || "#36D1DC",
                     gradientEnabled: data.gradientEnabled !== false,
+          uid: user.uid,
           savedAt: data.themeUpdatedAt instanceof Date ? data.themeUpdatedAt.getTime() : data.themeUpdatedAt && "toDate" in data.themeUpdatedAt && typeof data.themeUpdatedAt.toDate === "function" ? data.themeUpdatedAt.toDate().getTime() : data.themeUpdatedAt && "seconds" in data.themeUpdatedAt && typeof data.themeUpdatedAt.seconds === "number" ? data.themeUpdatedAt.seconds * 1000 : Number(data.themeUpdatedAt || 0)
         };
         const cached = readThemeCache();
-        const remoteIsNewer = userData.savedAt > cached.savedAt;
+        const remoteIsNewer = cached.uid !== user.uid || userData.savedAt > cached.savedAt;
         if (remoteIsNewer || cached.savedAt === 0) {
           writeThemeCache(userData);
-          await applyTheme(userData.theme, userData.customColor, userData.gradientEnabled);
+          await applyTheme(userData.theme, userData.customColor, userData.gradientEnabled, false);
         } else {
           userData = cached;
-          await applyTheme(userData.theme, userData.customColor, userData.gradientEnabled);
+          await applyTheme(userData.theme, userData.customColor, userData.gradientEnabled, false);
         }
       } catch (error) { console.error("Nepodařilo se načíst vzhled", error); }
     });
     const interval = window.setInterval(() => {
       if (userData.theme === "auto" || userData.theme === "weather") {
-        void applyTheme(userData.theme, userData.customColor, userData.gradientEnabled);
+        void applyTheme(userData.theme, userData.customColor, userData.gradientEnabled, false);
       }
     }, 5 * 60 * 1000);
     return () => { active = false; unsub(); window.clearInterval(interval); };
   }, []);
 }
 
-export async function applyTheme(selectedTheme: string, color: string, gradientEnabled = true) {
+let themeRevision = 0;
+
+export async function applyTheme(selectedTheme: string, color: string, gradientEnabled = true, persist = true) {
+  const revision = ++themeRevision;
   const activeTheme = ["default", "light", "white", "dark", "auto", "weather", "custom"].includes(selectedTheme) ? (selectedTheme === "white" ? "light" : selectedTheme) : "default";
   let gradient = "linear-gradient(180deg, #36D1DC, #5B86E5)";
   const root = document.documentElement;
@@ -84,7 +89,7 @@ export async function applyTheme(selectedTheme: string, color: string, gradientE
     gradient = `linear-gradient(180deg, ${color}, #000000)`;
   }
 
-  writeThemeCache({ theme: activeTheme, customColor: color, gradientEnabled, savedAt: Date.now() });
+  if (persist) writeThemeCache({ theme: activeTheme, customColor: color, gradientEnabled, savedAt: Date.now(), uid: auth.currentUser?.uid || "" });
 
   if (!gradientEnabled) {
     const solid =
@@ -110,6 +115,7 @@ export async function applyTheme(selectedTheme: string, color: string, gradientE
       }
       if (!response.ok) throw new Error("Počasí není dostupné");
       const data = await response.json();
+      if (revision !== themeRevision) return;
       const current = data.current;
       if (!current) throw new Error("Chybí aktuální počasí");
 
@@ -156,7 +162,7 @@ export async function applyTheme(selectedTheme: string, color: string, gradientE
     }
   }
 
-  root.style.setProperty("--main-gradient", gradient);
+  if (revision === themeRevision) root.style.setProperty("--main-gradient", gradient);
 }
 
 function getTimeTheme(date: Date): { period: string; gradient: string } {

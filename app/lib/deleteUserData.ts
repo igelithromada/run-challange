@@ -15,8 +15,15 @@ async function deleteSubcollections(ref: DocumentReference) {
   }
 }
 
+async function userDocuments(db: Firestore, parents: string, children: string, uid: string) {
+  const snapshot=await db.collection(parents).get();
+  const results=await Promise.all(snapshot.docs.map(parent=>parent.ref.collection(children).where(children==="comments"?"uid":"userId","==",uid).get()));
+  const docs=results.flatMap(result=>result.docs);
+  return {docs,size:docs.length};
+}
+
 async function deleteCommentsByUser(adminDb: Firestore, uid: string) {
-  const snapshot = await adminDb.collectionGroup("comments").where("uid", "==", uid).get();
+  const snapshot = await userDocuments(adminDb,"runs","comments",uid);
   const grouped = new Map<string, { runRef: DocumentReference; comments: QueryDocumentSnapshot[] }>();
 
   for (const comment of snapshot.docs) {
@@ -45,16 +52,13 @@ async function deleteCommentsByUser(adminDb: Firestore, uid: string) {
 
 async function removeUserLikes(adminDb: Firestore, uid: string) {
   const snapshot = await adminDb.collection("runs").where("likedBy", "array-contains", uid).get();
-  for (let i = 0; i < snapshot.docs.length; i += 400) {
-    const batch = adminDb.batch();
-    snapshot.docs.slice(i, i + 400).forEach(run => {
-      const currentCount = Number(run.data().likeCount) || 0;
-      batch.update(run.ref, {
-        likedBy: FieldValue.arrayRemove(uid),
-        likeCount: Math.max(0, currentCount - 1),
-      });
+  for(const run of snapshot.docs){
+    await adminDb.runTransaction(async tx=>{
+      const current=await tx.get(run.ref);
+      if(!current.exists)return;
+      const likedBy=Array.isArray(current.data()?.likedBy)?current.data()!.likedBy.filter((id:unknown)=>typeof id==="string"&&id!==uid):[];
+      tx.update(run.ref,{likedBy:[...new Set(likedBy)],likeCount:new Set(likedBy).size});
     });
-    await batch.commit();
   }
   return snapshot.size;
 }
@@ -76,7 +80,7 @@ async function removeUserNotifications(adminDb: Firestore, uid: string) {
 }
 
 async function removeUserFromChallenges(adminDb: Firestore, uid: string) {
-  const participantSnapshot = await adminDb.collectionGroup("participants").where("userId", "==", uid).get();
+  const participantSnapshot = await userDocuments(adminDb,"challenges","participants",uid);
   if (!participantSnapshot.size) return 0;
 
   const challengeStates = new Map<string, string>();
@@ -93,9 +97,9 @@ async function removeUserFromChallenges(adminDb: Firestore, uid: string) {
     challengeStates.set(path, snapshot.exists ? String(snapshot.data()?.state || "") : "");
   }));
 
-  for (let i = 0; i < participantSnapshot.docs.length; i += 400) {
+  for (let i = 0; i < participantSnapshot.docs.length; i += 200) {
     const batch = adminDb.batch();
-    for (const participant of participantSnapshot.docs.slice(i, i + 400)) {
+    for (const participant of participantSnapshot.docs.slice(i, i + 200)) {
       const challengeRef = participant.ref.parent.parent;
       const state = challengeRef ? challengeStates.get(challengeRef.path) : "";
       if (state === "completed") {
@@ -128,10 +132,8 @@ async function removeUserFromChallenges(adminDb: Firestore, uid: string) {
 }
 
 async function removeUserFromTeams(adminDb: Firestore, uid: string) {
-  const membershipSnapshot = await adminDb.collectionGroup("members")
-    .where("userId", "==", uid)
-    .where("active", "==", true)
-    .get();
+  const allMemberships=await userDocuments(adminDb,"teams","members",uid);
+  const membershipSnapshot={docs:allMemberships.docs.filter(member=>member.data().active===true)};
 
   let cleaned = 0;
   for (const member of membershipSnapshot.docs) {
@@ -149,9 +151,8 @@ async function removeUserFromTeams(adminDb: Firestore, uid: string) {
     batch.delete(member.ref);
     const activeHistory = await teamRef.collection("membershipHistory")
       .where("userId", "==", uid)
-      .where("active", "==", true)
       .get();
-    activeHistory.docs.forEach(history => batch.update(history.ref, {
+    activeHistory.docs.filter(history=>history.data().active===true).forEach(history => batch.update(history.ref, {
       active: false,
       leftAt: FieldValue.serverTimestamp(),
     }));
@@ -179,6 +180,7 @@ async function removeUserFromTeams(adminDb: Firestore, uid: string) {
 }
 
 export async function deleteUserData(adminDb: Firestore, uid: string) {
+  await adminDb.collection("users").doc(uid).set({deleting:true},{merge:true});
   const [runsSnapshot, userSnapshot] = await Promise.all([
     adminDb.collection("runs").where("uid", "==", uid).get(),
     adminDb.collection("users").doc(uid).get(),
@@ -203,8 +205,14 @@ export async function deleteUserData(adminDb: Firestore, uid: string) {
   }
 
   publicIds.push(...collectCloudinaryPublicIds(imageUrls, uid));
-  const cloudinaryResult = await deleteCloudinaryImages(publicIds);
-  if (cloudinaryResult.failed.length) throw new Error(`CLOUDINARY_DELETE_FAILED:${cloudinaryResult.failed.length}`);
+  let cloudinaryResult;
+  try {
+    cloudinaryResult=await deleteCloudinaryImages(publicIds);
+    if(cloudinaryResult.failed.length)throw new Error(`CLOUDINARY_DELETE_FAILED:${cloudinaryResult.failed.length}`);
+  }catch(error){
+    await adminDb.collection("users").doc(uid).update({deleting:FieldValue.delete()});
+    throw error;
+  }
 
   for (const run of runsSnapshot.docs) await deleteSubcollections(run.ref);
 
@@ -223,6 +231,7 @@ export async function deleteUserData(adminDb: Firestore, uid: string) {
     removeUserFromChallenges(adminDb, uid),
   ]);
 
+  await deleteSubcollections(adminDb.collection("users").doc(uid));
   await Promise.all([
     adminDb.collection("users").doc(uid).delete(),
     adminDb.collection("publicProfiles").doc(uid).delete(),

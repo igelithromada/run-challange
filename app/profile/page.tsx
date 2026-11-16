@@ -7,7 +7,7 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { UserRound, Mail, KeyRound, LogOut, Trash2, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { getUserProfile } from "../lib/services/users";
+import { getUserProfile, invalidateUserProfileCache } from "../lib/services/users";
 import { invalidatePublicProfileCache } from "../lib/services/publicProfiles";
 import { showAppToast } from "../components/AppToast";
 
@@ -78,6 +78,7 @@ export default function ProfilePage() {
       if (!response.ok) throw new Error(result.error || "Přezdívku se nepodařilo uložit.");
       setNickname(typeof result.nickname === "string" ? result.nickname : value);
       invalidatePublicProfileCache(user.uid);
+      invalidateUserProfileCache(user.uid);
       flash("Přezdívka uložena.");
     } catch (error) {
       flash(error instanceof Error ? error.message : "Přezdívku se nepodařilo uložit.", "error");
@@ -130,6 +131,7 @@ export default function ProfilePage() {
 
       setAvatarUrl(uploadResult.secureUrl);
       invalidatePublicProfileCache(user.uid);
+      invalidateUserProfileCache(user.uid);
       flash("Profilová fotografie byla uložena.");
     } catch (error) {
       flash(error instanceof Error ? error.message : "Avatar se nepodařilo uložit.", "error");
@@ -322,7 +324,7 @@ export default function ProfilePage() {
                 <AlertTriangle size={22} />
                 <div>
                   <h3>Trvale smazat účet?</h3>
-                  <p>Tato akce je nevratná. Smaže se přihlášení, profil, všechny tvoje aktivity, fotografie, komentáře, označení To se mi líbí, upozornění a členství v týmech. Pokud jsi zakladatel týmu, tým bude také odstraněn.</p>
+                  <p>Tato akce je nevratná. Smaže se přihlášení, profil, všechny tvoje aktivity, fotografie, komentáře, označení To se mi líbí, upozornění a členství v týmech. Pokud spravuješ tým, správa se předá dalšímu členovi; týmové historické statistiky zůstanou zachované.</p>
                 </div>
               </div>
               <div className="profile-delete-confirm-actions">

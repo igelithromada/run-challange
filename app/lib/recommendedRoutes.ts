@@ -3,7 +3,7 @@ import type { RouteGroup, RouteItem } from "./routes";
 export async function getRecommendedRouteGroups(): Promise<RouteGroup[]> {
   try {
     const response = await fetch("/api/routes/recommended", { cache: "no-store" });
-    if (!response.ok) return [];
+    if (!response.ok) throw new Error("Trasy se nepodařilo načíst.");
     const data = await response.json();
     const items = Array.isArray(data.routes) ? data.routes : [];
     const groups = new Map<string, RouteGroup>();
@@ -31,7 +31,7 @@ export async function getRecommendedRouteGroups(): Promise<RouteGroup[]> {
       groups.set(groupId, group);
     }
     return Array.from(groups.values());
-  } catch {
-    return [];
+  } catch(error) {
+    throw error instanceof Error ? error : new Error("Trasy se nepodařilo načíst.");
   }
 }

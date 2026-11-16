@@ -14,7 +14,7 @@ import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { setHapticsEnabled } from "../lib/haptics";
 import { invalidatePublicProfileCache, mergePublicProfile } from "../lib/services/publicProfiles";
-import { getUserProfile, saveUserSettings } from "../lib/services/users";
+import { getUserProfile, saveUserSettings, invalidateUserProfileCache } from "../lib/services/users";
 
 const DEFAULT_COLOR = "#36D1DC";
 const DEFAULT_ACTIVITY_KEY = "dolni-lhota-default-activity-v1";
@@ -139,6 +139,7 @@ export default function SettingsPage() {
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Vzhled se nepodařilo uložit.");
+        invalidateUserProfileCache(currentUser.uid);
         return;
       }
       await saveUserSettings(activeUserId, { ...patch });
@@ -215,6 +216,8 @@ export default function SettingsPage() {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Výchozí aktivitu se nepodařilo uložit.");
+      invalidateUserProfileCache(currentUser.uid);
+      invalidatePublicProfileCache(currentUser.uid);
       setDefaultActivity(value);
       try { localStorage.setItem(DEFAULT_ACTIVITY_KEY, value); } catch {}
       flash(value === "běh" ? "Výchozí aktivita: běh" : "Výchozí aktivita: chůze");

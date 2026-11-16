@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { FieldValue } from "firebase-admin/firestore";
 import { requireUser as requireApiUser, authErrorResponse } from "../../lib/apiAuth";
 
 export const runtime = "nodejs";
@@ -10,7 +9,6 @@ export async function GET(request: Request) {
     const { adminDb, decoded } = await requireApiUser(request);
     const snapshot = await adminDb.collection("notifications")
       .where("recipientUid", "==", decoded.uid)
-      .limit(50)
       .get();
 
     const notifications = snapshot.docs.map(doc => {
@@ -31,7 +29,7 @@ export async function GET(request: Request) {
 
     notifications.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
     return NextResponse.json({
-      notifications,
+      notifications: notifications.slice(0, 50),
       unreadCount: notifications.filter(item => !item.read).length,
     });
   } catch (error) {
@@ -52,11 +50,13 @@ export async function POST(request: Request) {
     if (markAll) {
       const snapshot = await adminDb.collection("notifications")
         .where("recipientUid", "==", decoded.uid)
-        .limit(100)
         .get();
-      const batch = adminDb.batch();
-      snapshot.docs.filter(doc => doc.data()?.read !== true).forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
+      const unread = snapshot.docs.filter(doc => doc.data()?.read !== true);
+      for(let start=0;start<unread.length;start+=450){
+        const batch=adminDb.batch();
+        unread.slice(start,start+450).forEach(doc=>batch.delete(doc.ref));
+        await batch.commit();
+      }
       return NextResponse.json({ ok: true });
     }
 

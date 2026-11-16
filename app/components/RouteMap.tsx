@@ -59,6 +59,7 @@ function parseGpx(text: string): ParsedGpx {
   const elevations: (number | null)[] = [];
 
   for (const point of points) {
+    if(point.getAttribute("lon")===null || point.getAttribute("lat")===null)continue;
     const lon = Number(point.getAttribute("lon"));
     const lat = Number(point.getAttribute("lat"));
     if (!Number.isFinite(lon) || !Number.isFinite(lat) || lon < -180 || lon > 180 || lat < -90 || lat > 90) continue;

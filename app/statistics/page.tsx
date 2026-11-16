@@ -13,12 +13,13 @@ import LoadingSkeleton from "../components/LoadingSkeleton";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
 import type { RunData, ActivityType } from "../types";
-import { getUserAvatars } from "../lib/services/users";
+import { getPublicProfiles } from "../lib/services/publicProfiles";
 import { filteredRunsQuery } from "../lib/services/runs";
 import { showAppToast } from "../components/AppToast";
 
 export default function StatisticsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
+  const [nicknames, setNicknames] = useState<Record<string,string>>({});
   const [avatars, setAvatars] = useState<Record<string, string>>({});
   const [user, setUser] = useState<AuthUser | null>(null);
   const [selectedType, setSelectedType] = useState<ActivityType>("běh");
@@ -49,9 +50,11 @@ export default function StatisticsPage() {
     let cancelled = false;
     const load = async () => {
       try {
-        const next = await getUserAvatars(ids);
+        const profiles = await getPublicProfiles(ids);
+        const next=Object.fromEntries(Object.entries(profiles).map(([uid,p])=>[uid,p.avatarUrl||""]));
         if (cancelled) return;
         setAvatars(next);
+        setNicknames(Object.fromEntries(Object.entries(profiles).map(([uid,p])=>[uid,p.nickname||""])));
       } catch (error) { console.error("Nepodařilo se načíst avatary ve výsledcích", error); }
     };
     void load();
@@ -62,8 +65,8 @@ export default function StatisticsPage() {
     if ((run.type || "běh") !== selectedType) return false;
     const timestamp = run.timestamp;
     const date = !timestamp ? new Date(0) : timestamp instanceof Date ? timestamp : "toDate" in timestamp && typeof timestamp.toDate === "function" ? timestamp.toDate() : "seconds" in timestamp && typeof timestamp.seconds === "number" ? new Date(timestamp.seconds * 1000) : new Date(0);
-    if (startDate && new Date(startDate) > date) return false;
-    if (endDate && new Date(endDate + "T23:59") < date) return false;
+    if (startDate && new Date(startDate + "T00:00:00") > date) return false;
+    if (endDate && new Date(endDate + "T23:59:59.999") < date) return false;
     return true;
   });
 
@@ -71,11 +74,11 @@ export default function StatisticsPage() {
   filtered.forEach(run => {
     const uid = typeof run.uid === "string" ? run.uid : "";
     if (!uid) return;
-    const name = run.nickname || run.email?.split("@")[0] || "Anonym";
+    const name = nicknames[uid] || run.nickname || run.email?.split("@")[0] || "Anonym";
     const km = Number(run.km) || 0;
     const min = Number(run.minuty) || 0;
     if (!userMap[uid]) userMap[uid] = { name, km: 0, min: 0, avatarUrl: run.avatarUrl || "" };
-    userMap[uid].name = name;
+    if(nicknames[uid])userMap[uid].name=nicknames[uid];
     if (!userMap[uid].avatarUrl && run.avatarUrl) userMap[uid].avatarUrl = run.avatarUrl;
     userMap[uid].km += km; userMap[uid].min += min;
   });

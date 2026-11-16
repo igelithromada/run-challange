@@ -14,8 +14,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Neplatná výchozí aktivita." }, { status: 400 });
     }
 
-    await adminDb.collection("users").doc(decoded.uid).set({ defaultActivity }, { merge: true });
-    await adminDb.collection("publicProfiles").doc(decoded.uid).set({ activityType: defaultActivity }, { merge: true });
+    const batch=adminDb.batch();
+    batch.set(adminDb.collection("users").doc(decoded.uid),{defaultActivity},{merge:true});
+    batch.set(adminDb.collection("publicProfiles").doc(decoded.uid),{activityType:defaultActivity},{merge:true});
+    await batch.commit();
     return NextResponse.json({ ok: true, defaultActivity });
   } catch (error) {
     const authError = authErrorResponse(error);

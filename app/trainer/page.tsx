@@ -9,7 +9,7 @@ import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
-import { getUserProfile } from "../lib/services/users";
+import { getUserProfile, invalidateUserProfileCache } from "../lib/services/users";
 import type { RunData, LegacyTrainerPlan } from "../types";
 import { userRunsForDateRangeQuery } from "../lib/services/runs";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
@@ -191,6 +191,7 @@ export default function TrainerPage(){
    const response=await fetch("/api/trainer/plan",{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`},body:JSON.stringify({plan:next})});
    const result=await response.json().catch(()=>({}));
    if(!response.ok) throw new Error(result?.error||"SAVE_FAILED");
+   invalidateUserProfileCache(user.uid);
    return (result?.plan||next) as Plan;
  };
  const saveSelected=async()=>{
@@ -278,11 +279,11 @@ export default function TrainerPage(){
 
    <section className="tile trainer-plan-card">
     <div className="progress-section-title"><TrendingUp/><div><h2>Plán na měsíc</h2><p>{monthTitle(month)} · {type}</p></div></div>
-    <ActivityTypeSelector value={type} onChange={v=>{setType(v);setDirty(false);setModalOpen(false);setBulkMode(false);setBulkDates([]);}} ariaLabel="Typ tréninku"/>
+    <ActivityTypeSelector value={type} onChange={v=>{if(saving)return;setType(v);setDirty(false);setModalOpen(false);setBulkMode(false);setBulkDates([]);}} ariaLabel="Typ tréninku"/>
     <div className="trainer-month-nav">
-      <button className="ui-icon-button" type="button" onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()-1,1))} aria-label="Předchozí měsíc"><ChevronLeft size={19}/></button>
+      <button className="ui-icon-button" type="button" disabled={saving} onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()-1,1))} aria-label="Předchozí měsíc"><ChevronLeft size={19}/></button>
       <strong>{monthTitle(month)}</strong>
-      <button className="ui-icon-button" type="button" onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()+1,1))} aria-label="Další měsíc"><ChevronRight size={19}/></button>
+      <button className="ui-icon-button" type="button" disabled={saving} onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()+1,1))} aria-label="Další měsíc"><ChevronRight size={19}/></button>
     </div>
     <div className="trainer-calendar-weekdays">{["Po","Út","St","Čt","Pá","So","Ne"].map(d=><span key={d}>{d}</span>)}</div>
     <div className="trainer-calendar-toolbar">

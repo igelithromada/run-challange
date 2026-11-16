@@ -34,33 +34,35 @@ export async function POST(request: Request) {
 
     const userRef = adminDb.collection("users").doc(decoded.uid);
     const publicRef = adminDb.collection("publicProfiles").doc(decoded.uid);
-    const [userSnapshot, publicSnapshot] = await Promise.all([userRef.get(), publicRef.get()]);
+    const result = await adminDb.runTransaction(async tx => {
+      const [userSnapshot, publicSnapshot] = await Promise.all([tx.get(userRef), tx.get(publicRef)]);
 
-    const userData = userSnapshot.exists ? userSnapshot.data() || {} : {};
-    const publicData = publicSnapshot.exists ? publicSnapshot.data() || {} : {};
+      const userData = userSnapshot.exists ? userSnapshot.data() || {} : {};
+      const publicData = publicSnapshot.exists ? publicSnapshot.data() || {} : {};
 
-    const userPatch: Record<string, string> = {};
-    const publicPatch: Record<string, string> = {};
-    if (nickname) {
-      userPatch.nickname = nickname;
-      publicPatch.nickname = nickname;
-    }
-    if (avatarUrl) {
-      userPatch.avatarUrl = avatarUrl;
-      publicPatch.avatarUrl = avatarUrl;
-    }
+      const userPatch: Record<string, string> = {};
+      const publicPatch: Record<string, string> = {};
+      if (nickname) {
+        userPatch.nickname = nickname;
+        publicPatch.nickname = nickname;
+      }
+      if (avatarUrl) {
+        userPatch.avatarUrl = avatarUrl;
+        publicPatch.avatarUrl = avatarUrl;
+      }
 
-    await Promise.all([
-      userRef.set(userPatch, { merge: true }),
-      publicRef.set({
-        ...publicPatch,
-        nickname: nickname || (typeof userData.nickname === "string" ? userData.nickname : (typeof publicData.nickname === "string" ? publicData.nickname : "")),
-        avatarUrl: avatarUrl || (typeof userData.avatarUrl === "string" ? userData.avatarUrl : (typeof publicData.avatarUrl === "string" ? publicData.avatarUrl : "")),
-        activityType: publicData.activityType === "chůze" ? "chůze" : "běh",
-      }, { merge: true }),
-    ]);
+      tx.set(userRef, userPatch, { merge: true });
+      tx.set(publicRef, {
+          ...publicPatch,
+          nickname: nickname || (typeof userData.nickname === "string" ? userData.nickname : (typeof publicData.nickname === "string" ? publicData.nickname : "")),
+          avatarUrl: avatarUrl || (typeof userData.avatarUrl === "string" ? userData.avatarUrl : (typeof publicData.avatarUrl === "string" ? publicData.avatarUrl : "")),
+          activityType: publicData.activityType === "chůze" ? "chůze" : "běh",
+        }, { merge: true });
+      return { nickname: nickname || userData.nickname || publicData.nickname || "", avatarUrl: avatarUrl || userData.avatarUrl || publicData.avatarUrl || "" };
 
-    return NextResponse.json({ ok: true, nickname: nickname || (typeof userData.nickname === "string" ? userData.nickname : ""), avatarUrl: avatarUrl || (typeof userData.avatarUrl === "string" ? userData.avatarUrl : "") });
+    });
+
+    return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     const authError = authErrorResponse(error);
     if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });

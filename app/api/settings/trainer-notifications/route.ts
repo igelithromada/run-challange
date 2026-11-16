@@ -10,12 +10,15 @@ export async function POST(request: Request) {
     const body=await request.json().catch(()=>({}));
     const value=body?.trainerNotifications;
     if(!value || typeof value!=="object") return NextResponse.json({error:"Neplatné nastavení notifikací."},{status:400});
+    for (const key of ["todayTime", "tomorrowTime"]) {
+      if (value[key] !== undefined && (typeof value[key] !== "string" || !/^([01]\d|2[0-3]):00$/.test(value[key]))) return NextResponse.json({error:"Čas upozornění musí být platná celá hodina."},{status:400});
+    }
     const trainerNotifications={
       enabled:value.enabled===true,
       today:value.today!==false,
       tomorrow:value.tomorrow!==false,
-      todayTime: /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value.todayTime) ? value.todayTime : "07:00",
-      tomorrowTime: /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value.tomorrowTime) ? value.tomorrowTime : "18:00"
+      todayTime: /^([01]\d|2[0-3]):[0-5]\d$/.test(value.todayTime) ? value.todayTime : "07:00",
+      tomorrowTime: /^([01]\d|2[0-3]):[0-5]\d$/.test(value.tomorrowTime) ? value.tomorrowTime : "18:00"
     };
     await adminDb.collection("users").doc(decoded.uid).set({trainerNotifications},{merge:true});
     return NextResponse.json({ok:true,trainerNotifications});

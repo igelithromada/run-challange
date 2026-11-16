@@ -63,6 +63,7 @@ export default function RunForm({ type }: {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
+  const submissionIdRef = useRef<string | null>(null);
   const formPanelRef = useRef<HTMLElement | null>(null);
   const activityLabel = type === "chůze" ? "chůzi" : "běh";
   const activityPast = type === "chůze" ? "Chůze byla" : "Běh byl";
@@ -95,6 +96,7 @@ export default function RunForm({ type }: {
   };
 
   const reset = () => {
+    submissionIdRef.current = null;
     setKm("");
     setDurationMinutes("");
     setDurationSeconds("");
@@ -211,7 +213,8 @@ export default function RunForm({ type }: {
         commentCount: 0
       };
 
-      await createRun(runData);
+      submissionIdRef.current ||= crypto.randomUUID();
+      await createRun(runData, submissionIdRef.current);
       reset();
       setShowForm(false);
       showAppToast(

@@ -5,6 +5,8 @@ import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+import { isValidDateOnly } from "../../../lib/validation";
+
 const validType = (value: unknown): value is "běh" | "chůze" => value === "běh" || value === "chůze";
 
 export async function POST(request: Request) {
@@ -17,11 +19,13 @@ export async function POST(request: Request) {
     const type = plan.type;
     const monthKey = plan.monthKey;
     const dates = Array.isArray(plan.dates) ? plan.dates.filter((x: unknown): x is string => typeof x === "string") : [];
+    if(!Array.isArray(plan.dates)||dates.length!==plan.dates.length)return NextResponse.json({error:"Plán obsahuje neplatná data."},{status:400});
     const rawDayKm = plan.dayKm && typeof plan.dayKm === "object" ? plan.dayKm as Record<string, unknown> : {};
-    if (!validType(type) || typeof monthKey !== "string" || !/^\d{4}-\d{2}$/.test(monthKey)) {
+    if (!validType(type) || typeof monthKey !== "string" || (!/^\d{4}-\d{2}$/.test(monthKey) || !isValidDateOnly(monthKey + "-01"))) {
       return NextResponse.json({ error: "Plán obsahuje neplatné údaje." }, { status: 400 });
     }
 
+    if (dates.some((date:string) => !isValidDateOnly(date) || date.slice(0,7)!==monthKey)) return NextResponse.json({error:"Plán obsahuje neplatné datum."},{status:400});
     const safeDates: string[] = Array.from(new Set<string>(dates)).filter((d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d) && d.slice(0, 7) === monthKey).sort();
     const dayKm: Record<string, number> = {};
     for (const date of safeDates) {
@@ -37,14 +41,16 @@ export async function POST(request: Request) {
     };
 
     const userRef = adminDb.collection("users").doc(decoded.uid);
-    const userSnap = await userRef.get();
-    const userData = userSnap.exists ? userSnap.data() || {} : {};
-    const existingPlans = (userData.personalTrainerPlans && typeof userData.personalTrainerPlans === "object" ? userData.personalTrainerPlans : {}) as Record<"běh" | "chůze", Record<string, Record<string, unknown>>>;
-    const typePlans = existingPlans[type] && typeof existingPlans[type] === "object" ? existingPlans[type] : {};
-    await userRef.set(
-      { personalTrainerPlans: { ...existingPlans, [type]: { ...typePlans, [monthKey]: safePlan } }, personalTrainerPlan: safePlan },
-      { merge: true }
-    );
+    await adminDb.runTransaction(async tx => {
+      const userSnap = await tx.get(userRef);
+      const userData = userSnap.exists ? userSnap.data() || {} : {};
+      const existingPlans = (userData.personalTrainerPlans && typeof userData.personalTrainerPlans === "object" ? userData.personalTrainerPlans : {}) as Record<"běh" | "chůze", Record<string, Record<string, unknown>>>;
+      const typePlans = existingPlans[type] && typeof existingPlans[type] === "object" ? existingPlans[type] : {};
+      tx.set(userRef,
+        { personalTrainerPlans: { ...existingPlans, [type]: { ...typePlans, [monthKey]: safePlan } }, personalTrainerPlan: safePlan },
+        { merge: true }
+      );
+    });
     return NextResponse.json({ ok: true, plan: safePlan });
   } catch (error) {
     const authError = authErrorResponse(error);

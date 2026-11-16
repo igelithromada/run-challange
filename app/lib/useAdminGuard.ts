@@ -8,7 +8,7 @@ import { getUserProfile } from "./services/users";
 
 type AdminAccess = "loading" | "allowed" | "denied";
 
-export default function useAdminGuard(): AdminAccess {
+export default function useAdminGuard(redirectOnDenied = true): AdminAccess {
   const [access, setAccess] = useState<AdminAccess>("loading");
   const router = useRouter();
 
@@ -33,11 +33,11 @@ export default function useAdminGuard(): AdminAccess {
         if (!active) return;
         setAccess(isAdmin ? "allowed" : "denied");
 
-        if (!isAdmin) router.replace("/");
+        if (!isAdmin && redirectOnDenied) router.replace("/");
       } catch (error) {
         console.error("Nepodařilo se ověřit oprávnění administrátora:", error);
         if (active) setAccess("denied");
-        router.replace("/");
+        if (redirectOnDenied) router.replace("/");
       }
     });
 
@@ -45,7 +45,7 @@ export default function useAdminGuard(): AdminAccess {
       active = false;
       unsubscribe();
     };
-  }, [router]);
+  }, [router, redirectOnDenied]);
 
   return access;
 }

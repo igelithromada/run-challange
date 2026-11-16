@@ -14,7 +14,7 @@ export async function DELETE(request: Request) {
     const body = await request.json().catch(() => ({}));
     const runId = typeof body.runId === "string" ? body.runId.trim() : "";
     const index = Number(body.index);
-    if (!runId || !Number.isInteger(index) || index < 0) {
+    if (!runId || runId.includes("/") || !Number.isInteger(index) || index < 0) {
       return NextResponse.json({ error: "Chybí platné ID záznamu nebo fotografie." }, { status: 400 });
     }
 
@@ -31,13 +31,9 @@ export async function DELETE(request: Request) {
       : typeof data.imageUrl === "string" && data.imageUrl ? [data.imageUrl] : [];
     if (index >= images.length) return NextResponse.json({ error: "Fotografie už neexistuje." }, { status: 404 });
 
-    const publicIds = Array.isArray(data.imagePublicIds)
-      ? data.imagePublicIds.filter((value: unknown): value is string => typeof value === "string")
-      : [];
-    const imagePublicId = publicIds[index];
-    const idsToDelete = imagePublicId && isUserCloudinaryPublicId(imagePublicId, data.uid)
-      ? [imagePublicId]
-      : collectCloudinaryPublicIds([images[index]], data.uid);
+    if(data.deleting)return NextResponse.json({error:"Záznam se právě maže."},{status:409});
+    const removedUrl=images[index];
+    const idsToDelete=collectCloudinaryPublicIds([removedUrl],data.uid);
     if (idsToDelete.length) {
       const cloudinaryResult = await deleteCloudinaryImages(idsToDelete);
       if (cloudinaryResult.failed.length) {
@@ -45,14 +41,16 @@ export async function DELETE(request: Request) {
       }
     }
 
-    const nextImages = images.filter((_, i) => i !== index);
-    const nextPublicIds = publicIds.filter((_, i) => i !== index);
-    await runRef.update({
-      imageUrls: nextImages,
-      imageUrl: nextImages[0] || "",
-      imagePublicIds: nextPublicIds,
+    const nextImages=await adminDb.runTransaction(async tx=>{
+      const latest=await tx.get(runRef);
+      if(!latest.exists)return [];
+      const current=latest.data()||{};
+      const currentImages=Array.isArray(current.imageUrls)?current.imageUrls:current.imageUrl?[current.imageUrl]:[];
+      const removedIndex=currentImages.indexOf(removedUrl);
+      const remaining=currentImages.filter((_:unknown,i:number)=>i!==removedIndex);
+      tx.update(runRef,{imageUrls:remaining,imageUrl:remaining[remaining.length-1]||"",imagePublicIds:remaining.map((url:string)=>collectCloudinaryPublicIds([url],data.uid)[0]||"")});
+      return remaining;
     });
-
     return NextResponse.json({ ok: true, imageUrls: nextImages });
   } catch (error) {
     const authError = authErrorResponse(error);

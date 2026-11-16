@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase";
 import { onSnapshot, Query, QueryDocumentSnapshot } from "firebase/firestore";
 
 export type SharedQueryState<T> = {
@@ -45,9 +47,13 @@ function trimCache() {
 
 /** Sdílí jeden Firestore listener a poslední snapshot mezi obrazovkami. */
 export function useSharedFirestoreQuery<T = Record<string, unknown>>(
-  cacheKey: string,
+  queryKey: string,
   source: Query
 ): SharedQueryState<T> {
+  const signedOutState = useMemo(() => emptyState<T>(), []);
+  const [authUid, setAuthUid] = useState<string | null>(auth.currentUser?.uid || null);
+  useEffect(() => onAuthStateChanged(auth, user => setAuthUid(user?.uid || null)), []);
+  const cacheKey = `${authUid || "signed-out"}:${queryKey}`;
   const [local, setLocal] = useState<{ key: string; state: SharedQueryState<T> }>(() => ({
     key: cacheKey,
     state: (cache.get(cacheKey)?.state as SharedQueryState<T>) || emptyState<T>(),
@@ -59,6 +65,7 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
       : (cache.get(cacheKey)?.state as SharedQueryState<T>) || emptyState<T>();
 
   useEffect(() => {
+    if (!authUid) return;
     let entry = cache.get(cacheKey);
 
     if (!entry) {
@@ -88,7 +95,7 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
         { includeMetadataChanges: true },
         snapshot => {
           const next: SharedQueryState<T> = {
-            data: snapshot.docs.map(item => ({ id: item.id, ...item.data() } as T)),
+            data: snapshot.docs.filter(item => item.data()?.deleting !== true).map(item => ({ id: item.id, ...item.data() } as T)),
             loading: false,
             error: null,
             fromCache: snapshot.metadata.fromCache,
@@ -121,7 +128,7 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
 
       trimCache();
     };
-  }, [cacheKey, source]);
+  }, [cacheKey, source, authUid]);
 
-  return state;
+  return authUid ? state : signedOutState;
 }

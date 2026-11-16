@@ -49,7 +49,7 @@ export async function mergePublicProfile(
 export async function getPublicProfiles(uids: string[]): Promise<Record<string, PublicProfileData>> {
   const uniqueIds = Array.from(new Set(uids.filter(Boolean)));
   const entries = await Promise.all(uniqueIds.map(async uid => {
-    const profile = await getPublicProfile(uid);
+    const profile = await getPublicProfile(uid).catch(() => null);
     return profile ? [uid, profile] as const : null;
   }));
 

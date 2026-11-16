@@ -3,7 +3,7 @@ import type { Firestore } from "firebase-admin/firestore";
 import { getAdminServices } from "./firebaseAdmin";
 
 export class ApiAuthError extends Error {
-  constructor(public readonly code: "UNAUTHORIZED" | "FORBIDDEN" | "BLOCKED") {
+  constructor(public readonly code: "UNAUTHORIZED" | "FORBIDDEN" | "BLOCKED" | "DELETING") {
     super(code);
   }
 }
@@ -21,9 +21,10 @@ export async function requireUser(request: Request, options: { allowBlocked?: bo
   adminDb: Firestore;
 }> {
   const { adminAuth, adminDb } = getAdminServices();
-  const decoded = await adminAuth.verifyIdToken(bearerToken(request));
+  const decoded = await adminAuth.verifyIdToken(bearerToken(request), true);
   if (!options.allowBlocked) {
     const profile = await adminDb.collection("users").doc(decoded.uid).get();
+    if (profile.data()?.deleting === true) throw new ApiAuthError("DELETING");
     if (profile.data()?.blocked === true) throw new ApiAuthError("BLOCKED");
   }
   return { decoded, adminDb };
@@ -50,8 +51,8 @@ function isFirebaseAuthError(error: unknown): boolean {
 export function authErrorResponse(error: unknown): { status: number; message: string } | null {
   if (error instanceof ApiAuthError) {
     return {
-      status: error.code === "FORBIDDEN" || error.code === "BLOCKED" ? 403 : 401,
-      message: error.code === "BLOCKED" ? "Tento účet je zablokovaný." : error.code === "FORBIDDEN" ? "Nemáš oprávnění správce." : "Nejsi přihlášen.",
+      status: error.code === "FORBIDDEN" || error.code === "BLOCKED" || error.code === "DELETING" ? 403 : 401,
+      message: error.code === "DELETING" ? "Účet se právě maže. Zkus dokončit smazání znovu." : error.code === "BLOCKED" ? "Tento účet je zablokovaný." : error.code === "FORBIDDEN" ? "Nemáš oprávnění správce." : "Nejsi přihlášen.",
     };
   }
 

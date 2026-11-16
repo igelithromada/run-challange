@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { FieldValue } from "firebase-admin/firestore";
+import { syncRunTeamContributions } from "../../../lib/teams/contributions";
 import type { DocumentReference } from "firebase-admin/firestore";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { collectCloudinaryPublicIds, deleteCloudinaryImages, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
@@ -37,17 +37,25 @@ export async function DELETE(request: Request) {
 
     const body = await request.json().catch(() => ({}));
     const runId = typeof body.runId === "string" ? body.runId.trim() : "";
-    if (!runId) return NextResponse.json({ error: "Chybí ID záznamu." }, { status: 400 });
+    if (!runId || runId.includes("/")) return NextResponse.json({ error: "Chybí ID záznamu." }, { status: 400 });
 
     const runRef = user.adminDb.collection("runs").doc(runId);
     const runSnapshot = await runRef.get();
     if (!runSnapshot.exists) return NextResponse.json({ error: "Záznam neexistuje." }, { status: 404 });
 
-    const data = runSnapshot.data() || {};
+    let data = runSnapshot.data() || {};
     if (data.uid !== user.uid && !user.isAdmin) {
       return NextResponse.json({ error: "Nemáš oprávnění tento záznam smazat." }, { status: 403 });
     }
 
+    data = await user.adminDb.runTransaction(async tx => {
+      const current=await tx.get(runRef);
+      if(!current.exists)throw new Error("RUN_NOT_FOUND");
+      if(current.data()?.uid!==user.uid && !user.isAdmin)throw new Error("RUN_FORBIDDEN");
+      tx.update(runRef,{deleting:true});
+      return current.data() || {};
+    });
+    await syncRunTeamContributions(user.adminDb,runId);
     const imageUrls: string[] = [];
     const publicIds: string[] = [];
     if (Array.isArray(data.imageUrls)) {
@@ -66,36 +74,6 @@ export async function DELETE(request: Request) {
     } catch (error) {
       console.error("Cloudinary cleanup failed while deleting run:", error);
       cloudinaryResult = { deleted: 0, failed: safePublicIds };
-    }
-
-    // Team contribution records are the bookkeeping layer for lifetime team
-    // statistics. Remove exactly the contribution created with this activity.
-    const contributions = await user.adminDb
-      .collectionGroup("activityContributions")
-      .where("activityId", "==", runId)
-      .get();
-
-    for(let start=0;start<contributions.docs.length;start+=225){
-      const chunk=contributions.docs.slice(start,start+225);
-      const batch=user.adminDb.batch();
-      for(const contribution of chunk){
-        const data=contribution.data()||{};
-        const teamRef=contribution.ref.parent.parent;
-        if(!teamRef)continue;
-        const teamSnap=await teamRef.get();
-        const type=data.type==="chůze"?"chůze":"běh";
-        const km=Number(data.km)||0;
-        const kmField=type==="chůze"?"walkingKm":"runningKm";
-        const countField=type==="chůze"?"walkingActivities":"runningActivities";
-        if(teamSnap.exists) {
-          batch.update(teamRef,{
-            [`stats.${kmField}`]:FieldValue.increment(-km),
-            [`stats.${countField}`]:FieldValue.increment(-1)
-          });
-        }
-        batch.delete(contribution.ref);
-      }
-      await batch.commit();
     }
 
     // The activity itself is authoritative data. Never leave it undeletable
@@ -119,6 +97,8 @@ export async function DELETE(request: Request) {
     const authError = authErrorResponse(error);
     if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });
     const message = error instanceof Error ? error.message : "";
+    if(message==="RUN_NOT_FOUND")return NextResponse.json({error:"Záznam neexistuje."},{status:404});
+    if(message==="RUN_FORBIDDEN")return NextResponse.json({error:"Nemáš oprávnění tento záznam smazat."},{status:403});
     if (message.includes("CLOUDINARY")) {
       return NextResponse.json({ error: "Záznam nelze smazat, protože na serveru chybí nastavení Cloudinary." }, { status: 500 });
     }

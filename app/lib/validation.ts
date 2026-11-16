@@ -27,6 +27,11 @@ export function isValidRegistrationCode(value: unknown): value is string { retur
 export function isValidPushSubscription(value: unknown): value is { endpoint:string; keys:{p256dh:string;auth:string} } {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>, keys = candidate.keys;
+  try {
+    const endpoint = new URL(String(candidate.endpoint || ""));
+    const hosts = ["fcm.googleapis.com", "push.services.mozilla.com", "push.apple.com", "notify.windows.com"];
+    if(endpoint.protocol!=="https:" || endpoint.username || endpoint.password || (endpoint.port && endpoint.port!=="443") || !hosts.some(host=>endpoint.hostname===host||endpoint.hostname.endsWith("."+host)))return false;
+  } catch { return false; }
   return typeof candidate.endpoint === "string" && candidate.endpoint.length <= 4096 &&
     !!keys && typeof keys === "object" &&
     typeof (keys as Record<string, unknown>).p256dh === "string" &&

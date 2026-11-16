@@ -26,7 +26,7 @@ export default function RoutesPage() {
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
   const [showRouteForm, setShowRouteForm] = useState(false);
   const [routeSort, setRouteSort] = useState<"shortest" | "longest">("shortest");
-  const adminAccess = useAdminGuard();
+  const adminAccess = useAdminGuard(false);
 
   React.useEffect(() => {
     let active = true;
@@ -34,7 +34,7 @@ export default function RoutesPage() {
       if (!active) return;
       setAllGroups(groups);
       setRoutesLoading(false);
-    }).catch(() => { if (active) setRoutesLoading(false); });
+    }).catch(error => { if (active) { setRoutesLoading(false); showAppToast(error instanceof Error ? error.message : "Trasy se nepodařilo načíst.","error"); } });
     return () => { active = false; };
   }, []);
 

@@ -86,7 +86,10 @@ export default function ActivityRecorder({ type, onFinished }:{
   const acquireWakeLock=async()=>{
     try {
       if ("wakeLock" in navigator && !wakeLockRef.current) {
-        wakeLockRef.current=await navigator.wakeLock.request("screen");
+        const lock=await navigator.wakeLock.request("screen");
+        if(!runningRef.current || pausedRef.current){await lock.release();return;}
+        wakeLockRef.current=lock;
+        lock.addEventListener("release",()=>{if(wakeLockRef.current===lock)wakeLockRef.current=null;});
       }
     } catch {}
   };
@@ -155,7 +158,9 @@ export default function ActivityRecorder({ type, onFinished }:{
         }
 
         const delta=distanceBetween(previous,p);
-        const timeDelta=Math.max(0,(p.timestamp-previous.timestamp)/1000);
+        const timeDelta=(p.timestamp-previous.timestamp)/1000;
+        if(timeDelta<=0)return;
+        if(timeDelta>30){lastPointRef.current=p;return;}
         if(delta>250 || (timeDelta>0 && delta/timeDelta>45)) return;
         if(delta<2 && timeDelta<8) return;
 
@@ -171,6 +176,12 @@ export default function ActivityRecorder({ type, onFinished }:{
           markGpsUnavailable("GPS není dostupné. Zapni polohu v telefonu a zkus GPS znovu.");
         } else {
           setGpsError("GPS signál se nepodařilo získat. Zkontroluj polohu v telefonu.");
+        }
+        if(acquiringFixRef.current){
+          acquiringFixRef.current=false;
+          stopGps();
+          setInitialGpsState("off");
+          if(runningRef.current)markGpsUnavailable("GPS signál se nepodařilo získat. Zkus GPS znovu.");
         }
         setRequestingLocation(false);
       },{enableHighAccuracy:true,maximumAge:2000,timeout:10000});
@@ -188,6 +199,7 @@ export default function ActivityRecorder({ type, onFinished }:{
       return;
     }
 
+    stopGps();
     setGpsError("");
     setInitialGpsState("checking");
     setGpsUnavailable(false);
@@ -280,7 +292,6 @@ export default function ActivityRecorder({ type, onFinished }:{
     stopGps();
     releaseWakeLock();
     const end=Date.now();
-    if(pausedAtRef.current) pausedTotalRef.current+=end-pausedAtRef.current;
     const finalSeconds=Math.max(1,activeSecondsAt(end));
     setElapsed(finalSeconds);
     setRunning(false);

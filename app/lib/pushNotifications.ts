@@ -43,10 +43,11 @@ export async function removeTrainerPush() {
   const subscription = registration ? await registration.pushManager.getSubscription() : null;
   if (!subscription) return;
   const token = await user.getIdToken(true);
-  await fetch("/api/notifications/subscribe", {
+  const response = await fetch("/api/notifications/subscribe", {
     method: "DELETE",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ endpoint: subscription.endpoint })
-  }).catch(() => {});
-  await subscription.unsubscribe().catch(() => {});
+  });
+  if (!response.ok) throw new Error("Notifikace se nepodařilo vypnout. Zkus to znovu.");
+  await subscription.unsubscribe();
 }

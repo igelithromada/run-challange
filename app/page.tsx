@@ -68,7 +68,7 @@ export default function Page() {
   const runsQuery = useMemo(() => latestRunsQuery(30), []);
   const runsState = useSharedFirestoreQuery<RunData>("runs:latest:30", runsQuery);
   const runs = runsState.data;
-  const allRuns = Array.from(new Map<string, RunData>([...runs, ...olderRuns].map(run => [run.id, run] as const)).values());
+  const allRuns = Array.from(new Map<string, RunData>([...olderRuns, ...runs].map(run => [run.id, run] as const)).values());
 
   useEffect(() => {
     if (!runsState.loading && runs.length < 30) setHasMore(false);

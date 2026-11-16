@@ -1,6 +1,9 @@
+import { createHash } from "node:crypto";
+import { parseActivityDate } from "../../../lib/runData";
+import { syncRunTeamContributions } from "../../../lib/teams/contributions";
 
 import { NextResponse } from "next/server";
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { Timestamp } from "firebase-admin/firestore";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { normalizeActivityType } from "../../../lib/validation";
 import { cloudinaryPublicIdFromUrl, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
@@ -39,7 +42,10 @@ export async function POST(request: Request) {
     // Team membership is no longer selected per activity. Every activity
     // automatically contributes to every team the user belongs to at the exact
     // moment the activity is created.
-    const createdAt = new Date();
+    const activityDate = parseActivityDate(data.timestamp);
+    if (!activityDate) return NextResponse.json({ error: "Datum aktivity není platné." }, { status: 400 });
+    const submissionId = typeof body.submissionId === "string" ? body.submissionId : "";
+    if (submissionId && !/^[a-zA-Z0-9_-]{8,128}$/.test(submissionId)) return NextResponse.json({ error: "Neplatné ID požadavku." }, { status: 400 });
     const memberTeamIds = await getActiveTeamMemberships(adminDb, decoded.uid);
 
     const profileSnapshot = await adminDb.collection("users").doc(decoded.uid).get();
@@ -54,7 +60,8 @@ export async function POST(request: Request) {
       avatarUrl: canonicalAvatarUrl,
       km, minuty, tempo: (minuty / km).toFixed(2), type,
       description: typeof data.description === "string" ? data.description.trim().slice(0, 500) : "",
-      timestamp: typeof data.timestamp === "string" && !Number.isNaN(new Date(data.timestamp).getTime()) ? new Date(data.timestamp) : createdAt,
+      timestamp: activityDate,
+      teamIds: memberTeamIds,
       imageUrls: Array.isArray(data.imageUrls)
         ? data.imageUrls
             .filter((x): x is string => typeof x === "string")
@@ -76,60 +83,17 @@ export async function POST(request: Request) {
       activityType: type, likedBy: [], likeCount: 0, commentCount: 0,
     };
 
-    const ref = adminDb.collection("runs").doc();
-    const runCreatedAt = Timestamp.now();
-        const createBatch = adminDb.batch();
-    createBatch.create(ref, { ...safeData, createdAt: runCreatedAt });
-    await createBatch.commit();
-
-    const kmField = type === "chůze" ? "walkingKm" : "runningKm";
-    const countField = type === "chůze" ? "walkingActivities" : "runningActivities";
-    const committedTeamIds: string[] = [];
-    try {
-      for (let start=0; start<memberTeamIds.length; start+=200) {
-        const chunk=memberTeamIds.slice(start,start+200);
-        const batch=adminDb.batch();
-        const existingTeamIds: string[] = [];
-        for (const teamId of chunk) {
-          const teamRef=adminDb.collection("teams").doc(teamId);
-          const contributionRef=teamRef.collection("activityContributions").doc(ref.id);
-          const teamSnap=await teamRef.get();
-          if(!teamSnap.exists) continue;
-          existingTeamIds.push(teamId);
-          batch.set(contributionRef,{
-            activityId:ref.id,userId:decoded.uid,type,km,createdAt:runCreatedAt
-          });
-          batch.update(teamRef,{
-            [`stats.${kmField}`]:FieldValue.increment(km),
-            [`stats.${countField}`]:FieldValue.increment(1)
-          });
-        }
-        if(existingTeamIds.length) {
-          await batch.commit();
-          committedTeamIds.push(...existingTeamIds);
-        }
-      }
-    } catch (teamError) {
-      // The run and team statistics must not diverge if a later team batch fails.
-      // Roll back only contributions that this request actually committed.
-      for (const teamId of committedTeamIds) {
-        const teamRef=adminDb.collection("teams").doc(teamId);
-        const contributionRef=teamRef.collection("activityContributions").doc(ref.id);
-        await adminDb.runTransaction(async tx => {
-          const [teamSnap, contributionSnap] = await Promise.all([tx.get(teamRef), tx.get(contributionRef)]);
-          if (!contributionSnap.exists) return;
-          tx.delete(contributionRef);
-          if (teamSnap.exists) {
-            tx.update(teamRef,{
-              [`stats.${kmField}`]:FieldValue.increment(-km),
-              [`stats.${countField}`]:FieldValue.increment(-1)
-            });
-          }
-        });
-      }
-      await adminDb.recursiveDelete(ref);
-      throw teamError;
-    }
+    const ref = submissionId
+      ? adminDb.collection("runs").doc(createHash("sha256").update(`${decoded.uid}:${submissionId}`).digest("hex"))
+      : adminDb.collection("runs").doc();
+    const result = await adminDb.runTransaction(async tx => {
+      const existing = await tx.get(ref);
+      if (existing.exists) return existing.data()?.deleting ? "deleting" : "existing";
+      tx.create(ref, { ...safeData, createdAt: Timestamp.now() });
+      return "created";
+    });
+    if (result === "deleting") return NextResponse.json({ error: "Aktivita se právě maže." }, { status: 409 });
+    await syncRunTeamContributions(adminDb, ref.id);
     try { await reconcileChallengesForUser(adminDb, decoded.uid); }
     catch(error) { console.error("Aktivita byla uložena, přepočet výzev selhal:",error); }
     return NextResponse.json({ ok: true, id: ref.id });

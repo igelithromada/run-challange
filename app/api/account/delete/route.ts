@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const { decoded, adminDb } = await requireUser(request);
+    const { decoded, adminDb } = await requireUser(request, {allowBlocked:true});
     const { adminAuth } = getAdminServices();
     const target = await adminAuth.getUser(decoded.uid);
     const deleted = await deleteUserData(adminDb, decoded.uid);
@@ -22,6 +22,6 @@ export async function POST(request: Request) {
     if (message.startsWith("CLOUDINARY_DELETE_FAILED:")) {
       return NextResponse.json({ error: "Účet nebyl smazán, protože se nepodařilo bezpečně odstranit všechny fotografie. Zkus to prosím později." }, { status: 502 });
     }
-    return NextResponse.json({ error: "Účet se nepodařilo úplně odstranit. Nic dalšího se nezměnilo." }, { status: 500 });
+    return NextResponse.json({ error: "Účet se nepodařilo úplně odstranit. Část dat už mohla být odstraněna; zkus dokončení znovu." }, { status: 500 });
   }
 }

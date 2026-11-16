@@ -10,7 +10,7 @@ import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSe
 import { Activity, Clock3, Medal, Users, Footprints, ArrowDownUp, ListFilter } from "lucide-react";
 import type { RunData } from "../types";
 import { fetchAllRuns } from "../lib/services/runs";
-import { getUserAvatars } from "../lib/services/users";
+import { getPublicProfiles } from "../lib/services/publicProfiles";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 
 type Participant = {
@@ -33,9 +33,11 @@ export default function ParticipantsPage() {
       if (cached === "běh" || cached === "chůze") setSelectedType(cached);
     } catch {}
   }, []);
+  const [authUid, setAuthUid] = useState("");
   const [runs, setRuns] = useState<RunRecord[]>([]);
   const [runsLoading, setRunsLoading] = useState(true);
   const [runsError, setRunsError] = useState("");
+  const [nicknames, setNicknames] = useState<Record<string,string>>({});
   const [avatars, setAvatars] = useState<Record<string, string>>({});
   const loading = runsLoading;
   const [sortMode, setSortMode] = useState<"km" | "alpha">("km");
@@ -46,7 +48,7 @@ export default function ParticipantsPage() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, user => {
-      if (!user) router.push("/login");
+      if (!user) { setAuthUid(""); router.push("/login"); } else setAuthUid(user.uid);
     });
     return unsub;
   }, [router]);
@@ -61,6 +63,7 @@ export default function ParticipantsPage() {
 
   useEffect(() => {
     let active = true;
+    if (!authUid) return;
     setRunsLoading(true);
     setRunsError("");
     void fetchAllRuns().then(items => {
@@ -74,13 +77,13 @@ export default function ParticipantsPage() {
       if (active) setRunsLoading(false);
     });
     return () => { active = false; };
-  }, []);
+  }, [authUid]);
 
   useEffect(() => {
     let active = true;
     const ids = Array.from(new Set(runs.map(item => item.uid).filter((uid): uid is string => typeof uid === "string" && !!uid)));
     if (!ids.length) { setAvatars({}); return () => { active = false; }; }
-    void getUserAvatars(ids).then(next => { if (active) setAvatars(next); }).catch(error => { if (active) console.error("Nepodařilo se načíst avatary účastníků", error); });
+    void getPublicProfiles(ids).then(profiles => { if(active){setAvatars(Object.fromEntries(Object.entries(profiles).map(([uid,p])=>[uid,p.avatarUrl||""])));setNicknames(Object.fromEntries(Object.entries(profiles).map(([uid,p])=>[uid,p.nickname||""])));} }).catch(error => { if (active) console.error("Nepodařilo se načíst avatary účastníků", error); });
     return () => { active = false; };
   }, [runs]);
 
@@ -89,16 +92,16 @@ export default function ParticipantsPage() {
     runs.filter(run => (run.type || "běh") === selectedType).forEach(run => {
       const uid = typeof run.uid === "string" ? run.uid : "";
       if (!uid) return;
-      const name = run.nickname || run.email?.split("@")[0] || "Anonym";
+      const name = nicknames[uid] || run.nickname || run.email?.split("@")[0] || "Anonym";
       if (!map[uid]) map[uid] = { uid, name, avatarUrl: avatars[uid] || run.avatarUrl || "", km: 0, minutes: 0, activities: 0 };
-      map[uid].name = name;
+      if(nicknames[uid])map[uid].name=nicknames[uid];
       if (avatars[uid] || !map[uid].avatarUrl) map[uid].avatarUrl = avatars[uid] || run.avatarUrl || "";
       map[uid].km += Number(run.km) || 0;
       map[uid].minutes += Number(run.minuty) || 0;
       map[uid].activities += 1;
     });
     return Object.values(map).sort((a, b) => sortMode === "alpha" ? a.name.localeCompare(b.name, "cs", { sensitivity: "base" }) : b.km - a.km);
-  }, [runs, selectedType, avatars, sortMode]);
+  }, [runs, selectedType, avatars, nicknames, sortMode]);
 
   const alphabet = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
   const availableLetters = useMemo(() => new Set(participants.map(p => p.name.trim().charAt(0).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase())), [participants]);

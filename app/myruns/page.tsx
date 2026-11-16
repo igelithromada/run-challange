@@ -16,7 +16,7 @@ import { MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
 import { showAppToast } from "../components/AppToast";
 import type { RunData as BaseRunData, ActivityType } from "../types";
-import { fetchOlderRuns, latestUserRunsQuery, updateRun } from "../lib/services/runs";
+import { fetchOlderUserRuns, latestUserRunsQuery, updateRun } from "../lib/services/runs";
 import { getUserProfile } from "../lib/services/users";
 
 type RunData = BaseRunData;
@@ -73,7 +73,7 @@ export default function MyRunsPage() {
   const [confirmDelete, setConfirmDelete] = useState(true);
   const pageActive = useRef(true);
 
-  useEffect(() => () => { pageActive.current = false; }, []);
+  useEffect(() => { pageActive.current = true; return () => { pageActive.current = false; }; }, []);
 
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
@@ -107,6 +107,7 @@ export default function MyRunsPage() {
     const unsubAuth = onAuthStateChanged(auth, user => {
       if (!active) return;
       if (!user) { router.push("/login"); return; }
+      setOlderRuns([]);setOlderCursor(null);setLocalUpdates({});setDeletedIds(new Set());setHasMore(true);
       setUid(user.uid);
       getUserProfile(user.uid).then(data => {
         if (!active || !data) return;
@@ -121,9 +122,9 @@ export default function MyRunsPage() {
 
   const runsQuery = useMemo(() => latestUserRunsQuery(uid || "__no_user__", 30), [uid]);
   const runsState = useSharedFirestoreQuery<RunData>("runs:user:" + (uid || "none"), runsQuery);
-  const runs = useMemo(() => Array.from(new Map<string, RunData>([...runsState.data, ...olderRuns].map(run => [run.id, { ...run, ...(localUpdates[run.id] || {}) }] as const)).values()).filter(run => !deletedIds.has(run.id)).map(run => ({
+  const runs = useMemo(() => Array.from(new Map<string, RunData>([...runsState.data, ...olderRuns].map(run => [run.id, { ...run, ...(localUpdates[run.id] || {}) }] as const)).values()).filter(run => run.uid === uid && !deletedIds.has(run.id)).map(run => ({
     ...run, km: Number(run.km) || 0, minuty: Number(run.minuty) || 0, tempo: Number(run.tempo) || 0
-  })).sort((a,b) => dateOf(b.timestamp).getTime() - dateOf(a.timestamp).getTime()), [runsState.data, olderRuns, localUpdates]);
+  })).sort((a,b) => dateOf(b.timestamp).getTime() - dateOf(a.timestamp).getTime()), [runsState.data, olderRuns, localUpdates, deletedIds, uid]);
   const loading = runsState.loading;
   useEffect(() => { if (!runsState.loading && runsState.data.length < 30) setHasMore(false); }, [runsState.loading, runsState.data.length]);
   const loadOlderRuns = async () => {
@@ -131,8 +132,8 @@ export default function MyRunsPage() {
     if (!cursor || loadingOlder || !hasMore || !uid) return;
     setLoadingOlder(true);
     try {
-      const next = await fetchOlderRuns(cursor, 30);
-      if (!pageActive.current) return;
+      const next = await fetchOlderUserRuns(uid, cursor, 30);
+      if (!pageActive.current || auth.currentUser?.uid !== uid) return;
       const items = next.items;
       setOlderRuns(previous => [...previous, ...items.filter(item => !previous.some(old => old.id === item.id) && !runsState.data.some(current => current.id === item.id))]);
       setOlderCursor(next.lastDocument || cursor);
@@ -163,7 +164,7 @@ export default function MyRunsPage() {
     if ((run.type || "běh") !== selectedType) return false;
     const date = dateOf(run.timestamp);
     if (dateFrom && date < new Date(dateFrom + "T00:00:00")) return false;
-    if (dateTo && date > new Date(dateTo + "T23:59:59")) return false;
+    if (dateTo && date > new Date(dateTo + "T23:59:59.999")) return false;
     if (quickFilter !== "all") {
       const now = new Date();
       const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -193,9 +194,10 @@ export default function MyRunsPage() {
     if (!Number.isFinite(parsedKm) || parsedKm <= 0 || !Number.isFinite(minutesValue) || minutesValue < 0 || seconds <= 0 || !activityDate) {
       setActionError("Zkontroluj vzdálenost, čas ve formátu MM:SS a datum."); return;
     }
-    if (file && (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024)) {
-      setActionError("Vyber obrázek do 10 MB."); return;
+    if (file && (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+      setActionError("Vyber obrázek do 5 MB."); return;
     }
+    if(file && (runs.find(run => run.id===id)?.imageUrls?.length || 0)>=6){setActionError("U aktivity může být nejvýše šest fotografií.");return;}
     setBusy(true); setActionError("");
     try {
       const updates: Partial<RunData> = {
@@ -231,6 +233,7 @@ export default function MyRunsPage() {
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Fotografii se nepodařilo smazat.");
       const next = Array.isArray(result.imageUrls) ? result.imageUrls : showImageUrls.filter((_,i)=>i!==index);
+      setLocalUpdates(previous => ({ ...previous, [showImageRunId]: { ...(previous[showImageRunId] || {}), imageUrls: next, imageUrl: next[next.length-1] || "" } }));
       if (next.length) { setShowImageUrls(next); setCurrentImageIndex(Math.min(index,next.length-1)); }
       else { setShowImageUrls(null); setShowImageRunId(null); setCurrentImageIndex(0); }
     } catch (err) { setActionError(err instanceof Error ? err.message : "Fotografii se nepodařilo smazat."); }

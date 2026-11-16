@@ -20,7 +20,7 @@ export interface UserData {
   gradientEnabled?:boolean; themeUpdatedAt?:FirestoreTimestamp; role?:string; blocked?:boolean; activityType?:ActivityType;
   defaultActivity?:ActivityType; teamId?:string; teamIdsByType?:Partial<Record<ActivityType,string|null>>; challengeGoalKm?:number;
   hapticsEnabled?:boolean; socialNotifications?:{likes?:boolean;comments?:boolean}; confirmDelete?:boolean;
-  trainerNotifications?:{enabled?:boolean;today?:boolean;tomorrow?:boolean;todayTime?:string;tomorrowTime?:string;lastSentKey?:string};
+  trainerNotifications?:{enabled?:boolean;today?:boolean;tomorrow?:boolean;todayTime?:string;tomorrowTime?:string;lastSentKey?:string;lastSentKeys?:Partial<Record<"today"|"tomorrow",string>>};
   progressGoals?:{type?:ActivityType;weekly?:number;monthly?:number};
   progressGoalsByType?:Partial<Record<ActivityType,{weekly?:number;monthly?:number}>>;
   personalTrainerPlan?:TrainerPlan|LegacyTrainerPlan;

@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { auth } from "../../lib/firebase";
-import { signOut } from "firebase/auth";
+import { signOut, onAuthStateChanged } from "firebase/auth";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import ActivityCard from "../../components/ActivityCard";
@@ -31,13 +31,16 @@ export default function UserPage() {
       if (cached === "běh" || cached === "chůze") setSelectedType(cached);
     } catch {}
   }, []);
+  const [authUid, setAuthUid] = useState("");
+  useEffect(() => onAuthStateChanged(auth, user => { setAuthUid(user?.uid || ""); if(!user)router.replace("/login"); }), [router]);
   const [userInfo, setUserInfo] = useState({ nickname: "", avatarUrl: "" });
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const runsQuery = useMemo(() => userRunsQuery(id || "__none__"), [id]);
   const runsState = useSharedFirestoreQuery<RunData>(`user-runs:${id || "none"}`, runsQuery);
-  const teamsState = useSharedFirestoreQuery<{ id: string; name?: string }>("teams:all", allTeamsQuery());
+  const teamsQuery = useMemo(() => allTeamsQuery(1000), []);
+  const teamsState = useSharedFirestoreQuery<{ id: string; name?: string }>("teams:all:1000", teamsQuery);
 
   const runs = useMemo(() => {
     const items = runsState.data.map(item => ({
@@ -58,8 +61,8 @@ export default function UserPage() {
         if (profile) setUserInfo({ nickname: profile.nickname || "", avatarUrl: profile.avatarUrl || "" });
       } catch (error) { console.error("Nepodařilo se načíst profil uživatele", error); }
     };
-    if (id) void fetchUser();
-  }, [id]);
+    if (id && authUid) void fetchUser();
+  }, [id, authUid]);
 
 
 
@@ -67,7 +70,7 @@ export default function UserPage() {
     setMenuVisible(false);
     if (item === "logout") {
       await signOut(auth);
-      window.location.assign("/login");
+      router.replace("/login");
       return;
     }
     const paths: Record<string, string> = {
@@ -84,7 +87,7 @@ export default function UserPage() {
       profile: "/profile",
       admin: "/admin",
     };
-    window.location.assign(paths[item] || "/");
+    router.push(paths[item] || "/");
   };
 
   const runNickname = runs.find(run => typeof run.nickname === "string" && run.nickname.trim())?.nickname?.trim() || "";
@@ -101,7 +104,7 @@ export default function UserPage() {
 
   return (
     <>
-      <Navbar title={profileName} onMenuClick={() => setMenuVisible(true)} onHomeClick={() => window.location.assign("/")} />
+      <Navbar title={profileName} onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
       <main className="container user-page-modern">
         <header className="user-page-header">

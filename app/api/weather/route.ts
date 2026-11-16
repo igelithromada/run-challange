@@ -34,8 +34,8 @@ function description(code: number, precipitationMm?: number | null) {
 
 function conditionType(code: number) {
   if (code >= 95) return "THUNDERSTORM";
-  if (code >= 71 && code <= 86) return "SNOW";
-  if (code >= 51 && code <= 67) return "RAIN";
+  if ((code >= 71 && code <= 77 || code >= 85 && code <= 86)) return "SNOW";
+  if ((code >= 51 && code <= 67 || code >= 80 && code <= 82)) return "RAIN";
   if (code >= 45 && code <= 48) return "FOG";
   if (code >= 1 && code <= 2) return "PARTLY_CLOUDY";
   if (code === 3) return "CLOUDY";
@@ -48,6 +48,7 @@ async function openMeteo() {
   url.searchParams.set("longitude", String(LONGITUDE));
   url.searchParams.set("timezone", "Europe/Prague");
   url.searchParams.set("forecast_days", "2");
+  url.searchParams.set("timeformat", "unixtime");
   url.searchParams.set(
     "current",
     "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m"
@@ -64,7 +65,7 @@ async function openMeteo() {
   const data = await response.json();
   const c = data.current;
   const h = data.hourly;
-  const start = Math.max(0, h.time.findIndex((time: string) => time >= c.time));
+  const start = Math.max(0, h.time.findIndex((time: number) => time >= c.time));
 
   return {
     configured: true,
@@ -83,10 +84,10 @@ async function openMeteo() {
       },
       relativeHumidity: c.relative_humidity_2m
     },
-    hourly: h.time.slice(start, start + 12).map((time: string, offset: number) => {
+    hourly: h.time.slice(start, start + 12).map((time: number, offset: number) => {
       const i = start + offset;
       return {
-        interval: { startTime: new Date(time).toISOString() },
+        interval: { startTime: new Date(time * 1000).toISOString() },
         temperature: { degrees: h.temperature_2m[i] },
         weatherCondition: {
           type: conditionType(h.weather_code[i]),

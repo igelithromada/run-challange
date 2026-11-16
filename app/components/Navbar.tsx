@@ -77,6 +77,7 @@ function NotificationsBell() {
       const response = await fetch("/api/notifications", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
       if (!response.ok) return;
       const data = await response.json();
+      if(auth.currentUser?.uid!==user.uid)return;
       setNotifications(Array.isArray(data.notifications) ? data.notifications : []);
       setUnreadCount(Number(data.unreadCount) || 0);
     } catch {}
@@ -85,6 +86,8 @@ function NotificationsBell() {
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | null = null;
     const unsubscribe = onAuthStateChanged(auth, user => {
+      if(timer)clearInterval(timer);
+      timer=null;
       if (user) {
         void load();
         timer = setInterval(() => void load(), 20000);
@@ -102,11 +105,12 @@ function NotificationsBell() {
     if (!user) return;
     try {
       const token = await user.getIdToken();
-      await fetch("/api/notifications", {
+      const response = await fetch("/api/notifications", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ notificationId: notification.id }),
       });
+      if(!response.ok)return;
       setNotifications(previous => previous.filter(item => item.id !== notification.id));
       setUnreadCount(previous => Math.max(0, previous - (notification.read ? 0 : 1)));
     } catch {}
@@ -117,10 +121,11 @@ function NotificationsBell() {
     if (!user) return;
     try {
       const token = await user.getIdToken();
-      await fetch("/api/notifications", {
+      const response = await fetch("/api/notifications", {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ markAll: true }),
       });
+      if(!response.ok)return;
       setNotifications([]);
       setUnreadCount(0);
       setOpen(false);
