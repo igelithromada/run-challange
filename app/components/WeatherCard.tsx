@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import type { WeatherHour, WeatherResponse } from "../lib/weather";
+import { getWeather } from "../lib/weatherClient";
 import {
   Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudSnow,
   CloudSun, Sun, Wind, Droplets, Thermometer, RefreshCw
@@ -43,27 +44,20 @@ export default function WeatherCard() {
   const [lastUpdated, setLastUpdated] = useState("");
 
   const loadWeather = async (forceRefresh = false) => {
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 10000);
     try {
-      const response = await fetch("/api/weather", {
-        ...(forceRefresh ? { cache: "reload" as RequestCache } : {}),
-        signal: controller.signal,
-      });
-      const data = await response.json();
+      const data = await getWeather(forceRefresh);
       setWeather(data);
       setLastUpdated(new Date().toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" }));
     } catch {
       setWeather({ configured: true, error: "Počasí se nepodařilo načíst. Zkus to později." });
     } finally {
-      window.clearTimeout(timeout);
       setLoading(false);
     }
   };
 
   useEffect(() => {
     loadWeather();
-    const timer = window.setInterval(loadWeather, 30 * 60 * 1000);
+    const timer = window.setInterval(() => void loadWeather(), 5 * 60 * 1000);
     return () => window.clearInterval(timer);
   }, []);
 
