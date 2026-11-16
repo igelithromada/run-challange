@@ -19,23 +19,19 @@ export async function POST(request: Request) {
       const type = normalizeActivityType(body?.type);
       if (!name) return NextResponse.json({ error: "Zadej název týmu." }, { status: 400 });
       const teamRef = adminDb.collection("teams").doc();
-      const userSnap = await userRef.get();
-      const data = userSnap.exists ? userSnap.data() || {} : {};
-      const stored = data.teamIdsByType && typeof data.teamIdsByType === "object" ? data.teamIdsByType : {};
-      const existingTeamId = typeof (stored as Record<string, unknown>)[type] === "string"
-        ? String((stored as Record<string, unknown>)[type])
-        : "";
-      if (existingTeamId) {
-        return NextResponse.json(
-          { error: "Nejdřív opusť svůj současný tým tohoto typu." },
-          { status: 409 }
-        );
-      }
-      const next = { ...stored, [type]: teamRef.id };
-      const batch = adminDb.batch();
-      batch.set(teamRef, { name, type, createdBy: decoded.uid, challengeGoalKm: 500, avatarUrl: "", avatarPublicId: "", memberIds: [decoded.uid] });
-      batch.set(userRef, { teamIdsByType: next, ...(type === "běh" ? { teamId: teamRef.id, joinedTeam: teamRef.id } : {}) }, { merge: true });
-      await batch.commit();
+      // The membership check and team creation must be atomic: two requests
+      // must never create two teams for the same user's activity type.
+      await adminDb.runTransaction(async transaction => {
+        const userSnap = await transaction.get(userRef);
+        const data = userSnap.exists ? userSnap.data() || {} : {};
+        const stored = data.teamIdsByType && typeof data.teamIdsByType === "object"
+          ? data.teamIdsByType as Record<string, unknown> : {};
+        const existingTeamId = typeof stored[type] === "string" ? String(stored[type]) : "";
+        if (existingTeamId) throw new Error("TEAM_ALREADY_JOINED");
+        const next = { ...stored, [type]: teamRef.id };
+        transaction.create(teamRef, { name, type, createdBy: decoded.uid, challengeGoalKm: 500, avatarUrl: "", avatarPublicId: "", memberIds: [decoded.uid] });
+        transaction.set(userRef, { teamIdsByType: next, ...(type === "běh" ? { teamId: teamRef.id, joinedTeam: teamRef.id } : {}) }, { merge: true });
+      });
       return NextResponse.json({ ok: true, team: { id: teamRef.id, name, type, createdBy: decoded.uid, challengeGoalKm: 500 } });
     }
 
@@ -192,9 +188,11 @@ export async function POST(request: Request) {
     const message =
       errorMessage === "UNAUTHORIZED"
         ? "Nejsi přihlášen."
-        : errorMessage === "TEAM_NOT_FOUND"
+        : errorMessage === "TEAM_ALREADY_JOINED"
+          ? "Nejdřív opusť svůj současný tým tohoto typu."
+          : errorMessage === "TEAM_NOT_FOUND"
           ? "Tým už neexistuje."
           : "Operaci týmu se nepodařilo dokončit.";
-    return NextResponse.json({ error: message }, { status: message === "Nejsi přihlášen." ? 401 : 500 });
+    return NextResponse.json({ error: message }, { status: message === "Nejsi přihlášen." ? 401 : errorMessage === "TEAM_ALREADY_JOINED" ? 409 : errorMessage === "TEAM_NOT_FOUND" ? 404 : 500 });
   }
 }
