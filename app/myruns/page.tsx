@@ -283,18 +283,21 @@ export default function MyRunsPage() {
   return <>
     <Navbar title="Moje aktivity" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
     <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
-    <div className="container">
+    <div className="container myruns-page">
       <div className="control-caption">Typ aktivity</div>
       <ActivityTypeSelector value={selectedType as "běh" | "chůze"} onChange={setSelectedType} />
       <div className="control-caption">Rychlý filtr období</div>
       <div className="activity-quick-filters">
         {[["all","Vše"],["week","Tento týden"],["month","Tento měsíc"]].map(([value,label]) => <button key={value} className={`activity-quick-filter-button${quickFilter === value ? " active" : ""}`} onClick={() => setQuickFilter(value)}>{label}</button>)}
       </div>
-      <div className="tile date-filter">
-        <label className="date-field"><span>Od data</span><input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setQuickFilter("all"); }} /></label>
-        <label className="date-field"><span>Do data</span><input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setQuickFilter("all"); }} /></label>
-        {(dateFrom || dateTo) && <button className="date-clear" onClick={() => { setDateFrom(""); setDateTo(""); }}>Zrušit filtr</button>}
-      </div>
+      <details className="activity-date-range">
+        <summary>Vlastní období{(dateFrom || dateTo) && <span>{dateFrom ? dateFrom.split("-").reverse().join(". ") : "začátek"} – {dateTo ? dateTo.split("-").reverse().join(". ") : "dnes"}</span>}</summary>
+        <div className="tile date-filter">
+          <label className="date-field"><span>Od data</span><input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setQuickFilter("all"); }} /></label>
+          <label className="date-field"><span>Do data</span><input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setQuickFilter("all"); }} /></label>
+          {(dateFrom || dateTo) && <button className="date-clear" onClick={() => { setDateFrom(""); setDateTo(""); }}>Zrušit filtr</button>}
+        </div>
+      </details>
       <div className="tile-group activity-summary-grid">
         <div className="tile"><ListChecks/><span>Počet aktivit</span><strong>{filteredRuns.length}</strong></div>
         <div className="tile"><MapPin/><span>Celkem km</span><strong>{totalKm.toFixed(2)} km</strong></div>

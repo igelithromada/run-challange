@@ -532,3 +532,84 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Kompaktní rozložení: prostor šetří mezery a seskupení, ne malé dotykové cíle. */
+.home-activity-feed { margin-top: .85rem; }
+.home-section-heading { margin-bottom: .5rem; }
+.centered-title { margin: 1rem 0 .6rem; }
+.teams-header { margin-bottom: .75rem; }
+.teams-header p { margin-top: .25rem; }
+.activity-type-selector { margin: .5rem 0 .65rem; }
+.activity-type-selector button { min-height: 44px; }
+.activity-card-modern { gap: .6rem !important; padding: .85rem !important; }
+.activity-card-modern .activity-metrics > div {
+  min-height: 76px;
+  padding: .5rem .4rem;
+}
+.activity-card-modern .activity-card-actions { padding-top: .5rem; gap: .4rem; }
+.activity-card-modern .activity-social-button,
+.activity-card-modern .activity-manage-button,
+.activity-card-modern .activity-photos-button { min-height: 44px; }
+.activity-person > span, .team-card-title-row h3 { overflow-wrap: anywhere; }
+.activity-date-range { margin: .5rem 0 .65rem; }
+.activity-date-range > summary {
+  min-height: 44px;
+  padding: .65rem .8rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-bg-soft);
+  color: var(--ui-text);
+  cursor: pointer;
+  box-sizing: border-box;
+  font-size: .85rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.activity-date-range > summary span { margin-left: .5rem; font-size: .75rem; font-weight: 400; }
+.activity-date-range .date-filter { margin: .4rem 0 0; }
+.activity-summary-grid, .stat-summary-grid { margin: .65rem 0; gap: .5rem; }
+.activity-summary-grid > .tile, .stat-summary-grid > .tile {
+  min-height: 76px;
+  padding: .6rem .45rem;
+  gap: .2rem;
+}
+.settings-section-heading { margin-bottom: .65rem !important; }
+.theme-options { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: .5rem !important; }
+.theme-option { min-width: 0; min-height: 54px !important; gap: .45rem; padding: .6rem !important; border-radius: 13px !important; }
+.theme-option .theme-color-dot { width: 28px !important; height: 28px !important; flex-basis: 28px !important; border-radius: 9px !important; }
+.theme-option > span:nth-child(2) { font-size: .85rem !important; overflow-wrap: anywhere; }
+.professional-form { gap: .65rem; }
+.professional-form input:not([type="checkbox"]):not([type="radio"]),
+.professional-form select { min-height: 48px; padding: .7rem .85rem; }
+.professional-form textarea { min-height: 88px; }
+.teams-create-form { gap: .65rem !important; margin-top: .65rem !important; }
+.challenge-type-switch { margin: .65rem 0 .5rem; }
+.challenge-month-switcher { margin: .5rem 0 .75rem; }
+.run-weather-recommendation { gap: .65rem !important; padding: .8rem !important; }
+.run-weather-forecast { gap: .65rem; }
+.run-weather-forecast-icon { width: 54px; height: 54px; flex: 0 0 54px; }
+.run-weather-forecast-icon > * { max-width: 54px; max-height: 54px; }
+.run-weather-temperature { font-size: 1.35rem !important; }
+.run-weather-status { font-size: .88rem; }
+.run-weather-advice p { margin: 0 0 .35rem !important; line-height: 1.45; }
+.run-weather-more { margin-top: .35rem; }
+@media (max-width: 620px) {
+  .run-weather-recommendation { gap: .5rem !important; }
+  .run-weather-advice { padding-top: .5rem; }
+  .run-weather-forecast-copy { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; column-gap: .65rem; }
+  .run-weather-status { grid-column: 2; grid-row: 1; }
+  .run-weather-condition { grid-column: 2; grid-row: 2; }
+  .run-weather-location { grid-column: 1; grid-row: 2; }
+  .challenges-create .challenge-dates { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 380px) {
+  .myruns-page .activity-summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .myruns-page .activity-summary-grid > .tile { font-size: .72rem; }
+  .myruns-page .activity-summary-grid strong { font-size: .82rem; overflow-wrap: anywhere; }
+  .myruns-page .activity-summary-grid svg { width: 18px; height: 18px; }
+}
+@media (max-width: 360px) {
+  .theme-option { flex-wrap: wrap; }
+  .challenges-create .challenge-dates { grid-template-columns: 1fr; }
+}

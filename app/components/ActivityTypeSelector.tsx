@@ -39,6 +39,7 @@ export default function ActivityTypeSelector({
           key={type}
           type="button"
           className={value === type ? "active" : ""}
+          aria-pressed={value === type}
           onClick={() => onChange(type)}
         >
           <ActivityTypeIcon type={type} />
