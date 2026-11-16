@@ -106,13 +106,7 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
   const get=(type:string)=>todayParts.find(p=>p.type===type)?.value||"";
   const today=`${get("year")}-${get("month")}-${get("day")}`;
 
-  if((challenge.state==="planned" || challenge.state==="active") && challenge.startDate===today) {
-    const participants=await ref.collection("participants").where("active","==",true).get();
-    if(participants.size<=1) {
-      await adminDb.recursiveDelete(ref);
-      await adminDb.collection("challengeNames").doc(String(challenge.nameKey||"")).delete().catch(()=>undefined);
-      return;
-    }
+  if((challenge.state==="planned" || challenge.state==="active") && challenge.startDate<=today && challenge.endDate>=today) {
     if(challenge.state==="planned") await ref.update({state:"active"});
   }
 
