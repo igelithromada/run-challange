@@ -117,12 +117,14 @@ export default function ChallengesPage() {
       setGroups(nextGroups);
       const allItems = [...nextGroups.active, ...nextGroups.planned, ...nextGroups.completed];
       const authorIds = allItems.map(item => String(item.createdBy || "")).filter(Boolean);
-      const [authorProfiles, joinedIds] = await Promise.all([
+      // Doplňková data nesmí blokovat již načtené výzvy.
+      const [profilesResult, membershipResult] = await Promise.allSettled([
         import("../lib/services/publicProfiles").then(({ getPublicProfiles }) => getPublicProfiles(authorIds)),
         user ? getActiveChallengeIdsForUser(user.uid) : Promise.resolve([]),
       ]);
-      setAuthors(authorProfiles);
-      setJoinedChallengeIds(new Set(joinedIds));
+      if (cancelled) return;
+      setAuthors(profilesResult.status === "fulfilled" ? profilesResult.value : {});
+      setJoinedChallengeIds(new Set(membershipResult.status === "fulfilled" ? membershipResult.value : []));
     }).catch(e => {
       if (!cancelled) setError(e instanceof Error ? e : new Error("Výzvy se nepodařilo načíst."));
     }).finally(() => {
