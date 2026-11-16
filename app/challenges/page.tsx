@@ -81,7 +81,15 @@ export default function ChallengesPage() {
     setCreating(true);
     try{
       const data=await request("create",{name,description,kind,activityType,goal:Number(goal),startDate,endDate,avatarUrl,avatarPublicId});
+      const createdChallenge = data.challenge as ChallengeData | undefined;
       setName("");setDescription("");setGoal("");setStartDate("");setEndDate("");setAvatarUrl("");setAvatarPublicId("");
+      if (createdChallenge) {
+        setGroups(current => ({
+          active: createdChallenge.state === "active" ? [createdChallenge, ...current.active.filter(item => item.id !== createdChallenge.id)] : current.active.filter(item => item.id !== createdChallenge.id),
+          planned: createdChallenge.state === "planned" ? [createdChallenge, ...current.planned.filter(item => item.id !== createdChallenge.id)] : current.planned.filter(item => item.id !== createdChallenge.id),
+          completed: current.completed.filter(item => item.id !== createdChallenge.id),
+        }));
+      }
       showAppToast("Výzva byla vytvořena.","success");
       setShowCreate(false);
       const createdStart = new Date(startDate + "T12:00:00");
