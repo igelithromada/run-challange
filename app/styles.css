@@ -6220,3 +6220,25 @@ html[data-theme="white"] .social-modal input {
   color:#17232b !important;
   -webkit-text-fill-color:#17232b !important;
 }
+
+/* ===== CROSS-SCREEN QA: formuláře + navigace ===== */
+html:not([data-theme="white"]) .teams-create-form input,html:not([data-theme="white"]) .teams-create-form select,html:not([data-theme="white"]) .challenges-create input,html:not([data-theme="white"]) .challenges-create select,html:not([data-theme="white"]) .challenges-create textarea{color:#fff!important;-webkit-text-fill-color:#fff!important;background:rgba(0,0,0,.18)!important;color-scheme:dark}
+html:not([data-theme="white"]) .teams-create-form input::placeholder,html:not([data-theme="white"]) .challenges-create input::placeholder,html:not([data-theme="white"]) .challenges-create textarea::placeholder{color:rgba(255,255,255,.68)!important;opacity:1!important}
+html[data-theme="white"] .teams-create-form input,html[data-theme="white"] .teams-create-form select,html[data-theme="white"] .challenges-create input,html[data-theme="white"] .challenges-create select,html[data-theme="white"] .challenges-create textarea{color:#17232b!important;-webkit-text-fill-color:#17232b!important;background:#fff!important;border-color:#c7d4da;color-scheme:light}
+html[data-theme="white"] .teams-create-form input::placeholder,html[data-theme="white"] .challenges-create input::placeholder,html[data-theme="white"] .challenges-create textarea::placeholder{color:#667780!important;opacity:1!important}
+html:not([data-theme="white"]) .challenges-create .challenge-dates input{color:#fff!important;-webkit-text-fill-color:#fff!important;background:rgba(0,0,0,.18)!important;color-scheme:dark}
+html[data-theme="white"] .site-sidebar-profile{background:#f5f8fa;border-color:#dce3e8;color:#17212b}
+html[data-theme="white"] .site-sidebar-profile-icon{background:#e8eef2}
+html[data-theme="white"] .site-sidebar-profile-copy small,html[data-theme="white"] .site-sidebar-header small{color:#66737d!important}
+html[data-theme="white"] .site-sidebar-item{background:#f5f8fa;border-color:#dce3e8;color:#17212b!important}
+html[data-theme="white"] .site-sidebar-item:hover{background:#eef3f6;border-color:#c7d1d8}
+html[data-theme="white"] .site-sidebar-icon-button{background:#f5f8fa;border-color:#dce3e8;color:#17212b}
+html[data-theme="white"] .site-sidebar-panel{background:#fff!important;border-color:#dce3e8!important}
+html[data-theme="white"] .site-navbar-inner{background:#fff;border-color:#dce3e8;box-shadow:0 8px 24px rgba(18,38,52,.08)}
+html[data-theme="white"] .site-navbar-button{color:#17212b}
+html[data-theme="white"] .site-navbar-button:hover{background:#f1f5f7}
+.teams-create-form input,.teams-create-form select,.challenges-create input,.challenges-create select,.challenges-create textarea{min-height:48px;box-sizing:border-box;border-radius:14px;padding:.75rem .9rem;font:inherit}
+.challenges-create .challenge-dates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}
+.challenges-create .challenge-dates label{display:grid;gap:.35rem;font-size:.8rem;font-weight:700}
+@media(max-width:520px){.challenges-create .challenge-dates{grid-template-columns:1fr 1fr}}
+.teams-header,.progress-header,.participants-header,.admin-header{margin-top:.5rem}
