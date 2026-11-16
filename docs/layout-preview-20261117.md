@@ -50,3 +50,10 @@ Náhled používá existující přihlášení a databázi; uložené změny nej
 - Ostrou verzi otevřít odkazem v patičce a porovnat.
 
 Bez interaktivního prohlížeče není vizuální a přihlášená ruční přejímka provedena. Automatické sestavení a testy se ověřují na Vercelu; nejde o potvrzení ruční přejímky.
+
+## Automatické ověření prvního kandidáta
+
+Na Vercelu proběhlo `npm test && npm run typecheck && npm run build`.
+34 testů prošlo, 1 test Firestore byl přeskočen kvůli nedostupnému emulátoru.
+TypeScript i produkční sestavení prošly. Náhled se nasadil ve stavu READY.
+Přihlášení na URL náhledu odpovídá HTTP 200. Přihlášené scénáře a vizuální přejímka zatím nejsou ověřeny.

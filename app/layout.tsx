@@ -1,7 +1,7 @@
 import "./styles.css";
 import "./professional-ui.css";
 import "./layout-study.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ReactNode } from "react";
 import ClientLayout from "./ClientLayout";
 
@@ -13,9 +13,9 @@ export const metadata: Metadata = {
   description: "Běžecká a pohybová výzva Dolní Lhota.",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icon.svg" },
-  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
-  themeColor: "#17364b",
 };
+
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#17364b" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

@@ -209,7 +209,7 @@ export default function ProgressPage() {
           <button className="progress-save" onClick={saveGoals}><Save size={17}/>{saved?"Uloženo":"Uložit cíle"}</button>
         </div>
         </details>
-        <p className="trainer-goal-note">Osobní trenér používá stejné cíle jako tato stránka. Měsíční cíl je hlavní meta; trenér z něj vychází při plánování týdnů a zbytek můžeš doplnit vlastními aktivitami.</p>
+        <p className="trainer-goal-note">Cíle jsou společné s osobním trenérem. Hlavní metou je měsíční vzdálenost.</p>
       </section>
 
       <section className="progress-level tile">

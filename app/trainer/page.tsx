@@ -335,7 +335,6 @@ export default function TrainerPage(){
       <div><span>Tento týden</span><strong>{weekActualTotal.toFixed(1)} / {weekPlannedTotal.toFixed(1)} km</strong></div>
       <div><span>Plnění týdne</span><strong>{weekPlanPercent.toFixed(0)} %</strong></div>
     </div>
-    <p className="trainer-goal-note">Kalendář zůstává hlavním místem pro plánování. Tady máš souhrn měsíce i aktuálního týdne na jednom místě.</p>
    </section>
 
   </main>

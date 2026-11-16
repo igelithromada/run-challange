@@ -145,7 +145,7 @@ export default function StatisticsPage() {
         </div>
 
         </div></div>
-        <details className="layout-disclosure result-period"><summary>{startDate || endDate ? "Období · aktivní filtr" : "Období · vše"}</summary><div className="tile date-filter">
+        <details className="layout-disclosure result-period"><summary>{startDate || endDate ? `${startDate ? startDate.split("-").reverse().join(". ") : "Začátek"} – ${endDate ? endDate.split("-").reverse().join(". ") : "Dnes"}` : "Období · vše"}</summary><div className="tile date-filter">
           <label className="date-field"><span>Od data</span><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></label>
           <label className="date-field"><span>Do data</span><input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} /></label>
           {(startDate || endDate) && <button className="date-clear" onClick={() => { setStartDate(""); setEndDate(""); }}>Zrušit filtr</button>}
