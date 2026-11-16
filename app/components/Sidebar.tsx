@@ -115,7 +115,7 @@ export default function Sidebar({ visible, onClose }: SidebarProps) {
                       <Icon size={22} strokeWidth={2} aria-hidden="true" />
                       <span>{label}</span>
                     </button>
-                  ))}
+                  ); })}
                 </div>
               </section>
             );
