@@ -12,6 +12,7 @@ import { fetchChallengesPage, getActiveChallengeIdsForUser } from "../lib/servic
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
+import FormField from "../components/FormField";
 
 async function uploadChallengeImage(file: File) {
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Povolené jsou pouze JPG, PNG a WebP.");
@@ -82,7 +83,9 @@ export default function ChallengesPage() {
       const data=await request("create",{name,description,kind,activityType,goal:Number(goal),startDate,endDate,avatarUrl,avatarPublicId});
       setName("");setDescription("");setGoal("");setStartDate("");setEndDate("");setAvatarUrl("");setAvatarPublicId("");
       showAppToast("Výzva byla vytvořena.","success");
-      if(data.id)router.push("/challenges/"+data.id);
+      setShowCreate(false);
+      const createdStart = new Date(startDate + "T12:00:00");
+      if (!Number.isNaN(createdStart.getTime())) setMonth(new Date(createdStart.getFullYear(), createdStart.getMonth(), 1));
     }catch(e){showAppToast(e instanceof Error?e.message:"Výzvu se nepodařilo vytvořit.","error");}
     finally{setCreating(false);}
   };
@@ -136,31 +139,26 @@ export default function ChallengesPage() {
             <button type="button" className="ui-icon-button" onClick={() => setShowCreate(false)} aria-label="Zavřít formulář"><X size={18}/></button>
           </div>
           <div className="teams-create-form professional-form">
-            <label className="professional-form-field">
-              <span>Název výzvy</span>
+            <FormField label="Název výzvy">
               <input className="professional-input" maxLength={40} placeholder="Např. 50 km za listopad" value={name} onChange={e=>setName(e.target.value)}/>
-            </label>
-            <label className="professional-form-field">
-              <span>Popis <small>volitelné</small></span>
+            </FormField>
+            <FormField label="Popis" hint="volitelné">
               <textarea className="professional-input" maxLength={200} placeholder="Krátce popiš cíl a motivaci výzvy." value={description} onChange={e=>setDescription(e.target.value)}/>
-            </label>
-            <div className="professional-form-field">
-              <span>Typ aktivity</span>
+            </FormField>
+            <FormField label="Typ aktivity">
               <ActivityTypeSelector value={activityType} onChange={setActivityType} ariaLabel="Typ aktivity výzvy"/>
-            </div>
-            <label className="professional-form-field">
-              <span>Typ cíle</span>
+            </FormField>
+            <FormField label="Typ cíle">
               <select value={kind} onChange={e=>setKind(e.target.value as ChallengeKind)}>
                 <option value="distance">Vzdálenost</option>
                 <option value="activities">Počet aktivit</option>
                 <option value="activeDays">Aktivní dny</option>
                 <option value="sharedDistance">Společný cíl</option>
               </select>
-            </label>
-            <label className="professional-form-field">
-              <span>Cíl</span>
+            </FormField>
+            <FormField label="Cíl">
               <input className="professional-input" type="number" min="1" step={kind==="distance"||kind==="sharedDistance"?"0.1":"1"} placeholder={kind==="distance"||kind==="sharedDistance"?"Např. 50":kind==="activities"?"Např. 10":"Např. 15"} value={goal} onChange={e=>setGoal(e.target.value)}/>
-            </label>
+            </FormField>
             <div className="challenge-dates">
               <label><span>Od</span><input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}/></label>
               <label><span>Do</span><input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/></label>
