@@ -99,9 +99,9 @@ test('clear, partly cloudy, rain and storm have different single-SVG symbols', (
   assert.match(markup[3], /wx-lightning/);
   assert.equal(visuals.weatherDescription(''), 'Počasí není dostupné');
 });
-test('the forecast card uses the first hour quantity and probability, not a six-hour maximum', () => {
+test('current conditions use current precipitation and the hourly strip starts in the future', () => {
   const now = base + 7.5 * 3600000;
-  const weather = { current: { temperature: { degrees: 4 }, weatherCondition: { type: 'CLOUDY' }, relativeHumidity: 88 },
+  const weather = { current: { temperature: { degrees: 4 }, weatherCondition: { type: 'CLOUDY' }, relativeHumidity: 88, precipitation: { amount: .1, probability: { percent: 99 } } },
     hourly: [{ interval: { startTime: new Date(base + 7 * 3600000).toISOString(), endTime: new Date(base + 8 * 3600000).toISOString() }, precipitation: { amount: .4, probability: { percent: 20 } }, weatherCondition: { type: 'RAIN' } },
       { interval: { startTime: new Date(base + 8 * 3600000).toISOString(), endTime: new Date(base + 9 * 3600000).toISOString() }, precipitation: { amount: 2, probability: { percent: 95 } } }] };
   let state = 0;
@@ -109,7 +109,9 @@ test('the forecast card uses the first hour quantity and probability, not a six-
   const Card = load('app/components/WeatherCard.tsx', { react: hooks, '../lib/weather': helpers, './WeatherVisual': visuals }).default;
   const html = renderToStaticMarkup(React.createElement(Card));
   const top = html.slice(html.indexOf('weather-precipitation-stat'), html.indexOf('weather-hour-section'));
-  assert.match(top, /0,4 mm/); assert.match(top, /Pravděp\. 20 %/);
+  assert.match(top, /0,1 mm/); assert.match(top, /Srážky za 15 min/);
   assert.doesNotMatch(top, /95 %/);
-  assert.match(html, /Teď/); assert.match(html, /08:00/);
+  assert.doesNotMatch(html, /Teď/); assert.match(html, /08:00/);
+  assert.doesNotMatch(html, /Předpověď pro 07:00–08:00/);
+  assert.doesNotMatch(top, /Pravděp/);
 });

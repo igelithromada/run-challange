@@ -73,11 +73,14 @@ export default function WeatherCard() {
 
   const current = weather?.current;
   const timeZone = weather?.timeZone?.id || "Europe/Prague";
-  const hours = upcomingWeatherHours(weather?.hourly, now);
-  const firstHour = hours[0];
+  const hours = upcomingWeatherHours(weather?.hourly, now, 24)
+    .filter(item => Date.parse(item.interval?.startTime || "") > now).slice(0, 12);
   const wind = current?.wind?.speed?.value;
   const windUnit = current?.wind?.speed?.unit === "KILOMETERS_PER_HOUR" ? "km/h" : "m/s";
-  const periodLabel = firstHour ? `${weatherTime(firstHour.interval?.startTime, timeZone)}–${weatherTime(firstHour.interval?.endTime, timeZone)}` : "Tato hodina";
+  const observedTime = Date.parse(weather?.observedAt || "");
+  const observedPeriod = Number.isFinite(observedTime)
+    ? `${weatherTime(new Date(observedTime - 15 * 60000).toISOString(), timeZone)}–${weatherTime(weather?.observedAt, timeZone)}`
+    : "posledních 15 minut";
 
   return <section className="tile weather-card weather-card-improved" aria-label="Předpověď počasí" aria-busy={refreshing}>
     {!current ? <p className="weather-loading" role="status">{error || "Načítám předpověď…"}</p> : <>
@@ -88,6 +91,7 @@ export default function WeatherCard() {
             <span>Dolní Lhota u Ostravy</span>
           </div>
           <div className="weather-current-copy">
+            <small>Aktuálně{Number.isFinite(observedTime) ? ` · ${weatherTime(weather?.observedAt, timeZone)}` : ""}</small>
             <strong className="weather-temperature">{temperatureLabel(current.temperature?.degrees)}{typeof current.temperature?.degrees === "number" ? "C" : ""}</strong>
             <span className="weather-description">{current.weatherCondition?.description?.text || weatherDescription(current.weatherCondition?.type)}</span>
             {typeof current.feelsLikeTemperature?.degrees === "number" && <small>Pocitově {temperatureLabel(current.feelsLikeTemperature.degrees)}C</small>}
@@ -95,10 +99,10 @@ export default function WeatherCard() {
         </div>
         <div className="weather-stat-grid">
           <div className="weather-stat-card"><Wind size={24} /><strong>{typeof wind === "number" ? `${Math.round(wind)} ${windUnit}` : "—"}</strong><small>Vítr</small></div>
-          <div className="weather-stat-card weather-precipitation-stat" title={`Očekávané srážky ${periodLabel}. Množství a pravděpodobnost platí pro stejné období.`}>
-            <WeatherVisual type="RAIN" size={28} />
-            <strong>{formatPrecipitation(firstHour?.precipitation?.amount)}</strong>
-            <small>Srážky {periodLabel}<br />Pravděp. {probabilityLabel(firstHour?.precipitation?.probability?.percent)}</small>
+          <div className="weather-stat-card weather-precipitation-stat" title={`Aktuální odhad úhrnu srážek za ${observedPeriod}. Pravděpodobnost budoucích srážek je uvedena v hodinové předpovědi.`}>
+            <Droplets className="weather-humidity-icon" size={28} />
+            <strong>{formatPrecipitation(current.precipitation?.amount)}</strong>
+            <small>Srážky za 15 min</small>
           </div>
           <div className="weather-stat-card"><Droplets className="weather-humidity-icon" size={24} /><strong>{probabilityLabel(current.relativeHumidity)}</strong><small>Vlhkost</small></div>
         </div>
@@ -107,12 +111,9 @@ export default function WeatherCard() {
         <h3 id="weather-hour-heading">Předpověď po hodinách</h3>
         <div className="weather-hour-grid weather-hour-scroll" tabIndex={0} role="group" aria-label="Předpověď na 12 hodin, posouvej doleva nebo doprava">
           {hours.map(item => {
-            const start = Date.parse(item.interval?.startTime || "");
-            const end = Date.parse(item.interval?.endTime || "") || start + 3600000;
-            const activeHour = start <= now && now < end;
             const period = `${weatherTime(item.interval?.startTime, timeZone)}–${weatherTime(item.interval?.endTime, timeZone)}`;
             return <div key={item.interval?.startTime} className="weather-hour-card" title={`Předpověď pro ${period}`}>
-              <small className="weather-hour-time">{activeHour ? "Teď" : weatherTime(item.interval?.startTime, timeZone)}</small>
+              <small className="weather-hour-time">{weatherTime(item.interval?.startTime, timeZone)}</small>
               <div className="weather-hour-main"><WeatherVisual type={item.weatherCondition?.type} size={48} className="weather-hour-icon" night={weatherIsNight(item, item.interval?.startTime || now, timeZone)} /><strong>{temperatureLabel(item.temperature?.degrees)}</strong></div>
               <strong className="weather-hour-amount">{formatPrecipitation(item.precipitation?.amount)}</strong>
               <span>Pravděp. {probabilityLabel(item.precipitation?.probability?.percent)}</span>
