@@ -40,3 +40,7 @@ test('legacy participants slot opens the personal gallery and results remain uni
  let target;load('app/participants/page.tsx',{'next/navigation':{redirect:path=>target=path}}).default();assert.equal(target,'/gallery');
  const items=load('app/lib/navigation.ts').NAVIGATION_ITEMS;assert.equal(items.filter(i=>i.id==='statistics').length,1);assert.equal(items.some(i=>i.id==='participants'),false);
 });
+
+test('award results show community totals and individual counters while retaining distance and other metrics',()=>{
+ const html=renderResults({4:'badges'});assert.match(html,/Celkové vyhodnocení odznaků/);assert.match(html,/Ranní ptáče/);assert.match(html,/Noční běh/);assert.match(html,/Počty jednotlivých odznaků/);assert.match(html,/6\.00 km/);assert.match(html,/Podle odznaků/);
+});

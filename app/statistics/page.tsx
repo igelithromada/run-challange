@@ -30,6 +30,7 @@ import {
   visiblePeople,
   type ResultPerson,
 } from "../lib/results";
+import { activityAwards } from "../lib/awards";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import type { ActivityType, PublicProfileData, RunData } from "../types";
 export default function StatisticsPage() {
@@ -38,7 +39,7 @@ export default function StatisticsPage() {
     [uid, setUid] = useState(""),
     [selectedType, setSelectedType] = useState<ActivityType>("běh"),
     [view, setView] = useState<"já" | "jednotlivci">("jednotlivci"),
-    [metric, setMetric] = useState<"km" | "tempo">("km"),
+    [metric, setMetric] = useState<"km" | "tempo" | "badges">("km"),
     [sort, setSort] = useState<"rank" | "alpha">("rank"),
     [startDate, setStartDate] = useState(""),
     [endDate, setEndDate] = useState(""),
@@ -108,7 +109,11 @@ export default function StatisticsPage() {
   const showPodium =
     view === "jednotlivci" && sort === "rank" && !search.trim();
   const ranked = people.filter((p) =>
-    metric === "km" ? p.km > 0 : p.pace > 0,
+    metric === "badges"
+      ? p.awardCount > 0
+      : metric === "km"
+        ? p.km > 0
+        : p.pace > 0,
   );
   const podium = showPodium ? ranked.slice(0, 3) : [];
   const podiumIds = new Set(podium.map((p) => p.uid));
@@ -122,51 +127,67 @@ export default function StatisticsPage() {
     element?.scrollIntoView({ block: "start", behavior: "instant" });
   };
   const personRow = (person: ResultPerson, podiumRow = false) => (
-    <button
-      type="button"
-      key={person.uid}
-      className={`unified-person-row${podiumRow ? ` is-podium rank-${person.rank}` : ""}${person.uid === uid ? " is-mine" : ""}`}
-      onClick={() => router.push("/user/" + encodeURIComponent(person.uid))}
-      aria-label={`Profil ${person.name}`}
-    >
-      <span className="unified-rank">
-        {sort === "alpha" ? null : podiumRow ? (
-          <Trophy size={19} />
-        ) : (
-          person.rank
-        )}
-      </span>
-      <span className="activity-avatar">
-        {person.avatarUrl ? (
-          <img
-            src={cloudinaryImageUrl(person.avatarUrl, 96)}
-            alt=""
-            loading="lazy"
-          />
-        ) : (
-          person.name.charAt(0).toUpperCase()
-        )}
-      </span>
-      <span className="unified-person-main">
-        <strong>
-          {person.name}
-          {person.uid === uid ? " · ty" : ""}
-        </strong>
-        <small>
-          {person.count} aktivit · {formatResultDuration(person.minutes)}
-        </small>
-        <small>Průměrné tempo {formatPace(person.pace)}</small>
-      </span>
-      <span className="unified-person-value">
-        <strong>
-          {metric === "tempo"
-            ? formatPace(person.pace)
-            : `${person.km.toFixed(2)} km`}
-        </strong>
-        {metric === "tempo" && <small>{person.km.toFixed(2)} km</small>}
-        {podiumRow && <small>{person.rank}. místo</small>}
-      </span>
-    </button>
+    <div key={person.uid}>
+      <button
+        type="button"
+        className={`unified-person-row${podiumRow ? ` is-podium rank-${person.rank}` : ""}${person.uid === uid ? " is-mine" : ""}`}
+        onClick={() => router.push("/user/" + encodeURIComponent(person.uid))}
+        aria-label={`Profil ${person.name}`}
+      >
+        <span className="unified-rank">
+          {sort === "alpha" ? null : podiumRow ? (
+            <Trophy size={19} />
+          ) : (
+            person.rank
+          )}
+        </span>
+        <span className="activity-avatar">
+          {person.avatarUrl ? (
+            <img
+              src={cloudinaryImageUrl(person.avatarUrl, 96)}
+              alt=""
+              loading="lazy"
+            />
+          ) : (
+            person.name.charAt(0).toUpperCase()
+          )}
+        </span>
+        <span className="unified-person-main">
+          <strong>
+            {person.name}
+            {person.uid === uid ? " · ty" : ""}
+          </strong>
+          <small>
+            {person.count} aktivit · {formatResultDuration(person.minutes)}
+          </small>
+          <small>Průměrné tempo {formatPace(person.pace)}</small>
+        </span>
+        <span className="unified-person-value">
+          <strong>
+            {metric === "badges"
+              ? `${person.awardCount} odznaků`
+              : metric === "tempo"
+                ? formatPace(person.pace)
+                : `${person.km.toFixed(2)} km`}
+          </strong>
+          {metric === "tempo" && <small>{person.km.toFixed(2)} km</small>}
+          {podiumRow && <small>{person.rank}. místo</small>}
+        </span>
+      </button>
+      {metric === "badges" && (
+        <details className="result-award-details">
+          <summary>Počty jednotlivých odznaků</summary>
+          <div>
+            {person.awards.map((award) => (
+              <span key={award.id}>
+                {award.title}
+                <b>{award.count}×</b>
+              </span>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
   );
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
@@ -248,6 +269,14 @@ export default function StatisticsPage() {
             onClick={() => setMetric("tempo")}
           >
             Tempo
+          </button>
+          <button
+            type="button"
+            className={`tile-button ${metric === "badges" ? "active" : ""}`}
+            aria-pressed={metric === "badges"}
+            onClick={() => setMetric("badges")}
+          >
+            Odznaky
           </button>
         </div>
         <div className="tile date-filter">
@@ -348,7 +377,11 @@ export default function StatisticsPage() {
                   aria-pressed={sort === "rank"}
                   onClick={() => setSort("rank")}
                 >
-                  {metric === "tempo" ? "Podle tempa" : "Podle kilometrů"}
+                  {metric === "badges"
+                    ? "Podle odznaků"
+                    : metric === "tempo"
+                      ? "Podle tempa"
+                      : "Podle kilometrů"}
                 </button>
                 <button
                   type="button"
@@ -365,6 +398,57 @@ export default function StatisticsPage() {
                 Nalezeno: {visible.length}. Souhrn nahoře platí pro celé zvolené
                 období.
               </p>
+            )}
+            {metric === "badges" && (
+              <section
+                className="community-awards"
+                aria-label="Celkové vyhodnocení odznaků"
+              >
+                <h2>Odznaky a úspěchy</h2>
+                <p className="chart-hint">
+                  Vyhodnocení za zvolené období a kategorii. Jednorázové odznaky
+                  se počítají nejvýše 1×, ranní a noční za každou odpovídající
+                  aktivitu.
+                </p>
+                <strong>
+                  Celkem{" "}
+                  {(view === "já"
+                    ? people.filter((p) => p.uid === uid)
+                    : people
+                  ).reduce((sum, p) => sum + p.awardCount, 0)}{" "}
+                  odznaků
+                </strong>
+                <div
+                  className="progress-badges-scroll"
+                  role="group"
+                  tabIndex={0}
+                  aria-label="Počty odznaků v komunitě"
+                >
+                  {(people[0]?.awards || activityAwards([], selectedType)).map(
+                    (award) => (
+                      <article className="progress-badge" key={award.id}>
+                        <span aria-hidden="true">{award.icon}</span>
+                        <div>
+                          <strong>{award.title}</strong>
+                          <p>
+                            {(view === "já"
+                              ? people.filter((p) => p.uid === uid)
+                              : people
+                            ).reduce(
+                              (sum, p) =>
+                                sum +
+                                (p.awards.find((a) => a.id === award.id)
+                                  ?.count || 0),
+                              0,
+                            )}
+                            ×
+                          </p>
+                        </div>
+                      </article>
+                    ),
+                  )}
+                </div>
+              </section>
             )}
             {!!podium.length && (
               <section className="results-section">

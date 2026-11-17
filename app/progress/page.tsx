@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Award, CalendarDays, Footprints, Medal, Trophy, CheckCircle2, Lock, Zap, Flame } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { parseActivityDate } from "../lib/runData";
+import { activityAwards, awardTotal } from "../lib/awards";
 import ActivityCalendar from "../components/ActivityCalendar";
 import ProgressChart from "../components/ProgressChart";
 import Navbar from "../components/Navbar";
@@ -50,7 +51,6 @@ export default function ProgressPage() {
   const selected = useMemo(() => mine.filter(run => (run.type || "běh") === goalType), [mine, goalType]);
   const now = new Date();
   const allKm = selected.reduce((sum, run) => sum + asNumber(run.km), 0);
-  const allActivities = selected.length;
 
   const sorted = [...selected].sort((a,b) => activityDate(a).getTime()-activityDate(b).getTime());
   const longest = sorted.reduce<ProgressActivity | null>((best, run) => !best || asNumber(run.km)>asNumber(best.km) ? run : best, null);
@@ -81,17 +81,7 @@ export default function ProgressPage() {
   const level = [...levels].reverse().find(item => allKm >= item.min) || levels[0];
   const levelProgress = Math.min(100, Math.max(0, allKm / level.next * 100));
 
-  const badges = [
-    { title:"První krok", detail:"Zaznamenal/a první aktivitu", icon:"👟", done:allActivities>=1 },
-    { title:"Desítka", detail:"Celkem 10 km", icon:"🔟", done:allKm>=10 },
-    { title:"Padesátka", detail:"Celkem 50 km", icon:"🥉", done:allKm>=50 },
-    { title:"Stovka", detail:"Celkem 100 km", icon:"🥈", done:allKm>=100 },
-    { title:"Čtvrt tisíce", detail:"Celkem 250 km", icon:"🥇", done:allKm>=250 },
-    { title:"Půlmaratonský měsíc", detail:"100 km za jeden měsíc", icon:"🌙", done:bestMonth>=100 },
-    { title:"Pravidelnost", detail:"Aktivita alespoň 7 dní v řadě", icon:"🔥", done:streak>=7 },
-    { title:"Deset aktivit", detail:"Zaznamenáno 10 aktivit", icon:"📅", done:allActivities>=10 },
-    { title:"Padesát aktivit", detail:"Zaznamenáno 50 aktivit", icon:"💪", done:allActivities>=50 }
-  ];
+  const badges = activityAwards(selected, goalType);
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
     if (item==="logout") { await signOut(auth); router.push("/login"); }
@@ -117,8 +107,8 @@ export default function ProgressPage() {
       </section>
 
       <section className="progress-section">
-        <div className="progress-section-title"><Award/><div><h2>Odznaky a úspěchy</h2><p>{badges.filter(b=>b.done).length} z {badges.length} získaných odznaků</p></div></div>
-        <div className="progress-badges-scroll" role="group" tabIndex={0} aria-label="Odznaky a úspěchy, posouvej doleva nebo doprava">{badges.map(badge=><article key={badge.title} className={badge.done?"progress-badge earned":"progress-badge locked"}><span>{badge.done?badge.icon:"🔒"}</span><div><strong>{badge.title}</strong><p>{badge.detail}</p></div>{badge.done?<CheckCircle2 size={18}/>:<Lock size={17}/>}</article>)}</div>
+        <div className="progress-section-title"><Award/><div><h2>Odznaky a úspěchy</h2><p>Celkem {awardTotal(badges)} odznaků · {badges.filter(b=>b.count>0).length} z {badges.length} druhů</p></div></div>
+        <div className="progress-badges-scroll" role="group" tabIndex={0} aria-label="Odznaky a úspěchy, posouvej doleva nebo doprava">{badges.map(badge=><article key={badge.title} className={badge.count>0?"progress-badge earned":"progress-badge locked"}><span>{badge.count>0?badge.icon:"🔒"}</span><div><strong>{badge.title} <b className="award-count">{badge.count}×</b></strong><p>{badge.detail}</p></div>{badge.count>0?<CheckCircle2 size={18}/>:<Lock size={17}/>}</article>)}</div>
       </section>
 
       <ActivityCalendar runs={selected} />
