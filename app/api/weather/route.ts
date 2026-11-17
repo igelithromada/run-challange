@@ -1,3 +1,4 @@
+import { weatherCoordinates } from "../../lib/weatherLocation";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,8 @@ async function openMeteo(fresh = false, coordinates?: { lat: number; lon: number
   url.searchParams.set("longitude", String(coordinates?.lon ?? LONGITUDE));
   url.searchParams.set("timezone", coordinates ? "auto" : "Europe/Prague");
   url.searchParams.set("forecast_days", "3");
+  // Select suitable land terrain; retain Open-Meteo’s default elevation adjustment.
+  url.searchParams.set("cell_selection", "land");
   url.searchParams.set("timeformat", "unixtime");
   url.searchParams.set(
     "current",
@@ -125,8 +128,7 @@ export async function GET(request?: Request) {
     if (!query.get("lat") || !query.get("lon") || !Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
       return NextResponse.json({ error: "Neplatná poloha pro počasí." }, { status: 400 });
     }
-    // A kilometre-scale cell is sufficient for the forecast and shares provider cache entries.
-    coordinates = { lat: Math.round(lat * 100) / 100, lon: Math.round(lon * 100) / 100 };
+    coordinates = weatherCoordinates(lat, lon);
   }
   try {
     return NextResponse.json(await openMeteo(fresh, coordinates), {

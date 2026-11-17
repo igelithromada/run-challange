@@ -5,6 +5,7 @@ import { Wind, Droplets, RefreshCw, MapPin } from "lucide-react";
 import type { WeatherResponse } from "../lib/weather";
 import { formatPrecipitation, upcomingWeatherHours, weatherIsNight, weatherTime } from "../lib/weather";
 import { auth } from "../lib/firebase";
+import { weatherCoordinates, weatherLocationMoved } from "../lib/weatherLocation";
 import { coordinatesLabel, locationErrorMessage } from "../lib/location";
 import WeatherVisual, { weatherDescription } from "./WeatherVisual";
 
@@ -25,7 +26,7 @@ export default function WeatherCard() {
   const [locationName, setLocationName] = useState("");
   const [followLocation, setFollowLocation] = useState(false);
   const locationRequest = useRef<AbortController | null>(null);
-  const locateRef = useRef<() => void>(() => {});
+  const locateRef = useRef<(position?: GeolocationPosition) => void>(() => {});
   const locationRef = useRef<{ lat: number; lon: number } | null>(null);
   const locationVersion = useRef(0);
   const lastObserved = useRef<string | undefined>(undefined);
@@ -69,7 +70,7 @@ export default function WeatherCard() {
     }
   }, []);
 
-  const chooseLocation = (gps: boolean) => {
+  const chooseLocation = (gps: boolean, knownPosition?: GeolocationPosition) => {
     const version = ++locationVersion.current;
     locationRequest.current?.abort();
     setLocationError(""); setError(""); setRefreshStatus("");
@@ -82,9 +83,9 @@ export default function WeatherCard() {
     }
     if (!("geolocation" in navigator)) { setLocationError("Telefon nepodporuje určení polohy."); setFollowLocation(false); return; }
     setLocating(true); setLocationStatus("Zjišťuji polohu GPS…");
-    navigator.geolocation.getCurrentPosition(position => {
+    const acceptPosition = (position: GeolocationPosition) => {
       if (!mounted.current || version !== locationVersion.current) return;
-      const coords = { lat: Math.round(position.coords.latitude * 100) / 100, lon: Math.round(position.coords.longitude * 100) / 100 };
+      const coords = weatherCoordinates(position.coords.latitude, position.coords.longitude);
       const changed = !locationRef.current || coords.lat !== locationRef.current.lat || coords.lon !== locationRef.current.lon;
       setLocating(false); setUsingGps(true); setLocationError("");
       setLocationStatus(`Poloha dostupná · přesnost přibližně ${Math.max(1, Math.round(position.coords.accuracy))} m`);
@@ -94,23 +95,26 @@ export default function WeatherCard() {
         setWeather(null); setLocationName(coordinatesLabel(coords.lat, coords.lon));
         void loadWeather();
       }
-      // Resolve only when the user selects/retries the location; periodic checks never geocode.
+      // Resolve on selection/retry or a meaningful move, never for stationary GPS checks.
       const controller = new AbortController(); locationRequest.current = controller;
       void (async () => {
         try {
           const token = await auth.currentUser?.getIdToken();
           if (!token || controller.signal.aborted) return;
-          const response = await fetch(`/api/weather/location?lat=${coords.lat}&lon=${coords.lon}`, { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal });
+          const response = await fetch(`/api/weather/location?v=2&lat=${coords.lat}&lon=${coords.lon}`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-cache", signal: controller.signal });
           const result = await response.json();
           if (mounted.current && version === locationVersion.current && !controller.signal.aborted && response.ok && result.name) setLocationName(result.name);
         } catch { /* Coordinate label remains available if the place name cannot be resolved. */ }
       })();
-    }, cause => {
+    };
+    const rejectPosition = (cause: GeolocationPositionError) => {
       if (!mounted.current || version !== locationVersion.current) return;
       setLocating(false); setLocationStatus(""); setLocationError(locationErrorMessage(cause.code));
-    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+    };
+    if (knownPosition) acceptPosition(knownPosition);
+    else navigator.geolocation.getCurrentPosition(acceptPosition, rejectPosition, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
   };
-  locateRef.current = () => chooseLocation(true);
+  locateRef.current = position => chooseLocation(true, position);
 
   useEffect(() => {
     if (!followLocation || !navigator.geolocation) return;
@@ -122,7 +126,8 @@ export default function WeatherCard() {
       navigator.geolocation.getCurrentPosition(position => {
         pending = false; if (!active) return;
         setLocationError(""); setLocationStatus(`Poloha dostupná · přesnost přibližně ${Math.max(1, Math.round(position.coords.accuracy))} m`);
-        if (!locationRef.current) locateRef.current();
+        const coords = weatherCoordinates(position.coords.latitude, position.coords.longitude);
+        if (weatherLocationMoved(locationRef.current, coords)) locateRef.current(position);
       }, cause => {
         pending = false; if (!active) return;
         setLocationStatus(""); setLocationError(locationErrorMessage(cause.code));

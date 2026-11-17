@@ -4,4 +4,4 @@ export function locationErrorMessage(code: number) {
   if (code === 3) return "Zjištění polohy trvá příliš dlouho. Zkontroluj zapnutí polohy a signál; zkus to znovu.";
   return "Polohu se nepodařilo zjistit. Zkus to znovu nebo vyber Dolní Lhotu.";
 }
-export function coordinatesLabel(lat: number, lon: number) { return `${Math.abs(lat).toFixed(2)}° ${lat < 0 ? "j. š." : "s. š."}, ${Math.abs(lon).toFixed(2)}° ${lon < 0 ? "z. d." : "v. d."}`; }
+export function coordinatesLabel(lat: number, lon: number) { return `${Math.abs(lat).toFixed(5)}° ${lat < 0 ? "j. š." : "s. š."}, ${Math.abs(lon).toFixed(5)}° ${lon < 0 ? "z. d." : "v. d."}`; }
