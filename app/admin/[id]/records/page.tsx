@@ -21,11 +21,11 @@ export default function RecordsPage() {
   const { id } = useParams() as { id:string };
   const router = useRouter();
   const [menuVisible,setMenuVisible] = useState(false);
-  const [selectedType,setSelectedType] = useState<"běh"|"chůze">("běh");
+  const [selectedType,setSelectedType] = useState<import("../../../types").ActivityType>("běh");
   useEffect(() => {
     try {
       const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
-      if (cached === "běh" || cached === "chůze") setSelectedType(cached);
+      if (cached === "běh" || cached === "chůze" || cached === "dřepy" || cached === "kliky") setSelectedType(cached);
     } catch {}
   }, []);
   const [lightbox,setLightbox] = useState<{urls:string[];index:number}|null>(null);

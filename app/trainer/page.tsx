@@ -1,4 +1,5 @@
 "use client";
+import { activityAmount, activityUnit, isStrengthActivity, ACTIVITY_TYPES } from "../lib/activity";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -15,7 +16,7 @@ import type { RunData, LegacyTrainerPlan } from "../types";
 import { personalHistoryQuery } from "../lib/services/runs";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 
-type Activity = Pick<RunData, "id" | "uid" | "km" | "type" | "timestamp">;
+type Activity = Pick<RunData, "id" | "uid" | "km" | "type" | "timestamp" | "repetitions">;
 type Plan = { monthKey:string; type:ActivityType; dates:string[]; dayKm:Record<string, number | string>; monthlyKm:number; createdAt?:string };
 type OldPlan = LegacyTrainerPlan;
 
@@ -40,7 +41,7 @@ export default function TrainerPage(){
  useEffect(() => {
    try {
      const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
-     if (cached === "běh" || cached === "chůze") setType(cached);
+     if (cached === "běh" || cached === "chůze" || cached === "dřepy" || cached === "kliky") setType(cached);
    } catch {}
  }, []);
  const [profileLoading,setProfileLoading]=useState(true);
@@ -86,7 +87,7 @@ export default function TrainerPage(){
        const storedLegacy=(data?.personalTrainerPlan as Plan|OldPlan|undefined);
        const storedPlans=data?.personalTrainerPlans&&typeof data.personalTrainerPlans==="object"?data.personalTrainerPlans:{};
        const normalized:Record<string,Plan>={};
-       for(const activityType of ["běh","chůze"] as ActivityType[]){
+       for(const activityType of ACTIVITY_TYPES){
          const byMonth=storedPlans[activityType]&&typeof storedPlans[activityType]==="object"?storedPlans[activityType]:{};
          for(const [key,value] of Object.entries(byMonth)){
            const p=value as Partial<Plan>;
@@ -126,7 +127,8 @@ export default function TrainerPage(){
 
  useEffect(()=>{ if(!selectedDate||!selectedDate.startsWith(currentMonth)) setSelectedDate(dateKey(month)); },[currentMonth,selectedDate,month]);
 
- const actualFor=(key:string)=>runs.filter(r=>(r.type||"běh")===type&&dateKey(activityDate(r))===key).reduce((s,r)=>s+num(r.km),0);
+ const strength = isStrengthActivity(type), unit = activityUnit(type);
+ const actualFor=(key:string)=>runs.filter(r=>(r.type||"běh")===type&&dateKey(activityDate(r))===key).reduce((s,r)=>s+activityAmount(r),0);
  const daysInMonth=new Date(month.getFullYear(),month.getMonth()+1,0).getDate();
  const calendarStart=monday(new Date(month.getFullYear(),month.getMonth(),1));
  const calendarEnd=new Date(month.getFullYear(),month.getMonth(),daysInMonth);
@@ -180,7 +182,7 @@ export default function TrainerPage(){
    try{
      const nextDates=dates.includes(selectedDate)?dates:[...dates,selectedDate].sort();
      const nextDayKm={...dayKm,[selectedDate]:String(value)};
-     const normalizedDayKm=Object.fromEntries(nextDates.map(d=>[d,Math.max(.5,num(nextDayKm[d]))]));
+     const normalizedDayKm=Object.fromEntries(nextDates.map(d=>[d,Math.max(strength ? 1 : .5,num(nextDayKm[d]))]));
      const next:Plan={monthKey:currentMonth,type,dates:nextDates,dayKm:normalizedDayKm,monthlyKm:nextDates.reduce((s,d)=>s+num(normalizedDayKm[d]),0),createdAt:plan?.createdAt||new Date().toISOString()};
      const savedPlan=await persistPlan(next);
      setPlan(savedPlan);setPlansByKey(cur=>({...cur,[planKey(type,currentMonth)]:savedPlan}));
@@ -190,7 +192,7 @@ export default function TrainerPage(){
    finally{setSaving(false);}
  };
  const saveBulk=async()=>{
-   const value=Math.max(.5,num(bulkKm));
+   const value=Math.max(strength ? 1 : .5,num(bulkKm));
    const selected=bulkDates.filter(d=>d>=todayKey);
    if(!uid||!selected.length||value<=0)return;
    setSaving(true);setSaveError("");
@@ -198,7 +200,7 @@ export default function TrainerPage(){
      const nextDates=Array.from(new Set([...dates,...selected])).sort();
      const nextDayKm={...dayKm};
      selected.forEach(d=>nextDayKm[d]=String(value));
-     const normalizedDayKm=Object.fromEntries(nextDates.map(d=>[d,Math.max(.5,num(nextDayKm[d]))]));
+     const normalizedDayKm=Object.fromEntries(nextDates.map(d=>[d,Math.max(strength ? 1 : .5,num(nextDayKm[d]))]));
      const next:Plan={monthKey:currentMonth,type,dates:nextDates,dayKm:normalizedDayKm,monthlyKm:nextDates.reduce((s,d)=>s+num(normalizedDayKm[d]),0),createdAt:plan?.createdAt||new Date().toISOString()};
      const savedPlan=await persistPlan(next);
      setPlan(savedPlan);setPlansByKey(cur=>({...cur,[planKey(type,currentMonth)]:savedPlan}));
@@ -279,7 +281,7 @@ export default function TrainerPage(){
         return <button type="button" key={s.key} className={`trainer-calendar-day ${s.inMonth?"":"outside"} ${s.selected?"selected":""} ${s.status} ${s.key<todayKey?"past":""} ${bulkSelected?"bulk-selected":""}`}
           onPointerDown={e=>beginLongPress(s.key,e)} onPointerUp={cancelLongPress} onPointerLeave={cancelLongPress} onPointerCancel={cancelLongPress}
           onContextMenu={e=>e.preventDefault()} onClick={()=>handleDayClick(s)}>
-          <span>{d.getDate()}</span>{s.selected&&<small>{s.target.toFixed(1)} km</small>}{s.selected&&s.status==="done"&&<Check size={13}/>}
+          <span>{d.getDate()}</span>{s.selected&&<small>{s.target.toFixed(strength ? 0 : 1)} {strength ? "×" : unit}</small>}{s.selected&&s.status==="done"&&<Check size={13}/>}
         </button>
       })}</div>)}
     </div>
@@ -290,20 +292,20 @@ export default function TrainerPage(){
         top:`max(78px, ${quickInfo.y-30}px)`
       }}>
         <strong>{statusLabel(quickInfo.status)}</strong>
-        {quickInfo.status!=="off"&&<span>Cíl <b>{quickInfo.target.toFixed(1)} km</b> · Splněno <b>{quickInfo.actual.toFixed(1)} km</b></span>}
+        {quickInfo.status!=="off"&&<span>Cíl <b>{quickInfo.target.toFixed(strength ? 0 : 1)} {unit}</b> · Splněno <b>{quickInfo.actual.toFixed(strength ? 0 : 1)} {unit}</b></span>}
         {quickInfo.status==="off"&&<span>Den bez naplánovaného tréninku</span>}
       </div>,
       document.body
     )}
     {bulkMode&&<div className="trainer-bulk-panel">
       <div><strong>{bulkDates.length} {bulkDates.length===1?"den":"dny"}</strong><span>Společný cíl pro vybrané dny</span></div>
-      <label><span>km / den</span><input type="number" min=".5" step=".5" inputMode="decimal" value={bulkKm} onChange={e=>setBulkKm(e.target.value)}/></label>
+      <label><span>{unit} / den</span><input type="number" min={strength ? "1" : ".5"} step={strength ? "1" : ".5"} inputMode="decimal" value={bulkKm} onChange={e=>setBulkKm(e.target.value)}/></label>
       <button type="button" className="progress-save" disabled={!bulkDates.length||saving} onClick={()=>void saveBulk()}><Save size={17}/> {saving?"Ukládám…":"Naplánovat"}</button>
     </div>}
 
     <div className="trainer-plan-summary" aria-label="Souhrn měsíčního plánu">
-      <div><span>Naplánováno</span><strong>{plannedTotal.toFixed(1)} km</strong></div>
-      <div><span>Splněno z plánu</span><strong>{completed.toFixed(1)} km</strong></div>
+      <div><span>Naplánováno</span><strong>{plannedTotal.toFixed(strength ? 0 : 1)} {unit}</strong></div>
+      <div><span>Splněno z plánu</span><strong>{completed.toFixed(strength ? 0 : 1)} {unit}</strong></div>
       <div><span>Plnění plánu</span><strong>{planPercent.toFixed(0)} %</strong></div>
       <div><span>Tréninkové dny</span><strong>{dates.length}</strong></div>
     </div>
@@ -319,9 +321,9 @@ export default function TrainerPage(){
         <div><span>Vybraný den</span><h3 id="trainer-day-modal-title">{selectedDate?new Date(selectedDate+"T00:00:00").toLocaleDateString("cs-CZ",{weekday:"long",day:"numeric",month:"long"}):"—"}</h3></div>
         <button type="button" className="ui-icon-button" onClick={()=>setModalOpen(false)} aria-label="Zavřít">×</button>
       </div>
-      <div className={`trainer-modal-status ${modalStatus}`}><i/>{statusLabel(modalStatus)}{selectedInfo.selected&&modalStatus!=="draft"&&<span> · {selectedInfo.actual.toFixed(1)} / {selectedInfo.target.toFixed(1)} km</span>}</div>
-      {selectedIsPast ? <div className="trainer-day-readonly"><strong>{selectedInfo.selected ? statusLabel(selectedInfo.status) : "Volný den"}</strong><span>{selectedInfo.selected ? selectedInfo.actual.toFixed(1)+" / "+selectedInfo.target.toFixed(1)+" km" : "Tento den nebyl naplánovaný."}</span></div> : <div className="trainer-day-modal-form">
-        <label><span>Cíl dne</span><div className={`trainer-km-field ${selectedInfo.status}`}><input className={selectedInfo.status} autoFocus type="number" min=".5" step=".5" inputMode="decimal" placeholder="5" value={selectedKmValue} onChange={e=>updateSelectedKm(e.target.value)}/><b>km</b></div></label>
+      <div className={`trainer-modal-status ${modalStatus}`}><i/>{statusLabel(modalStatus)}{selectedInfo.selected&&modalStatus!=="draft"&&<span> · {selectedInfo.actual.toFixed(strength ? 0 : 1)} / {selectedInfo.target.toFixed(strength ? 0 : 1)} {unit}</span>}</div>
+      {selectedIsPast ? <div className="trainer-day-readonly"><strong>{selectedInfo.selected ? statusLabel(selectedInfo.status) : "Volný den"}</strong><span>{selectedInfo.selected ? selectedInfo.actual.toFixed(strength ? 0 : 1)+" / "+selectedInfo.target.toFixed(strength ? 0 : 1)+" "+unit : "Tento den nebyl naplánovaný."}</span></div> : <div className="trainer-day-modal-form">
+        <label><span>Cíl dne</span><div className={`trainer-km-field ${selectedInfo.status}`}><input className={selectedInfo.status} autoFocus type="number" min={strength ? "1" : ".5"} step={strength ? "1" : ".5"} inputMode="decimal" placeholder="5" value={selectedKmValue} onChange={e=>updateSelectedKm(e.target.value)}/><b>{unit}</b></div></label>
         {saveError&&<p className="trainer-save-error">{saveError}</p>}
         <div className="trainer-day-modal-actions"><button type="button" className={`progress-save trainer-status-action ${modalStatus}`} disabled={!selectedKmValue||num(selectedKmValue)<=0||saving} onClick={()=>void saveSelected()}><Save size={17}/> {saving?"Ukládám…":selectedInfo.selected?"Uložit":"Naplánovat"}</button></div>
       </div>}

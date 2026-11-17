@@ -1,3 +1,4 @@
+import { sharedChallenge } from "../challengeMeasurement";
 import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import type { ChallengeData } from "../../types";
 import { readCommunity } from "./community";
@@ -23,7 +24,7 @@ function numericValue(value: any) {
 export async function fetchChallengeParticipantsPage(id: string, challenge: Pick<ChallengeData, "state" | "kind">, pageSize = 10, cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>): Promise<Page<any>> {
   void pageSize; void cursor;
   const items = await getChallengeParticipants(id);
-  const field = challenge.state === "completed" ? "finalRank" : challenge.kind === "sharedDistance" ? "joinedAt" : "result";
+  const field = challenge.state === "completed" ? "finalRank" : sharedChallenge(challenge.kind) ? "joinedAt" : "result";
   const direction = field === "result" ? -1 : 1;
   items.sort((a, b) => direction * (numericValue(a[field]) - numericValue(b[field])) || (field === "result" ? (numericValue(a.targetReachedAt) || Number.MAX_SAFE_INTEGER) - (numericValue(b.targetReachedAt) || Number.MAX_SAFE_INTEGER) : 0) || a.id.localeCompare(b.id));
   return { items, lastDocument: null, hasMore: false };

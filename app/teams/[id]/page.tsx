@@ -221,6 +221,8 @@ export default function TeamDetailPage() {
           <div className="team-stats-rows">
             <div><ActivityTypeIcon type="běh" size={20} /> <strong>Běh</strong><span>{Number(stats.runningKm || 0).toFixed(1)} km · {Number(stats.runningActivities || 0)} aktivit</span></div>
             <div><ActivityTypeIcon type="chůze" size={20} /> <strong>Chůze</strong><span>{Number(stats.walkingKm || 0).toFixed(1)} km · {Number(stats.walkingActivities || 0)} aktivit</span></div>
+            <div><ActivityTypeIcon type="dřepy" size={20} /> <strong>Dřepy</strong><span>{Number(stats.squatRepetitions || 0).toLocaleString("cs-CZ")} opakování · {Number(stats.squatActivities || 0)} aktivit</span></div>
+            <div><ActivityTypeIcon type="kliky" size={20} /> <strong>Kliky</strong><span>{Number(stats.pushupRepetitions || 0).toLocaleString("cs-CZ")} opakování · {Number(stats.pushupActivities || 0)} aktivit</span></div>
           </div>
         </section>
 

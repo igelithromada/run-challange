@@ -5,7 +5,8 @@ import { syncRunTeamContributions } from "../../../lib/teams/contributions";
 import { NextResponse } from "next/server";
 import { Timestamp } from "firebase-admin/firestore";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
-import { normalizeActivityType } from "../../../lib/validation";
+import { validateActivityValues } from "../../../lib/activity";
+import { isActivityType, normalizeActivityType } from "../../../lib/validation";
 import { cloudinaryPublicIdFromUrl, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
 import { reconcileChallengesForUser } from "../../../lib/challenges/server";
 
@@ -28,17 +29,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Aktivitu můžeš uložit pouze ke svému účtu." }, { status: 403 });
     }
 
-    const km = Number(data.km);
-    const minuty = Number(data.minuty);
-    const type = data.type === "běh" || data.type === "chůze" ? normalizeActivityType(data.type) : "";
-    if (
-      !Number.isFinite(km) || km <= 0 || km > 1000 ||
-      !Number.isFinite(minuty) || minuty <= 0 || minuty > 24 * 60 ||
-      !type
-    ) {
-      return NextResponse.json({ error: "Aktivita obsahuje neplatné údaje." }, { status: 400 });
-    }
-
+    const type = isActivityType(data.type) ? normalizeActivityType(data.type) : "";
+    const values = type ? validateActivityValues(type, data) : null;
+    if (!values) return NextResponse.json({ error: "Aktivita obsahuje neplatné údaje." }, { status: 400 });
     // Team membership is no longer selected per activity. Every activity
     // automatically contributes to every team the user belongs to at the exact
     // moment the activity is created.
@@ -58,7 +51,7 @@ export async function POST(request: Request) {
       email: decoded.email || "",
       nickname: canonicalNickname,
       avatarUrl: canonicalAvatarUrl,
-      km, minuty, tempo: (minuty / km).toFixed(2), type,
+      ...values, type,
       description: typeof data.description === "string" ? data.description.trim().slice(0, 500) : "",
       timestamp: activityDate,
       teamIds: memberTeamIds,

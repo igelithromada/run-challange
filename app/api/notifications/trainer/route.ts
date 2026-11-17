@@ -1,4 +1,5 @@
 import { Timestamp } from "firebase-admin/firestore";
+import { activityLabel, activityUnit } from "../../../lib/activity";
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { getAdminServices } from "../../../lib/firebaseAdmin";
@@ -8,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const TIME_ZONE = "Europe/Prague";
-const ACTIVITY_TYPES: readonly ActivityType[] = ["běh", "chůze"];
+const ACTIVITY_TYPES: readonly ActivityType[] = ["běh", "chůze", "dřepy", "kliky"];
 
 function dateParts(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -52,7 +53,7 @@ function planFor(data: UserData, type: ActivityType, key: string): TrainerPlan |
 function plannedText(plan: TrainerPlan, key: string) {
   const km = Number(plan.dayKm?.[key] || 0);
   if (!(km > 0)) return "";
-  return `${plan.type === "chůze" ? "Chůze" : "Běh"} · ${km.toFixed(1)} km`;
+  return `${activityLabel(plan.type)} · ${km.toLocaleString("cs-CZ")} ${activityUnit(plan.type)}`;
 }
 
 export async function GET(request: Request) {

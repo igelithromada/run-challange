@@ -1,6 +1,6 @@
 import type { Timestamp } from "firebase/firestore";
 
-export type ActivityType = "běh" | "chůze";
+export type ActivityType = "běh" | "chůze" | "dřepy" | "kliky";
 
 export type FirestoreTimestamp = Timestamp | { seconds: number; nanoseconds?: number } | Date;
 
@@ -8,7 +8,7 @@ export interface OrganizationData { id:string; name:string; slug:string; logoUrl
 
 export interface RunData {
   id:string; uid:string; organizationId?:string; email?:string; nickname?:string; avatarUrl?:string; teamId?:string;
-  activityType?:ActivityType; type?:string; km:number|string; minuty:number|string; tempo:number|string; description?:string;
+  repetitions?:number; activityType?:ActivityType; type?:string; km:number|string; minuty:number|string; tempo:number|string; description?:string;
   timestamp?:FirestoreTimestamp; imageUrl?:string; imageUrls?:string[]; imagePublicIds?:string[]; likedBy?:string[];
   likeCount?:number; commentCount?:number; comments?:RunComment[];
 }
@@ -27,7 +27,7 @@ export interface UserData {
   personalTrainerPlans?:Partial<Record<ActivityType,Record<string,TrainerPlan>>>;
 }
 
-export interface TeamStats { runningKm:number; runningActivities:number; walkingKm:number; walkingActivities:number; }
+export interface TeamStats { runningKm:number; runningActivities:number; walkingKm:number; walkingActivities:number; squatRepetitions?:number; squatActivities?:number; pushupRepetitions?:number; pushupActivities?:number; }
 export interface TeamData {
   deleting?: boolean;
   id:string; organizationId?:string; name:string; description?:string; createdBy?:string; managerId?:string; type?:ActivityType; challengeGoalKm?:number;
@@ -35,7 +35,7 @@ export interface TeamData {
   memberIds?:string[]; // legacy compatibility only; new code should use members subcollection
 }
 
-export type ChallengeKind = "distance"|"activities"|"activeDays"|"sharedDistance";
+export type ChallengeKind = "distance"|"activities"|"activeDays"|"sharedDistance"|"repetitions"|"sharedRepetitions";
 export type ChallengeState = "planned"|"active"|"completed";
 
 export interface ChallengeData {
@@ -54,5 +54,6 @@ export interface ChallengeParticipant {
 export interface TeamMember { id:string; nickname:string; email:string; avatarUrl:string; }
 export interface AdminUser extends UserData { id:string; }
 
+/** dayKm/monthlyKm are legacy storage names: values use the selected type’s unit. */
 export interface TrainerPlan { monthKey:string; type:ActivityType; dates:string[]; dayKm:Record<string,number>; monthlyKm:number; createdAt?:FirestoreTimestamp; }
 export interface LegacyTrainerPlan { weekKey?:string; type?:ActivityType; days?:number[]; dayKm?:Record<string,number>; weeklyKm?:number; }

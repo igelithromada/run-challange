@@ -1,3 +1,5 @@
+import { activityAmount } from "../activity";
+import { isActivityType } from "../validation";
 import { notifyChallengeState } from "../notifications/community";
 import { FieldValue, Timestamp, type QueryDocumentSnapshot } from "firebase-admin/firestore";
 
@@ -28,11 +30,11 @@ async function calculateParticipantResult(adminDb:any, challenge:any, participan
   });
   let result=0,targetReachedAt:any=null;
   const goal=Number(challenge.goal||0);
-  if(challenge.kind==="distance"||challenge.kind==="sharedDistance"){
-    result=values.reduce((sum:number,item:any)=>sum+Number(item.data.km||0),0);
-    if(challenge.kind==="distance"&&result>=goal){
+  if(challenge.kind==="distance"||challenge.kind==="sharedDistance"||challenge.kind==="repetitions"||challenge.kind==="sharedRepetitions"){
+    result=values.reduce((sum:number,item:any)=>sum+activityAmount(item.data),0);
+    if((challenge.kind==="distance"||challenge.kind==="repetitions")&&result>=goal){
       let sum=0;
-      for(const item of values){sum+=Number(item.data.km||0);if(sum>=goal){targetReachedAt=item.data.timestamp;break;}}
+      for(const item of values){sum+=activityAmount(item.data);if(sum>=goal){targetReachedAt=item.data.timestamp;break;}}
     }
   } else if(challenge.kind==="activities"){
     result=values.length;
@@ -61,7 +63,7 @@ export async function reconcileChallengesForUser(adminDb:any, userId:string) {
   for(const challengeDoc of snapshot.docs){
     const challenge=challengeDoc.data()||{};
     if(challenge.deleting)continue;
-    if(challenge.activityType!=="běh"&&challenge.activityType!=="chůze")continue;
+    if(!isActivityType(challenge.activityType))continue;
     const recalculate = async (memberId:string) => {
       const memberRef=challengeDoc.ref.collection("participants").doc(memberId);
       await adminDb.runTransaction(async (tx:any) => {
@@ -74,7 +76,7 @@ export async function reconcileChallengesForUser(adminDb:any, userId:string) {
         tx.set(memberRef,calculated,{merge:true});
       });
     };
-    if(challenge.kind==="sharedDistance"){
+    if(challenge.kind==="sharedDistance"||challenge.kind==="sharedRepetitions"){
       const members=await challengeDoc.ref.collection("participants").where("active","==",true).get();
       for(const member of members.docs)await recalculate(member.id);
       await adminDb.runTransaction(async (tx:any) => {
@@ -114,7 +116,7 @@ export async function reconcileChallengeState(adminDb:any, challengeId:string) {
       const calculated=await calculateParticipantResult(adminDb,challenge,{...data,userId:d.id});
       return {doc:d, data:{...data,...calculated}};
     }));
-    if(challenge.kind==="sharedDistance") {
+    if(challenge.kind==="sharedDistance"||challenge.kind==="sharedRepetitions") {
       const shared=finalized.reduce((sum:number,p:any)=>sum+Number(p.data.result||0),0);
       for(let start=0;start<finalized.length;start+=450){
         const batch=adminDb.batch();

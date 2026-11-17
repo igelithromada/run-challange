@@ -6258,3 +6258,9 @@ html[data-theme="white"] .challenges-create input[type="file"]::file-selector-bu
   font:inherit;
   font-weight:700;
 }
+
+/* Keep all activity categories reachable without squeezing labels. */
+.activity-type-selector { display:flex; overflow-x:auto; gap:8px; scroll-snap-type:x proximity; scrollbar-width:thin; padding-bottom:4px; }
+.activity-type-selector > button { flex:1 0 105px; scroll-snap-align:center; }
+.activity-metrics.strength-metrics { display:flex; gap:12px; }
+.activity-metrics.strength-metrics > div { flex:1; }

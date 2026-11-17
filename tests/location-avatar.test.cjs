@@ -4,7 +4,7 @@ const fs = require('node:fs'), path = require('node:path'), vm = require('node:v
 function load(file, dependencies = {}, globals = {}) {
   const filename = path.resolve(file), module = { exports: {} }, req = Module.createRequire(filename);
   const code = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
-  vm.runInNewContext(code, { module, exports: module.exports, require: name => dependencies[name] || req(name), URL, URLSearchParams, AbortController, Date, Response, setTimeout, clearTimeout, console, process, ...globals }, { filename });
+  vm.runInNewContext(code, { module, exports: module.exports, require: name => { if(dependencies[name])return dependencies[name]; if(name.startsWith(".")){for(const ext of [".ts",".tsx"]){const f=path.resolve(path.dirname(filename),name+ext);if(fs.existsSync(f))return load(f,dependencies,globals);}}return req(name); }, URL, URLSearchParams, AbortController, Date, Response, setTimeout, clearTimeout, console, process, ...globals }, { filename });
   return module.exports;
 }
 test('avatar crop stays inside portrait and landscape photos at every position and zoom', () => {

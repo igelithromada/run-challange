@@ -1,4 +1,5 @@
 "use client";
+import { activityLabel } from "../lib/activity";
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -117,7 +118,7 @@ export default function GalleryPage() {
           role="group"
           aria-label="Typ aktivit v galerii"
         >
-          {(["all", "běh", "chůze"] as const).map((value) => (
+          {(["all", "běh", "chůze", "dřepy", "kliky"] as const).map((value) => (
             <button
               type="button"
               className={`tile-button${type === value ? " active" : ""}`}
@@ -126,7 +127,7 @@ export default function GalleryPage() {
               onClick={() => setType(value)}
             >
               {value !== "all" && <ActivityTypeIcon type={value} size={20} />}{" "}
-              {value === "all" ? "Vše" : value === "běh" ? "Běh" : "Chůze"}
+              {value === "all" ? "Vše" : activityLabel(value)}
             </button>
           ))}
         </div>

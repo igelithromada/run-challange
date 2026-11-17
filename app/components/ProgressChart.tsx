@@ -1,4 +1,5 @@
 "use client";
+import { isStrengthActivity, activityUnit } from "../lib/activity";
 import { useMemo, useState } from "react";
 import {
   progressPoints,
@@ -31,6 +32,7 @@ export default function ProgressChart({
   loading?: boolean;
   error?: boolean;
 }) {
+  const strength = isStrengthActivity(activityType), unit = activityUnit(activityType);
   const [from, setFrom] = useState(() =>
     key(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
   );
@@ -69,9 +71,9 @@ export default function ProgressChart({
     >
       <div className="progress-section-title">
         <div>
-          <h2 id="progress-chart-title">Kilometry v čase</h2>
+          <h2 id="progress-chart-title">{strength ? "Opakování v čase" : "Kilometry v čase"}</h2>
           <p>
-            Součet kilometrů pro {activityType === "chůze" ? "chůzi" : "běh"}.
+            Součet {strength ? "opakování" : "kilometrů"} · {activityType}.
             Každý bod představuje jednu aktivitu.
           </p>
         </div>
@@ -120,7 +122,7 @@ export default function ProgressChart({
       ) : (
         <>
           <div className="progress-chart-summary">
-            <strong>{km(max)} km</strong>
+            <strong>{km(max)} {unit}</strong>
             <span>
               {points.length} aktivit ·{" "}
               {points.at(-1)?.completeTime
@@ -149,7 +151,7 @@ export default function ProgressChart({
               aria-valuenow={activeIndex + 1}
               aria-valuetext={
                 active
-                  ? `${date(active.time)}, aktivita ${km(active.km)} km, celkem ${km(active.totalKm)} km`
+                  ? `${date(active.time)}, aktivita ${km(active.km)} ${unit}, celkem ${km(active.totalKm)} ${unit}`
                   : undefined
               }
               onKeyDown={(event) => {
@@ -268,21 +270,19 @@ export default function ProgressChart({
               </strong>
               <div>
                 <span>
-                  Aktivita <b>{km(active.km)} km</b>
+                  Aktivita <b>{km(active.km)} {unit}</b>
                 </span>
                 <span>
                   Čas{" "}
                   <b>{active.minutes > 0 ? duration(active.minutes) : "—"}</b>
                 </span>
-                <span>
-                  Tempo <b>{pace(active.minutes, active.km)}</b>
-                </span>
+                {!strength && <span>Tempo <b>{pace(active.minutes, active.km)}</b></span>}
               </div>
               <div>
                 <span>
-                  Do tohoto bodu <b>{km(active.totalKm)} km</b>
+                  Do tohoto bodu <b>{km(active.totalKm)} {unit}</b>
                 </span>
-                <span>
+                {!strength && <span>
                   Průměrné tempo{" "}
                   <b>
                     {pace(
@@ -290,7 +290,7 @@ export default function ProgressChart({
                       active.totalKm,
                     )}
                   </b>
-                </span>
+                </span>}
               </div>
             </output>
           )}

@@ -1,7 +1,7 @@
 import type { ActivityType, ChallengeKind } from "../types";
 
-export function isActivityType(value: unknown): value is ActivityType { return value === "běh" || value === "chůze"; }
-export function normalizeActivityType(value: unknown): ActivityType { return value === "chůze" ? "chůze" : "běh"; }
+export function isActivityType(value: unknown): value is ActivityType { return value === "běh" || value === "chůze" || value === "dřepy" || value === "kliky"; }
+export function normalizeActivityType(value: unknown): ActivityType { return isActivityType(value) ? value : "běh"; }
 
 export function normalizeName(value: unknown, max = 40): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -9,7 +9,7 @@ export function normalizeName(value: unknown, max = 40): string {
 export function normalizeTeamName(value: unknown): string { return normalizeName(value, 40); }
 export function normalizeDescription(value: unknown): string { return typeof value === "string" ? value.trim().slice(0, 200) : ""; }
 export function isChallengeKind(value: unknown): value is ChallengeKind {
-  return value === "distance" || value === "activities" || value === "activeDays" || value === "sharedDistance";
+  return value === "distance" || value === "activities" || value === "activeDays" || value === "sharedDistance" || value === "repetitions" || value === "sharedRepetitions";
 }
 export function isValidChallengeGoal(kind: ChallengeKind, value: unknown): boolean {
   const n = Number(value);

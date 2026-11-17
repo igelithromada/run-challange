@@ -161,7 +161,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           avatarUrl: typeof update.avatarUrl === "string"
             ? update.avatarUrl
             : (data.avatarUrl || ""),
-          activityType: data.defaultActivity === "chůze" ? "chůze" : "běh",
+          activityType: (data.defaultActivity === "dřepy" || data.defaultActivity === "kliky" || data.defaultActivity === "chůze") ? data.defaultActivity : "běh",
         });
       } catch (error) {
         // Profilová synchronizace nesmí shodit zbytek aplikace.

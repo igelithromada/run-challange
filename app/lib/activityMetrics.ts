@@ -1,14 +1,15 @@
-export type ActivityMetric = { km: number; minutes: number; pace: number; count: number };
+import { isStrengthActivity } from "./activity";
+export type ActivityMetric = { km: number; repetitions:number; minutes: number; pace: number; count: number };
 
 export const numberValue = (value: unknown) => {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
 };
 
-export const activityMetrics = (runs: Array<{ km?: unknown; minuty?: unknown }>): ActivityMetric => {
-  const km = runs.reduce((sum, run) => sum + numberValue(run.km), 0);
+export const activityMetrics = (runs: Array<{ km?: unknown; repetitions?:unknown; type?:string; minuty?: unknown }>): ActivityMetric => {
+  const km = runs.reduce((sum, run) => sum + (isStrengthActivity(run.type) ? 0 : numberValue(run.km)), 0);
   const minutes = runs.reduce((sum, run) => sum + numberValue(run.minuty), 0);
-  return { km, minutes, pace: km > 0 ? minutes / km : 0, count: runs.length };
+  return { km, repetitions: runs.reduce((sum, run) => sum + (isStrengthActivity(run.type) ? numberValue(run.repetitions) : 0), 0), minutes, pace: km > 0 ? runs.filter(run => !isStrengthActivity(run.type)).reduce((sum, run) => sum + numberValue(run.minuty), 0) / km : 0, count: runs.length };
 };
 
 export const formatPace = (pace: number) => {

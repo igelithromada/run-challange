@@ -1,4 +1,5 @@
 "use client";
+import { isStrengthActivity } from "../lib/activity";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
 import { formatResultDuration, type ResultPerson } from "../lib/results";
 import { activityAwards } from "../lib/awards";
@@ -12,10 +13,11 @@ export default function ResultsSummary({
 }: {
   runs: RunData[];
   people: ResultPerson[];
-  metric: "km" | "tempo" | "badges";
+  metric: "km" | "tempo" | "badges" | "repetitions";
   type: ActivityType;
   mine: boolean;
 }) {
+  const strength = isStrengthActivity(type);
   const totals = activityMetrics(runs),
     count = new Set(runs.map((run) => run.uid)).size,
     badges = people.reduce((sum, p) => sum + p.awardCount, 0);
@@ -31,14 +33,14 @@ export default function ResultsSummary({
               ? "Odznaky celkem"
               : metric === "tempo"
                 ? "Průměrné tempo"
-                : "Celkem km"}
+                : strength ? "Celkem opakování" : "Celkem km"}
           </span>
           <strong>
             {metric === "badges"
               ? badges
               : metric === "tempo"
                 ? formatPace(totals.pace)
-                : `${totals.km.toFixed(2)} km`}
+                : strength ? totals.repetitions.toLocaleString("cs-CZ") : `${totals.km.toFixed(2)} km`}
           </strong>
         </div>
         <p>
@@ -51,17 +53,14 @@ export default function ResultsSummary({
         <summary>Podrobný souhrn</summary>
         <dl>
           <div>
-            <dt>Celkem km</dt>
-            <dd>{totals.km.toFixed(2)} km</dd>
+            <dt>{strength ? "Celkem opakování" : "Celkem km"}</dt>
+            <dd>{strength ? totals.repetitions.toLocaleString("cs-CZ") : totals.km.toFixed(2)+" km"}</dd>
           </div>
           <div>
-            <dt>Čas</dt>
-            <dd>{formatResultDuration(totals.minutes)}</dd>
+            <dt>{strength ? "Zaznamenaný čas" : "Čas"}</dt>
+            <dd>{strength && totals.minutes === 0 ? "—" : formatResultDuration(totals.minutes)}</dd>
           </div>
-          <div>
-            <dt>Průměrné tempo</dt>
-            <dd>{formatPace(totals.pace)}</dd>
-          </div>
+          {!strength && <div><dt>Průměrné tempo</dt><dd>{formatPace(totals.pace)}</dd></div>}
           <div>
             <dt>Aktivity</dt>
             <dd>{totals.count}</dd>

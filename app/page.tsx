@@ -25,7 +25,7 @@ export default function Page() {
   const [olderCursor, setOlderCursor] = useState<import("firebase/firestore").QueryDocumentSnapshot | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [selectedType, setSelectedType] = useState<"běh" | "chůze">("běh");
+  const [selectedType, setSelectedType] = useState<import("./types").ActivityType>("běh");
   const [showImages, setShowImages] = useState<string[] | null>(null);
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const router = useRouter();
@@ -37,10 +37,10 @@ export default function Page() {
       if (!user) { router.push("/login"); return; }
       try {
         const cachedActivity = localStorage.getItem("dolni-lhota-default-activity-v1");
-        if (active && (cachedActivity === "běh" || cachedActivity === "chůze")) setSelectedType(cachedActivity);
+        if (active && (cachedActivity === "běh" || cachedActivity === "chůze" || cachedActivity === "dřepy" || cachedActivity === "kliky")) setSelectedType(cachedActivity);
         const profile = await getUserProfile(user.uid);
         if (!active || !profile || window.location.hash.startsWith("#run-")) return;
-        const remoteActivity = profile.defaultActivity === "chůze" ? "chůze" : "běh";
+        const remoteActivity = (profile.defaultActivity === "dřepy" || profile.defaultActivity === "kliky" || profile.defaultActivity === "chůze") ? profile.defaultActivity : "běh";
         setSelectedType(remoteActivity);
         try { localStorage.setItem("dolni-lhota-default-activity-v1", remoteActivity); } catch {}
       } catch {}
@@ -61,7 +61,7 @@ export default function Page() {
         if (!active || request !== version || auth.currentUser?.uid !== user.uid) return;
         if (!run) { showAppToast("Tato aktivita už byla odstraněna.", "error"); return; }
         setOlderRuns(previous => [run, ...previous.filter(item => item.id !== run.id)]);
-        setSelectedType(run.type === "chůze" ? "chůze" : "běh");
+        setSelectedType((run.type === "dřepy" || run.type === "kliky" || run.type === "chůze") ? run.type : "běh");
         setNotificationRunId(run.id);
       } catch {
         if (active && request === version) showAppToast("Aktivitu z upozornění se nepodařilo načíst.", "error");
@@ -185,7 +185,7 @@ export default function Page() {
       <div className="container">
         <h1 className="sr-only">Dolní Lhota v pohybu</h1>
 
-        <RunWeatherRecommendation type={selectedType} />
+        {(selectedType === "běh" || selectedType === "chůze") && <RunWeatherRecommendation type={selectedType} />}
 
         <section className="home-quick-add" aria-labelledby="home-add-heading">
           <div className="home-section-heading">
@@ -196,7 +196,7 @@ export default function Page() {
           <ActivityTypeSelector value={selectedType} onChange={(value) => { setSelectedType(value); try { localStorage.setItem("dolni-lhota-default-activity-v1", value); } catch {} }} />
 
           <div className="run-form-wrap">
-            <RunForm type={selectedType} />
+            <RunForm key={selectedType} type={selectedType} />
           </div>
         </section>
 

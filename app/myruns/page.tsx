@@ -1,4 +1,5 @@
 "use client";
+import { isStrengthActivity, activityAmount } from "../lib/activity";
 import { preparePhoto } from "../lib/preparePhoto";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Timestamp } from "firebase/firestore";
@@ -87,7 +88,7 @@ export default function MyRunsPage() {
   useEffect(() => {
     try {
       const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
-      if (cached === "běh" || cached === "chůze") setSelectedType(cached);
+      if (cached === "běh" || cached === "chůze" || cached === "dřepy" || cached === "kliky") setSelectedType(cached);
     } catch {}
   }, []);
   const [dateFrom, setDateFrom] = useState("");
@@ -167,6 +168,8 @@ export default function MyRunsPage() {
     if (dateTo && date > new Date(dateTo + "T23:59:59.999")) return false;
     return true;
   });
+  const strength = isStrengthActivity(selectedType);
+  useEffect(() => { setEditingId(null); }, [selectedType]);
   const metrics = activityMetrics(filteredRuns);
   const totalKm = metrics.km;
   const totalMin = metrics.minutes;
@@ -174,7 +177,7 @@ export default function MyRunsPage() {
 
 
   const handleEdit = (run: RunData) => {
-    setEditingId(run.id); setKm(String(run.km)); setDuration(durationString(Number(run.minuty)));
+    setEditingId(run.id); setKm(String(activityAmount(run))); setDuration(durationString(Number(run.minuty)));
     const totalSeconds = Math.round(Number(run.minuty) * 60); setDurationMinutes(String(Math.floor(totalSeconds / 60))); setDurationSeconds(String(totalSeconds % 60).padStart(2,"0"));
     setActivityDate(toLocalInput(dateOf(run.timestamp))); setDescription(run.description || ""); setFile(null); setActionError("");
   };
@@ -184,8 +187,8 @@ export default function MyRunsPage() {
     const minutesValue = Number(durationMinutes);
     const secondsValue = Number(durationSeconds);
     const seconds = Number.isFinite(minutesValue) && Number.isFinite(secondsValue) && secondsValue >= 0 && secondsValue < 60 ? minutesValue * 60 + secondsValue : 0;
-    if (!Number.isFinite(parsedKm) || parsedKm <= 0 || !Number.isFinite(minutesValue) || minutesValue < 0 || seconds <= 0 || !activityDate) {
-      setActionError("Zkontroluj vzdálenost, čas ve formátu MM:SS a datum."); return;
+    if (!Number.isFinite(parsedKm) || parsedKm <= 0 || !Number.isFinite(minutesValue) || minutesValue < 0 || (!strength && seconds <= 0) || (strength && (!Number.isInteger(parsedKm) || parsedKm > 100000)) || !activityDate) {
+      setActionError("Zkontroluj počet nebo vzdálenost, čas a datum."); return;
     }
     if (file && (!file.type.startsWith("image/"))) {
       setActionError("Vyber fotografii."); return;
@@ -194,7 +197,7 @@ export default function MyRunsPage() {
     setBusy(true); setActionError("");
     try {
       const updates: Partial<RunData> = {
-        km: parsedKm, minuty: seconds / 60, tempo: (seconds / 60 / parsedKm).toFixed(2),
+        km: strength ? 0 : parsedKm, repetitions: strength ? parsedKm : 0, minuty: seconds / 60, tempo: strength ? "0" : (seconds / 60 / parsedKm).toFixed(2),
         timestamp: Timestamp.fromDate(new Date(activityDate)),
         description: description.trim().slice(0, 500)
       };
@@ -278,7 +281,7 @@ export default function MyRunsPage() {
     <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
     <div className="container myruns-page">
       <div className="control-caption">Typ aktivity</div>
-      <ActivityTypeSelector value={selectedType as "běh" | "chůze"} onChange={setSelectedType} />
+      <ActivityTypeSelector value={selectedType as import("../types").ActivityType} onChange={setSelectedType} />
 
       <details className="activity-date-range">
         <summary>Období{(dateFrom || dateTo) && <span>{dateFrom ? dateFrom.split("-").reverse().join(". ") : "začátek"} – {dateTo ? dateTo.split("-").reverse().join(". ") : "dnes"}</span>}</summary>
@@ -290,18 +293,18 @@ export default function MyRunsPage() {
       </details>
       <div className="tile-group activity-summary-grid">
         <div className="tile"><ListChecks/><span>Počet aktivit</span><strong>{filteredRuns.length}</strong></div>
-        <div className="tile"><MapPin/><span>Celkem km</span><strong>{totalKm.toFixed(2)} km</strong></div>
-        <div className="tile"><Clock3/><span>Čas</span><strong>{(totalMin / 60).toFixed(2)} h</strong></div>
-        <div className="tile"><Gauge/><span>Prům. tempo</span><strong>{formatTime(avgTempo)} /km</strong></div>
+        <div className="tile"><MapPin/><span>{strength ? "Celkem opakování" : "Celkem km"}</span><strong>{strength ? metrics.repetitions.toLocaleString("cs-CZ") : totalKm.toFixed(2)+" km"}</strong></div>
+        <div className="tile"><Clock3/><span>{strength ? "Zaznamenaný čas" : "Čas"}</span><strong>{strength && totalMin === 0 ? "—" : (totalMin / 60).toFixed(2)+" h"}</strong></div>
+        {!strength && <div className="tile"><Gauge/><span>Prům. tempo</span><strong>{formatTime(avgTempo)} /km</strong></div>}
       </div>
       <h2 className="centered-title">Moje záznamy</h2>
 
       <div className="list-container myruns-list">
         {filteredRuns.map(run => editingId === run.id ? <section key={run.id} className="run-form-panel activity-edit-form" aria-label="Upravit aktivitu">
           <div className="run-form-heading"><div><span className="run-form-eyebrow">ÚPRAVA AKTIVITY</span><h3>Upravit aktivitu</h3></div><button type="button" className="run-form-close" onClick={() => { setEditingId(null); setFile(null); setActionError(""); }} disabled={busy} aria-label="Zavřít formulář">×</button></div>
-          <label className="run-form-field"><span>Vzdálenost <small>km</small></span><input type="number" min="0.1" step="0.01" value={km} onChange={e => setKm(e.target.value)} /></label>
-          <div className="run-form-field"><span>Celkový čas <small>minuty a sekundy</small></span><div className="run-form-time-fields"><label className="run-form-unit-field"><input aria-label="Minuty" type="number" min="0" value={durationMinutes} onChange={e=>setDurationMinutes(e.target.value.replace(/[^0-9]/g,"").slice(0,4))}/></label><label className="run-form-unit-field"><input aria-label="Sekundy" type="number" min="0" max="59" value={durationSeconds} onChange={e=>setDurationSeconds(e.target.value.replace(/[^0-9]/g,"").slice(0,2))}/></label></div></div>
-          <label className="run-form-field"><span>Popis <small>volitelné</small></span><textarea className="run-form-description" maxLength={500} placeholder="Jaký byl dnešní běh nebo chůze?" value={description} onChange={e => setDescription(e.target.value)} /></label>
+          <label className="run-form-field"><span>{strength ? "Počet opakování" : "Vzdálenost (km)"}</span><input type="number" min={strength ? "1" : "0.1"} step={strength ? "1" : "0.01"} value={km} onChange={e => setKm(e.target.value)} /></label>
+          <div className="run-form-field"><span>Celkový čas <small>{strength ? "volitelné" : "minuty a sekundy"}</small></span><div className="run-form-time-fields"><label className="run-form-unit-field"><input aria-label="Minuty" type="number" min="0" value={durationMinutes} onChange={e=>setDurationMinutes(e.target.value.replace(/[^0-9]/g,"").slice(0,4))}/></label><label className="run-form-unit-field"><input aria-label="Sekundy" type="number" min="0" max="59" value={durationSeconds} onChange={e=>setDurationSeconds(e.target.value.replace(/[^0-9]/g,"").slice(0,2))}/></label></div></div>
+          <label className="run-form-field"><span>Popis <small>volitelné</small></span><textarea className="run-form-description" maxLength={500} placeholder="Jaká byla dnešní aktivita?" value={description} onChange={e => setDescription(e.target.value)} /></label>
           <label className="run-form-field"><span>Datum a čas aktivity</span><input type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} /></label>
           <label className="run-form-upload"><span>{file ? `Vybraná fotografie: ${file.name}` : "Přidat fotografii (volitelné)"}</span><input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} /></label>
           <div className="run-form-actions run-form-actions-single"><button type="button" className="run-primary-button" disabled={busy} onClick={() => handleUpdate(run.id)}>{busy ? "Ukládám…" : "Uložit změny"}</button></div>

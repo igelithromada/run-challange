@@ -1,6 +1,7 @@
+import { activityAmount } from "./activity";
 import { parseActivityDate } from "./runData";
 export type ChartRun = {
-  id: string;
+  id: string; type?:string; repetitions?:number;
   km: number | string;
   minuty: number | string;
   timestamp?: unknown;
@@ -29,7 +30,7 @@ export function progressPoints(
     .map((run) => ({
       ...run,
       time: parseActivityDate(run.timestamp)?.getTime(),
-      km: Number(run.km),
+      km: activityAmount(run),
       minutes: Number(run.minuty),
     }))
     .filter(

@@ -1,3 +1,4 @@
+import { normalizeActivityType } from "./validation";
 import { activityAwards, awardTotal, type Award } from "./awards";
 import { activityMetrics, type ActivityMetric } from "./activityMetrics";
 import { parseActivityDate } from "./runData";
@@ -77,7 +78,7 @@ export function resultRuns(
 export function resultPeople(
   runs: RunData[],
   profiles: Record<string, PublicProfileData>,
-  metric: "km" | "tempo" | "badges",
+  metric: "km" | "tempo" | "badges" | "repetitions",
 ): ResultPerson[] {
   const groups = new Map<string, RunData[]>();
   for (const run of runs) {
@@ -91,7 +92,7 @@ export function resultPeople(
       avatar = items.find((r) => r.avatarUrl);
     const awards = activityAwards(
       items,
-      items[0]?.type === "chůze" ? "chůze" : "běh",
+      normalizeActivityType(items[0]?.type),
     );
     return {
       awards,
@@ -112,7 +113,7 @@ export function resultPeople(
         ? b.awardCount - a.awardCount
         : metric === "tempo"
           ? (a.pace > 0 ? a.pace : Infinity) - (b.pace > 0 ? b.pace : Infinity)
-          : b.km - a.km;
+          : metric === "repetitions" ? b.repetitions - a.repetitions : b.km - a.km;
     return (
       difference ||
       a.name.localeCompare(b.name, "cs") ||

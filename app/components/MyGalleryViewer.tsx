@@ -1,4 +1,5 @@
 "use client";
+import { activityLabel, activityAmount, activityUnit } from "../lib/activity";
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import type { GalleryPhoto } from "../lib/myGallery";
@@ -97,8 +98,8 @@ export default function MyGalleryViewer({
             }) || "Datum neuvedeno"}
           </strong>
           <span>
-            {photo.type === "běh" ? "Běh" : "Chůze"} ·{" "}
-            {photo.km.toLocaleString("cs-CZ")} km
+            {activityLabel(photo.type)} ·{" "}
+            {activityAmount(photo).toLocaleString("cs-CZ")} {activityUnit(photo.type)}
           </span>
           <small>Mezi fotkami přejeď prstem doleva nebo doprava.</small>
         </div>

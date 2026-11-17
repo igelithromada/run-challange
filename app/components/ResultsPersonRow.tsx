@@ -1,29 +1,32 @@
 "use client";
+import { isStrengthActivity } from "../lib/activity";
 import { Trophy } from "lucide-react";
 import { formatPace } from "../lib/activityMetrics";
 import { formatResultDuration, type ResultPerson } from "../lib/results";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 export default function ResultsPersonRow({
   person,
+  type = "běh",
   metric,
   alpha,
   mine,
   winner,
   onOpen,
 }: {
-  person: ResultPerson;
-  metric: "km" | "tempo" | "badges";
+  person: ResultPerson; type?:string;
+  metric: "km" | "tempo" | "badges" | "repetitions";
   alpha: boolean;
   mine: boolean;
   winner: boolean;
   onOpen: () => void;
 }) {
+  const strength = isStrengthActivity(type);
   const value =
     metric === "badges"
       ? `${person.awardCount}×`
       : metric === "tempo"
         ? formatPace(person.pace)
-        : `${person.km.toFixed(2)} km`;
+        : strength ? `${person.repetitions.toLocaleString("cs-CZ")}×` : `${person.km.toFixed(2)} km`;
   return (
     <article
       className={`results-person${winner ? ` is-winner rank-${person.rank}` : ""}${mine ? " is-mine" : ""}`}
@@ -70,17 +73,14 @@ export default function ResultsPersonRow({
         <summary>{metric === "badges" ? "Odznaky" : "Podrobnosti"}</summary>
         <dl>
           <div>
-            <dt>Celkem km</dt>
-            <dd>{person.km.toFixed(2)} km</dd>
+            <dt>{strength ? "Celkem opakování" : "Celkem km"}</dt>
+            <dd>{strength ? person.repetitions.toLocaleString("cs-CZ") : person.km.toFixed(2)+" km"}</dd>
           </div>
           <div>
-            <dt>Čas</dt>
-            <dd>{formatResultDuration(person.minutes)}</dd>
+            <dt>{strength ? "Zaznamenaný čas" : "Čas"}</dt>
+            <dd>{strength && person.minutes === 0 ? "—" : formatResultDuration(person.minutes)}</dd>
           </div>
-          <div>
-            <dt>Průměrné tempo</dt>
-            <dd>{formatPace(person.pace)}</dd>
-          </div>
+          {!strength && <div><dt>Průměrné tempo</dt><dd>{formatPace(person.pace)}</dd></div>}
           <div>
             <dt>Aktivity</dt>
             <dd>{person.count}</dd>

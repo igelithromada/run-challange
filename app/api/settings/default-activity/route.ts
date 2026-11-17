@@ -1,3 +1,4 @@
+import { isActivityType } from "../../../lib/validation";
 import { NextResponse } from "next/server";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 
@@ -8,7 +9,7 @@ export async function POST(request: Request) {
   try {
     const { decoded, adminDb } = await requireUser(request);
     const body = await request.json().catch(() => ({}));
-    const defaultActivity = body?.defaultActivity === "chůze" ? "chůze" : body?.defaultActivity === "běh" ? "běh" : null;
+    const defaultActivity = isActivityType(body?.defaultActivity) ? body.defaultActivity : null;
 
     if (!defaultActivity) {
       return NextResponse.json({ error: "Neplatná výchozí aktivita." }, { status: 400 });

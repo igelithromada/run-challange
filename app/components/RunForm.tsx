@@ -1,4 +1,5 @@
 "use client";
+import { isStrengthActivity, activityLabel as labelFor } from "../lib/activity";
 import { preparePhoto } from "../lib/preparePhoto";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -51,8 +52,9 @@ const translateSaveError = (error: unknown) => {
 };
 
 export default function RunForm({ type }: {
-  type: "běh" | "chůze";
+  type: import("../types").ActivityType;
 }) {
+  const strength = isStrengthActivity(type);
   const [showForm, setShowForm] = useState(false);
   const [showGpsRecorder, setShowGpsRecorder] = useState(false);
   const [km, setKm] = useState("");
@@ -66,14 +68,14 @@ export default function RunForm({ type }: {
   const [uploadStatus, setUploadStatus] = useState("");
   const submissionIdRef = useRef<string | null>(null);
   const formPanelRef = useRef<HTMLElement | null>(null);
-  const activityLabel = type === "chůze" ? "chůzi" : "běh";
-  const activityPast = type === "chůze" ? "Chůze byla" : "Běh byl";
+  const activityLabel = strength ? labelFor(type).toLowerCase() : type === "chůze" ? "chůzi" : "běh";
+  const activityPast = "Aktivita byla";
 
   const previews = useMemo(() => files.map(file => ({ file, url: URL.createObjectURL(file) })), [files]);
   useEffect(() => () => previews.forEach(item => URL.revokeObjectURL(item.url)), [previews]);
 
-  const minutesValue = durationMinutes.trim() === "" ? null : Number(durationMinutes);
-  const secondsValue = durationSeconds.trim() === "" ? null : Number(durationSeconds);
+  const minutesValue = durationMinutes.trim() === "" ? (strength ? 0 : null) : Number(durationMinutes);
+  const secondsValue = durationSeconds.trim() === "" ? (strength ? 0 : null) : Number(durationSeconds);
   const parsedDuration =
     minutesValue !== null && secondsValue !== null &&
     Number.isInteger(minutesValue) && minutesValue >= 0 && minutesValue <= 9999 &&
@@ -83,7 +85,7 @@ export default function RunForm({ type }: {
   const distanceValue = Number(km.replace(",", "."));
   const pace = distanceValue > 0 && parsedDuration !== null ? parsedDuration / distanceValue : null;
 
-  const handleGpsFinished = (draft: { type: "běh" | "chůze"; km: number; seconds: number }) => {
+  const handleGpsFinished = (draft: { type: import("../types").ActivityType; km: number; seconds: number }) => {
     setKm(draft.km.toFixed(2));
     setDurationMinutes(String(Math.floor(draft.seconds / 60)));
     setDurationSeconds(String(draft.seconds % 60).padStart(2, "0"));
@@ -145,12 +147,14 @@ export default function RunForm({ type }: {
     };
   }, [showForm]);
 
+  useEffect(() => { reset(); setShowForm(false); }, [type]);
+
   const handleSubmit = async () => {
     if (saving) return;
 
     const kmVal = Number(km.replace(",", "."));
-    if (!km.trim() || !Number.isFinite(kmVal) || kmVal <= 0 || parsedDuration === null || parsedDuration <= 0) {
-      setError("Zadej platnou vzdálenost a celkový čas. Sekundy musí být v rozsahu 0–59.");
+    if (!km.trim() || !Number.isFinite(kmVal) || kmVal <= 0 || parsedDuration === null || (!strength && parsedDuration <= 0) || (strength && (!Number.isInteger(kmVal) || kmVal > 100000))) {
+      setError(strength ? "Zadej celý počet opakování od 1 do 100 000. Čas je volitelný." : "Zadej platnou vzdálenost a celkový čas. Sekundy musí být v rozsahu 0–59.");
       return;
     }
     if (!activityDate || Number.isNaN(new Date(activityDate).getTime())) {
@@ -200,9 +204,10 @@ export default function RunForm({ type }: {
         email: user.email || "",
         nickname: typeof userData.nickname === "string" ? userData.nickname : "",
         avatarUrl: typeof userData.avatarUrl === "string" ? userData.avatarUrl : "",
-        km: kmVal,
+        km: strength ? 0 : kmVal,
+        repetitions: strength ? kmVal : 0,
         minuty: parsedDuration / 60,
-        tempo: (parsedDuration / 60 / kmVal).toFixed(2),
+        tempo: strength ? "0" : (parsedDuration / 60 / kmVal).toFixed(2),
         type,
         description: description.trim().slice(0, 500),
         timestamp: new Date(activityDate),
@@ -254,25 +259,25 @@ export default function RunForm({ type }: {
             </button>
           </div>
 
-          {!showGpsRecorder && (
+          {!strength && !showGpsRecorder && (
             <button type="button" className="run-secondary-button gps-form-launch" onClick={() => setShowGpsRecorder(true)} disabled={saving}>
               <MapPin size={18} aria-hidden="true" /> Změřit trasu pomocí GPS
             </button>
           )}
 
-          {showGpsRecorder ? (
+          {showGpsRecorder && !strength && (type === "běh" || type === "chůze") ? (
             <div className="run-form-gps-recorder">
               <ActivityRecorder type={type} onFinished={handleGpsFinished} />
             </div>
           ) : (
             <>
               <label className="run-form-field">
-                <span>Vzdálenost <small>km</small></span>
-                <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label="Vzdálenost v kilometrech" type="number" min="0.1" step="0.01" inputMode="decimal" placeholder="Např. 5,2" value={km} onChange={e => setKm(e.target.value)} />
+                <span>{strength ? "Počet opakování" : "Vzdálenost"} <small>{strength ? "" : "km"}</small></span>
+                <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label={strength ? "Počet opakování" : "Vzdálenost v kilometrech"} type="number" min={strength ? "1" : "0.1"} step={strength ? "1" : "0.01"} inputMode={strength ? "numeric" : "decimal"} placeholder={strength ? "Např. 30" : "Např. 5,2"} value={km} onChange={e => setKm(e.target.value)} />
               </label>
 
               <div className="run-form-field">
-                <span>Celkový čas <small>minuty a sekundy</small></span>
+                <span>Celkový čas <small>{strength ? "volitelné" : "minuty a sekundy"}</small></span>
                 <div className="run-form-time-fields">
                   <label className="run-form-unit-field">
                     <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label="Minuty" type="number" min="0" max="9999" step="1" inputMode="numeric" placeholder="min" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} />
@@ -283,7 +288,7 @@ export default function RunForm({ type }: {
                 </div>
               </div>
 
-              {pace !== null && pace > 0 && (
+              {!strength && pace !== null && pace > 0 && (
                 <div className="run-form-pace" role="status">
                   <span>Vypočítané tempo</span>
                   <strong>{formatDuration(Math.round(pace))} /km</strong>
@@ -292,7 +297,7 @@ export default function RunForm({ type }: {
 
               <label className="run-form-field">
                 <span>Popis <small>volitelné</small></span>
-                <textarea onFocus={e => scrollFieldIntoView(e.currentTarget)} className="run-form-description" maxLength={500} placeholder="Jaký byl dnešní běh nebo chůze?" value={description} onChange={e => setDescription(e.target.value)} />
+                <textarea onFocus={e => scrollFieldIntoView(e.currentTarget)} className="run-form-description" maxLength={500} placeholder="Jaká byla dnešní aktivita?" value={description} onChange={e => setDescription(e.target.value)} />
               </label>
 
               <label className="run-form-field">

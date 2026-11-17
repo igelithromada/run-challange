@@ -1,4 +1,5 @@
 "use client";
+import { activityAmount, activityUnit, isStrengthActivity } from "../../lib/activity";
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -16,7 +17,7 @@ import { useSharedFirestoreQuery } from "../../lib/useSharedFirestoreQuery";
 
 type RunData = {
   id: string; uid?: string; email?: string; nickname?: string; avatarUrl?: string;
-  km: number; minuty: number; tempo: number | string; type?: string; teamId?: string;
+  repetitions?:number; km: number; minuty: number; tempo: number | string; type?: string; teamId?: string;
   imageUrls?: string[]; imageUrl?: string; timestamp?: { seconds: number }; likedBy?: string[]; likeCount?: number; commentCount?: number;
 };
 
@@ -28,7 +29,7 @@ export default function UserPage() {
   useEffect(() => {
     try {
       const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
-      if (cached === "běh" || cached === "chůze") setSelectedType(cached);
+      if (cached === "běh" || cached === "chůze" || cached === "dřepy" || cached === "kliky") setSelectedType(cached);
     } catch {}
   }, []);
   const [authUid, setAuthUid] = useState("");
@@ -111,7 +112,7 @@ export default function UserPage() {
           <div className="user-page-avatar">
             {userInfo.avatarUrl ? <img src={cloudinaryImageUrl(userInfo.avatarUrl, 128)} alt="" /> : profileName.charAt(0).toUpperCase()}
           </div>
-          <div><span className="user-page-eyebrow">AKTIVITY UŽIVATELE</span><h1>{profileName}</h1><p>{filteredRuns.length} {filteredRuns.length === 1 ? "aktivita" : filteredRuns.length < 5 ? "aktivity" : "aktivit"} · {filteredRuns.reduce((sum, run) => sum + (Number(run.km) || 0), 0).toFixed(1)} km</p></div>
+          <div><span className="user-page-eyebrow">AKTIVITY UŽIVATELE</span><h1>{profileName}</h1><p>{filteredRuns.length} {filteredRuns.length === 1 ? "aktivita" : filteredRuns.length < 5 ? "aktivity" : "aktivit"} · {filteredRuns.reduce((sum, run) => sum + activityAmount(run), 0).toLocaleString("cs-CZ",{maximumFractionDigits:isStrengthActivity(selectedType)?0:1})} {activityUnit(selectedType)}</p></div>
         </header>
 
         <ActivityTypeSelector value={selectedType} onChange={setSelectedType} ariaLabel="Typ aktivity" />

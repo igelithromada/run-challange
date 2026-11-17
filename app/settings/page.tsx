@@ -33,7 +33,7 @@ export default function SettingsPage() {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [gradientEnabled, setGradientEnabled] = useState(true);
   const [hapticsEnabled, setHapticsEnabledState] = useState(true);
-  const [defaultActivity, setDefaultActivity] = useState<"běh" | "chůze">("běh");
+  const [defaultActivity, setDefaultActivity] = useState<import("../types").ActivityType>("běh");
   const [saving, setSaving] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
@@ -51,7 +51,7 @@ export default function SettingsPage() {
   useEffect(() => {
     try {
       const cachedActivity = localStorage.getItem(DEFAULT_ACTIVITY_KEY);
-      if (cachedActivity === "běh" || cachedActivity === "chůze") setDefaultActivity(cachedActivity);
+      if (cachedActivity === "běh" || cachedActivity === "chůze" || cachedActivity === "dřepy" || cachedActivity === "kliky") setDefaultActivity(cachedActivity);
       const cachedHaptics = localStorage.getItem("dolni-lhota-haptics-v1");
       if (cachedHaptics !== null) setHapticsEnabledState(cachedHaptics !== "false");
       const cached = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
@@ -97,7 +97,7 @@ export default function SettingsPage() {
           const effectiveHaptics = localHaptics ?? remoteHaptics;
           setHapticsEnabledState(effectiveHaptics);
           setHapticsEnabled(effectiveHaptics);
-          const remoteDefaultActivity = data.defaultActivity === "chůze" ? "chůze" : "běh";
+          const remoteDefaultActivity = (data.defaultActivity === "dřepy" || data.defaultActivity === "kliky" || data.defaultActivity === "chůze") ? data.defaultActivity : "běh";
           setDefaultActivity(remoteDefaultActivity);
           const remoteSocial = data.socialNotifications || {};
           setSocialNotifications({ likes: remoteSocial.likes !== false, comments: remoteSocial.comments !== false, teams: remoteSocial.teams !== false, challenges: remoteSocial.challenges !== false });
@@ -203,7 +203,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleDefaultActivityChange = async (value: "běh" | "chůze") => {
+  const handleDefaultActivityChange = async (value: import("../types").ActivityType) => {
     const activeUserId = userId || auth.currentUser?.uid;
     const currentUser = auth.currentUser;
     if (!activeUserId || !currentUser) {
@@ -224,7 +224,7 @@ export default function SettingsPage() {
       invalidatePublicProfileCache(currentUser.uid);
       setDefaultActivity(value);
       try { localStorage.setItem(DEFAULT_ACTIVITY_KEY, value); } catch {}
-      flash(value === "běh" ? "Výchozí aktivita: běh" : "Výchozí aktivita: chůze");
+      flash(`Výchozí aktivita: ${value}`);
     } catch (error) {
       console.error("Nepodařilo se uložit výchozí aktivitu", error);
       flash(error instanceof Error ? error.message : "Výchozí aktivitu se nepodařilo uložit.");

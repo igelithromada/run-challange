@@ -1,10 +1,11 @@
 "use client";
+import { activityAmount, activityUnit, isStrengthActivity } from "../lib/activity";
 import { useEffect, useState } from "react";
 import { Save, Target } from "lucide-react";
 import { getUserProfile, mergeUserProfile } from "../lib/services/users";
 import { parseActivityDate } from "../lib/runData";
 import type { ActivityType, RunData } from "../types";
-type GoalRun = Pick<RunData, "km" | "type" | "timestamp">;
+type GoalRun = Pick<RunData, "km" | "type" | "timestamp" | "repetitions">;
 export default function TrainingGoals({
   uid,
   type,
@@ -16,6 +17,7 @@ export default function TrainingGoals({
   runs: GoalRun[];
   onSaved?: (monthly: number) => void;
 }) {
+  const strength = isStrengthActivity(type), unit = activityUnit(type);
   const [weekly, setWeekly] = useState("25"),
     [monthly, setMonthly] = useState("100"),
     [loading, setLoading] = useState(true),
@@ -71,7 +73,7 @@ export default function TrainingGoals({
   for (const run of runs) {
     if ((run.type || "běh") !== type) continue;
     const date = parseActivityDate(run.timestamp),
-      km = Number(run.km);
+      km = activityAmount(run);
     if (!date || date > now || !Number.isFinite(km) || km <= 0) continue;
     if (date >= weekStart) weekKm += km;
     if (date >= monthStart) monthKm += km;
@@ -79,7 +81,7 @@ export default function TrainingGoals({
   const save = async () => {
     const w = Number(weekly),
       m = Number(monthly);
-    if (!Number.isFinite(w) || !Number.isFinite(m) || w <= 0 || m <= 0) {
+    if (!Number.isFinite(w) || !Number.isFinite(m) || w <= 0 || m <= 0 || (strength && (!Number.isInteger(w) || !Number.isInteger(m)))) {
       setMessage("Zadej kladný týdenní a měsíční cíl.");
       return;
     }
@@ -109,7 +111,7 @@ export default function TrainingGoals({
         <div>
           <h2 id="training-goals-title">Cíle a plnění</h2>
           <p>
-            Všechny aktivity pro {type === "běh" ? "běh" : "chůzi"}. Aktuální týden a měsíc.
+            Všechny aktivity pro {type}. Aktuální týden a měsíc.
           </p>
         </div>
       </div>
@@ -117,22 +119,20 @@ export default function TrainingGoals({
         <summary>Upravit cíle</summary>
         <div className="progress-goal-inputs">
           <label>
-            Týdenní cíl (km)
+            Týdenní cíl ({unit})
             <input
-              type="number"
+              type="number" step={strength ? "1" : "0.1"}
               min="0.1"
-              step="0.1"
               value={weekly}
               disabled={loading || saving || failed}
               onChange={(e) => setWeekly(e.target.value)}
             />
           </label>
           <label>
-            Měsíční cíl (km)
+            Měsíční cíl ({unit})
             <input
-              type="number"
+              type="number" step={strength ? "1" : "0.1"}
               min="0.1"
-              step="0.1"
               value={monthly}
               disabled={loading || saving || failed}
               onChange={(e) => setMonthly(e.target.value)}
@@ -158,7 +158,7 @@ export default function TrainingGoals({
             <div className="progress-bar-heading">
               <strong>{item.name}</strong>
               <span>
-                {item.km.toFixed(1)} / {item.goal} km ·{" "}
+                {item.km.toFixed(strength ? 0 : 1)} / {item.goal} {unit} ·{" "}
                 {Math.round((item.km / item.goal) * 100)} %
               </span>
             </div>
@@ -172,7 +172,7 @@ export default function TrainingGoals({
             <small className="training-goal-remaining">
               {item.km >= item.goal
                 ? "Cíl splněn"
-                : `Zbývá ${(item.goal - item.km).toFixed(1)} km`}
+                : `Zbývá ${(item.goal - item.km).toFixed(strength ? 0 : 1)} {unit}`}
             </small>
           </div>
         ))}

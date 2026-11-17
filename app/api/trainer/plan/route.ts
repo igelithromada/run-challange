@@ -5,9 +5,11 @@ import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { isValidDateOnly } from "../../../lib/validation";
+import { isStrengthActivity } from "../../../lib/activity";
+import type { ActivityType } from "../../../types";
+import { isValidDateOnly, isActivityType } from "../../../lib/validation";
 
-const validType = (value: unknown): value is "běh" | "chůze" => value === "běh" || value === "chůze";
+const validType = isActivityType;
 
 export async function POST(request: Request) {
   try {
@@ -30,7 +32,7 @@ export async function POST(request: Request) {
     const dayKm: Record<string, number> = {};
     for (const date of safeDates) {
       const km = Number(rawDayKm[date]);
-      if (!Number.isFinite(km) || km < 0.5 || km > 200) return NextResponse.json({ error: "Plán obsahuje neplatný počet kilometrů." }, { status: 400 });
+      if (!Number.isFinite(km) || (isStrengthActivity(type) ? !Number.isInteger(km) || km < 1 || km > 100000 : km < 0.5 || km > 200)) return NextResponse.json({ error: "Plán obsahuje neplatný cíl dne." }, { status: 400 });
       dayKm[date] = Math.round(km * 10) / 10;
     }
 
@@ -44,7 +46,7 @@ export async function POST(request: Request) {
     await adminDb.runTransaction(async tx => {
       const userSnap = await tx.get(userRef);
       const userData = userSnap.exists ? userSnap.data() || {} : {};
-      const existingPlans = (userData.personalTrainerPlans && typeof userData.personalTrainerPlans === "object" ? userData.personalTrainerPlans : {}) as Record<"běh" | "chůze", Record<string, Record<string, unknown>>>;
+      const existingPlans = (userData.personalTrainerPlans && typeof userData.personalTrainerPlans === "object" ? userData.personalTrainerPlans : {}) as Record<ActivityType, Record<string, Record<string, unknown>>>;
       const typePlans = existingPlans[type] && typeof existingPlans[type] === "object" ? existingPlans[type] : {};
       tx.set(userRef,
         { personalTrainerPlans: { ...existingPlans, [type]: { ...typePlans, [monthKey]: safePlan } }, personalTrainerPlan: safePlan },

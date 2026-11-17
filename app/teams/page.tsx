@@ -278,6 +278,8 @@ export default function TeamsPage() {
                         <div className="team-card-stats">
                           <span className="team-activity-stat"><ActivityTypeIcon type="běh" size={18} /><span className="sr-only">Běh: </span>{Number(stats.runningKm || 0).toFixed(1)} km · {Number(stats.runningActivities || 0)} aktivit</span>
                           <span className="team-activity-stat"><ActivityTypeIcon type="chůze" size={18} /><span className="sr-only">Chůze: </span>{Number(stats.walkingKm || 0).toFixed(1)} km · {Number(stats.walkingActivities || 0)} aktivit</span>
+                          <span className="team-activity-stat"><ActivityTypeIcon type="dřepy" size={18} /><span className="sr-only">Dřepy: </span>{Number(stats.squatRepetitions || 0).toLocaleString("cs-CZ")} opakování · {Number(stats.squatActivities || 0)} aktivit</span>
+                          <span className="team-activity-stat"><ActivityTypeIcon type="kliky" size={18} /><span className="sr-only">Kliky: </span>{Number(stats.pushupRepetitions || 0).toLocaleString("cs-CZ")} opakování · {Number(stats.pushupActivities || 0)} aktivit</span>
                         </div>
                       </div>
                       <ChevronRight className="team-card-chevron" size={20} />

@@ -1,4 +1,5 @@
 "use client";
+import { isStrengthActivity, activityLabel } from "../lib/activity";
 
 import React, { useEffect, useRef, useState } from "react";
 import ActivityGallery from "./ActivityGallery";
@@ -10,7 +11,7 @@ import { showAppToast } from "./AppToast";
 
 export type ActivityCardRun = {
   id: string; uid?: string; nickname?: string; email?: string; avatarUrl?: string;
-  km: number | string; minuty: number | string; tempo: number | string;
+  repetitions?:number; km: number | string; minuty: number | string; tempo: number | string;
   timestamp?: { seconds: number } | Date; imageUrl?: string; imageUrls?: string[]; teamId?: string;
   likedBy?: string[]; likeCount?: number; commentCount?: number; description?: string;
 };
@@ -45,6 +46,7 @@ async function socialRequest(runId: string, init?: RequestInit) {
 }
 
 export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamAvatarUrl, activityType, onUserClick, onPhotosClick, onEdit, onDelete }: Props) {
+  const strength = isStrengthActivity(activityType);
   const tempo = Number(run.tempo) || 0;
   const range = activityType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
   const pos = Math.min(100, Math.max(0, ((range.max - tempo) / (range.max - range.min)) * 100));
@@ -265,10 +267,10 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
 
         {run.description?.trim() && <div className="activity-description">{run.description.trim()}</div>}
 
-        <div className="activity-metrics">
-          <div><MapPin size={17} /><strong>{run.km} <small>km</small></strong><span>Vzdálenost</span></div>
-          <div><Clock3 size={17} /><strong>{formatTime(run.minuty)}</strong><span>Čas</span></div>
-          <div><Gauge size={17} /><strong>{formatTime(run.tempo)} <small>/km</small></strong><span>Tempo</span><div className="activity-pace-bar" aria-label="Orientační škála tempa"><span style={{ left: `${pos}%` }} /></div></div>
+        <div className={strength ? "activity-metrics strength-metrics" : "activity-metrics"}>
+          {strength ? <div><strong>{Number(run.repetitions || 0).toLocaleString("cs-CZ")}</strong><span>{activityLabel(activityType)} · opakování</span></div> : <div><MapPin size={17} /><strong>{run.km} <small>km</small></strong><span>Vzdálenost</span></div>}
+          {(!strength || Number(run.minuty)>0) && <div><Clock3 size={17} /><strong>{formatTime(run.minuty)}</strong><span>Čas</span></div>}
+          {!strength && <div><Gauge size={17} /><strong>{formatTime(run.tempo)} <small>/km</small></strong><span>Tempo</span><div className="activity-pace-bar" aria-label="Orientační škála tempa"><span style={{ left: `${pos}%` }} /></div></div>}
         </div>
 
         {images.length > 0 && <ActivityGallery key={run.id} images={images} onOpen={index => onPhotosClick(images, run.imageUrl || "", index)} />}

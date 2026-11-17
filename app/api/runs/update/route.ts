@@ -1,3 +1,4 @@
+import { validateActivityValues } from "../../../lib/activity";
 import { parseActivityDate } from "../../../lib/runData";
 import { syncRunTeamContributions } from "../../../lib/teams/contributions";
 import { cloudinaryPublicIdFromUrl, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
@@ -24,21 +25,13 @@ export async function PATCH(request:Request){
     const current=snap.data()||{};
     if(current.uid!==decoded.uid)return NextResponse.json({error:"Tento záznam nemůžeš upravit."},{status:403});
 
-    const km=Number(updates.km);
-    const minuty=Number(updates.minuty);
+    const nextType = normalizeActivityType(updates.type === undefined ? current.type : updates.type);
+    const values = validateActivityValues(nextType, updates);
     const date=parseActivityDate(updates.timestamp);
     const timestamp=date ? Timestamp.fromDate(date) : null;
-    if(!Number.isFinite(km)||km<=0||km>1000||!Number.isFinite(minuty)||minuty<=0||minuty>1440||!timestamp){
-      return NextResponse.json({error:"Aktivita obsahuje neplatné údaje."},{status:400});
-    }
-
-    if (updates.type !== undefined && !isActivityType(updates.type)) {
-      return NextResponse.json({error:"Aktivita obsahuje neplatný typ."},{status:400});
-    }
-    const nextType=updates.type===undefined ? (current.type==="chůze"?"chůze":"běh") : normalizeActivityType(updates.type);
-    const tempo=(minuty/km).toFixed(2);
+    if (!values || !timestamp || (updates.type !== undefined && !isActivityType(updates.type))) return NextResponse.json({error:"Aktivita obsahuje neplatné údaje."},{status:400});
     const safeUpdate:any={
-      km,minuty,tempo,type:nextType,activityType:nextType,timestamp,
+      ...values,type:nextType,activityType:nextType,timestamp,
       description:typeof updates.description==="string"?updates.description.trim().slice(0,500):String(current.description||"")
     };
 

@@ -1,3 +1,4 @@
+import { normalizeActivityType } from "./validation";
 import { parseActivityDate } from "./runData";
 import type { ActivityType, RunData } from "../types";
 export type GalleryPhoto = {
@@ -5,7 +6,7 @@ export type GalleryPhoto = {
   runId: string;
   url: string;
   date: Date | null;
-  km: number;
+  km: number; repetitions?:number;
   type: ActivityType;
 };
 export function myGalleryPhotos(
@@ -23,7 +24,7 @@ export function myGalleryPhotos(
   for (const run of runs) {
     if (run.uid !== uid || ("deleting" in run && run.deleting === true))
       continue;
-    const activityType = run.type === "chůze" ? "chůze" : "běh";
+    const activityType = normalizeActivityType(run.type);
     if (type !== "all" && activityType !== type) continue;
     const date = parseActivityDate(run.timestamp);
     if (
@@ -49,7 +50,7 @@ export function myGalleryPhotos(
         runId: run.id,
         url,
         date,
-        km: Number(run.km) || 0,
+        km: Number(run.km) || 0, repetitions: Number(run.repetitions) || 0,
         type: activityType,
       });
     }

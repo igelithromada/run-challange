@@ -1,6 +1,7 @@
+import { activityAmount, isStrengthActivity } from "./activity";
 import { parseActivityDate } from "./runData";
 import type { ActivityType } from "../types";
-export type AwardRun = { id: string; km: number | string; timestamp?: unknown; type?: string };
+export type AwardRun = { id: string; repetitions?:number; km: number | string; timestamp?: unknown; type?: string };
 export type Award = {
   id: string;
   title: string;
@@ -34,7 +35,7 @@ export function activityAwards(
     if (seen.has(run.id)) continue;
     seen.add(run.id);
     const date = parseActivityDate(run.timestamp),
-      distance = Number(run.km);
+      distance = activityAmount(run);
     if (
       !date ||
       date.getTime() > now ||
@@ -80,14 +81,22 @@ export function activityAwards(
     count: done ? 1 : 0,
     repeatable: false,
   });
+  const strength = isStrengthActivity(type);
   return [
     one(
       "first",
-      "První krok",
+      strength ? "První trénink" : "První krok",
       "Zaznamenaná první aktivita",
-      "👟",
+      strength ? "💪" : "👟",
       activities >= 1,
     ),
+    ...(strength ? [
+      one("reps100", "První stovka", "Celkem 100 opakování", "🥉", km >= 100),
+      one("reps500", "Pět set", "Celkem 500 opakování", "🥈", km >= 500),
+      one("reps1000", "Tisícovka", "Celkem 1 000 opakování", "🥇", km >= 1000),
+      one("reps5000", "Pět tisíc", "Celkem 5 000 opakování", "🏆", km >= 5000),
+      one("month1000", "Silný měsíc", "1 000 opakování v jednom měsíci", "💪", bestMonth >= 1000),
+    ] : [
     one("km10", "Desítka", "Celkem 10 km", "🔟", km >= 10),
     one("km50", "Padesátka", "Celkem 50 km", "🥉", km >= 50),
     one("km100", "Stovka", "Celkem 100 km", "🥈", km >= 100),
@@ -99,6 +108,7 @@ export function activityAwards(
       "🌙",
       bestMonth >= 100,
     ),
+    ]),
     one(
       "streak7",
       "Pravidelnost",
@@ -130,7 +140,7 @@ export function activityAwards(
     },
     {
       id: "night",
-      title: type === "běh" ? "Noční běh" : "Noční chůze",
+      title: strength ? "Noční trénink" : type === "běh" ? "Noční běh" : "Noční chůze",
       detail: "Každá aktivita od 21:00 do 4:59 · český čas",
       icon: "🌙",
       count: night,

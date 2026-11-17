@@ -1,4 +1,6 @@
 "use client";
+import { challengeKindFor } from "../lib/challengeMeasurement";
+import { isStrengthActivity } from "../lib/activity";
 import { preparePhoto } from "../lib/preparePhoto";
 
 import React, { useEffect, useState } from "react";
@@ -55,7 +57,7 @@ export default function ChallengesPage() {
   const [error,setError]=useState<Error|null>(null);
   const [joinedChallengeIds,setJoinedChallengeIds]=useState<Set<string>>(new Set());
 
-  useEffect(()=>{ const unsub=onAuthStateChanged(auth,u=>{ if(!u){router.push("/login");return;} setUser(u); try{const v=localStorage.getItem("dolni-lhota-default-activity-v1"); if(v==="běh"||v==="chůze")setActivityType(v);}catch{} }); return ()=>unsub(); },[router]);
+  useEffect(()=>{ const unsub=onAuthStateChanged(auth,u=>{ if(!u){router.push("/login");return;} setUser(u); try{const v=localStorage.getItem("dolni-lhota-default-activity-v1"); if(v==="běh"||v==="chůze"||v==="dřepy"||v==="kliky")setActivityType(v);}catch{} }); return ()=>unsub(); },[router]);
 
   const request=async(action:string,payload:Record<string,unknown>)=>{
     if(!auth.currentUser)throw new Error("Nejsi přihlášen.");
@@ -68,7 +70,7 @@ export default function ChallengesPage() {
     if(!user||creating||!name.trim()||!goal||!startDate||!endDate)return;
     setCreating(true);
     try{
-      const data=await request("create",{name,description,kind,activityType,goal:Number(goal),startDate,endDate,avatarUrl,avatarPublicId});
+      const data=await request("create",{name,description,kind:challengeKindFor(activityType,kind),activityType,goal:Number(goal),startDate,endDate,avatarUrl,avatarPublicId});
       const createdChallenge = data.challenge as ChallengeData | undefined;
       setName("");setDescription("");setGoal("");setStartDate("");setEndDate("");setAvatarUrl("");setAvatarPublicId("");
       setJoinedChallengeIds(current => new Set([...current, data.id]));
@@ -133,7 +135,7 @@ export default function ChallengesPage() {
           </div>
           <div className="teams-create-form professional-form">
             <FormField label="Název výzvy">
-              <input className="professional-input" maxLength={40} placeholder="Např. 50 km za listopad" value={name} onChange={e=>setName(e.target.value)}/>
+              <input className="professional-input" maxLength={40} placeholder={isStrengthActivity(activityType) ? "Např. 500 opakování za měsíc" : "Např. 50 km za listopad"} value={name} onChange={e=>setName(e.target.value)}/>
             </FormField>
             <FormField label="Popis" hint="volitelné">
               <textarea className="professional-input" maxLength={200} placeholder="Krátce popiš cíl a motivaci výzvy." value={description} onChange={e=>setDescription(e.target.value)}/>
@@ -143,14 +145,14 @@ export default function ChallengesPage() {
             </FormField>
             <FormField label="Typ cíle">
               <select value={kind} onChange={e=>setKind(e.target.value as ChallengeKind)}>
-                <option value="distance">Vzdálenost</option>
+                <option value="distance">{isStrengthActivity(activityType) ? "Počet opakování" : "Vzdálenost"}</option>
                 <option value="activities">Počet aktivit</option>
                 <option value="activeDays">Aktivní dny</option>
                 <option value="sharedDistance">Společný cíl</option>
               </select>
             </FormField>
-            <FormField label="Cíl">
-              <input className="professional-input" type="number" min="1" step={kind==="distance"||kind==="sharedDistance"?"0.1":"1"} placeholder={kind==="distance"||kind==="sharedDistance"?"Např. 50":kind==="activities"?"Např. 10":"Např. 15"} value={goal} onChange={e=>setGoal(e.target.value)}/>
+            <FormField label={"Cíl (" + (kind === "activities" ? "aktivit" : kind === "activeDays" ? "dnů" : isStrengthActivity(activityType) ? "opakování" : "km") + ")"}>
+              <input className="professional-input" type="number" min="1" step={!isStrengthActivity(activityType) && (kind==="distance"||kind==="sharedDistance")?"0.1":"1"} placeholder={kind==="distance"||kind==="sharedDistance"?"Např. 50":kind==="activities"?"Např. 10":"Např. 15"} value={goal} onChange={e=>setGoal(e.target.value)}/>
             </FormField>
             <div className="challenge-dates">
               <FormField label="Od"><input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}/></FormField>

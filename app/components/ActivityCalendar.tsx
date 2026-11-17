@@ -1,4 +1,5 @@
 "use client";
+import { activityAmount, activityUnit, isStrengthActivity } from "../lib/activity";
 import { useMemo, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { parseActivityDate } from "../lib/runData";
@@ -10,7 +11,8 @@ const monday = (d: Date) => {
   next.setDate(next.getDate() - ((next.getDay() + 6) % 7));
   return next;
 };
-export default function ActivityCalendar({ runs }: { runs: ChartRun[] }) {
+export default function ActivityCalendar({ runs, activityType = "běh" }: { runs: ChartRun[]; activityType?:string }) {
+  const unit = activityUnit(activityType), strength = isStrengthActivity(activityType);
   const [offset, setOffset] = useState(0),
     [selected, setSelected] = useState(() => key(new Date()));
   const today = new Date(),
@@ -27,7 +29,7 @@ export default function ActivityCalendar({ runs }: { runs: ChartRun[] }) {
     const result = new Map<string, { km: number; count: number }>();
     for (const run of runs) {
       const d = parseActivityDate(run.timestamp),
-        km = Number(run.km);
+        km = activityAmount(run);
       if (!d || d > new Date() || !Number.isFinite(km) || km <= 0) continue;
       const date = key(d),
         value = result.get(date) || { km: 0, count: 0 };
@@ -127,9 +129,9 @@ export default function ActivityCalendar({ runs }: { runs: ChartRun[] }) {
                 type="button"
                 key={date}
                 disabled={date > key(today)}
-                className={`calendar-heat-cell heat-${km === 0 ? 0 : km < 3 ? 1 : km < 7 ? 2 : km < 12 ? 3 : 4}${date === key(today) ? " is-today" : ""}`}
+                className={`calendar-heat-cell heat-${km === 0 ? 0 : km < (strength ? 30 : 3) ? 1 : km < (strength ? 70 : 7) ? 2 : km < (strength ? 120 : 12) ? 3 : 4}${date === key(today) ? " is-today" : ""}`}
                 aria-pressed={date === selected}
-                aria-label={`${d.toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}, ${km.toLocaleString("cs-CZ")} km`}
+                aria-label={`${d.toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}, ${km.toLocaleString("cs-CZ")} ${unit}`}
                 onClick={() => setSelected(date)}
               />
             );
@@ -137,11 +139,11 @@ export default function ActivityCalendar({ runs }: { runs: ChartRun[] }) {
         </div>
       </div>
       <div className="activity-calendar-scale">
-        <span>0 km</span>
+        <span>0 {unit}</span>
         {[0, 1, 2, 3, 4].map((i) => (
           <i key={i} className={`heat-${i}`} />
         ))}
-        <span>12+ km</span>
+        <span>{strength ? "120+" : "12+"} {unit}</span>
       </div>
       <output className="activity-calendar-detail">
         <strong>
@@ -153,13 +155,13 @@ export default function ActivityCalendar({ runs }: { runs: ChartRun[] }) {
           })}
         </strong>
         <span>
-          {value.km.toLocaleString("cs-CZ", { maximumFractionDigits: 2 })} km ·{" "}
+          {value.km.toLocaleString("cs-CZ", { maximumFractionDigits: 2 })} {unit} ·{" "}
           {value.count} aktivit
         </span>
       </output>
       <p className="chart-hint">
         Za zobrazené období: {activeDays} aktivních dní ·{" "}
-        {totalKm.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} km
+        {totalKm.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} {unit}
       </p>
     </section>
   );

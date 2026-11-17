@@ -222,3 +222,41 @@ test('community reads authenticate, hide deleting records and bind membership to
   try { assert.equal((await call(read,{resource:'challenges'})).status,401); }
   finally { authenticated=true; }
 });
+
+test('strength challenges: validate units on create/edit and score each category separately', async () => {
+  for(const type of ['dřepy','kliky']) {
+    db=new DB();
+    const body={action:'create',name:`${type} stovka`,kind:'repetitions',activityType:type,goal:100,startDate:day(1),endDate:day(4)};
+    const created=await call(challenges,body);assert.equal(created.status,200);assert.equal(created.body.challenge.activityType,type);
+    assert.equal((await call(challenges,{...body,name:'Chybné jednotky',kind:'distance'})).status,400);
+    assert.equal((await call(challenges,{...body,name:'Zlomek',goal:1.5})).status,400);
+    assert.equal((await call(challenges,{...body,action:'edit',challengeId:created.body.id,kind:'distance'})).status,400);
+    assert.equal((await call(challenges,{...body,action:'edit',challengeId:created.body.id,kind:'sharedRepetitions'})).status,200);
+    assert.equal(db.store.get(`challenges/${created.body.id}`).kind,'sharedRepetitions');
+  }
+  const activityTime=new Date(day(-1)+'T12:00:00Z').getTime();
+  for(const type of ['dřepy','kliky'])for(const [kind,expected]of [['repetitions',110],['sharedRepetitions',110],['activities',2],['activeDays',1]]) {
+    db=new DB({'challenges/c':{...challenge(kind),activityType:type,goal:100},'challenges/c/participants/u':{active:true,userId:'u',joinedAt:tsAt(-2)},
+      'runs/a':{uid:'u',type,repetitions:50,km:0,timestamp:new Timestamp(activityTime)},'runs/b':{uid:'u',type,repetitions:60,km:0,timestamp:new Timestamp(activityTime+60000)},
+      'runs/other':{uid:'u',type:type==='dřepy'?'kliky':'dřepy',repetitions:999,timestamp:tsAt(-1)},'runs/run':{uid:'u',type:'běh',km:999,timestamp:tsAt(-1)},
+      'runs/old':{uid:'u',type,repetitions:999,timestamp:tsAt(-3)},'runs/future':{uid:'u',type,repetitions:999,timestamp:tsAt(1)}});
+    await scoring.reconcileChallengesForUser(db,'u');assert.equal(db.store.get('challenges/c/participants/u').result,expected,`${type}:${kind}`);
+    if(kind==='sharedRepetitions')assert.equal(db.store.get('challenges/c').sharedProgress,110);
+    db.store.get('runs/a').repetitions=25;await scoring.reconcileChallengesForUser(db,'u');
+    assert.equal(db.store.get('challenges/c/participants/u').result,kind.endsWith('Repetitions')||kind==='repetitions'?85:expected);
+    db.store.delete('runs/a');await scoring.reconcileChallengesForUser(db,'u');
+    assert.equal(db.store.get('challenges/c/participants/u').result,kind==='activities'||kind==='activeDays'?1:60);
+    db.store.get('challenges/c').endDate=day(-1);await scoring.reconcileChallengeState(db,'c');
+    assert.equal(db.store.get('challenges/c').state,'completed');assert.equal(db.store.get('challenges/c/participants/u').finalResult,kind==='activities'||kind==='activeDays'?1:60);
+  }
+});
+
+test('team strength totals stay separate and reconcile edits, duplicate syncs, type changes and deletions', async () => {
+  const {syncRunTeamContributions}=require('../app/lib/teams/contributions.ts');
+  db=new DB({'teams/t':{name:'Tým'},'runs/r':{uid:'u',type:'dřepy',repetitions:40,km:0,teamIds:['t'],createdAt:tsAt(-1)}});
+  await syncRunTeamContributions(db,'r');await syncRunTeamContributions(db,'r');
+  assert.equal(db.store.get('teams/t')['stats.squatRepetitions'],40);assert.equal(db.store.get('teams/t')['stats.squatActivities'],1);assert.equal(db.store.get('teams/t')['stats.runningActivities'],undefined);
+  db.store.get('runs/r').repetitions=60;await syncRunTeamContributions(db,'r');assert.equal(db.store.get('teams/t')['stats.squatRepetitions'],60);
+  db.store.get('runs/r').type='kliky';await syncRunTeamContributions(db,'r');assert.equal(db.store.get('teams/t')['stats.squatRepetitions'],0);assert.equal(db.store.get('teams/t')['stats.pushupRepetitions'],60);assert.equal(db.store.get('teams/t')['stats.squatActivities'],0);
+  db.store.get('runs/r').deleting=true;await syncRunTeamContributions(db,'r');await syncRunTeamContributions(db,'r');assert.equal(db.store.get('teams/t')['stats.pushupRepetitions'],0);assert.equal(db.store.get('teams/t')['stats.pushupActivities'],0);assert.equal(db.store.has('teams/t/activityContributions/r'),false);
+});

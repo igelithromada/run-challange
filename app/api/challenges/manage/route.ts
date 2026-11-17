@@ -1,8 +1,9 @@
+import { challengeKindFor } from "../../../lib/challengeMeasurement";
 import { prepareCommunityNotification } from "../../../lib/notifications/community";
 import { NextResponse } from "next/server";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { requireUser } from "../../../lib/apiAuth";
-import { normalizeName, normalizeDescription, isChallengeKind, isValidChallengeGoal, isValidDateOnly, normalizeActivityType } from "../../../lib/validation";
+import { normalizeName, normalizeDescription, isChallengeKind, isValidChallengeGoal, isValidDateOnly, normalizeActivityType, isActivityType } from "../../../lib/validation";
 import { reconcileChallengesForUser } from "../../../lib/challenges/server";
 import { cloudinaryPublicIdFromUrl, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
 
@@ -48,7 +49,7 @@ export async function POST(request:Request){
       const goal=Number(body?.goal), startDate=String(body?.startDate||""), endDate=String(body?.endDate||"");
       const image=challengeImage(body,uid);
       if(!name)return NextResponse.json({error:"Zadej název výzvy."},{status:400});
-      if(!isChallengeKind(kind)||!isValidChallengeGoal(kind,goal))return NextResponse.json({error:"Výzva má neplatný typ nebo cíl."},{status:400});
+      if(!isActivityType(body?.activityType)||!isChallengeKind(kind)||challengeKindFor(activityType,kind)!==kind||!isValidChallengeGoal(kind,goal))return NextResponse.json({error:"Výzva má neplatný typ nebo cíl."},{status:400});
       if(!isValidDateOnly(startDate)||!isValidDateOnly(endDate)||endDate<startDate)return NextResponse.json({error:"Zadej platné datumy výzvy."},{status:400});
       const today=localDateString();
       if(startDate<today)return NextResponse.json({error:"Výzvu nelze naplánovat do minulosti."},{status:400});
@@ -156,7 +157,7 @@ export async function POST(request:Request){
       const nextKind=body?.kind, nextType=normalizeActivityType(body?.activityType);
       const nextGoal=Number(body?.goal), nextStart=String(body?.startDate||""), nextEnd=String(body?.endDate||"");
       const image=challengeImage(body,uid);
-      if(!nextName||!isChallengeKind(nextKind)||!isValidChallengeGoal(nextKind,nextGoal)||!isValidDateOnly(nextStart)||!isValidDateOnly(nextEnd)||nextEnd<nextStart)return NextResponse.json({error:"Výzva má neplatné údaje."},{status:400});
+      if(!nextName||!isActivityType(body?.activityType)||!isChallengeKind(nextKind)||challengeKindFor(nextType,nextKind)!==nextKind||!isValidChallengeGoal(nextKind,nextGoal)||!isValidDateOnly(nextStart)||!isValidDateOnly(nextEnd)||nextEnd<nextStart)return NextResponse.json({error:"Výzva má neplatné údaje."},{status:400});
       const today=localDateString();
       if(nextStart<today)return NextResponse.json({error:"Výzvu nelze naplánovat do minulosti."},{status:400});
       const maxStartDate = new Date(`${localDateString()}T12:00:00`);

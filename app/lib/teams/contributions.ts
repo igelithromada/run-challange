@@ -1,3 +1,5 @@
+import { activityAmount } from "../activity";
+import { normalizeActivityType } from "../validation";
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
 
 /** Reconcile against the current activity inside each transaction. Safe to retry
@@ -20,15 +22,16 @@ export async function syncRunTeamContributions(db: Firestore, runId: string) {
       if (!contribution.exists && !keep) return;
       const deltas: Record<string, number> = {};
       const adjust = (type: unknown, km: number, count: number) => {
-        const prefix = type === "chůze" ? "walking" : "running";
-        deltas[`stats.${prefix}Km`] = (deltas[`stats.${prefix}Km`] || 0) + km;
+        const prefix = type === "dřepy" ? "squat" : type === "kliky" ? "pushup" : type === "chůze" ? "walking" : "running";
+        const field = type === "dřepy" || type === "kliky" ? "Repetitions" : "Km";
+        deltas[`stats.${prefix}${field}`] = (deltas[`stats.${prefix}${field}`] || 0) + km;
         deltas[`stats.${prefix}Activities`] = (deltas[`stats.${prefix}Activities`] || 0) + count;
       };
-      if (previous) adjust(previous.type, -(Number(previous.km) || 0), -1);
-      if (keep) adjust(current.type, Number(current.km) || 0, 1);
+      if (previous) adjust(previous.type, -activityAmount(previous), -1);
+      if (keep) adjust(current.type, activityAmount(current), 1);
       const updates = Object.fromEntries(Object.entries(deltas).filter(([, value]) => value !== 0).map(([key, value]) => [key, FieldValue.increment(value)]));
       if (team.exists && Object.keys(updates).length) tx.update(teamRef, updates);
-      if (keep) tx.set(contributionRef, { activityId: runId, userId: current.uid, type: current.type === "chůze" ? "chůze" : "běh", km: Number(current.km) || 0, createdAt: previous?.createdAt || current.createdAt || FieldValue.serverTimestamp() });
+      if (keep) tx.set(contributionRef, { activityId: runId, userId: current.uid, type: normalizeActivityType(current.type), km: Number(current.km) || 0, repetitions: Number(current.repetitions) || 0, createdAt: previous?.createdAt || current.createdAt || FieldValue.serverTimestamp() });
       else if (contribution.exists) tx.delete(contributionRef);
     });
   }

@@ -1,4 +1,5 @@
 "use client";
+import { isStrengthActivity } from "../lib/activity";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -28,7 +29,7 @@ export default function StatisticsPage() {
     [uid, setUid] = useState(""),
     [selectedType, setSelectedType] = useState<ActivityType>("běh"),
     [view, setView] = useState<"já" | "jednotlivci">("jednotlivci"),
-    [metric, setMetric] = useState<"km" | "tempo" | "badges">("km"),
+    [metric, setMetric] = useState<"km" | "tempo" | "badges" | "repetitions">("km"),
     [sort, setSort] = useState<"rank" | "alpha">("rank"),
     [startDate, setStartDate] = useState(""),
     [endDate, setEndDate] = useState(""),
@@ -41,7 +42,7 @@ export default function StatisticsPage() {
   useEffect(() => {
     try {
       const value = localStorage.getItem("dolni-lhota-default-activity-v1");
-      if (value === "běh" || value === "chůze") setSelectedType(value);
+      if (value === "běh" || value === "chůze" || value === "dřepy" || value === "kliky") setSelectedType(value);
     } catch {}
     return onAuthStateChanged(auth, (user) => {
       if (!user) {
@@ -82,9 +83,11 @@ export default function StatisticsPage() {
       active = false;
     };
   }, [filtered]);
+  const strength = isStrengthActivity(selectedType);
+  const effectiveMetric = strength ? (metric === "badges" ? "badges" : "repetitions") : metric === "repetitions" ? "km" : metric;
   const people = useMemo(
-    () => resultPeople(filtered, profiles, metric),
-    [filtered, profiles, metric],
+    () => resultPeople(filtered, profiles, effectiveMetric),
+    [filtered, profiles, effectiveMetric],
   );
   const scope =
     view === "já" ? filtered.filter((run) => run.uid === uid) : filtered;
@@ -107,11 +110,11 @@ export default function StatisticsPage() {
   const showPodium =
     view === "jednotlivci" && sort === "rank" && !search.trim();
   const ranked = people.filter((p) =>
-    metric === "badges"
+    effectiveMetric === "badges"
       ? p.awardCount > 0
-      : metric === "km"
+      : effectiveMetric === "km"
         ? p.km > 0
-        : p.pace > 0,
+        : effectiveMetric === "repetitions" ? p.repetitions > 0 : p.pace > 0,
   );
   const podium = showPodium ? ranked.slice(0, 3) : [];
   const podiumIds = new Set(podium.map((p) => p.uid));
@@ -125,10 +128,10 @@ export default function StatisticsPage() {
     element?.scrollIntoView({ block: "start", behavior: "instant" });
   };
   const personRow = (person: ResultPerson, winner = false) => (
-    <ResultsPersonRow
+    <ResultsPersonRow type={selectedType}
       key={person.uid}
       person={person}
-      metric={metric}
+      metric={effectiveMetric}
       alpha={sort === "alpha"}
       mine={person.uid === uid}
       winner={winner}
@@ -168,15 +171,14 @@ export default function StatisticsPage() {
         >
           {(
             [
-              { id: "km", label: "Kilometry" },
-              { id: "tempo", label: "Tempo" },
+              ...(strength ? [{ id: "repetitions", label: "Opakování" }] as const : [{ id: "km", label: "Kilometry" }, { id: "tempo", label: "Tempo" }] as const),
               { id: "badges", label: "Odznaky" },
             ] as const
           ).map((item) => (
             <button
               type="button"
               key={item.id}
-              aria-pressed={metric === item.id}
+              aria-pressed={effectiveMetric === item.id}
               onClick={() => setMetric(item.id)}
             >
               {item.label}
@@ -236,11 +238,11 @@ export default function StatisticsPage() {
               }
             >
               <option value="rank">
-                {metric === "badges"
+                {effectiveMetric === "badges"
                   ? "Podle odznaků"
-                  : metric === "tempo"
+                  : effectiveMetric === "tempo"
                     ? "Podle tempa"
-                    : "Podle kilometrů"}
+                    : effectiveMetric === "repetitions" ? "Podle opakování" : "Podle kilometrů"}
               </option>
               <option value="alpha">Podle abecedy</option>
             </select>
@@ -302,7 +304,7 @@ export default function StatisticsPage() {
             <ResultsSummary
               runs={scope}
               people={scopePeople}
-              metric={metric}
+              metric={effectiveMetric}
               type={selectedType}
               mine={view === "já"}
             />

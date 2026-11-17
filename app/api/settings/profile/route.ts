@@ -56,7 +56,7 @@ export async function POST(request: Request) {
           ...publicPatch,
           nickname: nickname || (typeof userData.nickname === "string" ? userData.nickname : (typeof publicData.nickname === "string" ? publicData.nickname : "")),
           avatarUrl: avatarUrl || (typeof userData.avatarUrl === "string" ? userData.avatarUrl : (typeof publicData.avatarUrl === "string" ? publicData.avatarUrl : "")),
-          activityType: publicData.activityType === "chůze" ? "chůze" : "běh",
+          activityType: ["chůze","dřepy","kliky"].includes(publicData.activityType) ? publicData.activityType : "běh",
         }, { merge: true });
       return { nickname: nickname || userData.nickname || publicData.nickname || "", avatarUrl: avatarUrl || userData.avatarUrl || publicData.avatarUrl || "" };
 
