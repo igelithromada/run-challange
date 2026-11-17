@@ -2,7 +2,6 @@ import {
   CloudSun,
   Dumbbell,
   Footprints,
-  ListOrdered,
   Map,
   ShieldCheck,
   SlidersHorizontal,
@@ -27,9 +26,8 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
 
   { id: "teams", label: "Týmy", route: "/teams", group: "community", Icon: Users },
   { id: "challenges", label: "Výzvy", route: "/challenges", group: "community", Icon: Trophy },
-  { id: "participants", label: "Účastníci", route: "/participants", group: "community", Icon: ListOrdered },
 
-  { id: "statistics", label: "Výsledky", route: "/statistics", group: "tools", Icon: Trophy },
+  { id: "statistics", label: "Výsledky", route: "/statistics", group: "community", Icon: Trophy },
   { id: "weather", label: "Počasí pro běh", route: "/weather", group: "tools", Icon: CloudSun },
   { id: "routes", label: "Doporučené trasy", route: "/routes", group: "tools", Icon: Map },
 

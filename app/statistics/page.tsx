@@ -1,195 +1,464 @@
 "use client";
-
-import React, { useEffect, useMemo, useState } from "react";
-import type { User as AuthUser } from "firebase/auth";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import {
+  Clock3,
+  Gauge,
+  ListChecks,
+  MapPin,
+  Search,
+  Trophy,
+  User,
+  Users,
+} from "lucide-react";
 import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
-import { Medal, Trophy, Users, User, MapPin, Gauge, ListChecks } from "lucide-react";
-import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import Sidebar from "../components/Sidebar";
-import LoadingSkeleton from "../components/LoadingSkeleton";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
-import { activityMetrics, formatPace } from "../lib/activityMetrics";
-import type { RunData, ActivityType } from "../types";
-import { getPublicProfiles } from "../lib/services/publicProfiles";
+import LoadingSkeleton from "../components/LoadingSkeleton";
+import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { filteredRunsQuery } from "../lib/services/runs";
-import { showAppToast } from "../components/AppToast";
-
+import { getPublicProfiles } from "../lib/services/publicProfiles";
+import { activityMetrics, formatPace } from "../lib/activityMetrics";
+import {
+  RESULT_ALPHABET,
+  formatResultDuration,
+  resultLetter,
+  resultPeople,
+  resultRuns,
+  visiblePeople,
+  type ResultPerson,
+} from "../lib/results";
+import { cloudinaryImageUrl } from "../lib/imageUrl";
+import type { ActivityType, PublicProfileData, RunData } from "../types";
 export default function StatisticsPage() {
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [nicknames, setNicknames] = useState<Record<string,string>>({});
-  const [avatars, setAvatars] = useState<Record<string, string>>({});
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [selectedType, setSelectedType] = useState<ActivityType>("běh");
+  const router = useRouter();
+  const [menuVisible, setMenuVisible] = useState(false),
+    [uid, setUid] = useState(""),
+    [selectedType, setSelectedType] = useState<ActivityType>("běh"),
+    [view, setView] = useState<"já" | "jednotlivci">("jednotlivci"),
+    [metric, setMetric] = useState<"km" | "tempo">("km"),
+    [sort, setSort] = useState<"rank" | "alpha">("rank"),
+    [startDate, setStartDate] = useState(""),
+    [endDate, setEndDate] = useState(""),
+    [search, setSearch] = useState(""),
+    [profiles, setProfiles] = useState<Record<string, PublicProfileData>>({}),
+    [activeLetter, setActiveLetter] = useState("");
+  const listRef = useRef<HTMLElement>(null),
+    alphabetRef = useRef<HTMLElement>(null);
   useEffect(() => {
     try {
-      const cached = localStorage.getItem("dolni-lhota-default-activity-v1");
-      if (cached === "běh" || cached === "chůze") setSelectedType(cached);
+      const value = localStorage.getItem("dolni-lhota-default-activity-v1");
+      if (value === "běh" || value === "chůze") setSelectedType(value);
     } catch {}
-  }, []);
-  const [view, setView] = useState("já");
-  const [metric, setMetric] = useState("km");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const router = useRouter();
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, u => { if (!u) router.push("/login"); else setUser(u); });
-    return () => unsub();
+    return onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        setUid("");
+        setProfiles({});
+        router.push("/login");
+      } else setUid(user.uid);
+    });
   }, [router]);
-
-  const runsQuery = useMemo(() => filteredRunsQuery(startDate || undefined, endDate || undefined), [startDate, endDate]);
-  const runsState = useSharedFirestoreQuery<RunData>("runs:statistics:" + (startDate || "all") + ":" + (endDate || "all"), runsQuery);
-  const runs = runsState.data;
-
+  const invalidDates = !!startDate && !!endDate && startDate > endDate;
+  const query = useMemo(
+    () =>
+      filteredRunsQuery(
+        invalidDates ? undefined : startDate || undefined,
+        invalidDates ? undefined : endDate || undefined,
+      ),
+    [startDate, endDate, invalidDates],
+  );
+  const state = useSharedFirestoreQuery<RunData>(
+    `runs:statistics:${invalidDates ? "invalid" : startDate || "all"}:${endDate || "all"}`,
+    query,
+  );
+  const filtered = useMemo(
+    () => resultRuns(state.data, selectedType, startDate, endDate),
+    [state.data, selectedType, startDate, endDate],
+  );
   useEffect(() => {
-    const ids = Array.from(new Set(runs.map(run => run.uid).filter((id): id is string => typeof id === "string" && !!id)));
-    if (!ids.length) { setAvatars({}); return; }
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const profiles = await getPublicProfiles(ids);
-        const next=Object.fromEntries(Object.entries(profiles).map(([uid,p])=>[uid,p.avatarUrl||""]));
-        if (cancelled) return;
-        setAvatars(next);
-        setNicknames(Object.fromEntries(Object.entries(profiles).map(([uid,p])=>[uid,p.nickname||""])));
-      } catch (error) { console.error("Nepodařilo se načíst avatary ve výsledcích", error); }
+    let active = true;
+    const ids = [...new Set(filtered.map((run) => run.uid))];
+    if (!ids.length) {
+      setProfiles({});
+      return;
+    }
+    void getPublicProfiles(ids).then((next) => {
+      if (active) setProfiles(next);
+    });
+    return () => {
+      active = false;
     };
-    void load();
-    return () => { cancelled = true; };
-  }, [runs]);
-
-  const filtered = runs.filter(run => {
-    if ((run.type || "běh") !== selectedType) return false;
-    const timestamp = run.timestamp;
-    const date = !timestamp ? new Date(0) : timestamp instanceof Date ? timestamp : "toDate" in timestamp && typeof timestamp.toDate === "function" ? timestamp.toDate() : "seconds" in timestamp && typeof timestamp.seconds === "number" ? new Date(timestamp.seconds * 1000) : new Date(0);
-    if (startDate && new Date(startDate + "T00:00:00") > date) return false;
-    if (endDate && new Date(endDate + "T23:59:59.999") < date) return false;
-    return true;
-  });
-
-  const userMap: Record<string, { name: string; km: number; min: number; avatarUrl?: string }> = {};
-  filtered.forEach(run => {
-    const uid = typeof run.uid === "string" ? run.uid : "";
-    if (!uid) return;
-    const name = nicknames[uid] || run.nickname || run.email?.split("@")[0] || "Anonym";
-    const km = Number(run.km) || 0;
-    const min = Number(run.minuty) || 0;
-    if (!userMap[uid]) userMap[uid] = { name, km: 0, min: 0, avatarUrl: run.avatarUrl || "" };
-    if(nicknames[uid])userMap[uid].name=nicknames[uid];
-    if (!userMap[uid].avatarUrl && run.avatarUrl) userMap[uid].avatarUrl = run.avatarUrl;
-    userMap[uid].km += km; userMap[uid].min += min;
-  });
-
-  const userList = Object.entries(userMap).map(([uid, data]) => ({ uid, name: data.name, avatarUrl: avatars[uid] || data.avatarUrl || "", km: data.km, tempo: data.km ? data.min / data.km : 0 })).sort((a,b) => metric === "tempo" ? a.tempo-b.tempo : b.km-a.km);
-  let totalKm = 0, totalMin = 0;
-  if (view === "já") {
-    const mine = filtered.filter(r => r.uid === user?.uid);
-    totalKm = mine.reduce((a,b) => a + Number(b.km || 0), 0);
-    totalMin = mine.reduce((a,b) => a + Number(b.minuty || 0), 0);
-  } else {
-    totalKm = userList.reduce((a,b) => a+b.km,0);
-    totalMin = userList.reduce((a,b) => a+(b.tempo*b.km || 0),0);
-  }
-  const overallMetrics = activityMetrics(filtered.filter(r => view === "já" ? r.uid === user?.uid : true));
-  const avgTempo = overallMetrics.pace;
-  const podiumData = userList;
-  const count = view === "já" ? filtered.filter(r => r.uid === user?.uid).length : userList.length;
-
-  useEffect(() => {
-    if (runsState.error) showAppToast("Výsledky se nepodařilo načíst. Zkus stránku obnovit.", "error");
-  }, [runsState.error]);
-
+  }, [filtered]);
+  const people = useMemo(
+    () => resultPeople(filtered, profiles, metric),
+    [filtered, profiles, metric],
+  );
+  const scope =
+    view === "já" ? filtered.filter((run) => run.uid === uid) : filtered;
+  const totals = activityMetrics(scope),
+    participantCount = new Set(scope.map((run) => run.uid)).size;
+  const visible = visiblePeople(
+    view === "já" ? people.filter((p) => p.uid === uid) : people,
+    search,
+    sort === "alpha",
+  );
+  const letters = new Set(visible.map((p) => resultLetter(p.name)));
+  const showPodium =
+    view === "jednotlivci" && sort === "rank" && !search.trim();
+  const ranked = people.filter((p) =>
+    metric === "km" ? p.km > 0 : p.pace > 0,
+  );
+  const podium = showPodium ? ranked.slice(0, 3) : [];
+  const podiumIds = new Set(podium.map((p) => p.uid));
+  const rows = visible.filter((p) => !podiumIds.has(p.uid));
+  const jump = (letter: string) => {
+    if (!letters.has(letter)) return;
+    setActiveLetter(letter);
+    const element = Array.from(
+      listRef.current?.querySelectorAll<HTMLElement>("[data-letter]") || [],
+    ).find((node) => node.dataset.letter === letter);
+    element?.scrollIntoView({ block: "start", behavior: "instant" });
+  };
+  const personRow = (person: ResultPerson, podiumRow = false) => (
+    <button
+      type="button"
+      key={person.uid}
+      className={`unified-person-row${podiumRow ? ` is-podium rank-${person.rank}` : ""}${person.uid === uid ? " is-mine" : ""}`}
+      onClick={() => router.push("/user/" + encodeURIComponent(person.uid))}
+      aria-label={`Profil ${person.name}`}
+    >
+      <span className="unified-rank">
+        {sort === "alpha" ? null : podiumRow ? (
+          <Trophy size={19} />
+        ) : (
+          person.rank
+        )}
+      </span>
+      <span className="activity-avatar">
+        {person.avatarUrl ? (
+          <img
+            src={cloudinaryImageUrl(person.avatarUrl, 96)}
+            alt=""
+            loading="lazy"
+          />
+        ) : (
+          person.name.charAt(0).toUpperCase()
+        )}
+      </span>
+      <span className="unified-person-main">
+        <strong>
+          {person.name}
+          {person.uid === uid ? " · ty" : ""}
+        </strong>
+        <small>
+          {person.count} aktivit · {formatResultDuration(person.minutes)}
+        </small>
+        <small>Průměrné tempo {formatPace(person.pace)}</small>
+      </span>
+      <span className="unified-person-value">
+        <strong>
+          {metric === "tempo"
+            ? formatPace(person.pace)
+            : `${person.km.toFixed(2)} km`}
+        </strong>
+        {metric === "tempo" && <small>{person.km.toFixed(2)} km</small>}
+        {podiumRow && <small>{person.rank}. místo</small>}
+      </span>
+    </button>
+  );
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
-    if (item === "logout") { await signOut(auth); router.push("/login"); return; }
-    if (item === "home") { router.push("/"); return; }
-    if (item === "trainer") { router.push("/trainer"); return; }
-    router.push("/" + (item === "myrun" ? "myruns" : item));
+    if (item === "logout") {
+      await signOut(auth);
+      router.push("/login");
+    } else
+      router.push(
+        item === "home" ? "/" : item === "myrun" ? "/myruns" : "/" + item,
+      );
   };
-
-  if (runsState.loading) {
-    return (
-      <>
-        <Navbar title="Výsledky" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-        <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
-        <main className="container statistics-page">
-          <LoadingSkeleton count={3} />
-        </main>
-      </>
-    );
-  }
-
   return (
     <>
-      <Navbar title="Výsledky" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
-      <main className="container statistics-page">
-        {/* Chyba načítání se zobrazuje jednotně přes globální AppToast. */}
-
-        <div className="control-caption">Typ aktivity</div>
+      <Navbar
+        title="Výsledky"
+        onMenuClick={() => setMenuVisible(true)}
+        onHomeClick={() => router.push("/")}
+      />
+      <Sidebar
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onSelect={handleSelect}
+      />
+      <main
+        className={`container statistics-page unified-results${sort === "alpha" && view === "jednotlivci" ? " has-alphabet" : ""}`}
+      >
         <ActivityTypeSelector value={selectedType} onChange={setSelectedType} />
-
+        <label className="results-search">
+          <Search size={18} />
+          <input
+            type="search"
+            value={search}
+            placeholder="Hledat přezdívku…"
+            aria-label="Hledat uživatele podle přezdívky"
+            onChange={(e) => {
+              setSearch(e.target.value);
+              if (e.target.value) setView("jednotlivci");
+            }}
+          />
+        </label>
         <div className="control-caption">Zobrazit výsledky</div>
         <div className="tile-group">
-          <button className={`tile-button ${view === "já" ? "active" : ""}`} onClick={() => setView("já")}><User size={20}/> Já</button>
-          <button className={`tile-button ${view === "jednotlivci" ? "active" : ""}`} onClick={() => setView("jednotlivci")}><Users size={20}/> Jednotlivci</button>
+          <button
+            type="button"
+            className={`tile-button ${view === "já" ? "active" : ""}`}
+            aria-pressed={view === "já"}
+            onClick={() => {
+              setView("já");
+              setSearch("");
+            }}
+          >
+            <User size={20} />
+            Já
+          </button>
+          <button
+            type="button"
+            className={`tile-button ${view === "jednotlivci" ? "active" : ""}`}
+            aria-pressed={view === "jednotlivci"}
+            onClick={() => setView("jednotlivci")}
+          >
+            <Users size={20} />
+            Jednotlivci
+          </button>
         </div>
-
         <div className="control-caption">Hodnocené podle</div>
         <div className="tile-group">
-          <button className={`tile-button ${metric === "km" ? "active" : ""}`} onClick={() => setMetric("km")}>Km</button>
-          <button className={`tile-button ${metric === "tempo" ? "active" : ""}`} onClick={() => setMetric("tempo")}>Tempo</button>
+          <button
+            type="button"
+            className={`tile-button ${metric === "km" ? "active" : ""}`}
+            aria-pressed={metric === "km"}
+            onClick={() => setMetric("km")}
+          >
+            Km
+          </button>
+          <button
+            type="button"
+            className={`tile-button ${metric === "tempo" ? "active" : ""}`}
+            aria-pressed={metric === "tempo"}
+            onClick={() => setMetric("tempo")}
+          >
+            Tempo
+          </button>
         </div>
-
         <div className="tile date-filter">
-          <label className="date-field"><span>Od data</span><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></label>
-          <label className="date-field"><span>Do data</span><input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} /></label>
-          {(startDate || endDate) && <button className="date-clear" onClick={() => { setStartDate(""); setEndDate(""); }}>Zrušit filtr</button>}
+          <label className="date-field">
+            <span>Od data</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </label>
+          <label className="date-field">
+            <span>Do data</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </label>
+          {(startDate || endDate) && (
+            <button
+              type="button"
+              className="date-clear"
+              onClick={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+            >
+              Zrušit filtr
+            </button>
+          )}
         </div>
-
-        <div className="tile-group stat-summary-grid">
-          <div className="tile stat-card"><MapPin/><span>Celkem km</span><strong>{totalKm.toFixed(2)} km</strong></div>
-          <div className="tile stat-card"><Gauge/><span>Průměrné tempo</span><strong>{formatPace(avgTempo)}</strong></div>
-          <div className="tile stat-card"><ListChecks/><span>Počet</span><strong>{count}</strong></div>
-        </div>
-
-        {view === "já" && (
-          <section className="tile result-my-position">
-            <div className="results-position-row"><span><Trophy size={20}/> Tvé výsledky</span><strong>{count}</strong></div>
-          </section>
+        {invalidDates && (
+          <p role="alert">Datum od nesmí být později než datum do.</p>
         )}
-
-        {view !== "já" && (
+        {state.error && (
+          <p role="status">
+            Výsledky se nepodařilo obnovit.
+            {state.data.length
+              ? " Zobrazuji poslední načtené údaje."
+              : " Zkus stránku obnovit."}
+          </p>
+        )}
+        {state.loading && !state.data.length ? (
+          <LoadingSkeleton count={3} />
+        ) : (
           <>
-            <section className="results-section">
-              <div className="results-section-heading"><Trophy size={22}/><div><h2>Stupně vítězů</h2><p>Nejlepší výsledky podle zvoleného období a kritéria.</p></div></div>
-              <ul className="results-podium">
-                {podiumData.slice(0,3).map((item, idx) => {
-                  const label = item.name;
-                  const avatar = item.avatarUrl;
-                  return <li key={idx} className={`results-podium-item rank-${idx+1}`}>
-                    <span className="results-rank-icon"><Medal /></span>
-                    <span className="activity-avatar">{avatar ? <img src={avatar} alt="" /> : label.charAt(0).toUpperCase()}</span>
-                    <span className="results-name">{label}</span>
-                    <span className="results-value">{metric === "km" ? `${item.km.toFixed(2)} km` : `${item.tempo.toFixed(2)} min/km`}</span>
-                  </li>;
-                })}
-              </ul>
+            <section
+              className="unified-results-summary"
+              aria-label={
+                view === "já" ? "Souhrn mých výsledků" : "Souhrn všech výsledků"
+              }
+            >
+              {[
+                {
+                  label: "Celkem km",
+                  value: `${totals.km.toFixed(2)} km`,
+                  Icon: MapPin,
+                },
+                {
+                  label: "Čas",
+                  value: formatResultDuration(totals.minutes),
+                  Icon: Clock3,
+                },
+                {
+                  label: "Průměrné tempo",
+                  value: formatPace(totals.pace),
+                  Icon: Gauge,
+                },
+                {
+                  label: "Aktivity",
+                  value: String(totals.count),
+                  Icon: ListChecks,
+                },
+                {
+                  label: "Účastníci",
+                  value: String(participantCount),
+                  Icon: Users,
+                },
+              ].map((item) => (
+                <div className="tile" key={item.label}>
+                  <item.Icon size={20} />
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
             </section>
 
-            <section className="results-other">
-              <div className="results-section-heading"><Users size={22}/><div><h2>Ostatní</h2><p>Další účastníci v pořadí.</p></div></div>
-              <ul className="results-podium">
-                {podiumData.slice(3).map((item, idx) => {
-                  const label = item.name;
-                  return <li key={idx} className="results-podium-item"><span className="results-rank-icon"><span>{idx+4}</span></span><span className="activity-avatar">{label.charAt(0).toUpperCase()}</span><span className="results-name">{label}</span><span className="results-value">{metric === "km" ? `${item.km.toFixed(2)} km` : `${item.tempo.toFixed(2)} min/km`}</span></li>;
-                })}
-              </ul>
+            {view === "jednotlivci" && (
+              <div
+                className="participant-sort"
+                role="group"
+                aria-label="Řazení výsledků"
+              >
+                <button
+                  type="button"
+                  className={`participant-sort-button${sort === "rank" ? " active" : ""}`}
+                  aria-pressed={sort === "rank"}
+                  onClick={() => setSort("rank")}
+                >
+                  {metric === "tempo" ? "Podle tempa" : "Podle kilometrů"}
+                </button>
+                <button
+                  type="button"
+                  className={`participant-sort-button${sort === "alpha" ? " active" : ""}`}
+                  aria-pressed={sort === "alpha"}
+                  onClick={() => setSort("alpha")}
+                >
+                  Podle abecedy
+                </button>
+              </div>
+            )}
+            {search.trim() && (
+              <p className="chart-hint">
+                Nalezeno: {visible.length}. Souhrn nahoře platí pro celé zvolené
+                období.
+              </p>
+            )}
+            {!!podium.length && (
+              <section className="results-section">
+                <h2>Stupně vítězů</h2>
+                <div className="unified-results-list">
+                  {podium.map((p) => personRow(p, true))}
+                </div>
+              </section>
+            )}
+            <section
+              ref={listRef}
+              className="unified-results-list"
+              aria-label="Seznam účastníků a výsledků"
+            >
+              {!visible.length ? (
+                <p>Pro tento výběr nebyl nalezen žádný uživatel.</p>
+              ) : (
+                rows.map((person, index) => (
+                  <React.Fragment key={person.uid}>
+                    {view === "jednotlivci" &&
+                      sort === "alpha" &&
+                      (index === 0 ||
+                        resultLetter(rows[index - 1].name) !==
+                          resultLetter(person.name)) && (
+                        <h3
+                          className="results-letter-heading"
+                          data-letter={resultLetter(person.name)}
+                        >
+                          {resultLetter(person.name)}
+                        </h3>
+                      )}
+                    {personRow(person)}
+                  </React.Fragment>
+                ))
+              )}
             </section>
           </>
+        )}
+        {sort === "alpha" && view === "jednotlivci" && visible.length > 0 && (
+          <nav
+            ref={alphabetRef}
+            className="results-alphabet"
+            aria-label="Abecední navigace"
+            onPointerDown={(event) => {
+              event.currentTarget.setPointerCapture(event.pointerId);
+              const rect = event.currentTarget.getBoundingClientRect();
+              jump(
+                RESULT_ALPHABET[
+                  Math.max(
+                    0,
+                    Math.min(
+                      RESULT_ALPHABET.length - 1,
+                      Math.floor(
+                        ((event.clientY - rect.top) / rect.height) *
+                          RESULT_ALPHABET.length,
+                      ),
+                    ),
+                  )
+                ],
+              );
+            }}
+            onPointerMove={(event) => {
+              if (!event.currentTarget.hasPointerCapture(event.pointerId))
+                return;
+              const rect = event.currentTarget.getBoundingClientRect();
+              jump(
+                RESULT_ALPHABET[
+                  Math.max(
+                    0,
+                    Math.min(
+                      RESULT_ALPHABET.length - 1,
+                      Math.floor(
+                        ((event.clientY - rect.top) / rect.height) *
+                          RESULT_ALPHABET.length,
+                      ),
+                    ),
+                  )
+                ],
+              );
+            }}
+          >
+            {RESULT_ALPHABET.map((letter) => (
+              <button
+                type="button"
+                key={letter}
+                disabled={!letters.has(letter)}
+                aria-label={`Přejít na ${letter}`}
+                aria-current={activeLetter === letter ? "location" : undefined}
+                onClick={() => jump(letter)}
+              >
+                {letter}
+              </button>
+            ))}
+          </nav>
         )}
       </main>
     </>
