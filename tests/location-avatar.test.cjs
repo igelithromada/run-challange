@@ -41,14 +41,14 @@ test('weather reports GPS failure, automatically recovers, names the place, and 
   const helpers=load('app/lib/weather.ts'), location=load('app/lib/location.ts');
   const weather={current:{temperature:{degrees:7}},hourly:[],fetchedAt:new Date().toISOString()};
   const Card=load('app/components/WeatherCard.tsx',{react:hooks,'../lib/weather':helpers,'../lib/location':location,'./WeatherVisual':{default:()=>null,weatherDescription:()=>''},'../lib/firebase':{auth:{currentUser:{getIdToken:async()=>'token'}}}}, {
-    navigator:{permissions:{query:async()=>({state:'granted'})},geolocation:{getCurrentPosition:(yes,no)=>enabled?yes({coords:{latitude:49.84,longitude:18.1,accuracy:60}}):no({code:2})}},
+    navigator:{permissions:{query:async()=>({state:'granted'})},geolocation:{getCurrentPosition:(yes,no,options)=>{ assert.equal(options.enableHighAccuracy,true); return enabled?yes({coords:{latitude:49.84,longitude:18.1,accuracy:60}}):no({code:2}); }}},
     document:{visibilityState:'visible',addEventListener(){},removeEventListener(){}},window:{setTimeout:()=>1,clearTimeout(){},setInterval:(fn,ms)=>{const id=++timerId;timers.set(id,{fn,ms});return id;},clearInterval:id=>timers.delete(id),addEventListener(){},removeEventListener(){}},
     fetch:async url=>Response.json(url.includes('/location?')?{name:'Dolní Lhota, Moravskoslezský kraj'}:weather),
   }).default;
   const render=()=>{hook=0;const result=Card();effects.splice(0).forEach(fn=>fn());return result;};
   const flush=()=>new Promise(resolve=>setImmediate(resolve));
   render(); await flush();
-  find(render(), n=>n.type==='button'&&text(n)==='Moje poloha').props.onClick(); await flush();
+  find(render(), n=>n.type==='button'&&text(n)==='Moje poloha (GPS)').props.onClick(); await flush();
   assert.match(text(render()),/Zapni polohu/);
   enabled=true; [...timers.values()].find(t=>t.ms===15000).fn(); await flush();
   assert.match(text(render()),/Poloha dostupná/); assert.match(text(render()),/Dolní Lhota, Moravskoslezský kraj/);

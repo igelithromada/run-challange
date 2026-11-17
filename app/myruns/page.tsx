@@ -92,7 +92,6 @@ export default function MyRunsPage() {
   }, []);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [quickFilter, setQuickFilter] = useState("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [km, setKm] = useState("");
   const [duration, setDuration] = useState("");
@@ -166,13 +165,6 @@ export default function MyRunsPage() {
     const date = dateOf(run.timestamp);
     if (dateFrom && date < new Date(dateFrom + "T00:00:00")) return false;
     if (dateTo && date > new Date(dateTo + "T23:59:59.999")) return false;
-    if (quickFilter !== "all") {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      if (quickFilter === "week") { const day = (start.getDay() + 6) % 7; start.setDate(start.getDate() - day); }
-      if (quickFilter === "month") start.setDate(1);
-      if (date < start) return false;
-    }
     return true;
   });
   const metrics = activityMetrics(filteredRuns);
@@ -287,15 +279,12 @@ export default function MyRunsPage() {
     <div className="container myruns-page">
       <div className="control-caption">Typ aktivity</div>
       <ActivityTypeSelector value={selectedType as "běh" | "chůze"} onChange={setSelectedType} />
-      <div className="control-caption">Rychlý filtr období</div>
-      <div className="activity-quick-filters">
-        {[["all","Vše"],["week","Tento týden"],["month","Tento měsíc"]].map(([value,label]) => <button key={value} className={`activity-quick-filter-button${quickFilter === value ? " active" : ""}`} onClick={() => setQuickFilter(value)}>{label}</button>)}
-      </div>
+
       <details className="activity-date-range">
-        <summary>Vlastní období{(dateFrom || dateTo) && <span>{dateFrom ? dateFrom.split("-").reverse().join(". ") : "začátek"} – {dateTo ? dateTo.split("-").reverse().join(". ") : "dnes"}</span>}</summary>
+        <summary>Období{(dateFrom || dateTo) && <span>{dateFrom ? dateFrom.split("-").reverse().join(". ") : "začátek"} – {dateTo ? dateTo.split("-").reverse().join(". ") : "dnes"}</span>}</summary>
         <div className="tile date-filter">
-          <label className="date-field"><span>Od data</span><input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setQuickFilter("all"); }} /></label>
-          <label className="date-field"><span>Do data</span><input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setQuickFilter("all"); }} /></label>
+          <label className="date-field"><span>Od data</span><input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); }} /></label>
+          <label className="date-field"><span>Do data</span><input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); }} /></label>
           {(dateFrom || dateTo) && <button className="date-clear" onClick={() => { setDateFrom(""); setDateTo(""); }}>Zrušit filtr</button>}
         </div>
       </details>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import RouteElevationProfile from "./RouteElevationProfile";
+import { routeSamples, type RouteSample } from "../lib/routeProfile";
 import { LoaderCircle, MapPinned } from "lucide-react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 
@@ -104,64 +106,13 @@ function calculateStats(coordinates: Coordinate[], elevations: (number | null)[]
   return {
     distanceKm: distance / 1000,
     elevationGain: gain,
-    minElevation: Math.min(...validElevations),
-    maxElevation: Math.max(...validElevations),
+    minElevation: validElevations.reduce((min,value)=>Math.min(min,value),Infinity),
+    maxElevation: validElevations.reduce((max,value)=>Math.max(max,value),-Infinity),
   };
 }
 
 function formatKm(value: number) {
   return value >= 10 ? value.toFixed(0) : value.toFixed(1);
-}
-
-function ElevationProfile({
-  elevations,
-  gain,
-  min,
-  max,
-  distanceKm,
-}: {
-  elevations: (number | null)[];
-  gain: number | null;
-  min: number | null;
-  max: number | null;
-  distanceKm: number;
-}) {
-  const valid = elevations.filter((value): value is number => typeof value === "number");
-  if (valid.length < 2 || min === null || max === null || !Number.isFinite(distanceKm) || distanceKm <= 0) return null;
-
-  const range = Math.max(1, max - min);
-  const points = elevations
-    .map((value, index) => {
-      if (value === null) return null;
-      const x = (index / Math.max(1, elevations.length - 1)) * 100;
-      const y = 88 - ((value - min) / range) * 68;
-      return `${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .filter((value): value is string => value !== null);
-
-  if (!points.length) return null;
-
-  const linePoints = points.join(" ");
-  const areaPoints = `0,88 ${linePoints} 100,88`;
-  const axis = [0, 0.25, 0.5, 0.75, 1].map((ratio) => distanceKm * ratio);
-
-  return (
-    <div className="route-elevation-profile" aria-label={`Výškový profil trasy, ${distanceKm.toFixed(1)} km`}>
-      <div className="route-elevation-header">
-        <strong>Výškový profil</strong>
-        <span>{distanceKm >= 10 ? distanceKm.toFixed(0) : distanceKm.toFixed(1)} km · {Math.round(min)}–{Math.round(max)} m n. m.{gain !== null ? ` · ↑ ${Math.round(gain)} m` : ""}</span>
-      </div>
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        <polygon points={areaPoints} fill="currentColor" fillOpacity=".10" stroke="none" />
-        <polyline points={linePoints} fill="none" stroke="currentColor" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <div className="route-elevation-axis" aria-hidden="true">
-        {axis.map((value, index) => (
-          <span key={index}>{value >= 10 ? value.toFixed(0) : value.toFixed(1)} km</span>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, interactive = true, mapStyle = "standard" }: Props) {
@@ -170,13 +121,17 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
   const routeSvgRef = useRef<SVGSVGElement | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [stats, setStats] = useState<RouteStats | null>(null);
-  const [profileElevations, setProfileElevations] = useState<(number | null)[]>([]);
+  const [samples, setSamples] = useState<RouteSample[]>([]);
+  const selectedCoordinate = useRef<Coordinate | null>(null);
+  const updateOverlay = useRef<(() => void) | null>(null);
   const routeColor = mapStyle === "minimal" ? "#35d69a" : "#4da3ff";
 
   useEffect(() => {
     const element = elementRef.current;
     if (!element) return;
 
+    selectedCoordinate.current = null;
+    setSamples([]); setStats(null); setState("loading");
     let alive = true;
     let map: MapLibreMap | null = null;
     let drawRoute: (() => void) | null = null;
@@ -211,7 +166,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
           ? [parsed.coordinates]
           : Array.from({ length: lapCount }, () => parsed.coordinates);
         const routePoints = routeLines.flat();
-        setProfileElevations(parsed.elevations);
+        setSamples(routeSamples(parsed.coordinates, parsed.elevations, lapCount));
         const routeStats = calculateStats(parsed.coordinates, parsed.elevations);
         setStats({
           ...routeStats,
@@ -255,6 +210,16 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
         };
         map.on("error", onMapError);
 
+        const updateSelectedMarker = () => {
+          if (!alive || !map || !routeSvgRef.current) return;
+          const svg = routeSvgRef.current;
+          const selected = svg.querySelector<SVGCircleElement>(".route-overlay-selected");
+          if (selected) {
+            selected.style.display = selectedCoordinate.current ? "" : "none";
+            if (selectedCoordinate.current) { const projected = map.project(selectedCoordinate.current); selected.setAttribute("cx",String(projected.x)); selected.setAttribute("cy",String(projected.y)); }
+          }
+        };
+
         const updateRouteOverlay = () => {
           if (!alive || !map || !routeSvgRef.current) return;
           const svg = routeSvgRef.current;
@@ -264,6 +229,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
             return `${projected.x.toFixed(1)},${projected.y.toFixed(1)}`;
           }).join(" ");
           svg.querySelectorAll<SVGPolylineElement>(".route-overlay-line").forEach(line => line.setAttribute("points", points));
+          updateSelectedMarker();
           const first = map!.project(routePoints[0]);
           const last = map!.project(routePoints[routePoints.length - 1]);
           const start = svg.querySelector<SVGCircleElement>(".route-overlay-start");
@@ -282,6 +248,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
           }
         };
 
+        updateOverlay.current = updateSelectedMarker;
         drawRoute = () => {
           if (!alive || !map || !map.isStyleLoaded() || map.getSource("route")) {
             updateRouteOverlay();
@@ -411,18 +378,18 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
       window.removeEventListener("resize", handleResize);
       map?.remove();
       mapRef.current = null;
+      updateOverlay.current = null;
     };
   }, [gpxUrl, laps, interactive, mapStyle]);
   return (
     <div className={`route-visualization route-visualization-${mapStyle} ${interactive ? "route-visualization-interactive" : "route-visualization-preview"} route-map-loading-${state}`}>
       {stats && (
-        <ElevationProfile
-          elevations={profileElevations}
-          gain={stats.elevationGain}
-          min={stats.minElevation}
-          max={stats.maxElevation}
-          distanceKm={stats.distanceKm}
-        />
+        <RouteElevationProfile key={gpxUrl+laps} samples={samples} gain={stats.elevationGain} min={stats.minElevation} max={stats.maxElevation} onSelect={sample => {
+          selectedCoordinate.current = sample.coordinate;
+          const map = mapRef.current;
+          if (map) { const point = map.project(sample.coordinate), bounds = map.getContainer().getBoundingClientRect(); if (point.x < 20 || point.x > bounds.width-20 || point.y < 20 || point.y > bounds.height-20) map.panTo(sample.coordinate, { duration: 0 }); }
+          updateOverlay.current?.();
+        }} />
       )}
 
       <div className={`route-map-shell route-map-${mapStyle} ${interactive ? "route-map-interactive" : "route-map-preview"}`}>
@@ -432,6 +399,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
             <polyline className="route-overlay-line route-overlay-line-inner" fill="none" stroke={mapStyle === "minimal" ? "#a7ffe4" : "#d7eaff"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
             <circle className="route-overlay-start" r="7" fill="#35d69a" stroke="#fff" strokeWidth="2" vectorEffect="non-scaling-stroke" />
             <circle className="route-overlay-end" r="7" fill="#ff6b78" stroke="#fff" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+            <circle className="route-overlay-selected" r="9" fill="#ffbe55" stroke="#fff" strokeWidth="3" style={{ display: "none" }} />
             <text className="route-overlay-start-label" textAnchor="middle">START</text>
             <text className="route-overlay-end-label" textAnchor="middle">CÍL</text>
           </svg>

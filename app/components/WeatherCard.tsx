@@ -81,7 +81,7 @@ export default function WeatherCard() {
       void loadWeather(); return;
     }
     if (!("geolocation" in navigator)) { setLocationError("Telefon nepodporuje určení polohy."); setFollowLocation(false); return; }
-    setLocating(true); setLocationStatus("Zjišťuji polohu telefonu…");
+    setLocating(true); setLocationStatus("Zjišťuji polohu GPS…");
     navigator.geolocation.getCurrentPosition(position => {
       if (!mounted.current || version !== locationVersion.current) return;
       const coords = { lat: Math.round(position.coords.latitude * 100) / 100, lon: Math.round(position.coords.longitude * 100) / 100 };
@@ -108,7 +108,7 @@ export default function WeatherCard() {
     }, cause => {
       if (!mounted.current || version !== locationVersion.current) return;
       setLocating(false); setLocationStatus(""); setLocationError(locationErrorMessage(cause.code));
-    }, { enableHighAccuracy: false, maximumAge: 0, timeout: 15000 });
+    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
   };
   locateRef.current = () => chooseLocation(true);
 
@@ -126,7 +126,7 @@ export default function WeatherCard() {
       }, cause => {
         pending = false; if (!active) return;
         setLocationStatus(""); setLocationError(locationErrorMessage(cause.code));
-      }, { enableHighAccuracy: false, maximumAge: 0, timeout: 6000 });
+      }, { enableHighAccuracy: true, maximumAge: 0, timeout: 6000 });
     };
     void navigator.permissions?.query({ name: "geolocation" }).then(result => {
       if (!active) return; permission = result;
@@ -177,7 +177,7 @@ export default function WeatherCard() {
   return <section className="tile weather-card weather-card-improved" aria-label="Předpověď počasí" aria-busy={refreshing}>
     <div className="weather-location-selector" role="group" aria-label="Místo předpovědi">
       <button type="button" aria-pressed={!followLocation} onClick={() => chooseLocation(false)}>Dolní Lhota</button>
-      <button type="button" aria-pressed={followLocation} disabled={!!locating} onClick={() => chooseLocation(true)}><MapPin size={16} />{locating ? "Zjišťuji polohu…" : "Moje poloha"}</button>
+      <button type="button" aria-pressed={followLocation} disabled={!!locating} onClick={() => chooseLocation(true)}><MapPin size={16} />{locating ? "Zjišťuji polohu…" : "Moje poloha (GPS)"}</button>
     </div>
     {(locationError || locationStatus) && <p className="weather-precipitation-note" role="status">{locationError || locationStatus}{locationError && usingGps ? " Zobrazuji počasí pro poslední zjištěnou polohu." : ""}</p>}
     {!current ? <p className="weather-loading" role="status">{error || "Načítám předpověď…"}</p> : <>
