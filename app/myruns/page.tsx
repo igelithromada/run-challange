@@ -1,4 +1,5 @@
 "use client";
+import { preparePhoto } from "../lib/preparePhoto";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Timestamp } from "firebase/firestore";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
@@ -26,7 +27,7 @@ const uploadToCloudinary = async (file: File) => {
 
   const token = await user.getIdToken();
   const data = new FormData();
-  data.append("file", file);
+  data.append("file", await preparePhoto(file));
 
   const response = await fetch("/api/media/upload", {
     method: "POST",
@@ -194,8 +195,8 @@ export default function MyRunsPage() {
     if (!Number.isFinite(parsedKm) || parsedKm <= 0 || !Number.isFinite(minutesValue) || minutesValue < 0 || seconds <= 0 || !activityDate) {
       setActionError("Zkontroluj vzdálenost, čas ve formátu MM:SS a datum."); return;
     }
-    if (file && (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024)) {
-      setActionError("Vyber obrázek do 5 MB."); return;
+    if (file && (!file.type.startsWith("image/"))) {
+      setActionError("Vyber fotografii."); return;
     }
     if(file && (runs.find(run => run.id===id)?.imageUrls?.length || 0)>=6){setActionError("U aktivity může být nejvýše šest fotografií.");return;}
     setBusy(true); setActionError("");

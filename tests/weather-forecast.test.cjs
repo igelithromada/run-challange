@@ -16,7 +16,7 @@ function load(file, dependencies = {}, globals = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
   }).outputText;
   vm.runInNewContext(code, { module: testModule, exports: testModule.exports,
-    require: name => dependencies[name] || requireFile(name), URL, Date, Intl, AbortController, Response,
+    require: name => dependencies[name] || requireFile(name), URL, URLSearchParams, Date, Intl, AbortController, Response,
     setTimeout, clearTimeout, console: { ...console, error() {} }, ...globals }, { filename });
   return testModule.exports;
 }
@@ -109,7 +109,7 @@ test('current conditions use current precipitation and the hourly strip starts i
   const Card = load('app/components/WeatherCard.tsx', { react: hooks, '../lib/weather': helpers, './WeatherVisual': visuals }).default;
   const html = renderToStaticMarkup(React.createElement(Card));
   const top = html.slice(html.indexOf('weather-precipitation-stat'), html.indexOf('weather-hour-section'));
-  assert.match(top, /0,1 mm/); assert.match(top, /Aktuální srážky/);
+  assert.match(top, /0,1 mm/); assert.match(top, /<small>Srážky<\/small>/);
   assert.doesNotMatch(top, /95 %/);
   assert.doesNotMatch(html, /Teď/); assert.match(html, /08:00/);
   assert.doesNotMatch(html, /Předpověď pro 07:00–08:00/);
@@ -126,3 +126,15 @@ test('current conditions use current precipitation and the hourly strip starts i
   assert.equal(options.cache, 'no-store');
   assert.equal(options.next, undefined);
  });
+
+test('GPS weather validates coordinates and requests the chosen coarse location', async () => {
+  let requested;
+  const data = fixture(); data.timezone = 'Europe/Paris';
+  class Clock extends Date { static now() { return base + 7.5 * 3600000; } }
+  const api = load('app/api/weather/route.ts', {}, { Date: Clock, fetch: async url => { requested = new URL(url); return Response.json(data); } });
+  const response = await api.GET({ url: 'https://example.test/api/weather?lat=48.85661&lon=2.35222' });
+  assert.equal(response.status, 200); const body = await response.json();
+  assert.equal(requested.searchParams.get('latitude'), '48.86'); assert.equal(requested.searchParams.get('longitude'), '2.35');
+  assert.equal(requested.searchParams.get('timezone'), 'auto'); assert.equal(body.locationName, 'Moje poloha'); assert.equal(body.timeZone.id, 'Europe/Paris');
+  for (const query of ['lat=91&lon=18', 'lat=49', 'lat=bad&lon=18']) assert.equal((await api.GET({ url: `https://example.test/api/weather?${query}` })).status, 400);
+});

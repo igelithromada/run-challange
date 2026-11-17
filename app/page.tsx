@@ -190,8 +190,7 @@ export default function Page() {
         <section className="home-quick-add" aria-labelledby="home-add-heading">
           <div className="home-section-heading">
             <div>
-              <span className="home-section-eyebrow">Nová aktivita</span>
-              <h2 id="home-add-heading">Přidej svůj dnešní pohyb</h2>
+              <h2 id="home-add-heading">Nová aktivita</h2>
             </div>
           </div>
           <ActivityTypeSelector value={selectedType} onChange={(value) => { setSelectedType(value); try { localStorage.setItem("dolni-lhota-default-activity-v1", value); } catch {} }} />
@@ -204,7 +203,6 @@ export default function Page() {
         <section className="home-activity-feed" aria-labelledby="home-feed-heading">
           <div className="home-section-heading home-feed-heading">
             <div>
-              <span className="home-section-eyebrow">Komunita</span>
               <h2 id="home-feed-heading">Poslední záznamy</h2>
             </div>
           </div>

@@ -817,3 +817,8 @@ html[data-theme="light"] .activity-card-modern .activity-date { background: tran
 .weather-precipitation-note { margin: .65rem 0 0; font-size: .71rem; line-height: 1.5; color: var(--ui-muted); }
 .weather-refresh-row { align-items: center; gap: .75rem; }
 .weather-refresh-error { margin: 0; font-size: .8rem; color: var(--ui-danger); }
+
+.weather-location-selector { display: flex; gap: .4rem; margin-bottom: .75rem; flex-wrap: wrap; }
+.weather-location-selector button { display: inline-flex; align-items: center; justify-content: center; gap: .3rem; min-height: 44px; padding: .45rem .75rem; border: 1px solid var(--ui-border); border-radius: 11px; background: var(--ui-bg-soft); color: var(--ui-text); font: inherit; font-size: .8rem; cursor: pointer; }
+.weather-location-selector button[aria-pressed="true"] { border-color: var(--ui-border-strong); background: var(--control-background-active); font-weight: 750; }
+.weather-location-selector button:disabled { opacity: .6; cursor: progress; }

@@ -1,4 +1,5 @@
 "use client";
+import { preparePhoto } from "../../lib/preparePhoto";
 
 import React, { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
@@ -119,10 +120,10 @@ export default function TeamDetailPage() {
     if (!file || !isManager) return;
     try {
       if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
-      if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) throw new Error("Vyber obrázek do 5 MB.");
+      if (!file.type.startsWith("image/")) throw new Error("Vyber fotografii.");
       const token = await auth.currentUser.getIdToken();
       const form = new FormData();
-      form.append("file", file);
+      form.append("file", await preparePhoto(file));
       const response = await fetch("/api/media/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || typeof result.secureUrl !== "string") throw new Error(result.error || "Nahrání selhalo.");

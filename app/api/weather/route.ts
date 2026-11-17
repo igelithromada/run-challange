@@ -42,11 +42,11 @@ function conditionType(code: number) {
   return "CLEAR";
 }
 
-async function openMeteo(fresh = false) {
+async function openMeteo(fresh = false, coordinates?: { lat: number; lon: number }) {
   const url = new URL("https://api.open-meteo.com/v1/forecast");
-  url.searchParams.set("latitude", String(LATITUDE));
-  url.searchParams.set("longitude", String(LONGITUDE));
-  url.searchParams.set("timezone", "Europe/Prague");
+  url.searchParams.set("latitude", String(coordinates?.lat ?? LATITUDE));
+  url.searchParams.set("longitude", String(coordinates?.lon ?? LONGITUDE));
+  url.searchParams.set("timezone", coordinates ? "auto" : "Europe/Prague");
   url.searchParams.set("forecast_days", "3");
   url.searchParams.set("timeformat", "unixtime");
   url.searchParams.set(
@@ -75,6 +75,7 @@ async function openMeteo(fresh = false) {
   return {
     configured: true,
     source: "Open-Meteo",
+    locationName: coordinates ? "Moje poloha" : "Dolní Lhota u Ostravy",
     current: {
       isDay: c.is_day === 1 ? true : c.is_day === 0 ? false : undefined,
       temperature: { degrees: c.temperature_2m },
@@ -109,16 +110,26 @@ async function openMeteo(fresh = false) {
         }
       };
     }),
-    timeZone: { id: "Europe/Prague" },
+    timeZone: { id: data.timezone || "Europe/Prague" },
     fetchedAt: new Date(now).toISOString(),
     observedAt: typeof c.time === "number" ? new Date(c.time * 1000).toISOString() : undefined
   };
 }
 
 export async function GET(request?: Request) {
-  const fresh = request ? new URL(request.url).searchParams.get("refresh") === "1" : false;
+  const query = request ? new URL(request.url).searchParams : new URLSearchParams();
+  const fresh = query.get("refresh") === "1";
+  let coordinates: { lat: number; lon: number } | undefined;
+  if (query.has("lat") || query.has("lon")) {
+    const lat = Number(query.get("lat")), lon = Number(query.get("lon"));
+    if (!query.get("lat") || !query.get("lon") || !Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+      return NextResponse.json({ error: "Neplatná poloha pro počasí." }, { status: 400 });
+    }
+    // A kilometre-scale cell is sufficient for the forecast and shares provider cache entries.
+    coordinates = { lat: Math.round(lat * 100) / 100, lon: Math.round(lon * 100) / 100 };
+  }
   try {
-    return NextResponse.json(await openMeteo(fresh), {
+    return NextResponse.json(await openMeteo(fresh, coordinates), {
       headers: { "Cache-Control": fresh ? "no-store" : "public, max-age=0, s-maxage=900, must-revalidate" }
     });
   } catch (error) {

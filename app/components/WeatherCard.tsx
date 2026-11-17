@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Wind, Droplets, RefreshCw } from "lucide-react";
+import { Wind, Droplets, RefreshCw, MapPin } from "lucide-react";
 import type { WeatherResponse } from "../lib/weather";
 import { formatPrecipitation, upcomingWeatherHours, weatherIsNight, weatherTime } from "../lib/weather";
 import WeatherVisual, { weatherDescription } from "./WeatherVisual";
@@ -16,6 +16,11 @@ export default function WeatherCard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [refreshStatus, setRefreshStatus] = useState("");
+  const [locating, setLocating] = useState(false);
+  const [usingGps, setUsingGps] = useState(false);
+  const [locationError, setLocationError] = useState("");
+  const locationRef = useRef<{ lat: number; lon: number } | null>(null);
+  const locationVersion = useRef(0);
   const lastObserved = useRef<string | undefined>(undefined);
   const mounted = useRef(false);
   const request = useRef<AbortController | null>(null);
@@ -31,7 +36,10 @@ export default function WeatherCard() {
     const timeout = window.setTimeout(() => controller.abort(), 10000);
     try {
       // Explicit refresh bypasses both the CDN and the upstream Next.js cache.
-      const response = await fetch(forceRefresh ? `/api/weather?refresh=1&request=${Date.now()}` : "/api/weather", { cache: forceRefresh ? "no-store" : "no-cache", signal: controller.signal });
+      const query = new URLSearchParams();
+      if (locationRef.current) { query.set("lat", String(locationRef.current.lat)); query.set("lon", String(locationRef.current.lon)); }
+      if (forceRefresh) { query.set("refresh", "1"); query.set("request", String(Date.now())); }
+      const response = await fetch(`/api/weather${query.size ? `?${query}` : ""}`, { cache: forceRefresh ? "no-store" : "no-cache", signal: controller.signal });
       const result: WeatherResponse = await response.json();
       if (!response.ok || result.error || !result.current) throw new Error(result.error || "Počasí se nepodařilo načíst.");
       if (mounted.current && request.current === controller) {
@@ -54,6 +62,25 @@ export default function WeatherCard() {
     }
   }, []);
 
+  const chooseLocation = (gps: boolean) => {
+    const version = ++locationVersion.current;
+    setLocationError("");
+    const apply = (position: { lat: number; lon: number } | null) => {
+      if (!mounted.current || version !== locationVersion.current) return;
+      request.current?.abort(); request.current = null;
+      locationRef.current = position; lastObserved.current = undefined;
+      setUsingGps(!!position); setLocating(false); setWeather(null);
+      void loadWeather();
+    };
+    if (!gps) { apply(null); return; }
+    if (!("geolocation" in navigator)) { setLocationError("Telefon nepodporuje určení polohy."); return; }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(position => apply({ lat: Math.round(position.coords.latitude * 100) / 100, lon: Math.round(position.coords.longitude * 100) / 100 }), () => {
+      if (!mounted.current || version !== locationVersion.current) return;
+      setLocating(false); setLocationError("Polohu se nepodařilo získat. Povol polohu v telefonu, nebo použij Dolní Lhotu.");
+    }, { enableHighAccuracy: false, maximumAge: 300000, timeout: 15000 });
+  };
+
   useEffect(() => {
     mounted.current = true;
     void loadWeather();
@@ -69,6 +96,7 @@ export default function WeatherCard() {
     document.addEventListener("visibilitychange", resume);
     return () => {
       mounted.current = false;
+      ++locationVersion.current;
       request.current?.abort();
       request.current = null;
       window.clearInterval(clock);
@@ -90,12 +118,17 @@ export default function WeatherCard() {
     : "posledních 15 minut";
 
   return <section className="tile weather-card weather-card-improved" aria-label="Předpověď počasí" aria-busy={refreshing}>
+    <div className="weather-location-selector" role="group" aria-label="Místo předpovědi">
+      <button type="button" aria-pressed={!usingGps} onClick={() => chooseLocation(false)}>Dolní Lhota</button>
+      <button type="button" aria-pressed={!!usingGps} disabled={!!locating} onClick={() => chooseLocation(true)}><MapPin size={16} />{locating ? "Zjišťuji polohu…" : "Moje poloha"}</button>
+    </div>
+    {locationError && <p className="weather-precipitation-note" role="status">{locationError}</p>}
     {!current ? <p className="weather-loading" role="status">{error || "Načítám předpověď…"}</p> : <>
       <div className="weather-current-grid">
         <div className="weather-current-main">
           <div className="weather-current-icon-block">
             <WeatherVisual type={current.weatherCondition?.type} size={104} className="weather-main-icon" night={weatherIsNight(current, now, timeZone)} />
-            <span>Dolní Lhota u Ostravy</span>
+            <span>{weather?.locationName || "Dolní Lhota u Ostravy"}</span>
           </div>
           <div className="weather-current-copy">
             <small>Aktuálně{Number.isFinite(observedTime) ? ` · ${weatherTime(weather?.observedAt, timeZone)}` : ""}</small>
@@ -109,7 +142,7 @@ export default function WeatherCard() {
           <div className="weather-stat-card weather-precipitation-stat" title={`Aktuální odhad úhrnu srážek za ${observedPeriod}. Pravděpodobnost budoucích srážek je uvedena v hodinové předpovědi.`}>
             <Droplets className="weather-humidity-icon" size={28} />
             <strong>{formatPrecipitation(current.precipitation?.amount)}</strong>
-            <small>Aktuální srážky<br />{observedPeriod}</small>
+            <small>Srážky</small>
           </div>
           <div className="weather-stat-card"><Droplets className="weather-humidity-icon" size={24} /><strong>{probabilityLabel(current.relativeHumidity)}</strong><small>Vlhkost</small></div>
         </div>

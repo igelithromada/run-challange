@@ -1,4 +1,5 @@
 "use client";
+import { preparePhoto } from "../lib/preparePhoto";
 
 import React, { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, signOut, updatePassword } from "firebase/auth";
@@ -93,8 +94,8 @@ export default function ProfilePage() {
       flash("Povoleny jsou pouze JPG, PNG a WebP.", "error");
       return;
     }
-    if (file.size <= 0 || file.size > 5 * 1024 * 1024) {
-      flash("Avatar může mít maximálně 5 MB.", "error");
+    if (file.size <= 0) {
+      flash("Vybraná fotografie je prázdná.", "error");
       return;
     }
     const user = auth.currentUser;
@@ -107,7 +108,7 @@ export default function ProfilePage() {
     try {
       const token = await user.getIdToken(true);
       const form = new FormData();
-      form.append("file", file);
+      form.append("file", await preparePhoto(file));
       const uploadResponse = await fetch("/api/media/upload", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -280,7 +281,7 @@ export default function ProfilePage() {
                 disabled={avatarBusy}
               />
             </label>
-            <small>JPG, PNG nebo WEBP · maximálně 5 MB</small>
+            <small>Fotografie se automaticky zmenší.</small>
           </div>
         </section>
 

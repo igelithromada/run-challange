@@ -1,4 +1,5 @@
 "use client";
+import { preparePhoto } from "../lib/preparePhoto";
 
 import React, { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
@@ -82,10 +83,10 @@ export default function TeamsPage() {
 
   const uploadTeamImage = async (file: File) => {
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Povolené jsou pouze JPG, PNG a WebP.");
-    if (file.size <= 0 || file.size > 5 * 1024 * 1024) throw new Error("Obrázek může mít maximálně 5 MB.");
+    if (file.size <= 0) throw new Error("Vybraná fotografie je prázdná.");
     if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
     const token = await auth.currentUser.getIdToken();
-    const form = new FormData(); form.append("file", file);
+    const form = new FormData(); form.append("file", await preparePhoto(file));
     const response = await fetch("/api/media/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || typeof result.secureUrl !== "string") throw new Error(result.error || "Nahrání obrázku selhalo.");

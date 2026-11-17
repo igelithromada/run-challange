@@ -1,5 +1,6 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
-import { FieldPath, FieldValue, type Firestore } from "firebase-admin/firestore";
+import { FieldPath, FieldValue, type Firestore, type Transaction } from "firebase-admin/firestore";
 import { requireUser as requireApiUser, authErrorResponse } from "../../../lib/apiAuth";
 
 export const runtime = "nodejs";
@@ -8,8 +9,9 @@ export const dynamic = "force-dynamic";
 const MAX_SOCIAL_COMMENTS = 100;
 const MAX_SOCIAL_LIKE_USERS = 100;
 
-async function createSocialNotification(
+async function prepareSocialNotification(
   adminDb: Firestore,
+  transaction: Transaction,
   recipientUid: string,
   actorUid: string,
   actorNickname: string,
@@ -18,17 +20,17 @@ async function createSocialNotification(
   runId: string,
   commentText?: string
 ) {
-  if (!recipientUid || recipientUid === actorUid) return;
-  const recipientProfile = await adminDb.collection("users").doc(recipientUid).get();
+  if (!recipientUid || recipientUid === actorUid) return null;
+  const recipientProfile = await transaction.get(adminDb.collection("users").doc(recipientUid));
   const recipientData = recipientProfile.exists ? recipientProfile.data() || {} : {};
   const preferences = recipientData.socialNotifications || {};
-  if (type === "like" && preferences.likes === false) return;
-  if (type === "comment" && preferences.comments === false) return;
+  if (type === "like" && preferences.likes === false) return null;
+  if (type === "comment" && preferences.comments === false) return null;
   const title = type === "like" ? "Nové To se mi líbí" : "Nový komentář";
   const body = type === "like"
     ? `${actorNickname} dal To se mi líbí na tvůj záznam.`
     : `${actorNickname} okomentoval tvůj záznam${commentText ? `: "${commentText.slice(0, 80)}"` : "."}`;
-  await adminDb.collection("notifications").add({
+  return {
     recipientUid,
     actorUid,
     actorNickname,
@@ -39,7 +41,7 @@ async function createSocialNotification(
     runId,
     read: false,
     createdAt: FieldValue.serverTimestamp(),
-  });
+  };
 }
 
 async function isAdminUser(adminDb: Firestore, uid: string, claim: boolean): Promise<boolean> {
@@ -174,24 +176,25 @@ export async function POST(request: Request) {
     }
 
     if (action === "like") {
+      const publicProfile = await adminDb.collection("publicProfiles").doc(decoded.uid).get();
+      const actor = publicProfile.data() || {};
+      const actorNickname = typeof actor.nickname === "string" && actor.nickname.trim() ? actor.nickname : "Uživatel";
+      const actorAvatarUrl = typeof actor.avatarUrl === "string" ? actor.avatarUrl : "";
+      const notificationKey = createHash("sha256").update(`${runId}:${decoded.uid}`).digest("hex");
+      const notificationRef = adminDb.collection("notifications").doc(`social_like_${notificationKey}`);
       const result = await adminDb.runTransaction(async transaction => {
         const snapshot = await transaction.get(runRef);
+        if (!snapshot.exists) throw new Error("Záznam neexistuje.");
         const data = snapshot.data() || {};
         const current = Array.isArray(data.likedBy) ? data.likedBy.filter((id): id is string => typeof id === "string") : [];
         const liked = current.includes(decoded.uid);
         const next = liked ? current.filter(id => id !== decoded.uid) : [...current, decoded.uid];
+        const notification = !liked ? await prepareSocialNotification(adminDb, transaction, data.uid, decoded.uid, actorNickname, actorAvatarUrl, "like", runId) : null;
         transaction.update(runRef, { likedBy: next, likeCount: next.length });
+        if (notification) transaction.set(notificationRef, notification);
+        if (liked) transaction.delete(notificationRef);
         return { liked: !liked, likeCount: next.length };
       });
-      if (result.liked && runData.uid && runData.uid !== decoded.uid) {
-        try {
-        const publicProfile = await adminDb.collection("publicProfiles").doc(decoded.uid).get();
-        const profile = publicProfile.exists ? publicProfile.data() || {} : {};
-        const actorNickname = typeof profile.nickname === "string" && profile.nickname.trim() ? profile.nickname : "Uživatel";
-        const actorAvatarUrl = typeof profile.avatarUrl === "string" ? profile.avatarUrl : "";
-        await createSocialNotification(adminDb, runData.uid, decoded.uid, actorNickname, actorAvatarUrl, "like", runId);
-        } catch(error) { console.error("Lajk byl uložen, upozornění selhalo:",error); }
-      }
       return NextResponse.json(result);
     }
 
@@ -209,6 +212,8 @@ export async function POST(request: Request) {
     await adminDb.runTransaction(async transaction => {
       const currentRun = await transaction.get(runRef);
       const currentCount = Number(currentRun.data()?.commentCount) || 0;
+      const notification = await prepareSocialNotification(adminDb, transaction, currentRun.data()?.uid, decoded.uid, nickname, avatarUrl, "comment", runId, text);
+      if (notification) transaction.set(adminDb.collection("notifications").doc(`social_comment_${commentRef.id}`), notification);
       transaction.set(commentRef, {
         uid: decoded.uid,
         nickname,
@@ -219,10 +224,6 @@ export async function POST(request: Request) {
       transaction.update(runRef, { commentCount: currentCount + 1 });
     });
 
-    if (runData.uid && runData.uid !== decoded.uid) {
-      try { await createSocialNotification(adminDb, runData.uid, decoded.uid, nickname, avatarUrl, "comment", runId, text); }
-      catch(error) { console.error("Komentář byl uložen, upozornění selhalo:",error); }
-    }
 
     return NextResponse.json({
       ok: true,

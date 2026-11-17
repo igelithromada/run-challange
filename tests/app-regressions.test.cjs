@@ -12,7 +12,7 @@ const { isValidPushSubscription }=require('../app/lib/validation.ts');
 function loadIsolated(file, dependencies={}, globals={}) {
   const filename=path.resolve(file), testModule={exports:{}};
   const source=ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true,jsx:ts.JsxEmit.ReactJSX}}).outputText;
-  vm.runInNewContext(source,{module:testModule,exports:testModule.exports,require:name=>dependencies[name]||require(require.resolve(name,{paths:[path.dirname(filename)]})),console,Date,Intl,URL,TextDecoder,AbortController,Response,Request,setTimeout,clearTimeout,...globals},{filename});
+  vm.runInNewContext(source,{module:testModule,exports:testModule.exports,require:name=>dependencies[name]||require(require.resolve(name,{paths:[path.dirname(filename)]})),console,Date,Intl,URL,URLSearchParams,TextDecoder,AbortController,Response,Request,setTimeout,clearTimeout,...globals},{filename});
   return testModule.exports;
 }
 test('activity dates accept both Firestore JSON and ISO, reject invalid or missing dates',()=>{

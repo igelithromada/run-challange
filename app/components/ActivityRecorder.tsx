@@ -303,38 +303,42 @@ export default function ActivityRecorder({ type, onFinished }:{
   };
 
   useEffect(() => {
-    let active = true;
-    if (!("geolocation" in navigator)) {
-      setInitialGpsState("off");
-      return () => { active = false; };
-    }
+    let active = true, checking = false;
+    let permission: PermissionStatus | undefined;
+    if (!("geolocation" in navigator)) { setInitialGpsState("off"); return; }
     const check = async () => {
+      if (!active || checking || runningRef.current || acquiringFixRef.current || document.visibilityState === "hidden") return;
+      checking = true;
       try {
-        if ("permissions" in navigator && navigator.permissions?.query) {
-          const permission = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+        if (navigator.permissions?.query) {
+          permission = permission || await navigator.permissions.query({ name: "geolocation" as PermissionName });
           if (!active) return;
-          if (permission.state === "denied") {
-            setInitialGpsState("off");
-            return;
-          }
-          if (permission.state === "granted") {
-            navigator.geolocation.getCurrentPosition(
-              pos => { if (active) { setAccuracy(Math.round(pos.coords.accuracy)); setInitialGpsState(pos.coords.accuracy <= 75 ? "ready" : "off"); } },
-              () => { if (active) setInitialGpsState("off"); },
-              { enableHighAccuracy: true, maximumAge: 0, timeout: 2500 }
-            );
-            return;
-          }
-          setInitialGpsState("ready");
-          return;
-        }
-        setInitialGpsState("ready");
-      } catch {
-        if (active) setInitialGpsState("ready");
-      }
+          permission.onchange = () => void check();
+          if (permission.state === "denied") { setInitialGpsState("off"); return; }
+          // Never trigger a location prompt from the background readiness check.
+          if (permission.state !== "granted") { setInitialGpsState("ready"); return; }
+          await new Promise<void>(resolve => navigator.geolocation.getCurrentPosition(pos => {
+            if (active && !runningRef.current && !acquiringFixRef.current) {
+              setAccuracy(Math.round(pos.coords.accuracy));
+              setInitialGpsState(pos.coords.accuracy <= 75 ? "ready" : "checking");
+              setGpsUnavailable(false); gpsUnavailableRef.current = false; setGpsError("");
+            }
+            resolve();
+          }, () => { if (active && !runningRef.current) setInitialGpsState("off"); resolve(); },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }));
+        } else if (active) setInitialGpsState("ready");
+      } catch { if (active) setInitialGpsState("ready"); }
+      finally { checking = false; }
     };
     void check();
-    return () => { active = false; };
+    const timer = window.setInterval(() => void check(), 6000);
+    const resume = () => void check();
+    window.addEventListener("focus", resume); document.addEventListener("visibilitychange", resume);
+    return () => {
+      active = false; window.clearInterval(timer);
+      if (permission) permission.onchange = null;
+      window.removeEventListener("focus", resume); document.removeEventListener("visibilitychange", resume);
+    };
   }, []);
 
   useEffect(()=>{
@@ -351,7 +355,7 @@ export default function ActivityRecorder({ type, onFinished }:{
     const watchdog=window.setInterval(()=>{
       navigator.geolocation.getCurrentPosition(
         pos=>{
-          if(!runningRef.current || pausedRef.current) return;
+          if(!runningRef.current || (pausedRef.current && !gpsUnavailableRef.current)) return;
           lastGpsSuccessAtRef.current = Date.now();
           gpsWatchdogFailuresRef.current = 0;
           setAccuracy(Math.round(pos.coords.accuracy));
@@ -366,11 +370,14 @@ export default function ActivityRecorder({ type, onFinished }:{
               pausedAtRef.current = null;
             }
             lastPointRef.current = null;
+            setInitialGpsState("ready");
+            stopGps();
+            startGps();
             void acquireWakeLock();
           }
         },
         err=>{
-          if(!runningRef.current || pausedRef.current) return;
+          if(!runningRef.current || (pausedRef.current && !gpsUnavailableRef.current)) return;
           gpsWatchdogFailuresRef.current += 1;
           const lastSuccessAge = lastGpsSuccessAtRef.current === null
             ? Infinity

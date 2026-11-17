@@ -1,4 +1,5 @@
 "use client";
+import { preparePhoto } from "../lib/preparePhoto";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { auth } from "../lib/firebase";
@@ -14,7 +15,7 @@ const uploadToCloudinary = async (file: File) => {
 
   const token = await user.getIdToken();
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", await preparePhoto(file));
 
   const response = await fetch("/api/media/upload", {
     method: "POST",
@@ -156,8 +157,8 @@ export default function RunForm({ type }: {
       setError("Zkontroluj datum a čas aktivity.");
       return;
     }
-    if (files.length > 6 || files.some(file => !file.type.startsWith("image/") || file.size > 5 * 1024 * 1024)) {
-      setError("Vyber maximálně 6 obrázků, každý do 5 MB.");
+    if (files.length > 6 || files.some(file => !file.type.startsWith("image/"))) {
+      setError("Vyber maximálně 6 fotografií.");
       return;
     }
 
@@ -178,7 +179,7 @@ export default function RunForm({ type }: {
       const imageUrls: string[] = [];
       const imagePublicIds: string[] = [];
       for (let i = 0; i < files.length; i++) {
-        setUploadStatus(`Nahrávám fotografie ${i + 1}/${files.length}…`);
+        setUploadStatus(`Zmenšuji a nahrávám fotografii ${i + 1}/${files.length}…`);
         const uploaded = await uploadToCloudinary(files[i]);
         imageUrls.push(uploaded.secureUrl);
         if (uploaded.publicId) imagePublicIds.push(uploaded.publicId);

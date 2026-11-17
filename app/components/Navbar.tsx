@@ -106,7 +106,7 @@ function NotificationsBell() {
       void load();
     });
     const refresh = () => { if (document.visibilityState === "visible") void load(); };
-    const timer = setInterval(refresh, 20000);
+    const timer = setInterval(refresh, 15000);
     window.addEventListener("focus", refresh);
     window.addEventListener("online", refresh);
     document.addEventListener("visibilitychange", refresh);
@@ -163,6 +163,8 @@ function NotificationsBell() {
     const target = notificationTarget(notification);
     if (target) router.push(target);
   };
+
+  if (!open && unreadCount === 0 && notifications.length === 0) return <span className="site-navbar-spacer" aria-hidden="true" />;
 
   return <div className="notification-wrap">
     <button type="button" ref={bellRef} className="site-navbar-button notification-button" aria-expanded={open} aria-controls="notifications-panel" onClick={() => { setOpen(value => !value); void load(); }} aria-label={`Upozornění, ${unreadCount} nepřečtených`}>

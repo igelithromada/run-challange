@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       notifications: notifications.slice(0, 50),
       unreadCount: notifications.filter(item => !item.read).length,
-    });
+    }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     const authError = authErrorResponse(error);
     if (authError) return NextResponse.json({ error: authError.message }, { status: authError.status });

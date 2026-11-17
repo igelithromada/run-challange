@@ -28,6 +28,7 @@ export type WeatherHour = {
 };
 
 export type WeatherResponse = {
+  locationName?: string;
   configured: boolean;
   source?: string;
   current?: WeatherPoint;
