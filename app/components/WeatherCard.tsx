@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Wind, Droplets, RefreshCw, MapPin } from "lucide-react";
 import type { WeatherResponse } from "../lib/weather";
 import { formatPrecipitation, upcomingWeatherHours, weatherIsNight, weatherTime } from "../lib/weather";
+import { auth } from "../lib/firebase";
+import { coordinatesLabel, locationErrorMessage } from "../lib/location";
 import WeatherVisual, { weatherDescription } from "./WeatherVisual";
 
 const REFRESH_MS = 15 * 60 * 1000;
@@ -19,6 +21,11 @@ export default function WeatherCard() {
   const [locating, setLocating] = useState(false);
   const [usingGps, setUsingGps] = useState(false);
   const [locationError, setLocationError] = useState("");
+  const [locationStatus, setLocationStatus] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [followLocation, setFollowLocation] = useState(false);
+  const locationRequest = useRef<AbortController | null>(null);
+  const locateRef = useRef<() => void>(() => {});
   const locationRef = useRef<{ lat: number; lon: number } | null>(null);
   const locationVersion = useRef(0);
   const lastObserved = useRef<string | undefined>(undefined);
@@ -64,22 +71,71 @@ export default function WeatherCard() {
 
   const chooseLocation = (gps: boolean) => {
     const version = ++locationVersion.current;
-    setLocationError("");
-    const apply = (position: { lat: number; lon: number } | null) => {
-      if (!mounted.current || version !== locationVersion.current) return;
+    locationRequest.current?.abort();
+    setLocationError(""); setError(""); setRefreshStatus("");
+    setFollowLocation(gps);
+    if (!gps) {
       request.current?.abort(); request.current = null;
-      locationRef.current = position; lastObserved.current = undefined;
-      setUsingGps(!!position); setLocating(false); setWeather(null);
-      void loadWeather();
-    };
-    if (!gps) { apply(null); return; }
-    if (!("geolocation" in navigator)) { setLocationError("Telefon nepodporuje určení polohy."); return; }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(position => apply({ lat: Math.round(position.coords.latitude * 100) / 100, lon: Math.round(position.coords.longitude * 100) / 100 }), () => {
+      locationRef.current = null; lastObserved.current = undefined;
+      setUsingGps(false); setLocating(false); setLocationStatus(""); setLocationName(""); setWeather(null);
+      void loadWeather(); return;
+    }
+    if (!("geolocation" in navigator)) { setLocationError("Telefon nepodporuje určení polohy."); setFollowLocation(false); return; }
+    setLocating(true); setLocationStatus("Zjišťuji polohu telefonu…");
+    navigator.geolocation.getCurrentPosition(position => {
       if (!mounted.current || version !== locationVersion.current) return;
-      setLocating(false); setLocationError("Polohu se nepodařilo získat. Povol polohu v telefonu, nebo použij Dolní Lhotu.");
-    }, { enableHighAccuracy: false, maximumAge: 300000, timeout: 15000 });
+      const coords = { lat: Math.round(position.coords.latitude * 100) / 100, lon: Math.round(position.coords.longitude * 100) / 100 };
+      const changed = !locationRef.current || coords.lat !== locationRef.current.lat || coords.lon !== locationRef.current.lon;
+      setLocating(false); setUsingGps(true); setLocationError("");
+      setLocationStatus(`Poloha dostupná · přesnost přibližně ${Math.max(1, Math.round(position.coords.accuracy))} m`);
+      if (changed) {
+        request.current?.abort(); request.current = null;
+        locationRef.current = coords; lastObserved.current = undefined;
+        setWeather(null); setLocationName(coordinatesLabel(coords.lat, coords.lon));
+        void loadWeather();
+      }
+      // Resolve only when the user selects/retries the location; periodic checks never geocode.
+      const controller = new AbortController(); locationRequest.current = controller;
+      void (async () => {
+        try {
+          const token = await auth.currentUser?.getIdToken();
+          if (!token || controller.signal.aborted) return;
+          const response = await fetch(`/api/weather/location?lat=${coords.lat}&lon=${coords.lon}`, { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal });
+          const result = await response.json();
+          if (mounted.current && version === locationVersion.current && !controller.signal.aborted && response.ok && result.name) setLocationName(result.name);
+        } catch { /* Coordinate label remains available if the place name cannot be resolved. */ }
+      })();
+    }, cause => {
+      if (!mounted.current || version !== locationVersion.current) return;
+      setLocating(false); setLocationStatus(""); setLocationError(locationErrorMessage(cause.code));
+    }, { enableHighAccuracy: false, maximumAge: 0, timeout: 15000 });
   };
+  locateRef.current = () => chooseLocation(true);
+
+  useEffect(() => {
+    if (!followLocation || !navigator.geolocation) return;
+    let active = true, pending = false;
+    let permission: PermissionStatus | undefined;
+    const check = () => {
+      if (!active || pending || document.visibilityState === "hidden") return;
+      pending = true;
+      navigator.geolocation.getCurrentPosition(position => {
+        pending = false; if (!active) return;
+        setLocationError(""); setLocationStatus(`Poloha dostupná · přesnost přibližně ${Math.max(1, Math.round(position.coords.accuracy))} m`);
+        if (!locationRef.current) locateRef.current();
+      }, cause => {
+        pending = false; if (!active) return;
+        setLocationStatus(""); setLocationError(locationErrorMessage(cause.code));
+      }, { enableHighAccuracy: false, maximumAge: 0, timeout: 6000 });
+    };
+    void navigator.permissions?.query({ name: "geolocation" }).then(result => {
+      if (!active) return; permission = result;
+      permission.onchange = () => { if (permission?.state === "denied") { setLocationStatus(""); setLocationError(locationErrorMessage(1)); } else check(); };
+    }).catch(() => {});
+    const timer = window.setInterval(check, 15000);
+    window.addEventListener("focus", check); document.addEventListener("visibilitychange", check);
+    return () => { active = false; window.clearInterval(timer); if (permission) permission.onchange = null; window.removeEventListener("focus", check); document.removeEventListener("visibilitychange", check); };
+  }, [followLocation]);
 
   useEffect(() => {
     mounted.current = true;
@@ -97,6 +153,7 @@ export default function WeatherCard() {
     return () => {
       mounted.current = false;
       ++locationVersion.current;
+      locationRequest.current?.abort();
       request.current?.abort();
       request.current = null;
       window.clearInterval(clock);
@@ -119,16 +176,16 @@ export default function WeatherCard() {
 
   return <section className="tile weather-card weather-card-improved" aria-label="Předpověď počasí" aria-busy={refreshing}>
     <div className="weather-location-selector" role="group" aria-label="Místo předpovědi">
-      <button type="button" aria-pressed={!usingGps} onClick={() => chooseLocation(false)}>Dolní Lhota</button>
-      <button type="button" aria-pressed={!!usingGps} disabled={!!locating} onClick={() => chooseLocation(true)}><MapPin size={16} />{locating ? "Zjišťuji polohu…" : "Moje poloha"}</button>
+      <button type="button" aria-pressed={!followLocation} onClick={() => chooseLocation(false)}>Dolní Lhota</button>
+      <button type="button" aria-pressed={followLocation} disabled={!!locating} onClick={() => chooseLocation(true)}><MapPin size={16} />{locating ? "Zjišťuji polohu…" : "Moje poloha"}</button>
     </div>
-    {locationError && <p className="weather-precipitation-note" role="status">{locationError}</p>}
+    {(locationError || locationStatus) && <p className="weather-precipitation-note" role="status">{locationError || locationStatus}{locationError && usingGps ? " Zobrazuji počasí pro poslední zjištěnou polohu." : ""}</p>}
     {!current ? <p className="weather-loading" role="status">{error || "Načítám předpověď…"}</p> : <>
       <div className="weather-current-grid">
         <div className="weather-current-main">
           <div className="weather-current-icon-block">
             <WeatherVisual type={current.weatherCondition?.type} size={104} className="weather-main-icon" night={weatherIsNight(current, now, timeZone)} />
-            <span>{weather?.locationName || "Dolní Lhota u Ostravy"}</span>
+            <span>{usingGps ? locationName : "Dolní Lhota u Ostravy"}</span>
           </div>
           <div className="weather-current-copy">
             <small>Aktuálně{Number.isFinite(observedTime) ? ` · ${weatherTime(weather?.observedAt, timeZone)}` : ""}</small>
@@ -162,7 +219,7 @@ export default function WeatherCard() {
         </div>
         <p className="weather-precipitation-note">mm = očekávané množství srážek za hodinu · % = pravděpodobnost srážek</p>
       </section> : <p className="weather-message">Aktuální hodinová předpověď není dostupná. Obnov počasí.</p>}
-      <p className="weather-source">Zdroj: {weather?.source || "Open-Meteo"} · data načtena {weatherTime(weather?.fetchedAt, timeZone)}</p>
+      <p className="weather-source">Zdroj: {weather?.source || "Open-Meteo"} · data načtena {weatherTime(weather?.fetchedAt, timeZone)}{usingGps && <> · názvy míst © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a></>}</p>
     </>}
     <div className="weather-refresh-row">
       {refreshStatus && <p className="weather-precipitation-note" role="status">{refreshStatus}</p>}

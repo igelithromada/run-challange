@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import ActivityGallery from "./ActivityGallery";
 import { auth } from "../lib/firebase";
-import { Camera, Clock3, Gauge, Heart, MapPin, MessageCircle, Pencil, Trash2, X, Send } from "lucide-react";
+import { Clock3, Gauge, Heart, MapPin, MessageCircle, Pencil, Trash2, X, Send } from "lucide-react";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { getPublicProfiles } from "../lib/services/publicProfiles";
 import { showAppToast } from "./AppToast";
@@ -291,9 +291,6 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
           <button type="button" className={`activity-social-button ${commentCount > 0 ? "has-comments" : ""}`} onClick={() => void loadSocial("comments")} aria-label={`Komentáře · ${commentCount}`}>
             <MessageCircle size={20} /><span>{commentCount}</span>
           </button>
-          {images.length > 0 && <button type="button" className={`activity-social-button ${images.length > 0 ? "has-photos" : ""}`} onClick={() => onPhotosClick(images, run.imageUrl || "")} aria-label={`Fotografie · ${images.length}`}>
-            <Camera size={20} /><span>{images.length}</span>
-          </button>}
           <span className="activity-actions-spacer" />
           {onEdit && <button type="button" className="activity-manage-button" onClick={onEdit} aria-label="Upravit záznam" title="Upravit záznam"><Pencil size={18} aria-hidden="true" /></button>}
           {onDelete && <button type="button" className="activity-manage-button activity-delete-button" onClick={onDelete} aria-label="Smazat záznam" title="Smazat záznam"><Trash2 size={18} aria-hidden="true" /></button>}
@@ -301,7 +298,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
       </article>
 
       {socialOpen && (
-        <div className="social-modal-backdrop" role="dialog" aria-modal="true" onClick={() => setSocialOpen(null)}>
+        <div className="social-modal-backdrop" role="dialog" aria-modal="true" aria-label={socialOpen === "likes" ? "To se mi líbí" : "Komentáře"} onClick={() => setSocialOpen(null)}>
           <section className="social-modal" onClick={event => event.stopPropagation()}>
             <header className="social-modal-header">
               <div><span className="social-modal-eyebrow">{socialOpen === "likes" ? "REAKCE" : "DISKUZE"}</span><h2>{socialOpen === "likes" ? `To se mi líbí · ${likeCount}` : `Komentáře · ${commentCount}`}</h2></div>
@@ -324,24 +321,26 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
                     <article className="social-comment" key={comment.id}>
                       <div className="activity-avatar">{comment.avatarUrl ? <img src={cloudinaryImageUrl(comment.avatarUrl, 64)} alt="" /> : comment.nickname.charAt(0).toUpperCase()}</div>
                       <div className="social-comment-body">
-                        <div className="social-comment-meta"><strong>{comment.nickname}</strong><time>{formatCommentDate(comment.createdAt)}</time></div>
-                        {editingCommentId === comment.id ? (
-                          <div className="social-comment-edit">
-                            <textarea value={editingCommentText} maxLength={500} onChange={e => setEditingCommentText(e.target.value)} />
-                            <div><button type="button" onClick={() => void saveEditComment()} disabled={!editingCommentText.trim() || socialBusy}>Uložit</button><button type="button" onClick={cancelEditComment} disabled={socialBusy}>Zrušit</button></div>
-                          </div>
-                        ) : <p>{comment.text}</p>}
+                        <div className="social-comment-heading"><div className="social-comment-meta"><strong>{comment.nickname}</strong><time>{formatCommentDate(comment.createdAt)}</time></div>
                         {(comment.mine || isAdmin) && editingCommentId !== comment.id && <div className="social-comment-tools">
                           {comment.mine && <button type="button" className="social-comment-icon-button" onClick={() => startEditComment(comment)} disabled={socialBusy} aria-label="Upravit komentář" title="Upravit komentář"><Pencil size={15}/></button>}
                           <button type="button" className="social-comment-icon-button social-comment-delete-button" onClick={() => void deleteComment(comment.id)} disabled={socialBusy} aria-label="Smazat komentář" title="Smazat komentář"><Trash2 size={15}/></button>
                         </div>}
+                        </div>
+                        {editingCommentId === comment.id ? (
+                          <div className="social-comment-edit">
+                            <textarea aria-label="Upravit text komentáře" value={editingCommentText} maxLength={500} onChange={e => setEditingCommentText(e.target.value)} />
+                            <div><button type="button" onClick={() => void saveEditComment()} disabled={!editingCommentText.trim() || socialBusy}>Uložit</button><button type="button" onClick={cancelEditComment} disabled={socialBusy}>Zrušit</button></div>
+                          </div>
+                        ) : <p>{comment.text}</p>}
+
                       </div>
                     </article>
                   )) : <p className="social-modal-empty">Zatím tu není žádný komentář.</p>}
                 </div>
                 {commentsTruncated && <p className="social-modal-note">Zobrazeno je prvních 100 komentářů.</p>}
                 <div className="social-comment-form">
-                  <textarea value={commentText} maxLength={500} placeholder="Napiš komentář…" onChange={e => setCommentText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submitComment(); } }} />
+                  <textarea aria-label="Nový komentář" value={commentText} maxLength={500} placeholder="Napiš komentář…" onChange={e => setCommentText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submitComment(); } }} />
                   <button type="button" onClick={() => void submitComment()} disabled={!commentText.trim() || socialBusy} aria-label="Odeslat komentář"><Send size={18}/></button>
                 </div>
               </>

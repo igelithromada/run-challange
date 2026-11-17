@@ -106,7 +106,7 @@ test('current conditions use current precipitation and the hourly strip starts i
       { interval: { startTime: new Date(base + 8 * 3600000).toISOString(), endTime: new Date(base + 9 * 3600000).toISOString() }, precipitation: { amount: 2, probability: { percent: 95 } } }] };
   let state = 0;
   const hooks = { ...React, useState: () => [[weather, now, false, ''][state++], () => {}], useRef: value => ({ current: value }), useEffect() {}, useCallback: fn => fn };
-  const Card = load('app/components/WeatherCard.tsx', { react: hooks, '../lib/weather': helpers, './WeatherVisual': visuals }).default;
+  const Card = load('app/components/WeatherCard.tsx', { react: hooks, '../lib/weather': helpers, './WeatherVisual': visuals, '../lib/firebase': { auth: { currentUser: null } }, '../lib/location': load('app/lib/location.ts') }).default;
   const html = renderToStaticMarkup(React.createElement(Card));
   const top = html.slice(html.indexOf('weather-precipitation-stat'), html.indexOf('weather-hour-section'));
   assert.match(top, /0,1 mm/); assert.match(top, /<small>Srážky<\/small>/);

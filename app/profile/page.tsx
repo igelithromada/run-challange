@@ -4,6 +4,7 @@ import { preparePhoto } from "../lib/preparePhoto";
 import React, { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, signOut, updatePassword } from "firebase/auth";
 import { auth } from "../lib/firebase";
+import AvatarCropper from "../components/AvatarCropper";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { UserRound, Mail, KeyRound, LogOut, Trash2, AlertTriangle } from "lucide-react";
@@ -20,6 +21,7 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
@@ -131,6 +133,7 @@ export default function ProfilePage() {
       if (!profileResponse.ok) throw new Error(profileResult.error || "Avatar se nepodařilo uložit.");
 
       setAvatarUrl(uploadResult.secureUrl);
+      setAvatarFile(null);
       invalidatePublicProfileCache(user.uid);
       invalidateUserProfileCache(user.uid);
       flash("Profilová fotografie byla uložena.");
@@ -260,6 +263,7 @@ export default function ProfilePage() {
           </div>
         </section>
 
+        {avatarFile && <AvatarCropper file={avatarFile} busy={avatarBusy} onCancel={() => setAvatarFile(null)} onSave={handleAvatarChange} />}
         <section className="tile settings-avatar">
           <div className="settings-avatar-preview">
             {avatarUrl ? (
@@ -277,11 +281,11 @@ export default function ProfilePage() {
                 ref={avatarInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
-                onChange={e => void handleAvatarChange(e.target.files?.[0] || null)}
+                onChange={e => { const file = e.target.files?.[0]; if (file) setAvatarFile(file); e.target.value = ""; }}
                 disabled={avatarBusy}
               />
             </label>
-            <small>Fotografie se automaticky zmenší.</small>
+            <small>Před uložením si nastavíš výřez v kruhu.</small>
           </div>
         </section>
 
