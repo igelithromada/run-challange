@@ -70,9 +70,9 @@ export default function RunWeatherRecommendation({ linkToWeather = true, type }:
       <div className="run-weather-heading"><strong>{loading && !current ? "Načítám počasí" : advice.title}</strong>{linkToWeather && <ChevronRight size={17} aria-hidden="true" />}</div>
       <p>{loading && !current ? "Zjišťuji podmínky v Dolní Lhotě." : advice.advice}</p>
       {validWeather && <div className="run-weather-meta">
-        <span>{Math.round(advice.temperature!)} °C · {weatherDescription(current?.weatherCondition?.type)}</span>
+        <span>{Math.round(advice.temperature!)} °C · {current?.weatherCondition?.description?.text || weatherDescription(current?.weatherCondition?.type)}</span>
         <span>Vítr {Math.round(advice.wind)} km/h</span>
-        {advice.rainChance > 0 && <span>Srážky {Math.round(advice.rainChance)} %</span>}
+        {advice.rainChance > 0 && <span>Riziko srážek {Math.round(advice.rainChance)} %</span>}
       </div>}
     </div>
   </section>;

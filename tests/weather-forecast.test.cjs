@@ -138,3 +138,21 @@ test('GPS weather validates coordinates and preserves the selected local coordin
   assert.equal(requested.searchParams.get('timezone'), 'auto'); assert.equal(requested.searchParams.get('cell_selection'), 'land'); assert.equal(body.locationName, 'Moje poloha'); assert.equal(body.timeZone.id, 'Europe/Paris');
   for (const query of ['lat=91&lon=18', 'lat=49', 'lat=bad&lon=18']) assert.equal((await api.GET({ url: `https://example.test/api/weather?${query}` })).status, 400);
 });
+
+test('zero precipitation with rain or snow is explained without replacing provider conditions or amounts',()=>{
+  for(const type of ['RAIN','SNOW']) {
+    const current={weatherCondition:{type},precipitation:{amount:0}};
+    const note=helpers.precipitationContext(current);assert.ok(note);assert.match(note.summary,/0,0 mm/);assert.match(note.text,/samostatné údaje modelu/);assert.equal(current.precipitation.amount,0);assert.equal(current.weatherCondition.type,type);
+  }
+  assert.equal(helpers.precipitationContext({weatherCondition:{type:'CLOUDY'},precipitation:{amount:0}}),null);
+  assert.equal(helpers.precipitationContext({weatherCondition:{type:'RAIN'},precipitation:{amount:.04}}),null);
+  assert.equal(helpers.precipitationContext({weatherCondition:{type:'RAIN'},precipitation:{amount:null}}),null);
+  assert.equal(helpers.precipitationContext(),null);
+});
+
+test('weather displays the original rain icon, zero amount and a collapsed explanation together',()=>{
+  const weather={source:'Open-Meteo',current:{temperature:{degrees:7},weatherCondition:{type:'RAIN',description:{text:'Slabý déšť'}},precipitation:{amount:0}},hourly:[]};let state=0;
+  const hooks={...React,useState:()=>[[weather,base,false,''][state++],()=>{}],useRef:value=>({current:value}),useEffect(){},useCallback:fn=>fn};
+  const Card=load('app/components/WeatherCard.tsx',{react:hooks,'../lib/weather':helpers,'./WeatherVisual':visuals,'../lib/firebase':{auth:{currentUser:null}},'../lib/location':load('app/lib/location.ts')}).default;
+  const html=renderToStaticMarkup(React.createElement(Card));assert.match(html,/Slabý déšť/);assert.match(html,/0,0 mm/);assert.match(html,/Stav podle modelu/);assert.match(html,/<details class="weather-model-note"><summary>Proč déšť při 0,0 mm\?/);assert.match(html,/<small>Srážky<\/small>/);assert.doesNotMatch(html,/<details[^>]*open/);
+});

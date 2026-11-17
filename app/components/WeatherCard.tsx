@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Wind, Droplets, RefreshCw, MapPin } from "lucide-react";
 import type { WeatherResponse } from "../lib/weather";
-import { formatPrecipitation, upcomingWeatherHours, weatherIsNight, weatherTime } from "../lib/weather";
+import { precipitationContext, formatPrecipitation, upcomingWeatherHours, weatherIsNight, weatherTime } from "../lib/weather";
 import { auth } from "../lib/firebase";
 import { weatherCoordinates, weatherLocationMoved } from "../lib/weatherLocation";
 import { coordinatesLabel, locationErrorMessage } from "../lib/location";
@@ -169,6 +169,7 @@ export default function WeatherCard() {
   }, [loadWeather]);
 
   const current = weather?.current;
+  const precipitationExplanation = precipitationContext(current);
   const timeZone = weather?.timeZone?.id || "Europe/Prague";
   const hours = upcomingWeatherHours(weather?.hourly, now, 24)
     .filter(item => Date.parse(item.interval?.startTime || "") > now).slice(0, 12);
@@ -196,6 +197,7 @@ export default function WeatherCard() {
             <small>Aktuálně{Number.isFinite(observedTime) ? ` · ${weatherTime(weather?.observedAt, timeZone)}` : ""}</small>
             <strong className="weather-temperature">{temperatureLabel(current.temperature?.degrees)}{typeof current.temperature?.degrees === "number" ? "C" : ""}</strong>
             <span className="weather-description">{current.weatherCondition?.description?.text || weatherDescription(current.weatherCondition?.type)}</span>
+            {precipitationExplanation&&<span className="weather-condition-origin">Stav podle modelu</span>}
             {typeof current.feelsLikeTemperature?.degrees === "number" && <small>Pocitově {temperatureLabel(current.feelsLikeTemperature.degrees)}C</small>}
           </div>
         </div>
@@ -209,12 +211,13 @@ export default function WeatherCard() {
           <div className="weather-stat-card"><Droplets className="weather-humidity-icon" size={24} /><strong>{probabilityLabel(current.relativeHumidity)}</strong><small>Vlhkost</small></div>
         </div>
       </div>
+      {precipitationExplanation&&<details className="weather-model-note"><summary>{precipitationExplanation.summary}</summary><p>{precipitationExplanation.text}</p></details>}
       {hours.length > 0 ? <section className="weather-hour-section" aria-labelledby="weather-hour-heading">
         <h3 id="weather-hour-heading">Předpověď po hodinách</h3>
         <div className="weather-hour-grid weather-hour-scroll" tabIndex={0} role="group" aria-label="Předpověď na 12 hodin, posouvej doleva nebo doprava">
           {hours.map(item => {
             const period = `${weatherTime(item.interval?.startTime, timeZone)}–${weatherTime(item.interval?.endTime, timeZone)}`;
-            return <div key={item.interval?.startTime} className="weather-hour-card" title={`Předpověď pro ${period}`}>
+            return <div key={item.interval?.startTime} className={`weather-hour-card${(item.precipitation?.amount||0)>0 ? " has-precipitation" : ""}`} title={`Předpověď pro ${period}`}>
               <small className="weather-hour-time">{weatherTime(item.interval?.startTime, timeZone)}</small>
               <div className="weather-hour-main"><WeatherVisual type={item.weatherCondition?.type} size={48} className="weather-hour-icon" night={weatherIsNight(item, item.interval?.startTime || now, timeZone)} /><strong>{temperatureLabel(item.temperature?.degrees)}</strong></div>
               <strong className="weather-hour-amount">{formatPrecipitation(item.precipitation?.amount)}</strong>

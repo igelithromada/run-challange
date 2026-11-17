@@ -66,3 +66,17 @@ export function weatherIsNight(item: { isDay?: boolean }, instant: string | numb
   const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hourCycle: "h23", timeZone }).format(date));
   return hour < 6 || hour >= 20;
 }
+
+/** Keep provider condition and precipitation intact; explain when they disagree. */
+export function precipitationContext(current?: WeatherPoint) {
+  const type=String(current?.weatherCondition?.type||"").toUpperCase();
+  const amount=current?.precipitation?.amount;
+  if(amount!==0)return null;
+  const rain=/RAIN|DRIZZLE/.test(type),snow=/SNOW|SLEET/.test(type);
+  if(!rain&&!snow)return null;
+  const kind=rain?"déšť":"sněžení";
+  return {
+    summary:`Proč ${kind} při 0,0 mm?`,
+    text:`Zdroj uvádí ${kind}, ale aktuální množství srážek odhaduje na 0,0 mm. Druh počasí a úhrn srážek jsou samostatné údaje modelu, nikoli měření přímo na tomto místě.`,
+  };
+}
