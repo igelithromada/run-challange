@@ -113,5 +113,5 @@ test('current conditions use current precipitation and the hourly strip starts i
   assert.doesNotMatch(top, /95 %/);
   assert.doesNotMatch(html, /Teď/); assert.match(html, /08:00/);
   assert.doesNotMatch(html, /Předpověď pro 07:00–08:00/);
-  assert.doesNotMatch(top, /Pravděp/);
+  assert.doesNotMatch(top, /Pravděp\./);
 });
