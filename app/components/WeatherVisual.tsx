@@ -18,7 +18,7 @@ export function weatherDescription(type = "") {
   return labels[weatherKind(type)];
 }
 
-const cloud = "M6 16a4 4 0 0 1-.9-7.9A6 6 0 0 1 16.7 6 4.5 4.5 0 1 1 1.8 10H6Z";
+const cloud = "M6 16C3.8 16 2 14.2 2 12S3.8 8 6 8C6.8 4.7 9.4 3 12 3C15.5 3 18 5.4 18 8C20.2 8 22 9.8 22 12S20.2 16 18 16Z";
 
 /** One viewBox for the entire symbol: CSS cannot move its cloud, rain or sun apart. */
 export default function WeatherVisual({ type, size, className = "", night = false }: {
@@ -32,7 +32,7 @@ export default function WeatherVisual({ type, size, className = "", night = fals
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
       {kind === "sun" ? (night ? moon : sun) : kind === "partly" ? <>
         <g transform="translate(-.3,-.3) scale(.7)">{night ? moon : sun}</g>
-        <path className="wx-cloud" d="M9 21a4 4 0 0 1-.9-7.9A5.5 5.5 0 0 1 18 12a4.5 4.5 0 1 1 .5 9H9Z" />
+        <path className="wx-cloud" d="M9 21C6.8 21 5 19.2 5 17C5 15 6.4 13.4 8.4 13.1C9.1 10.5 11.2 9 13.7 9C16.4 9 18.5 10.8 19 13.1C21.2 13.5 22.5 15.2 22.5 17.1C22.5 19.3 20.7 21 18.5 21Z" />
       </> : <>
         <path className="wx-cloud" d={cloud} />
         {kind === "rain" && <path className="wx-rain" d="m7 19-1 3m7-3-1 3m7-3-1 3" />}
