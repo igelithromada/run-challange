@@ -217,3 +217,5 @@ html body .container :is(.activity-metrics:not(.strength-metrics),.result-measur
 html body .container :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric:nth-child(n+4) {
   border-top:1px solid var(--hierarchy-line) !important;
 }
+
+.sandbox-banner{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.4rem .8rem;padding:.4rem;background:#f3d283;color:#17232b;font-size:.75rem;position:relative;z-index:1}.sandbox-banner button{border:1px solid #6d581c;border-radius:6px;padding:.25rem .5rem;background:transparent;color:inherit;font:inherit;}

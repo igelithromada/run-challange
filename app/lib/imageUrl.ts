@@ -7,6 +7,7 @@ export function cloudinaryImageUrl(url: string | undefined, width = 640): string
 
 /** Inline previews must never fall back to downloading a full-size legacy image. */
 export function activityThumbnailUrl(url: string): string {
+  if (url?.startsWith("data:image/") || url?.startsWith("/sandbox-")) return url;
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== "https:" || parsed.hostname !== "res.cloudinary.com" || parsed.username || parsed.password) return "";
