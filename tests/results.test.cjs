@@ -28,7 +28,7 @@ test('pace ranking puts unknown pace last and duration rounding carries into hou
 });
 function renderResults(overrides={}){let i=0;const initial=[false,'a','běh','jednotlivci','km','rank','2026-11-16','2026-11-16','',profiles,''];for(const [key,value]of Object.entries(overrides))initial[Number(key)]=value;const hooks={...React,useState:()=>[initial[i++],()=>{}]};const blank={__esModule:true,default:()=>null};const Page=load('app/statistics/page.tsx',{react:hooks,'next/navigation':{useRouter:()=>({push(){}})},'firebase/auth':{onAuthStateChanged(){return()=>{};}},'../lib/firebase':{auth:{}},'../lib/useSharedFirestoreQuery':{useSharedFirestoreQuery:()=>({data:runs,loading:false,error:null})},'../lib/services/runs':{filteredRunsQuery:()=>({})},'../lib/services/publicProfiles':{getPublicProfiles:async()=>profiles},'../components/Navbar':blank,'../components/Sidebar':blank,'../components/LoadingSkeleton':blank}).default;return renderToStaticMarkup(React.createElement(Page));}
 test('merged screen retains every existing filter and all five summary values',()=>{
- const html=renderResults();for(const text of ['Já','Jednotlivci','Km','Tempo','Od data','Do data','Celkem km','Čas','Průměrné tempo','Aktivity','Účastníci','Hledat uživatele podle přezdívky','Podle abecedy'])assert.ok(html.includes(text),text);
+ const html=renderResults();for(const text of ['Já','Jednotlivci','Kilometry','Tempo','Od data','Do data','Celkem km','Čas','Průměrné tempo','Aktivity','Účastníci','Hledat uživatele podle přezdívky','Podle abecedy'])assert.ok(html.includes(text),text);
  assert.match(html,/6\.00 km/);assert.match(html,/Stupně vítězů/);
  const mine=renderResults({3:'já'});assert.match(mine,/4\.00 km/);assert.doesNotMatch(mine,/Stupně vítězů/);
 });
@@ -43,4 +43,25 @@ test('legacy participants slot opens the personal gallery and results remain uni
 
 test('award results show community totals and individual counters while retaining distance and other metrics',()=>{
  const html=renderResults({4:'badges'});assert.match(html,/Celkové vyhodnocení odznaků/);assert.match(html,/Ranní ptáče/);assert.match(html,/Noční běh/);assert.match(html,/Počty jednotlivých odznaků/);assert.match(html,/6\.00 km/);assert.match(html,/Podle odznaků/);
+});
+
+test('redesigned results keep advanced filters and secondary calculations collapsed by default',()=>{
+ const html=renderResults();assert.match(html,/id="results-filters"[^>]*hidden/);assert.match(html,/aria-controls="results-filters"/);assert.match(html,/<summary>Podrobný souhrn<\/summary>/);assert.match(html,/<summary>Podrobnosti<\/summary>/);assert.doesNotMatch(html,/class="unified-results-summary"/);
+});
+const treeText=n=>typeof n==='string'?n:typeof n==='number'?String(n):Array.isArray(n)?n.map(treeText).join(''):n?.props?treeText(n.props.children):'';
+function findNode(n,p){if(!n)return;if(Array.isArray(n)){for(const c of n){const r=findNode(c,p);if(r)return r;}return;}if(p(n))return n;return findNode(n.props?.children,p);}
+test('filter panel opens, personal/date filters apply, ranking mode switches, and reset restores all participants',()=>{
+ let index=0;const initial=[false,'a','běh','jednotlivci','km','rank','','','',profiles,'',false],slots=[];
+ const hooks={...React,useState:value=>{const i=index++;if(!(i in slots))slots[i]=i<initial.length?initial[i]:typeof value==='function'?value():value;return[slots[i],next=>slots[i]=typeof next==='function'?next(slots[i]):next];},useEffect(){},useMemo:fn=>fn(),useRef:value=>({current:value})};
+ const blank={__esModule:true,default:()=>null};
+ const Page=load('app/statistics/page.tsx',{react:hooks,'next/navigation':{useRouter:()=>({push(){}})},'firebase/auth':{onAuthStateChanged(){return()=>{};}},'../lib/firebase':{auth:{}},'../lib/useSharedFirestoreQuery':{useSharedFirestoreQuery:()=>({data:runs,loading:false,error:null})},'../lib/services/runs':{filteredRunsQuery:()=>({})},'../lib/services/publicProfiles':{getPublicProfiles:async()=>profiles},'../components/Navbar':blank,'../components/Sidebar':blank,'../components/LoadingSkeleton':blank}).default;
+ const render=()=>{index=0;return Page();};
+ let tree=render();assert.equal(findNode(tree,n=>n.props?.id==='results-filters').props.hidden,true);
+ findNode(tree,n=>n.type==='button'&&treeText(n).startsWith('Filtry')).props.onClick();tree=render();assert.equal(findNode(tree,n=>n.props?.id==='results-filters').props.hidden,false);
+ const input=label=>findNode(findNode(tree,n=>n.type==='label'&&treeText(n)===label),n=>n.type==='input');
+ input('Od data').props.onChange({target:{value:'2026-11-16'}});input('Do data').props.onChange({target:{value:'2026-11-16'}});
+ findNode(tree,n=>n.type==='select'&&n.props.value==='jednotlivci').props.onChange({target:{value:'já'}});
+ tree=render();let summary=findNode(tree,n=>typeof n.type==='function'&&n.type.name==='ResultsSummary');assert.equal(summary.props.mine,true);assert.equal(summary.props.runs.length,2);assert.ok(summary.props.runs.every(r=>r.uid==='a'));
+ findNode(tree,n=>n.type==='button'&&treeText(n)==='Tempo').props.onClick();tree=render();summary=findNode(tree,n=>typeof n.type==='function'&&n.type.name==='ResultsSummary');assert.equal(summary.props.metric,'tempo');
+ findNode(tree,n=>n.type==='button'&&treeText(n)==='Zrušit filtry').props.onClick();tree=render();summary=findNode(tree,n=>typeof n.type==='function'&&n.type.name==='ResultsSummary');assert.equal(summary.props.mine,false);assert.equal(summary.props.runs.length,4);assert.equal(summary.props.metric,'tempo','resetting filters preserves the selected evaluation criterion');
 });

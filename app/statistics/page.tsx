@@ -2,16 +2,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import {
-  Clock3,
-  Gauge,
-  ListChecks,
-  MapPin,
-  Search,
-  Trophy,
-  User,
-  Users,
-} from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
+import ResultsSummary from "../components/ResultsSummary";
+import ResultsPersonRow from "../components/ResultsPersonRow";
 import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -20,18 +13,14 @@ import LoadingSkeleton from "../components/LoadingSkeleton";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { filteredRunsQuery } from "../lib/services/runs";
 import { getPublicProfiles } from "../lib/services/publicProfiles";
-import { activityMetrics, formatPace } from "../lib/activityMetrics";
 import {
   RESULT_ALPHABET,
-  formatResultDuration,
   resultLetter,
   resultPeople,
   resultRuns,
   visiblePeople,
   type ResultPerson,
 } from "../lib/results";
-import { activityAwards } from "../lib/awards";
-import { cloudinaryImageUrl } from "../lib/imageUrl";
 import type { ActivityType, PublicProfileData, RunData } from "../types";
 export default function StatisticsPage() {
   const router = useRouter();
@@ -46,6 +35,7 @@ export default function StatisticsPage() {
     [search, setSearch] = useState(""),
     [profiles, setProfiles] = useState<Record<string, PublicProfileData>>({}),
     [activeLetter, setActiveLetter] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const listRef = useRef<HTMLElement>(null),
     alphabetRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -98,8 +88,16 @@ export default function StatisticsPage() {
   );
   const scope =
     view === "já" ? filtered.filter((run) => run.uid === uid) : filtered;
-  const totals = activityMetrics(scope),
-    participantCount = new Set(scope.map((run) => run.uid)).size;
+  const scopePeople =
+    view === "já" ? people.filter((person) => person.uid === uid) : people;
+  const filterCount =
+    Number(!!(startDate || endDate)) +
+    Number(view === "já") +
+    Number(sort === "alpha");
+  const periodLabel =
+    startDate || endDate
+      ? `${startDate ? new Date(startDate + "T12:00:00").toLocaleDateString("cs-CZ") : "Od začátku"} – ${endDate ? new Date(endDate + "T12:00:00").toLocaleDateString("cs-CZ") : "dnes"}`
+      : "Celé období";
   const visible = visiblePeople(
     view === "já" ? people.filter((p) => p.uid === uid) : people,
     search,
@@ -126,68 +124,16 @@ export default function StatisticsPage() {
     ).find((node) => node.dataset.letter === letter);
     element?.scrollIntoView({ block: "start", behavior: "instant" });
   };
-  const personRow = (person: ResultPerson, podiumRow = false) => (
-    <div key={person.uid}>
-      <button
-        type="button"
-        className={`unified-person-row${podiumRow ? ` is-podium rank-${person.rank}` : ""}${person.uid === uid ? " is-mine" : ""}`}
-        onClick={() => router.push("/user/" + encodeURIComponent(person.uid))}
-        aria-label={`Profil ${person.name}`}
-      >
-        <span className="unified-rank">
-          {sort === "alpha" ? null : podiumRow ? (
-            <Trophy size={19} />
-          ) : (
-            person.rank
-          )}
-        </span>
-        <span className="activity-avatar">
-          {person.avatarUrl ? (
-            <img
-              src={cloudinaryImageUrl(person.avatarUrl, 96)}
-              alt=""
-              loading="lazy"
-            />
-          ) : (
-            person.name.charAt(0).toUpperCase()
-          )}
-        </span>
-        <span className="unified-person-main">
-          <strong>
-            {person.name}
-            {person.uid === uid ? " · ty" : ""}
-          </strong>
-          <small>
-            {person.count} aktivit · {formatResultDuration(person.minutes)}
-          </small>
-          <small>Průměrné tempo {formatPace(person.pace)}</small>
-        </span>
-        <span className="unified-person-value">
-          <strong>
-            {metric === "badges"
-              ? `${person.awardCount} odznaků`
-              : metric === "tempo"
-                ? formatPace(person.pace)
-                : `${person.km.toFixed(2)} km`}
-          </strong>
-          {metric === "tempo" && <small>{person.km.toFixed(2)} km</small>}
-          {podiumRow && <small>{person.rank}. místo</small>}
-        </span>
-      </button>
-      {metric === "badges" && (
-        <details className="result-award-details">
-          <summary>Počty jednotlivých odznaků</summary>
-          <div>
-            {person.awards.map((award) => (
-              <span key={award.id}>
-                {award.title}
-                <b>{award.count}×</b>
-              </span>
-            ))}
-          </div>
-        </details>
-      )}
-    </div>
+  const personRow = (person: ResultPerson, winner = false) => (
+    <ResultsPersonRow
+      key={person.uid}
+      person={person}
+      metric={metric}
+      alpha={sort === "alpha"}
+      mine={person.uid === uid}
+      winner={winner}
+      onOpen={() => router.push("/user/" + encodeURIComponent(person.uid))}
+    />
   );
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
@@ -215,100 +161,129 @@ export default function StatisticsPage() {
         className={`container statistics-page unified-results${sort === "alpha" && view === "jednotlivci" ? " has-alphabet" : ""}`}
       >
         <ActivityTypeSelector value={selectedType} onChange={setSelectedType} />
-        <label className="results-search">
-          <Search size={18} />
-          <input
-            type="search"
-            value={search}
-            placeholder="Hledat přezdívku…"
-            aria-label="Hledat uživatele podle přezdívky"
-            onChange={(e) => {
-              setSearch(e.target.value);
-              if (e.target.value) setView("jednotlivci");
-            }}
-          />
-        </label>
-        <div className="control-caption">Zobrazit výsledky</div>
-        <div className="tile-group">
+        <div
+          className="results-main-tabs"
+          role="group"
+          aria-label="Hodnocené podle"
+        >
+          {(
+            [
+              { id: "km", label: "Kilometry" },
+              { id: "tempo", label: "Tempo" },
+              { id: "badges", label: "Odznaky" },
+            ] as const
+          ).map((item) => (
+            <button
+              type="button"
+              key={item.id}
+              aria-pressed={metric === item.id}
+              onClick={() => setMetric(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <div className="results-tools">
+          <label className="results-search">
+            <Search size={18} />
+            <input
+              type="search"
+              value={search}
+              placeholder="Najít člověka…"
+              aria-label="Hledat uživatele podle přezdívky"
+              onChange={(event) => {
+                setSearch(event.target.value);
+                if (event.target.value) setView("jednotlivci");
+              }}
+            />
+          </label>
           <button
             type="button"
-            className={`tile-button ${view === "já" ? "active" : ""}`}
-            aria-pressed={view === "já"}
-            onClick={() => {
-              setView("já");
-              setSearch("");
-            }}
+            className="results-filter-toggle"
+            aria-expanded={!!filtersOpen}
+            aria-controls="results-filters"
+            onClick={() => setFiltersOpen((value) => !value)}
           >
-            <User size={20} />
-            Já
-          </button>
-          <button
-            type="button"
-            className={`tile-button ${view === "jednotlivci" ? "active" : ""}`}
-            aria-pressed={view === "jednotlivci"}
-            onClick={() => setView("jednotlivci")}
-          >
-            <Users size={20} />
-            Jednotlivci
+            <SlidersHorizontal size={18} />
+            Filtry{filterCount > 0 && <span>{filterCount}</span>}
           </button>
         </div>
-        <div className="control-caption">Hodnocené podle</div>
-        <div className="tile-group">
-          <button
-            type="button"
-            className={`tile-button ${metric === "km" ? "active" : ""}`}
-            aria-pressed={metric === "km"}
-            onClick={() => setMetric("km")}
-          >
-            Km
-          </button>
-          <button
-            type="button"
-            className={`tile-button ${metric === "tempo" ? "active" : ""}`}
-            aria-pressed={metric === "tempo"}
-            onClick={() => setMetric("tempo")}
-          >
-            Tempo
-          </button>
-          <button
-            type="button"
-            className={`tile-button ${metric === "badges" ? "active" : ""}`}
-            aria-pressed={metric === "badges"}
-            onClick={() => setMetric("badges")}
-          >
-            Odznaky
-          </button>
-        </div>
-        <div className="tile date-filter">
-          <label className="date-field">
-            <span>Od data</span>
+        <section
+          id="results-filters"
+          className="results-filter-panel"
+          hidden={!filtersOpen}
+          aria-label="Filtry výsledků"
+        >
+          <label>
+            Zobrazit výsledky
+            <select
+              value={view}
+              onChange={(event) => {
+                setView(event.target.value as "já" | "jednotlivci");
+                setSearch("");
+              }}
+            >
+              <option value="jednotlivci">Jednotlivci</option>
+              <option value="já">Já</option>
+            </select>
+          </label>
+          <label>
+            Řazení
+            <select
+              value={sort}
+              onChange={(event) =>
+                setSort(event.target.value as "rank" | "alpha")
+              }
+            >
+              <option value="rank">
+                {metric === "badges"
+                  ? "Podle odznaků"
+                  : metric === "tempo"
+                    ? "Podle tempa"
+                    : "Podle kilometrů"}
+              </option>
+              <option value="alpha">Podle abecedy</option>
+            </select>
+          </label>
+          <label>
+            Od data
             <input
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(event) => setStartDate(event.target.value)}
             />
           </label>
-          <label className="date-field">
-            <span>Do data</span>
+          <label>
+            Do data
             <input
               type="date"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={(event) => setEndDate(event.target.value)}
             />
           </label>
-          {(startDate || endDate) && (
+          <div className="results-filter-actions">
             <button
               type="button"
-              className="date-clear"
               onClick={() => {
+                setView("jednotlivci");
+                setSort("rank");
                 setStartDate("");
                 setEndDate("");
+                setSearch("");
               }}
             >
-              Zrušit filtr
+              Zrušit filtry
             </button>
-          )}
-        </div>
+            <button type="button" onClick={() => setFiltersOpen(false)}>
+              Hotovo
+            </button>
+          </div>
+        </section>
+        <p className="results-context">
+          {view === "já" ? "Moje výsledky" : "Všichni účastníci"} ·{" "}
+          {periodLabel}
+          {sort === "alpha" && view !== "já" ? " · Abecedně" : ""}
+        </p>
         {invalidDates && (
           <p role="alert">Datum od nesmí být později než datum do.</p>
         )}
@@ -324,143 +299,30 @@ export default function StatisticsPage() {
           <LoadingSkeleton count={3} />
         ) : (
           <>
-            <section
-              className="unified-results-summary"
-              aria-label={
-                view === "já" ? "Souhrn mých výsledků" : "Souhrn všech výsledků"
-              }
-            >
-              {[
-                {
-                  label: "Celkem km",
-                  value: `${totals.km.toFixed(2)} km`,
-                  Icon: MapPin,
-                },
-                {
-                  label: "Čas",
-                  value: formatResultDuration(totals.minutes),
-                  Icon: Clock3,
-                },
-                {
-                  label: "Průměrné tempo",
-                  value: formatPace(totals.pace),
-                  Icon: Gauge,
-                },
-                {
-                  label: "Aktivity",
-                  value: String(totals.count),
-                  Icon: ListChecks,
-                },
-                {
-                  label: "Účastníci",
-                  value: String(participantCount),
-                  Icon: Users,
-                },
-              ].map((item) => (
-                <div className="tile" key={item.label}>
-                  <item.Icon size={20} />
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </section>
-
-            {view === "jednotlivci" && (
-              <div
-                className="participant-sort"
-                role="group"
-                aria-label="Řazení výsledků"
-              >
-                <button
-                  type="button"
-                  className={`participant-sort-button${sort === "rank" ? " active" : ""}`}
-                  aria-pressed={sort === "rank"}
-                  onClick={() => setSort("rank")}
-                >
-                  {metric === "badges"
-                    ? "Podle odznaků"
-                    : metric === "tempo"
-                      ? "Podle tempa"
-                      : "Podle kilometrů"}
-                </button>
-                <button
-                  type="button"
-                  className={`participant-sort-button${sort === "alpha" ? " active" : ""}`}
-                  aria-pressed={sort === "alpha"}
-                  onClick={() => setSort("alpha")}
-                >
-                  Podle abecedy
-                </button>
-              </div>
-            )}
+            <ResultsSummary
+              runs={scope}
+              people={scopePeople}
+              metric={metric}
+              type={selectedType}
+              mine={view === "já"}
+            />
             {search.trim() && (
               <p className="chart-hint">
                 Nalezeno: {visible.length}. Souhrn nahoře platí pro celé zvolené
                 období.
               </p>
             )}
-            {metric === "badges" && (
-              <section
-                className="community-awards"
-                aria-label="Celkové vyhodnocení odznaků"
-              >
-                <h2>Odznaky a úspěchy</h2>
-                <p className="chart-hint">
-                  Vyhodnocení za zvolené období a kategorii. Jednorázové odznaky
-                  se počítají nejvýše 1×, ranní a noční za každou odpovídající
-                  aktivitu.
-                </p>
-                <strong>
-                  Celkem{" "}
-                  {(view === "já"
-                    ? people.filter((p) => p.uid === uid)
-                    : people
-                  ).reduce((sum, p) => sum + p.awardCount, 0)}{" "}
-                  odznaků
-                </strong>
-                <div
-                  className="progress-badges-scroll"
-                  role="group"
-                  tabIndex={0}
-                  aria-label="Počty odznaků v komunitě"
-                >
-                  {(people[0]?.awards || activityAwards([], selectedType)).map(
-                    (award) => (
-                      <article className="progress-badge" key={award.id}>
-                        <span aria-hidden="true">{award.icon}</span>
-                        <div>
-                          <strong>{award.title}</strong>
-                          <p>
-                            {(view === "já"
-                              ? people.filter((p) => p.uid === uid)
-                              : people
-                            ).reduce(
-                              (sum, p) =>
-                                sum +
-                                (p.awards.find((a) => a.id === award.id)
-                                  ?.count || 0),
-                              0,
-                            )}
-                            ×
-                          </p>
-                        </div>
-                      </article>
-                    ),
-                  )}
-                </div>
-              </section>
-            )}
             {!!podium.length && (
-              <section className="results-section">
+              <section className="results-section results-leaders">
                 <h2>Stupně vítězů</h2>
-                <div className="unified-results-list">
+                <div className="unified-results-list results-compact-list">
                   {podium.map((p) => personRow(p, true))}
                 </div>
               </section>
             )}
             <section
               ref={listRef}
-              className="unified-results-list"
+              className="unified-results-list results-compact-list"
               aria-label="Seznam účastníků a výsledků"
             >
               {!visible.length ? (
