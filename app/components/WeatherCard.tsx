@@ -15,23 +15,30 @@ export default function WeatherCard() {
   const [now, setNow] = useState(() => Date.now());
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [refreshStatus, setRefreshStatus] = useState("");
+  const lastObserved = useRef<string | undefined>(undefined);
   const mounted = useRef(false);
   const request = useRef<AbortController | null>(null);
   const lastAttempt = useRef(0);
 
-  const loadWeather = useCallback(async () => {
+  const loadWeather = useCallback(async (forceRefresh = false) => {
     if (request.current) return;
     const controller = new AbortController();
     request.current = controller;
     lastAttempt.current = Date.now();
     setRefreshing(true);
+    setRefreshStatus("");
     const timeout = window.setTimeout(() => controller.abort(), 10000);
     try {
-      // The server shares a 15-minute cache. Manual refresh does not bypass it.
-      const response = await fetch("/api/weather", { cache: "no-cache", signal: controller.signal });
+      // Explicit refresh bypasses both the CDN and the upstream Next.js cache.
+      const response = await fetch(forceRefresh ? `/api/weather?refresh=1&request=${Date.now()}` : "/api/weather", { cache: forceRefresh ? "no-store" : "no-cache", signal: controller.signal });
       const result: WeatherResponse = await response.json();
       if (!response.ok || result.error || !result.current) throw new Error(result.error || "Počasí se nepodařilo načíst.");
       if (mounted.current && request.current === controller) {
+        if (forceRefresh) setRefreshStatus(lastObserved.current && lastObserved.current === result.observedAt
+          ? `Novější údaje zatím nejsou dostupné · čas dat ${weatherTime(result.observedAt, result.timeZone?.id)}`
+          : `Počasí obnoveno · čas dat ${weatherTime(result.observedAt, result.timeZone?.id)}`);
+        lastObserved.current = result.observedAt;
         setWeather(result);
         setNow(Date.now());
         setError("");
@@ -102,7 +109,7 @@ export default function WeatherCard() {
           <div className="weather-stat-card weather-precipitation-stat" title={`Aktuální odhad úhrnu srážek za ${observedPeriod}. Pravděpodobnost budoucích srážek je uvedena v hodinové předpovědi.`}>
             <Droplets className="weather-humidity-icon" size={28} />
             <strong>{formatPrecipitation(current.precipitation?.amount)}</strong>
-            <small>Srážky za 15 min</small>
+            <small>Aktuální srážky<br />{observedPeriod}</small>
           </div>
           <div className="weather-stat-card"><Droplets className="weather-humidity-icon" size={24} /><strong>{probabilityLabel(current.relativeHumidity)}</strong><small>Vlhkost</small></div>
         </div>
@@ -125,8 +132,9 @@ export default function WeatherCard() {
       <p className="weather-source">Zdroj: {weather?.source || "Open-Meteo"} · data načtena {weatherTime(weather?.fetchedAt, timeZone)}</p>
     </>}
     <div className="weather-refresh-row">
+      {refreshStatus && <p className="weather-precipitation-note" role="status">{refreshStatus}</p>}
       {current && error && <p className="weather-refresh-error" role="status">{error} Zobrazuji poslední dostupná data.</p>}
-      <button type="button" className="ui-icon-button weather-refresh-button" disabled={refreshing} onClick={() => void loadWeather()} aria-label="Obnovit počasí" title="Obnovit počasí"><RefreshCw size={18} /></button>
+      <button type="button" className="ui-icon-button weather-refresh-button" disabled={refreshing} onClick={() => void loadWeather(true)} aria-label="Obnovit počasí" title="Obnovit počasí"><RefreshCw size={18} />{refreshing && <span className="sr-only">Obnovuji počasí…</span>}</button>
     </div>
   </section>;
 }

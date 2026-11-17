@@ -4,11 +4,11 @@ export const dynamic = "force-dynamic";
 const LATITUDE = 49.84;
 const LONGITUDE = 18.10;
 
-async function fetchWithTimeout(url: string, timeoutMs = 8000) {
+async function fetchWithTimeout(url: string, timeoutMs = 8000, fresh = false) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, { next: { revalidate: 900 }, signal: controller.signal });
+    return await fetch(url, { ...(fresh ? { cache: "no-store" as RequestCache } : { next: { revalidate: 900 } }), signal: controller.signal });
   } finally {
     clearTimeout(timeout);
   }
@@ -42,7 +42,7 @@ function conditionType(code: number) {
   return "CLEAR";
 }
 
-async function openMeteo() {
+async function openMeteo(fresh = false) {
   const url = new URL("https://api.open-meteo.com/v1/forecast");
   url.searchParams.set("latitude", String(LATITUDE));
   url.searchParams.set("longitude", String(LONGITUDE));
@@ -59,7 +59,7 @@ async function openMeteo() {
   );
   url.searchParams.set("wind_speed_unit", "kmh");
 
-  const response = await fetchWithTimeout(url.toString());
+  const response = await fetchWithTimeout(url.toString(), 8000, fresh);
   if (!response.ok) throw new Error(`Open-Meteo API ${response.status}`);
 
   const data = await response.json();
@@ -115,10 +115,11 @@ async function openMeteo() {
   };
 }
 
-export async function GET() {
+export async function GET(request?: Request) {
+  const fresh = request ? new URL(request.url).searchParams.get("refresh") === "1" : false;
   try {
-    return NextResponse.json(await openMeteo(), {
-      headers: { "Cache-Control": "public, max-age=0, s-maxage=900, must-revalidate" }
+    return NextResponse.json(await openMeteo(fresh), {
+      headers: { "Cache-Control": fresh ? "no-store" : "public, max-age=0, s-maxage=900, must-revalidate" }
     });
   } catch (error) {
     console.error("Načtení počasí z Open-Meteo selhalo:", error);

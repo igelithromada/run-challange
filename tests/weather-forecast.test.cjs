@@ -109,9 +109,20 @@ test('current conditions use current precipitation and the hourly strip starts i
   const Card = load('app/components/WeatherCard.tsx', { react: hooks, '../lib/weather': helpers, './WeatherVisual': visuals }).default;
   const html = renderToStaticMarkup(React.createElement(Card));
   const top = html.slice(html.indexOf('weather-precipitation-stat'), html.indexOf('weather-hour-section'));
-  assert.match(top, /0,1 mm/); assert.match(top, /Srážky za 15 min/);
+  assert.match(top, /0,1 mm/); assert.match(top, /Aktuální srážky/);
   assert.doesNotMatch(top, /95 %/);
   assert.doesNotMatch(html, /Teď/); assert.match(html, /08:00/);
   assert.doesNotMatch(html, /Předpověď pro 07:00–08:00/);
   assert.doesNotMatch(top, /Pravděp\./);
 });
+
+ test('manual weather refresh bypasses both HTTP and upstream caches', async () => {
+  const data = fixture(); let options;
+  class Clock extends Date { static now() { return base + 7.5 * 3600000; } }
+  const api = load('app/api/weather/route.ts', {}, { Date: Clock, fetch: async (url, init) => { options = init; return Response.json(data); } });
+  const response = await api.GET({ url: 'https://example.test/api/weather?refresh=1' });
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.equal(options.cache, 'no-store');
+  assert.equal(options.next, undefined);
+ });
