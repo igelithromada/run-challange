@@ -181,39 +181,55 @@ html[data-theme="white"] {
 .container .app-metric strong.app-metric-value {white-space:normal !important;}
 .container .results-person-details {margin-left:0 !important;}
 
-/* Every measurement group uses the same centred cells and separators. */
-html body .container .app-metric {
+/* Shared separators: inset horizontal rules and shorter vertical dividers. */
+html body .container:is(.container) .app-metric {
   align-items:center !important;justify-content:center !important;text-align:center !important;
 }
-html body .container .app-metric .app-metric-heading {
+html body .container:is(.container) .app-metric .app-metric-heading {
   justify-content:center !important;text-align:center !important;width:100%;
 }
-html body .container :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) {
-  gap:0 !important;padding:.5rem 0 !important;box-sizing:border-box;
-  border-block:1px solid var(--hierarchy-line) !important;
+html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) {
+  position:relative;gap:0 !important;padding:.85rem .5rem !important;box-sizing:border-box;
+  border:0 !important;
 }
-html body .container :is(.app-metric-grid,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid) {
+html body .container:is(.container) :is(.app-metric-grid,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid) {
   display:grid !important;grid-template-columns:repeat(2,minmax(0,1fr)) !important;
 }
-html body .container :is(.activity-metrics,.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) {
+html body .container:is(.container) :is(.activity-metrics,.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) {
   display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;
 }
-html body .container .activity-metrics.strength-metrics {grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
-html body .container :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) > .app-metric {
-  border:0 !important;margin:0 !important;min-width:0;box-sizing:border-box;
+html body .container:is(.container) .activity-metrics.strength-metrics {grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid)::before,
+html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid)::after {
+  content:"";position:absolute;inset-inline:.5rem;height:1px;background:var(--hierarchy-line);pointer-events:none;
 }
-html body .container :is(.app-metric-grid,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.strength-metrics) > .app-metric:nth-child(even) {
-  border-inline-start:1px solid var(--hierarchy-line) !important;
+html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid)::before {top:.25rem;}
+html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid)::after {bottom:.25rem;}
+html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) > .app-metric:nth-child(n) {
+  position:relative;border:0 !important;margin:0 !important;min-width:0;box-sizing:border-box;
 }
-html body .container :is(.app-metric-grid,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.strength-metrics) > .app-metric:nth-child(n+3) {
-  border-top:1px solid var(--hierarchy-line) !important;
+html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) > .app-metric::before {
+  content:none;position:absolute;inset-inline-start:0;top:.6rem;bottom:.6rem;width:1px;background:var(--hierarchy-line);pointer-events:none;
 }
-html body .container :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric {
-  border-top:0 !important;border-inline-start:0 !important;
+html body .container:is(.container) :is(.app-metric-grid,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.strength-metrics) > .app-metric:nth-child(even)::before {content:"";}
+html body .container:is(.container) :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric::before {content:none;}
+html body .container:is(.container) :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric:not(:nth-child(3n+1))::before {content:"";}
+/* Each cell draws its part of the row rule with no gaps between columns. */
+html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) > .app-metric::after {
+  content:none;position:absolute;inset-inline:0;top:0;height:1px;background:var(--hierarchy-line);pointer-events:none;
 }
-html body .container :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric:not(:nth-child(3n+1)) {
-  border-inline-start:1px solid var(--hierarchy-line) !important;
+html body .container:is(.container) :is(.app-metric-grid,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.strength-metrics) > .app-metric:nth-child(n+3)::after {content:"";}
+html body .container:is(.container) :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric::after {content:none;}
+html body .container:is(.container) :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric:nth-child(n+4)::after {content:"";}
+/* Keep the summary's card outline separate from its internal rules. */
+html body .myruns-page .activity-summary-grid {outline:1px solid var(--hierarchy-line);}
+/* The next group's top rule is the only separator after a record description. */
+html body .container:is(.container) .activity-card-modern > .activity-description {
+  position:relative;border:0 !important;margin:0 !important;padding:.6rem .5rem .15rem !important;
 }
-html body .container :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric:nth-child(n+4) {
-  border-top:1px solid var(--hierarchy-line) !important;
+html body .container:is(.container) .activity-card-modern > .activity-description::before {
+  content:"";position:absolute;inset-inline:.5rem;top:0;height:1px;background:var(--hierarchy-line);
 }
+html body .container:is(.container) .activity-card-modern > .activity-metrics {margin:0 !important;}
+html body .container:is(.container) .activity-card-modern > .activity-metrics + .activity-card-actions,
+html body .container:is(.container) .app-metric-grid + .results-person-details {border-top:0 !important;}
