@@ -6,12 +6,13 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { CalendarDays, Check, ChevronLeft, ChevronRight, Save, Target, TrendingUp } from "lucide-react";
 import { auth } from "../lib/firebase";
+import TrainingGoals from "../components/TrainingGoals";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { getUserProfile, invalidateUserProfileCache } from "../lib/services/users";
 import type { RunData, LegacyTrainerPlan } from "../types";
-import { userRunsForDateRangeQuery } from "../lib/services/runs";
+import { personalHistoryQuery } from "../lib/services/runs";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 
 type Activity = Pick<RunData, "id" | "uid" | "km" | "type" | "timestamp">;
@@ -111,12 +112,8 @@ export default function TrainerPage(){
    return()=>{active=false;unsubscribe();};
  },[router]);
 
- const runsQuery = useMemo(() => {
-   const start = new Date(month.getFullYear(), month.getMonth(), 1);
-   const end = new Date(month.getFullYear(), month.getMonth() + 1, 0, 23, 59, 59, 999);
-   return userRunsForDateRangeQuery(uid || "__no_user__", start, end);
- }, [uid, month]);
- const runsState = useSharedFirestoreQuery<Activity>(`trainer:runs:${uid || "none"}:${currentMonth}`, runsQuery);
+ const runsQuery = useMemo(() => personalHistoryQuery(uid || "__no_user__"), [uid]);
+ const runsState = useSharedFirestoreQuery<Activity>(`personal-history:v2:${uid || "none"}`, runsQuery);
  const runs = runsState.data;
  const loading = profileLoading || runsState.loading;
 
@@ -277,9 +274,12 @@ export default function TrainerPage(){
   <main className="container progress-page trainer-page">
    <header className="progress-header"><h1>Osobní trenér</h1></header>
 
+   <ActivityTypeSelector value={type} onChange={v=>{if(saving)return;setType(v);setDirty(false);setModalOpen(false);setBulkMode(false);setBulkDates([]);}} ariaLabel="Typ tréninku"/>
+   <TrainingGoals key={uid+type} uid={uid} type={type} runs={runs} onSaved={monthly=>setGoalsByType(previous=>({...previous,[type]:monthly}))} />
+
    <section className="tile trainer-plan-card">
     <div className="progress-section-title"><TrendingUp/><div><h2>Plán na měsíc</h2><p>{monthTitle(month)} · {type}</p></div></div>
-    <ActivityTypeSelector value={type} onChange={v=>{if(saving)return;setType(v);setDirty(false);setModalOpen(false);setBulkMode(false);setBulkDates([]);}} ariaLabel="Typ tréninku"/>
+
     <div className="trainer-month-nav">
       <button className="ui-icon-button" type="button" disabled={saving} onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()-1,1))} aria-label="Předchozí měsíc"><ChevronLeft size={19}/></button>
       <strong>{monthTitle(month)}</strong>

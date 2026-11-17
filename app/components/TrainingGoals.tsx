@@ -1,0 +1,174 @@
+"use client";
+import { useEffect, useState } from "react";
+import { Save, Target } from "lucide-react";
+import { getUserProfile, mergeUserProfile } from "../lib/services/users";
+import { parseActivityDate } from "../lib/runData";
+import type { ActivityType, RunData } from "../types";
+type GoalRun = Pick<RunData, "km" | "type" | "timestamp">;
+export default function TrainingGoals({
+  uid,
+  type,
+  runs,
+  onSaved,
+}: {
+  uid: string;
+  type: ActivityType;
+  runs: GoalRun[];
+  onSaved: (monthly: number) => void;
+}) {
+  const [weekly, setWeekly] = useState("25"),
+    [monthly, setMonthly] = useState("100"),
+    [loading, setLoading] = useState(true),
+    [saving, setSaving] = useState(false),
+    [message, setMessage] = useState(""),
+    [failed, setFailed] = useState(false);
+  const [saved, setSaved] = useState({ weekly: 25, monthly: 100 });
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setFailed(false);
+    setMessage("");
+    getUserProfile(uid)
+      .then((profile) => {
+        if (!active) return;
+        const legacy =
+          profile?.progressGoals?.type === type
+            ? profile.progressGoals
+            : undefined;
+        const goals = {
+          weekly:
+            Number(
+              profile?.progressGoalsByType?.[type]?.weekly ?? legacy?.weekly,
+            ) || 25,
+          monthly:
+            Number(
+              profile?.progressGoalsByType?.[type]?.monthly ?? legacy?.monthly,
+            ) || 100,
+        };
+        setWeekly(String(goals.weekly));
+        setMonthly(String(goals.monthly));
+        setSaved(goals);
+      })
+      .catch(() => {
+        if (active) {
+          setFailed(true);
+          setMessage("Cíle se nepodařilo načíst. Obnov stránku.");
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [uid, type]);
+  const now = new Date(),
+    monthStart = new Date(now.getFullYear(), now.getMonth(), 1),
+    weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+  let weekKm = 0,
+    monthKm = 0;
+  for (const run of runs) {
+    if ((run.type || "běh") !== type) continue;
+    const date = parseActivityDate(run.timestamp),
+      km = Number(run.km);
+    if (!date || date > now || !Number.isFinite(km) || km <= 0) continue;
+    if (date >= weekStart) weekKm += km;
+    if (date >= monthStart) monthKm += km;
+  }
+  const save = async () => {
+    const w = Number(weekly),
+      m = Number(monthly);
+    if (!Number.isFinite(w) || !Number.isFinite(m) || w <= 0 || m <= 0) {
+      setMessage("Zadej kladný týdenní a měsíční cíl.");
+      return;
+    }
+    setSaving(true);
+    setMessage("");
+    try {
+      await mergeUserProfile(uid, {
+        progressGoalsByType: { [type]: { weekly: w, monthly: m } },
+        progressGoals: { weekly: w, monthly: m, type },
+      });
+      setSaved({ weekly: w, monthly: m });
+      onSaved(m);
+      setMessage("Cíle uloženy.");
+    } catch {
+      setMessage("Cíle se nepodařilo uložit. Zkus to znovu.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <section
+      className="progress-goal-settings tile"
+      aria-labelledby="training-goals-title"
+    >
+      <div className="progress-section-title">
+        <Target />
+        <div>
+          <h2 id="training-goals-title">Moje cíle</h2>
+          <p>
+            Týdenní a měsíční vzdálenost pro {type === "běh" ? "běh" : "chůzi"}.
+          </p>
+        </div>
+      </div>
+      <div className="progress-goal-inputs">
+        <label>
+          Týdenní cíl (km)
+          <input
+            type="number"
+            min="0.1"
+            step="0.1"
+            value={weekly}
+            disabled={loading || saving || failed}
+            onChange={(e) => setWeekly(e.target.value)}
+          />
+        </label>
+        <label>
+          Měsíční cíl (km)
+          <input
+            type="number"
+            min="0.1"
+            step="0.1"
+            value={monthly}
+            disabled={loading || saving || failed}
+            onChange={(e) => setMonthly(e.target.value)}
+          />
+        </label>
+        <button
+          type="button"
+          className="progress-save"
+          onClick={() => void save()}
+          disabled={loading || saving || failed}
+        >
+          <Save size={17} />
+          {saving ? "Ukládám…" : "Uložit cíle"}
+        </button>
+      </div>
+      <div className="progress-goal-bars">
+        {[
+          { name: "Tento týden", km: weekKm, goal: saved.weekly },
+          { name: "Tento měsíc", km: monthKm, goal: saved.monthly },
+        ].map((item) => (
+          <div key={item.name}>
+            <div className="progress-bar-heading">
+              <strong>{item.name}</strong>
+              <span>
+                {item.km.toFixed(1)} / {item.goal} km
+              </span>
+            </div>
+            <div className="progress-track">
+              <i
+                style={{
+                  width: `${Math.min(100, (item.km / item.goal) * 100)}%`,
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      {message && <p role="status">{message}</p>}
+    </section>
+  );
+}

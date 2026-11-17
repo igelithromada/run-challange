@@ -1,33 +1,26 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { Award, CalendarDays, Footprints, Medal, Target, Trophy, Users, TrendingUp, Save, CheckCircle2, Lock, Zap, Flame } from "lucide-react";
+import { Award, CalendarDays, Footprints, Medal, Trophy, CheckCircle2, Lock, Zap, Flame } from "lucide-react";
 import { auth } from "../lib/firebase";
+import { parseActivityDate } from "../lib/runData";
 import ProgressChart from "../components/ProgressChart";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
-import type { RunData, LegacyTrainerPlan } from "../types";
-import { getUserProfile, mergeUserProfile } from "../lib/services/users";
-import { userRunsQuery } from "../lib/services/runs";
+import type { RunData } from "../types";
+import { personalHistoryQuery } from "../lib/services/runs";
 
 type ProgressActivity = Pick<RunData, "id" | "uid" | "km" | "minuty" | "tempo" | "timestamp" | "type">;
 const asNumber = (value: unknown) => {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
 };
-const activityDate = (run: ProgressActivity) => {
-  const value = run.timestamp;
-  if (!value) return new Date(0);
-  if (value instanceof Date) return value;
-  if ("toDate" in value && typeof value.toDate === "function") return value.toDate();
-  if ("seconds" in value && typeof value.seconds === "number") return new Date(value.seconds * 1000);
-  return new Date(0);
-};
+const activityDate = (run: ProgressActivity) => parseActivityDate(run.timestamp) || new Date(0);
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
 const formatPace = (pace: number) => {
   if (!Number.isFinite(pace) || pace <= 0) return "—";
@@ -44,8 +37,6 @@ export default function ProgressPage() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const [uid, setUid] = useState("");
-  const [goalWeekly, setGoalWeekly] = useState("25");
-  const [goalMonthly, setGoalMonthly] = useState("100");
   const [goalType, setGoalType] = useState<ActivityType>("běh");
  useEffect(() => {
    try {
@@ -53,65 +44,18 @@ export default function ProgressPage() {
      if (cached === "běh" || cached === "chůze") setGoalType(cached);
    } catch {}
  }, []);
-  const [goalsByType, setGoalsByType] = useState<Record<ActivityType, { weekly: number; monthly: number }>>({ běh: { weekly: 25, monthly: 100 }, chůze: { weekly: 25, monthly: 100 } });
-  const [saved, setSaved] = useState(false);
-  const [trainerDays, setTrainerDays] = useState<number[]>([1,3,5]);
-  const [trainerKm, setTrainerKm] = useState("20");
-  const savedTimerRef = useRef<number | null>(null);
+  useEffect(() => onAuthStateChanged(auth, user => {
+    if (!user) { router.push("/login"); return; }
+    setUid(user.uid);
+  }), [router]);
 
-  useEffect(() => {
-    return () => {
-      if (savedTimerRef.current !== null) window.clearTimeout(savedTimerRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    const stopAuth = onAuthStateChanged(auth, async user => {
-      if (!active) return;
-      if (!user) { router.push("/login"); return; }
-      setUid(user.uid);
-      try {
-        const data = await getUserProfile(user.uid);
-        if (!active || !data) return;
-        {
-          const trainer = data.personalTrainerPlan as LegacyTrainerPlan | undefined;
-          if (trainer && Array.isArray(trainer.days)) setTrainerDays(trainer.days.filter((day: unknown) => typeof day === "number" && day >= 0 && day <= 6));
-          if (trainer && Number(trainer.weeklyKm) > 0) setTrainerKm(String(trainer.weeklyKm));
-          const storedGoals = data.progressGoalsByType || {};
-          const legacy = data.progressGoals || {};
-          const nextGoals: Record<ActivityType, { weekly: number; monthly: number }> = {
-            běh: { weekly: asNumber(storedGoals.běh?.weekly ?? legacy.weekly) || 25, monthly: asNumber(storedGoals.běh?.monthly ?? legacy.monthly) || 100 },
-            chůze: { weekly: asNumber(storedGoals.chůze?.weekly ?? legacy.weekly) || 25, monthly: asNumber(storedGoals.chůze?.monthly ?? legacy.monthly) || 100 }
-          };
-          setGoalsByType(nextGoals);
-          const initialType = legacy.type === "chůze" ? "chůze" : "běh";
-          setGoalType(initialType);
-          setGoalWeekly(String(nextGoals[initialType].weekly));
-          setGoalMonthly(String(nextGoals[initialType].monthly));
-        }
-      } catch (error) {
-        if (active) console.error("Nepodařilo se načíst profil a cíle", error);
-      }
-    });
-    return () => { active = false; stopAuth(); };
-  }, [router]);
-
-  const personalQuery = useMemo(() => userRunsQuery(uid || "__no_user__"), [uid]);
-  const personalState = useSharedFirestoreQuery<ProgressActivity>("progress:personal:" + (uid || "none"), personalQuery);
+  const personalQuery = useMemo(() => personalHistoryQuery(uid || "__no_user__"), [uid]);
+  const personalState = useSharedFirestoreQuery<ProgressActivity>("personal-history:v2:" + (uid || "none"), personalQuery);
   const mine = useMemo(() => personalState.data, [personalState.data]);
   const selected = useMemo(() => mine.filter(run => (run.type || "běh") === goalType), [mine, goalType]);
   const now = new Date();
-  const weekStart = mondayOf(now);
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const weekRuns = selected.filter(run => activityDate(run) >= weekStart && activityDate(run) <= now);
-  const monthRuns = selected.filter(run => activityDate(run) >= monthStart && activityDate(run) <= now);
-  const weekKm = weekRuns.reduce((sum, run) => sum + asNumber(run.km), 0);
-  const monthKm = monthRuns.reduce((sum, run) => sum + asNumber(run.km), 0);
   const allKm = selected.reduce((sum, run) => sum + asNumber(run.km), 0);
   const allActivities = selected.length;
-  const progressWeekly = Math.min(100, goalWeekly && asNumber(goalWeekly)>0 ? weekKm/asNumber(goalWeekly)*100 : 0);
-  const progressMonthly = Math.min(100, goalMonthly && asNumber(goalMonthly)>0 ? monthKm/asNumber(goalMonthly)*100 : 0);
 
   const sorted = [...selected].sort((a,b) => activityDate(a).getTime()-activityDate(b).getTime());
   const longest = sorted.reduce<ProgressActivity | null>((best, run) => !best || asNumber(run.km)>asNumber(best.km) ? run : best, null);
@@ -156,27 +100,13 @@ export default function ProgressPage() {
   ];
   const calendarDays = (() => {
     const end = new Date(now.getFullYear(),now.getMonth(),now.getDate());
-    const start = mondayOf(new Date(end.getTime()-83*86400000));
+    const start = mondayOf(end);
+    start.setDate(start.getDate()-77);
     const days: Date[]=[];
     for (let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) days.push(new Date(d));
     return days;
   })();
 
-  const switchGoalType = (nextType: ActivityType) => {
-    setGoalType(nextType);
-    const values = goalsByType[nextType] || { weekly: 25, monthly: 100 };
-    setGoalWeekly(String(values.weekly));
-    setGoalMonthly(String(values.monthly));
-  };
-  const saveGoals = async () => {
-    if (!uid || asNumber(goalWeekly)<=0 || asNumber(goalMonthly)<=0) return;
-    const updatedGoals = { ...goalsByType, [goalType]: { weekly: asNumber(goalWeekly), monthly: asNumber(goalMonthly) } };
-    setGoalsByType(updatedGoals);
-    await mergeUserProfile(uid, { progressGoalsByType: updatedGoals, progressGoals:{ weekly:asNumber(goalWeekly), monthly:asNumber(goalMonthly), type:goalType } });
-    setSaved(true);
-    if (savedTimerRef.current !== null) window.clearTimeout(savedTimerRef.current);
-    savedTimerRef.current = window.setTimeout(() => setSaved(false), 2500);
-  };
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
     if (item==="logout") { await signOut(auth); router.push("/login"); }
@@ -190,26 +120,7 @@ export default function ProgressPage() {
     <Navbar title="Můj pokrok" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
     <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/>
     <main className="container progress-page">
-      <header className="progress-header">
-        <span className="progress-eyebrow">TVŮJ POHYB. TVŮJ POSUN.</span>
-        <h1>Můj pokrok</h1>
-        <p>Každý kilometr se počítá. Sleduj cíle, úspěchy a svůj posun.</p>
-      </header>
-
-      <section className="progress-goal-settings tile">
-        <div className="progress-section-title"><Target/><div><h2>Moje cíle</h2><p>Nastav si vlastní vzdálenost, které chceš dosáhnout.</p></div></div>
-        <ActivityTypeSelector value={goalType as ActivityType} onChange={switchGoalType} ariaLabel="Typ cíle" />
-        <div className="progress-goal-inputs">
-          <label>Týdenní cíl (km)<input type="number" min="0.1" step="0.5" value={goalWeekly} onChange={e=>setGoalWeekly(e.target.value)}/></label>
-          <label>Měsíční cíl (km)<input type="number" min="0.1" step="1" value={goalMonthly} onChange={e=>setGoalMonthly(e.target.value)}/></label>
-          <button className="progress-save" onClick={saveGoals}><Save size={17}/>{saved?"Uloženo":"Uložit cíle"}</button>
-        </div>
-        <div className="progress-goal-bars">
-          <div><div className="progress-bar-heading"><strong>Tento týden</strong><span>{weekKm.toFixed(1)} / {asNumber(goalWeekly)} km</span></div><div className="progress-track"><i style={{width:`${progressWeekly}%`}}/></div></div>
-          <div><div className="progress-bar-heading"><strong>Tento měsíc</strong><span>{monthKm.toFixed(1)} / {asNumber(goalMonthly)} km</span></div><div className="progress-track"><i style={{width:`${progressMonthly}%`}}/></div></div>
-        </div>
-        <p className="trainer-goal-note">Osobní trenér používá stejné cíle jako tato stránka. Měsíční cíl je hlavní meta; trenér z něj vychází při plánování týdnů a zbytek můžeš doplnit vlastními aktivitami.</p>
-      </section>
+      <ActivityTypeSelector value={goalType} onChange={setGoalType} ariaLabel="Typ aktivity pro pokrok" />
 
       <ProgressChart runs={selected} activityType={goalType} loading={personalState.loading} error={!!personalState.error} />
 
@@ -227,7 +138,10 @@ export default function ProgressPage() {
 
       <section className="tile progress-calendar">
         <div className="progress-section-title"><CalendarDays/><div><h2>Kalendář aktivit</h2><p>Posledních 12 týdnů pro kategorii {goalType === "chůze" ? "chůzi" : "běh"} – čím sytější zelená, tím větší vzdálenost.</p></div></div>
-        <div className="progress-calendar-grid">{calendarDays.map(day=>{const km=dailyTotals.get(dateKey(day))||0;return <div key={dateKey(day)} className={`progress-day ${km===0?"":km<3?"level-1":km<7?"level-2":km<12?"level-3":"level-4"}`} title={`${day.toLocaleDateString("cs-CZ")}: ${km.toFixed(1)} km`}/>})}</div>
+        <div className="progress-calendar-with-days">
+          <div className="progress-calendar-day-labels" aria-hidden="true">{["Po","Út","St","Čt","Pá","So","Ne"].map(day=><span key={day}>{day}</span>)}</div>
+          <div className="progress-calendar-grid">{calendarDays.map(day=>{const km=dailyTotals.get(dateKey(day))||0;return <div key={dateKey(day)} className={`progress-day ${km===0?"":km<3?"level-1":km<7?"level-2":km<12?"level-3":"level-4"}`} title={`${day.toLocaleDateString("cs-CZ", {weekday:"long", day:"numeric", month:"numeric",year:"numeric"})}: ${km.toFixed(1)} km`} aria-label={`${day.toLocaleDateString("cs-CZ", {weekday:"long", day:"numeric",month:"numeric"})}: ${km.toFixed(1)} km`}/>})}</div>
+        </div>
         <div className="progress-calendar-legend"><span>Méně</span><i/><i/><i/><i/><span>Více</span></div>
         <p className="progress-calendar-summary">{activityDays} aktivních dní · {maxDay.toFixed(1)} km nejvíce za jeden den</p>
       </section>
@@ -242,10 +156,6 @@ export default function ProgressPage() {
         </div>
       </section>
 
-      <section className="tile progress-challenges">
-        <div className="progress-section-title"><Users/><div><h2>Výzvy</h2><p>Aktivní výzvy najdeš v samostatné sekci.</p></div></div>
-        <button className="progress-link-button" onClick={()=>router.push("/challenges")}><Users size={17}/> Zobrazit výzvy</button>
-      </section>
       {personalState.loading && <LoadingSkeleton count={2} />}
     </main>
   </>;

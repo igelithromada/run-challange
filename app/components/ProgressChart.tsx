@@ -102,13 +102,18 @@ export default function ProgressChart({
           />
         </label>
       </div>
+      {error && runs.length > 0 && (
+        <p role="status">
+          Spojení se nepodařilo obnovit. Zobrazuji poslední načtené aktivity.
+        </p>
+      )}
       {!from || !to ? (
         <p role="status">Vyber datum od a do.</p>
       ) : invalid ? (
         <p role="status">Datum od nesmí být později než datum do.</p>
-      ) : loading ? (
+      ) : loading && runs.length === 0 ? (
         <p role="status">Načítám aktivity…</p>
-      ) : error ? (
+      ) : error && runs.length === 0 ? (
         <p role="status">Aktivity se nepodařilo načíst. Obnov stránku.</p>
       ) : !points.length ? (
         <p role="status">V tomto období zatím nemáš žádnou aktivitu.</p>

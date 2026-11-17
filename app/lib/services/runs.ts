@@ -33,6 +33,11 @@ export function filteredRunsQuery(startDate?: string, endDate?: string): Query<D
   return query(runsCollection(), ...constraints);
 }
 
+/** Full personal history; chart/calendar sort locally and do not need a composite index. */
+export function personalHistoryQuery(uid: string): Query<DocumentData, DocumentData> {
+  return query(runsCollection(), where("uid", "==", uid));
+}
+
 export function userRunsQuery(uid: string): Query<DocumentData, DocumentData> {
   return query(runsCollection(), where("uid", "==", uid), orderBy("timestamp", "desc"));
 }

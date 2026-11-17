@@ -3,6 +3,10 @@ export function parseActivityDate(value: unknown): Date | null {
   if (value === null || value === undefined) return null;
   let date: Date;
   if (value instanceof Date) date = value;
+  else if (typeof value === "object" && "toDate" in value && typeof value.toDate === "function") {
+    try { date = value.toDate(); } catch { return null; }
+    if (!(date instanceof Date)) return null;
+  }
   else if (typeof value === "string") date = new Date(value);
   else if (typeof value === "object" && "seconds" in value && typeof value.seconds === "number") {
     const nanos = "nanoseconds" in value && typeof value.nanoseconds === "number" ? value.nanoseconds : 0;
