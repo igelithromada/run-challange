@@ -1,0 +1,22 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),Module=require('node:module'),ts=require('typescript'),React=require('react');
+const {renderToStaticMarkup}=require('react-dom/server');
+function load(file,deps={}){const filename=path.resolve(file),module={exports:{}},req=Module.createRequire(filename);const code=ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;vm.runInNewContext(code,{module,exports:module.exports,require:name=>{if(deps[name])return deps[name];if(name.startsWith('.'))for(const ext of ['.ts','.tsx']){const f=path.resolve(path.dirname(filename),name+ext);if(fs.existsSync(f))return load(f,deps);}return req(name);},Date,Map,Set,URL,console},{filename});return module.exports;}
+const api=load('app/lib/myGallery.ts');
+const image=name=>`https://res.cloudinary.com/demo/image/upload/v1/${name}.jpg`;
+const runs=[{id:'new',uid:'me',km:5,type:'běh',timestamp:new Date('2026-11-17T09:00:00'),imageUrls:[image('new'),image('new'),image('other')]},{id:'legacy',uid:'me',type:'chůze',km:2,timestamp:new Date('2026-11-16T09:00:00'),imageUrl:image('legacy')},{id:'other-user',uid:'someone',timestamp:new Date(),imageUrls:[image('secret')]},{id:'deleted',uid:'me',deleting:true,imageUrls:[image('deleted')]}];
+test('personal gallery excludes other users and deleted runs, supports legacy photos and removes duplicate run photos',()=>{const photos=api.myGalleryPhotos(runs,'me');assert.equal(photos.length,3);assert.equal(photos[0].runId,'new');assert.equal(photos.at(-1).runId,'legacy');assert.equal(new Set(photos.map(p=>p.key)).size,3);assert.equal(api.myGalleryPhotos(runs,'').length,0);});
+test('gallery type and inclusive date filters select the correct activity photos',()=>{assert.equal(api.myGalleryPhotos(runs,'me','chůze').length,1);assert.equal(api.myGalleryPhotos(runs,'me','all','2026-11-17','2026-11-17').length,2);assert.equal(api.myGalleryPhotos(runs,'me','all','2026-11-18','2026-11-17').length,0);});
+test('the gallery renders lazy reduced previews and never loads someone else’s photo',()=>{
+ let state=0;const values=[false,'me','all','','',60,null],hooks={...React,useState:initial=>[state<values.length?values[state++]:typeof initial==='function'?initial():initial,()=>{}]};const blank={__esModule:true,default:()=>null};
+ const Page=load('app/gallery/page.tsx',{react:hooks,'next/navigation':{useRouter:()=>({push(){}})},'firebase/auth':{onAuthStateChanged(){return()=>{};}},'../lib/firebase':{auth:{}},'../lib/useSharedFirestoreQuery':{useSharedFirestoreQuery:()=>({data:runs,loading:false,error:null})},'../lib/services/runs':{personalHistoryQuery:()=>({})},'../components/Navbar':blank,'../components/Sidebar':blank}).default;
+ const html=renderToStaticMarkup(React.createElement(Page));assert.match(html,/w_640,h_720/);assert.match(html,/loading="lazy"/);assert.doesNotMatch(html,/secret\.jpg|deleted\.jpg|my-gallery-viewer/);assert.match(html,/Fotografie mých záznamů/);
+});
+const find=(n,p)=>{if(!n)return;if(Array.isArray(n)){for(const c of n){const r=find(c,p);if(r)return r;}return;}if(p(n))return n;return find(n.props?.children,p);};
+test('full-size gallery viewer supports swiping and keyboard navigation without visible arrow or index controls',()=>{
+ const moves=[];const hooks={useRef:value=>({current:value}),useEffect(){}};const Viewer=load('app/components/MyGalleryViewer.tsx',{react:hooks}).default;
+ const tree=Viewer({photo:api.myGalleryPhotos(runs,'me')[0],onClose(){},onMove:d=>moves.push(d),onOpenRun(){}}),frame=find(tree,n=>n.props?.className==='my-gallery-viewer-image'),target={setPointerCapture(){}};
+ frame.props.onPointerDown({isPrimary:true,pointerId:1,clientX:200,clientY:100,currentTarget:target});frame.props.onPointerUp({pointerId:1,clientX:70,clientY:105});assert.equal(moves[0],1);
+ tree.props.onKeyDown({key:'ArrowLeft',preventDefault(){}});assert.equal(moves[1],-1);
+ assert.equal(find(tree,n=>n.type==='button'&&n.props['aria-label']==='Další fotografie'),undefined);
+ frame.props.onPointerDown({isPrimary:true,pointerId:1,clientX:200,clientY:100,currentTarget:target});frame.props.onPointerDown({isPrimary:false,pointerId:2,clientX:150,clientY:100,currentTarget:target});frame.props.onPointerUp({pointerId:1,clientX:50,clientY:100});assert.equal(moves.length,2,'pinching must not trigger a swipe');
+});

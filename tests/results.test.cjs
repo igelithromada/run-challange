@@ -36,7 +36,7 @@ test('search and alphabetical mode hide the podium without relabelling a found u
  const searched=renderResults({8:'cenek'});assert.doesNotMatch(searched,/Stupně vítězů/);assert.match(searched,/Čeněk Novák/);assert.doesNotMatch(searched,/Radek Pešák/);
  const alpha=renderResults({5:'alpha'});assert.match(alpha,/Abecední navigace/);assert.match(alpha,/data-letter="Č"/);assert.doesNotMatch(alpha,/Stupně vítězů/);
 });
-test('legacy participants link redirects and navigation exposes only the merged results entry',()=>{
- let target;load('app/participants/page.tsx',{'next/navigation':{redirect:path=>target=path}}).default();assert.equal(target,'/statistics');
+test('legacy participants slot opens the personal gallery and results remain unified',()=>{
+ let target;load('app/participants/page.tsx',{'next/navigation':{redirect:path=>target=path}}).default();assert.equal(target,'/gallery');
  const items=load('app/lib/navigation.ts').NAVIGATION_ITEMS;assert.equal(items.filter(i=>i.id==='statistics').length,1);assert.equal(items.some(i=>i.id==='participants'),false);
 });
