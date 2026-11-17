@@ -1,4 +1,5 @@
 "use client";
+import Metric from "./Metric";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Wind, Droplets, RefreshCw, MapPin } from "lucide-react";
@@ -202,13 +203,10 @@ export default function WeatherCard() {
           </div>
         </div>
         <div className="weather-stat-grid">
-          <div className="weather-stat-card"><Wind size={24} /><strong>{typeof wind === "number" ? `${Math.round(wind)} ${windUnit}` : "—"}</strong><small>Vítr</small></div>
-          <div className="weather-stat-card weather-precipitation-stat" title={`Aktuální odhad úhrnu srážek za ${observedPeriod}. Pravděpodobnost budoucích srážek je uvedena v hodinové předpovědi.`}>
-            <Droplets className="weather-humidity-icon" size={28} />
-            <strong>{formatPrecipitation(current.precipitation?.amount)}</strong>
-            <small>Srážky</small>
-          </div>
-          <div className="weather-stat-card"><Droplets className="weather-humidity-icon" size={24} /><strong>{probabilityLabel(current.relativeHumidity)}</strong><small>Vlhkost</small></div>
+          <Metric className="weather-stat-card" icon={<Wind size={24}/>} label="Vítr" value={typeof wind === "number" ? `${Math.round(wind)} ${windUnit}` : "—"}/>
+          <Metric className="weather-stat-card weather-precipitation-stat" title={`Aktuální odhad úhrnu srážek za ${observedPeriod}. Pravděpodobnost budoucích srážek je uvedena v hodinové předpovědi.`} icon={<Droplets className="weather-humidity-icon" size={24}/>} label="Srážky" value={formatPrecipitation(current.precipitation?.amount)}/>
+          <Metric className="weather-stat-card" icon={<Droplets className="weather-humidity-icon" size={24}/>} label="Vlhkost" value={probabilityLabel(current.relativeHumidity)}/>
+
         </div>
       </div>
       {precipitationExplanation&&<details className="weather-model-note"><summary>{precipitationExplanation.summary}</summary><p>{precipitationExplanation.text}</p></details>}
@@ -217,7 +215,7 @@ export default function WeatherCard() {
         <div className="weather-hour-grid weather-hour-scroll" tabIndex={0} role="group" aria-label="Předpověď na 12 hodin, posouvej doleva nebo doprava">
           {hours.map(item => {
             const period = `${weatherTime(item.interval?.startTime, timeZone)}–${weatherTime(item.interval?.endTime, timeZone)}`;
-            return <div key={item.interval?.startTime} className={`weather-hour-card${(item.precipitation?.amount||0)>0 ? " has-precipitation" : ""}`} title={`Předpověď pro ${period}`}>
+            return <div key={item.interval?.startTime} className="weather-hour-card" title={`Předpověď pro ${period}`}>
               <small className="weather-hour-time">{weatherTime(item.interval?.startTime, timeZone)}</small>
               <div className="weather-hour-main"><WeatherVisual type={item.weatherCondition?.type} size={48} className="weather-hour-icon" night={weatherIsNight(item, item.interval?.startTime || now, timeZone)} /><strong>{temperatureLabel(item.temperature?.degrees)}</strong></div>
               <strong className="weather-hour-amount">{formatPrecipitation(item.precipitation?.amount)}</strong>

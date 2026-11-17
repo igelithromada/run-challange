@@ -1,4 +1,5 @@
 "use client";
+import Metric from "../components/Metric";
 import { preparePhoto } from "../lib/preparePhoto";
 
 import React, { useEffect, useState } from "react";
@@ -281,7 +282,7 @@ export default function TeamsPage() {
                             {type:"chůze", amount:stats.walkingKm, unit:"km"},
                             {type:"dřepy", amount:stats.squatRepetitions, unit:"×"},
                             {type:"kliky", amount:stats.pushupRepetitions, unit:"×"},
-                          ] as const).filter(item=>Number(item.amount)>0).map(item=><span key={item.type} className="team-activity-stat"><ActivityTypeIcon type={item.type} size={18}/><span className="sr-only">{item.type}: </span>{Number(item.amount).toLocaleString("cs-CZ",{maximumFractionDigits:item.unit==="km"?1:0})} {item.unit}</span>)}
+                          ] as const).filter(item=>Number(item.amount)>0).map(item=><Metric key={item.type} icon={<ActivityTypeIcon type={item.type} size={19}/>} label={item.type} value={<>{Number(item.amount).toLocaleString("cs-CZ",{maximumFractionDigits:item.unit==="km"?1:0})} {item.unit}</>}/>)}
                           {![stats.runningKm,stats.walkingKm,stats.squatRepetitions,stats.pushupRepetitions].some(value=>Number(value)>0)&&<small>Zatím bez aktivit</small>}
                         </div>
                       </div>

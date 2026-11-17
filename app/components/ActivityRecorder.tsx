@@ -1,4 +1,5 @@
 "use client";
+import Metric from "./Metric";
 
 import React, { useEffect, useRef, useState } from "react";
 import { Activity, Footprints, Gauge, MapPin, Pause, Play, Square, Smartphone } from "lucide-react";
@@ -492,9 +493,9 @@ export default function ActivityRecorder({ type, onFinished, ownerUid }:{
     ) : null}
 
     <div className="activity-recorder-metrics">
-      <div><MapPin size={18}/><strong>{distanceKm.toFixed(2)}</strong><small>km</small></div>
-      <div><Gauge size={18}/><strong>{formatTime(elapsed)}</strong><small>čas</small></div>
-      <div><Activity size={18}/><strong>{formatPace(elapsed,distanceKm)}</strong><small>tempo</small></div>
+      <Metric icon={<MapPin size={19}/>} label="Vzdálenost" value={distanceKm.toFixed(2)+" km"}/>
+      <Metric icon={<Gauge size={19}/>} label="Čas" value={formatTime(elapsed)}/>
+      <Metric icon={<Activity size={19}/>} label="Tempo" value={formatPace(elapsed,distanceKm)}/>
     </div>
 
     {accuracy!==null && <div className="activity-recorder-gps">Přesnost GPS přibližně {accuracy} m{paused?" · měření pozastaveno":""}</div>}

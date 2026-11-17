@@ -2,6 +2,7 @@
 import { sharedChallenge, quantityChallenge, challengeUnit } from "../lib/challengeMeasurement";
 import { activityLabel } from "../lib/activity";
 
+import Metric from "./Metric";
 import Link from "next/link";
 import { CalendarDays, ChevronRight, Target, Users } from "lucide-react";
 import { ActivityTypeIcon } from "./ActivityTypeSelector";
@@ -34,11 +35,11 @@ export default function ChallengeSummaryCard({ challenge, joined, authorName, de
       <span className="activity-date challenge-state-label">{state}</span>
     </header>
     {challenge.description && <div className={detail ? "activity-description" : "activity-description challenge-summary-description"}>{challenge.description}</div>}
-    <div className="activity-metrics challenge-summary-metrics">
-      <div><Target size={17} aria-hidden="true" /><strong>{goal.toLocaleString("cs-CZ", { maximumFractionDigits: distance ? 1 : 0 })} <small>{unit}</small></strong><span>Cíl</span></div>
-      <div><Users size={17} aria-hidden="true" /><strong>{Number(challenge.participantCount || 0)}</strong><span>Účastníci</span></div>
-      <div><CalendarDays size={17} aria-hidden="true" /><strong className="challenge-period" title={period} aria-label={period}>{dateLabel(challenge.startDate, crossYear)} – {dateLabel(challenge.endDate, crossYear)}</strong><span>Období</span></div>
+    <div className="app-metric-grid challenge-summary-metrics">
+      <Metric icon={<Target size={19}/>} label="Cíl" value={<>{goal.toLocaleString("cs-CZ", { maximumFractionDigits: distance ? 1 : 0 })} <small>{unit}</small></>}/>
+      <Metric icon={<Users size={19}/>} label="Účastníci" value={Number(challenge.participantCount || 0)}/>
     </div>
+    <p className="challenge-period-line"><CalendarDays size={17} aria-hidden="true"/><span>{period}</span></p>
     {sharedChallenge(challenge.kind) && <div className="challenge-shared-progress">
       <span>Společně {total.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} z {goal.toLocaleString("cs-CZ")} {unit}</span>
       <progress max={goal > 0 ? goal : 1} value={Math.min(Math.max(0, total), goal > 0 ? goal : 1)} aria-label="Plnění společného cíle" />

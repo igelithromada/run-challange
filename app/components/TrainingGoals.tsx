@@ -1,4 +1,5 @@
 "use client";
+import Metric from "./Metric";
 import { activityAmount, activityUnit, isStrengthActivity } from "../lib/activity";
 import { useEffect, useState } from "react";
 import { Save, Target } from "lucide-react";
@@ -155,13 +156,7 @@ export default function TrainingGoals({
           { name: "Tento měsíc", km: monthKm, goal: saved.monthly },
         ].map((item) => (
           <div key={item.name}>
-            <div className="progress-bar-heading">
-              <strong>{item.name}</strong>
-              <span>
-                {item.km.toFixed(strength ? 0 : 1)} / {item.goal} {unit} ·{" "}
-                {Math.round((item.km / item.goal) * 100)} %
-              </span>
-            </div>
+            <Metric icon={<Target size={19}/>} label={item.name} value={<>{item.km.toFixed(strength ? 0 : 1)} / {item.goal} {unit}</>} detail={`${Math.round((item.km / item.goal) * 100)} %`}/>
             <div className="progress-track">
               <i
                 style={{

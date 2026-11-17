@@ -12,7 +12,7 @@ const { isValidPushSubscription }=require('../app/lib/validation.ts');
 function loadIsolated(file, dependencies={}, globals={}) {
   const filename=path.resolve(file), testModule={exports:{}};
   const source=ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true,jsx:ts.JsxEmit.ReactJSX}}).outputText;
-  vm.runInNewContext(source,{module:testModule,exports:testModule.exports,require:name=>dependencies[name]||require(require.resolve(name,{paths:[path.dirname(filename)]})),console,Date,Intl,URL,URLSearchParams,TextDecoder,AbortController,Response,Request,setTimeout,clearTimeout,...globals},{filename});
+  vm.runInNewContext(source,{module:testModule,exports:testModule.exports,require:name=>{if(dependencies[name])return dependencies[name];if(name==='./Metric')return loadIsolated('app/components/Metric.tsx');return require(require.resolve(name,{paths:[path.dirname(filename)]}));},console,Date,Intl,URL,URLSearchParams,TextDecoder,AbortController,Response,Request,setTimeout,clearTimeout,...globals},{filename});
   return testModule.exports;
 }
 test('activity dates accept both Firestore JSON and ISO, reject invalid or missing dates',()=>{
@@ -94,7 +94,7 @@ test('GPS: stopping while paused counts each pause once',()=>{
   const component=loadIsolated('app/components/ActivityRecorder.tsx',{react:hooks,'./InstallPwaPrompt':()=>null},
     {Date:Clock,navigator:{geolocation:{watchPosition:callback=>{fix=callback;return 1;},clearWatch(){}}}}).default;
   const render=()=>{hook=0;return component({type:'běh',onFinished:value=>draft=value});};
-  const text=node=>typeof node==='string'?node:typeof node==='number'?String(node):Array.isArray(node)?node.map(text).join(''):node?.props?text(node.props.children):'';
+  const text=node=>typeof node==='string'?node:typeof node==='number'?String(node):Array.isArray(node)?node.map(text).join(''):typeof node?.type==='function'&&node.type.name==='Metric'?text(node.type(node.props)):node?.props?text(node.props.children):'';
   const button=(node,label)=>{if(!node)return null;if(Array.isArray(node)){for(const child of node){const value=button(child,label);if(value)return value;}return null;}if(node.type==='button'&&text(node).includes(label))return node;return button(node.props?.children,label);};
   button(render(),'Spustit').props.onClick();
   fix({coords:{latitude:49,longitude:18,accuracy:5},timestamp:now});

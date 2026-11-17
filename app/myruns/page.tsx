@@ -1,4 +1,5 @@
 "use client";
+import Metric from "../components/Metric";
 import PhotoViewer from "../components/PhotoViewer";
 import { isStrengthActivity, activityAmount } from "../lib/activity";
 import { preparePhoto } from "../lib/preparePhoto";
@@ -270,10 +271,11 @@ export default function MyRunsPage() {
         </div>
       </details>
       <div className="tile-group activity-summary-grid">
-        <div className="tile"><ListChecks/><span>Počet aktivit</span><strong>{summaryUnavailable ?? filteredRuns.length}</strong></div>
-        <div className="tile"><MapPin/><span>{strength ? "Celkem opakování" : "Celkem km"}</span><strong>{summaryUnavailable ?? (strength ? metrics.repetitions.toLocaleString("cs-CZ") : totalKm.toFixed(2)+" km")}</strong></div>
-        <div className="tile"><Clock3/><span>{strength ? "Zaznamenaný čas" : "Čas"}</span><strong>{summaryUnavailable ?? (strength && totalMin === 0 ? "—" : formatResultDuration(totalMin))}</strong></div>
-        {!strength && <div className="tile"><Gauge/><span>Prům. tempo</span><strong>{summaryUnavailable ?? formatTime(avgTempo)} /km</strong></div>}
+        <Metric icon={<ListChecks/>} label="Počet aktivit" value={summaryUnavailable ?? filteredRuns.length}/>
+        <Metric icon={<MapPin/>} label={strength ? "Celkem opakování" : "Celkem km"} value={summaryUnavailable ?? (strength ? metrics.repetitions.toLocaleString("cs-CZ") : totalKm.toFixed(2)+" km")}/>
+        <Metric icon={<Clock3/>} label={strength ? "Zaznamenaný čas" : "Čas"} value={summaryUnavailable ?? (strength && totalMin === 0 ? "—" : formatResultDuration(totalMin))}/>
+        {!strength && <Metric icon={<Gauge/>} label="Prům. tempo" value={summaryUnavailable ?? formatTime(avgTempo)+" /km"}/>}
+
       </div>
       <h2 className="centered-title">Moje záznamy</h2>
 

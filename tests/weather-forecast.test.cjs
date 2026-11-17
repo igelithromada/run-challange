@@ -109,7 +109,7 @@ test('current conditions use current precipitation and the hourly strip starts i
   const Card = load('app/components/WeatherCard.tsx', { react: hooks, '../lib/weather': helpers, './WeatherVisual': visuals, '../lib/firebase': { auth: { currentUser: null } }, '../lib/location': load('app/lib/location.ts') }).default;
   const html = renderToStaticMarkup(React.createElement(Card));
   const top = html.slice(html.indexOf('weather-precipitation-stat'), html.indexOf('weather-hour-section'));
-  assert.match(top, /0,1 mm/); assert.match(top, /<small>Srážky<\/small>/);
+  assert.match(top, /0,1 mm/); assert.match(top, /<span>Srážky<\/span>/);
   assert.doesNotMatch(top, /95 %/);
   assert.doesNotMatch(html, /Teď/); assert.match(html, /08:00/);
   assert.doesNotMatch(html, /Předpověď pro 07:00–08:00/);
@@ -154,5 +154,5 @@ test('weather displays the original rain icon, zero amount and a collapsed expla
   const weather={source:'Open-Meteo',current:{temperature:{degrees:7},weatherCondition:{type:'RAIN',description:{text:'Slabý déšť'}},precipitation:{amount:0}},hourly:[]};let state=0;
   const hooks={...React,useState:()=>[[weather,base,false,''][state++],()=>{}],useRef:value=>({current:value}),useEffect(){},useCallback:fn=>fn};
   const Card=load('app/components/WeatherCard.tsx',{react:hooks,'../lib/weather':helpers,'./WeatherVisual':visuals,'../lib/firebase':{auth:{currentUser:null}},'../lib/location':load('app/lib/location.ts')}).default;
-  const html=renderToStaticMarkup(React.createElement(Card));assert.match(html,/Slabý déšť/);assert.match(html,/0,0 mm/);assert.match(html,/Stav podle modelu/);assert.match(html,/<details class="weather-model-note"><summary>Proč déšť při 0,0 mm\?/);assert.match(html,/<small>Srážky<\/small>/);assert.doesNotMatch(html,/<details[^>]*open/);
+  const html=renderToStaticMarkup(React.createElement(Card));assert.match(html,/Slabý déšť/);assert.match(html,/0,0 mm/);assert.match(html,/Stav podle modelu/);assert.match(html,/<details class="weather-model-note"><summary>Proč déšť při 0,0 mm\?/);assert.match(html,/<span>Srážky<\/span>/);assert.doesNotMatch(html,/<details[^>]*open/);
 });

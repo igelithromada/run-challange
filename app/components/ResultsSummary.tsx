@@ -1,4 +1,6 @@
 "use client";
+import Metric from "./Metric";
+import { Award, Clock3, Gauge, ListChecks, MapPin, Users } from "lucide-react";
 import { isStrengthActivity } from "../lib/activity";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
 import { formatResultDuration, type ResultPerson } from "../lib/results";
@@ -26,54 +28,18 @@ export default function ResultsSummary({
       className="results-overview"
       aria-label={mine ? "Souhrn mých výsledků" : "Souhrn všech výsledků"}
     >
-      <div className="results-overview-main">
-        <div>
-          <span>
-            {metric === "badges"
-              ? "Odznaky celkem"
-              : metric === "tempo"
-                ? "Průměrné tempo"
-                : strength ? "Celkem opakování" : "Celkem km"}
-          </span>
-          <strong>
-            {metric === "badges"
-              ? badges
-              : metric === "tempo"
-                ? formatPace(totals.pace)
-                : strength ? totals.repetitions.toLocaleString("cs-CZ") : `${totals.km.toFixed(2)} km`}
-          </strong>
-        </div>
-        <p>
-          Účastníci: {count}
-          <br />
-          Aktivity: {totals.count}
-        </p>
+      <div className="app-metric-grid results-summary-metrics">
+        <Metric icon={metric === "badges" ? <Award/> : metric === "tempo" ? <Gauge/> : <MapPin/>} label={metric === "badges" ? "Odznaky celkem" : metric === "tempo" ? "Průměrné tempo" : strength ? "Celkem opakování" : "Vzdálenost"} value={metric === "badges" ? badges : metric === "tempo" ? formatPace(totals.pace) : strength ? totals.repetitions.toLocaleString("cs-CZ") : totals.km.toFixed(2)+" km"}/>
+        <Metric icon={<ListChecks/>} label="Aktivity" value={totals.count}/>
+        <Metric icon={<Users/>} label="Účastníci" value={count}/>
       </div>
-      <details className="results-summary-details">
-        <summary>Podrobný souhrn</summary>
-        <dl>
-          <div>
-            <dt>{strength ? "Celkem opakování" : "Celkem km"}</dt>
-            <dd>{strength ? totals.repetitions.toLocaleString("cs-CZ") : totals.km.toFixed(2)+" km"}</dd>
-          </div>
-          <div>
-            <dt>{strength ? "Zaznamenaný čas" : "Čas"}</dt>
-            <dd>{strength && totals.minutes === 0 ? "—" : formatResultDuration(totals.minutes)}</dd>
-          </div>
-          {!strength && <div><dt>Průměrné tempo</dt><dd>{formatPace(totals.pace)}</dd></div>}
-          <div>
-            <dt>Aktivity</dt>
-            <dd>{totals.count}</dd>
-          </div>
-          <div>
-            <dt>Účastníci</dt>
-            <dd>{count}</dd>
-          </div>
-          <div>
-            <dt>Odznaky</dt>
-            <dd>{badges}</dd>
-          </div>
-        </dl>
+      <details className="results-summary-details"><summary>Podrobný souhrn</summary>
+        <div className="app-metric-grid">
+          <Metric icon={<MapPin/>} label={strength ? "Celkem opakování" : "Vzdálenost"} value={strength ? totals.repetitions.toLocaleString("cs-CZ") : totals.km.toFixed(2)+" km"}/>
+          <Metric icon={<Clock3/>} label="Čas" value={strength && totals.minutes === 0 ? "—" : formatResultDuration(totals.minutes)}/>
+          {!strength && <Metric icon={<Gauge/>} label="Průměrné tempo" value={formatPace(totals.pace)}/>}
+          <Metric icon={<Award/>} label="Odznaky" value={badges}/>
+        </div>
       </details>
       {metric === "badges" && (
         <details

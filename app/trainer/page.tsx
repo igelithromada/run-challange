@@ -1,4 +1,6 @@
 "use client";
+import Metric from "../components/Metric";
+import { CalendarDays as MetricCalendar, Target as MetricTarget, CheckCircle2 as MetricCheck, Percent as MetricPercent } from "lucide-react";
 import { activityAmount, activityUnit, isStrengthActivity, ACTIVITY_TYPES } from "../lib/activity";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -304,10 +306,10 @@ export default function TrainerPage(){
     </div>}
 
     <div className="trainer-plan-summary" aria-label="Souhrn měsíčního plánu">
-      <div><span>Naplánováno</span><strong>{plannedTotal.toFixed(strength ? 0 : 1)} {unit}</strong></div>
-      <div><span>Splněno z plánu</span><strong>{completed.toFixed(strength ? 0 : 1)} {unit}</strong></div>
-      <div><span>Plnění plánu</span><strong>{planPercent.toFixed(0)} %</strong></div>
-      <div><span>Tréninkové dny</span><strong>{dates.length}</strong></div>
+      <Metric icon={<MetricTarget/>} label="Naplánováno" value={<>{plannedTotal.toFixed(strength ? 0 : 1)} {unit}</>}/>
+      <Metric icon={<MetricCheck/>} label="Splněno z plánu" value={<>{completed.toFixed(strength ? 0 : 1)} {unit}</>}/>
+      <Metric icon={<MetricPercent/>} label="Plnění plánu" value={<>{planPercent.toFixed(0)} %</>}/>
+      <Metric icon={<MetricCalendar/>} label="Tréninkové dny" value={<>{dates.length}</>}/>
     </div>
     <p className="chart-hint">Tady se počítají pouze naplánované tréninky. V cílech nahoře se počítají všechny tvoje aktivity.</p>
 

@@ -2,6 +2,8 @@
 import { isStrengthActivity, activityLabel } from "../lib/activity";
 
 import React, { useEffect, useRef, useState } from "react";
+import Metric from "./Metric";
+import { ActivityTypeIcon } from "./ActivityTypeSelector";
 import ActivityGallery from "./ActivityGallery";
 import { auth } from "../lib/firebase";
 import { Clock3, Gauge, Heart, MapPin, MessageCircle, Pencil, Trash2, X, Send } from "lucide-react";
@@ -269,9 +271,10 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
         {run.description?.trim() && <div className="activity-description">{run.description.trim()}</div>}
 
         <div className={strength ? "activity-metrics strength-metrics" : "activity-metrics"}>
-          {strength ? <div><strong>{Number(run.repetitions || 0).toLocaleString("cs-CZ")}</strong><span>{activityLabel(activityType)} · opakování</span></div> : <div><MapPin size={17} /><strong>{run.km} <small>km</small></strong><span>Vzdálenost</span></div>}
-          {(!strength || Number(run.minuty)>0) && <div><Clock3 size={17} /><strong>{formatTime(run.minuty)}</strong><span>Čas</span></div>}
-          {!strength && <div><Gauge size={17} /><strong>{formatTime(run.tempo)} <small>/km</small></strong><span>Tempo</span><div className="activity-pace-bar" aria-label="Orientační škála tempa"><span style={{ left: `${pos}%` }} /></div></div>}
+          {strength ? <Metric icon={<ActivityTypeIcon type={activityType} size={19}/>} label="Opakování" value={Number(run.repetitions || 0).toLocaleString("cs-CZ")}/> : <Metric icon={<MapPin size={19}/>} label="Vzdálenost" value={<>{run.km} <small>km</small></>}/>}
+          {(!strength || Number(run.minuty)>0) && <Metric icon={<Clock3 size={19}/>} label="Čas" value={formatTime(run.minuty)}/>}
+          {!strength && <Metric icon={<Gauge size={19}/>} label="Tempo" value={<>{formatTime(run.tempo)} <small>/km</small></>}/>}
+
         </div>
 
         {images.length > 0 && <ActivityGallery key={run.id} images={images} onOpen={index => onPhotosClick(images, run.imageUrl || "", index)} />}

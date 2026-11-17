@@ -126,3 +126,55 @@ html[data-theme="white"] {
   .container .activity-card-modern .activity-metrics > div {padding:.35rem .3rem !important;}
   .container .weather-card-improved .weather-stat-card strong {font-size:1.05rem !important;}
 }
+
+/* One shared measurement: icon + name, followed by a legible value. */
+.container .app-metric {
+  display:flex !important;flex-direction:column !important;align-items:flex-start !important;
+  justify-content:flex-start !important;gap:.35rem !important;min-width:0;
+  padding:.65rem .7rem !important;text-align:left !important;background:transparent !important;
+  border-radius:0 !important;box-shadow:none !important;
+}
+.container .app-metric .app-metric-heading {
+  display:flex !important;align-items:center !important;gap:.35rem !important;
+  font-size:.8rem !important;font-weight:500;line-height:1.3;color:var(--hierarchy-muted) !important;
+  min-height:1.5rem;min-width:0;
+}
+.app-metric-icon {display:inline-flex;flex:0 0 auto;}
+.app-metric-icon svg {width:19px;height:19px;}
+.container .app-metric strong.app-metric-value {font-size:clamp(1.1rem,3.8vw,1.5rem) !important;line-height:1.25 !important;color:var(--hierarchy-text) !important;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;}
+.app-metric-value small {font-size:.72em;white-space:nowrap;}
+.app-metric-detail {color:var(--hierarchy-muted);font-size:.75rem;}
+.app-metric-grid,.container .team-card-stats-compact,.container .team-stats-rows,.container .trainer-plan-summary {display:grid !important;grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:0 !important;}
+.container .app-metric-grid > .app-metric:nth-child(even),.container .team-card-stats-compact > .app-metric:nth-child(even),.container .team-stats-rows > .app-metric:nth-child(even),.container .trainer-plan-summary > .app-metric:nth-child(even) {border-inline-start:1px solid var(--hierarchy-line) !important;}
+.container .activity-card-modern .activity-metrics {display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;margin:.25rem 0 !important;padding:.35rem 0 !important;}
+.container .activity-card-modern .strength-metrics {grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+.container .activity-card-modern .activity-description {margin:.45rem 0 !important;padding:.4rem 0 !important;}
+.container .activity-card-modern .activity-gallery {margin-top:.35rem !important;}
+.container .myruns-page .activity-summary-grid {grid-template-columns:repeat(2,minmax(0,1fr)) !important;width:100%;box-sizing:border-box;padding:.45rem 0 !important;gap:0 !important;}
+.container .myruns-page .activity-summary-grid > .app-metric {border:0 !important;}
+.container .myruns-page .activity-summary-grid > .app-metric:nth-child(even) {border-inline-start:1px solid var(--hierarchy-line) !important;}
+.container .myruns-page .activity-summary-grid > .app-metric:nth-child(n+3) {border-top:1px solid var(--hierarchy-line) !important;}
+.container .results-person,.container .results-overview {background:var(--hierarchy-card) !important;border:1px solid var(--hierarchy-line) !important;border-radius:18px !important;padding:.8rem !important;box-shadow:none !important;}
+.container .results-person-open {display:flex !important;align-items:center;gap:.65rem;padding:0 !important;background:transparent !important;width:100%;}
+.container .results-person-name {flex:1;text-align:left;min-width:0;}
+.container .results-person.is-mine {border-color:var(--hierarchy-accent) !important;}
+.container .results-person-rank {min-width:1.3rem;}
+.container .result-measurements,.container .results-summary-metrics {grid-template-columns:repeat(3,minmax(0,1fr)) !important;margin:.6rem 0 0;}
+.container .result-measurements > .app-metric + .app-metric,.container .results-summary-metrics > .app-metric + .app-metric {border-inline-start:1px solid var(--hierarchy-line) !important;}
+.container .results-person-details {border-top:1px solid var(--hierarchy-line);margin-top:.4rem;}
+.challenge-period-line {display:flex;gap:.45rem;align-items:center;font-size:.82rem;color:var(--hierarchy-muted);margin:.5rem 0;}
+.challenge-period-line svg {flex-shrink:0;}
+.container .challenge-summary-footer {margin-top:.5rem;padding-top:.6rem;}
+.container .challenge-summary-card .activity-avatar {width:48px;height:48px;}
+.container .challenge-summary-card .activity-person h3 {font-size:1.15rem;margin:0;}
+.container .weather-card-improved .weather-hour-scroll > .weather-hour-card {border-top:1px solid var(--hierarchy-line) !important;}
+.container .progress-record-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;}
+.container .progress-records .progress-record-item {display:flex !important;grid-template-areas:none !important;}
+.container .progress-records .progress-record-item:nth-child(even) {border-inline-start:1px solid var(--hierarchy-line) !important;}
+.container .progress-records .progress-record-item:nth-child(-n+2) {border-top:0 !important;}
+.container .challenge-result-card {display:grid;grid-template-columns:1.5rem minmax(0,1fr) auto;align-items:center;gap:.5rem;padding:.75rem;}
+.container .challenge-result-card .app-metric {grid-column:2 / -1;}
+.container .activity-card-modern .app-metric svg {width:19px;height:19px;}
+.container .activity-recorder-metrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;}
+.container .activity-recorder-metrics > .app-metric + .app-metric {border-inline-start:1px solid var(--hierarchy-line);}
+.container .activity-card-modern {gap:.35rem !important;}

@@ -1,4 +1,5 @@
 "use client";
+import Metric from "../components/Metric";
 import { activityAmount, activityUnit, isStrengthActivity } from "../lib/activity";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -10,7 +11,6 @@ import { auth } from "../lib/firebase";
 import { parseActivityDate } from "../lib/runData";
 import { activityAwards, awardTotal } from "../lib/awards";
 import ActivityCalendar from "../components/ActivityCalendar";
-import ProgressComparison from "../components/ProgressComparison";
 import ProgressChart from "../components/ProgressChart";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -101,7 +101,6 @@ export default function ProgressPage() {
     <main className="container progress-page">
       <ActivityTypeSelector value={goalType} onChange={setGoalType} ariaLabel="Typ aktivity pro pokrok" />
 
-      {!personalState.loading && (!personalState.error || selected.length > 0) && <ProgressComparison runs={selected} type={goalType} />}
 
       <ProgressChart key={goalType} runs={selected} activityType={goalType} loading={personalState.loading} error={!!personalState.error} />
 
@@ -122,10 +121,10 @@ export default function ProgressPage() {
       <section className="tile progress-records">
         <div className="progress-section-title"><Trophy/><div><h2>Osobní rekordy</h2><p>Nejlepší výkony v kategorii {goalType}.</p></div></div>
         <div className="progress-record-grid">
-          <div className="progress-record-item progress-record"><span className="progress-record-icon"><Footprints size={20}/></span><small>{strength ? "Nejvíce v jedné aktivitě" : "Nejdelší aktivita"}</small><strong>{longest?activityAmount(longest).toLocaleString("cs-CZ")+" "+unit:"—"}</strong><em>{longest?activityDate(longest).toLocaleDateString("cs-CZ"):"Zatím bez aktivity"}</em></div>
-          {!strength && <div className="progress-record-item progress-record"><span className="progress-record-icon"><Zap size={20}/></span><small>Nejrychlejší tempo</small><strong>{fastest?formatPace(asNumber(fastest.tempo)):"—"}</strong><em>{fastest?activityDate(fastest).toLocaleDateString("cs-CZ"):"Zatím bez aktivity"}</em></div>}
-          <div className="progress-record-item progress-record"><span className="progress-record-icon"><CalendarDays size={20}/></span><small>Nejvíce za měsíc</small><strong>{bestMonth.toFixed(strength ? 0 : 1)} {unit}</strong><em>{bestMonthKey?new Date(bestMonthKey+"-01T12:00:00").toLocaleDateString("cs-CZ",{month:"long",year:"numeric"}):"Zatím bez aktivity"}</em></div>
-          <div className="progress-record-item progress-record"><span className="progress-record-icon"><Flame size={20}/></span><small>Aktuální série</small><strong>{streak} {streak===1?"den":"dní"}</strong><em>Aktivní dny za sebou</em></div>
+          <Metric className="progress-record-item progress-record" icon={<Footprints size={20}/>} label={strength ? "Nejvíce v jedné aktivitě" : "Nejdelší aktivita"} value={<> {longest?activityAmount(longest).toLocaleString("cs-CZ")+" "+unit:"—"}</>} detail={<> {longest?activityDate(longest).toLocaleDateString("cs-CZ"):"Zatím bez aktivity"}</>}/>
+          {!strength && <Metric className="progress-record-item progress-record" icon={<Zap size={20}/>} label="Nejrychlejší tempo" value={<> {fastest?formatPace(asNumber(fastest.tempo)):"—"}</>} detail={<> {fastest?activityDate(fastest).toLocaleDateString("cs-CZ"):"Zatím bez aktivity"}</>}/>}
+          <Metric className="progress-record-item progress-record" icon={<CalendarDays size={20}/>} label="Nejvíce za měsíc" value={<> {bestMonth.toFixed(strength ? 0 : 1)} {unit}</>} detail={<> {bestMonthKey?new Date(bestMonthKey+"-01T12:00:00").toLocaleDateString("cs-CZ",{month:"long",year:"numeric"}):"Zatím bez aktivity"}</>}/>
+          <Metric className="progress-record-item progress-record" icon={<Flame size={20}/>} label="Aktuální série" value={<> {streak} {streak===1?"den":"dní"}</>} detail={<> Aktivní dny za sebou</>}/>
         </div>
       </section>
 

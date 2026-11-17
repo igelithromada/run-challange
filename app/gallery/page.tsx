@@ -1,5 +1,4 @@
 "use client";
-import { activityLabel } from "../lib/activity";
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -8,12 +7,11 @@ import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import MyGalleryViewer from "../components/MyGalleryViewer";
-import { ActivityTypeIcon } from "../components/ActivityTypeSelector";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { personalHistoryQuery } from "../lib/services/runs";
 import { myGalleryPhotos, type GalleryPhoto } from "../lib/myGallery";
 import { activityThumbnailUrl } from "../lib/imageUrl";
-import type { ActivityType, RunData } from "../types";
+import type { RunData } from "../types";
 function Photo({ photo, onOpen }: { photo: GalleryPhoto; onOpen: () => void }) {
   const [failed, setFailed] = useState(false);
   const url = activityThumbnailUrl(photo.url);
@@ -52,9 +50,6 @@ export default function GalleryPage() {
   const router = useRouter();
   const [menu, setMenu] = useState(false),
     [uid, setUid] = useState(""),
-    [type, setType] = useState<ActivityType | "all">("all"),
-    [from, setFrom] = useState(""),
-    [to, setTo] = useState(""),
     [limit, setLimit] = useState(60),
     [active, setActive] = useState<string | null>(null);
   useEffect(
@@ -75,15 +70,15 @@ export default function GalleryPage() {
     query,
   );
   const photos = useMemo(
-    () => myGalleryPhotos(state.data, uid, type, from, to),
-    [state.data, uid, type, from, to],
+    () => myGalleryPhotos(state.data, uid, "all", "", ""),
+    [state.data, uid],
   );
   const index = photos.findIndex((photo) => photo.key === active),
     photo = photos[index];
   useEffect(() => {
     setLimit(60);
     setActive(null);
-  }, [uid, type, from, to]);
+  }, [uid]);
   const move = (direction: number) => {
     if (photos.length)
       setActive(
@@ -113,63 +108,6 @@ export default function GalleryPage() {
         onSelect={navigate}
       />
       <main className="container my-gallery-page">
-        <div
-          className="tile-group my-gallery-types"
-          role="group"
-          aria-label="Typ aktivit v galerii"
-        >
-          {(["all", "běh", "chůze", "dřepy", "kliky"] as const).map((value) => (
-            <button
-              type="button"
-              className={`tile-button${type === value ? " active" : ""}`}
-              aria-pressed={type === value}
-              key={value}
-              onClick={() => setType(value)}
-            >
-              {value !== "all" && <ActivityTypeIcon type={value} size={20} />}{" "}
-              {value === "all" ? "Vše" : activityLabel(value)}
-            </button>
-          ))}
-        </div>
-        <details className="activity-date-range">
-          <summary>
-            Období{(from || to) && ` · ${from || "začátek"} – ${to || "dnes"}`}
-          </summary>
-          <div className="tile date-filter">
-            <label className="date-field">
-              <span>Od data</span>
-              <input
-                type="date"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-              />
-            </label>
-            <label className="date-field">
-              <span>Do data</span>
-              <input
-                type="date"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-              />
-            </label>
-            {(from || to) && (
-              <button
-                type="button"
-                className="date-clear"
-                onClick={() => {
-                  setFrom("");
-                  setTo("");
-                }}
-              >
-                Zrušit filtr
-              </button>
-            )}
-          </div>
-        </details>
-        {from && to && from > to ? (
-          <p role="alert">Datum od nesmí být později než datum do.</p>
-        ) : (
-          <>
             {state.error && (
               <p role="status">
                 Galerii se nepodařilo obnovit.
@@ -212,7 +150,7 @@ export default function GalleryPage() {
               !state.error && (
                 <div className="tile my-gallery-empty">
                   <Camera size={30} />
-                  <p>Pro tento výběr zatím nemáš žádné fotografie.</p>
+                  <p>Zatím nemáš žádné fotografie.</p>
                   <button
                     type="button"
                     className="tile-button"
@@ -223,8 +161,6 @@ export default function GalleryPage() {
                 </div>
               )
             )}
-          </>
-        )}
         {photo && (
           <MyGalleryViewer
             photo={photo}
