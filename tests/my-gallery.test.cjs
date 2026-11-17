@@ -12,11 +12,11 @@ test('the gallery renders lazy reduced previews and never loads someone else’s
  const html=renderToStaticMarkup(React.createElement(Page));assert.match(html,/w_640,h_720/);assert.match(html,/loading="lazy"/);assert.doesNotMatch(html,/secret\.jpg|deleted\.jpg|my-gallery-viewer/);assert.match(html,/Fotografie mých záznamů/);
 });
 const find=(n,p)=>{if(!n)return;if(Array.isArray(n)){for(const c of n){const r=find(c,p);if(r)return r;}return;}if(p(n))return n;return find(n.props?.children,p);};
-test('full-size gallery viewer supports swiping and keyboard navigation without visible arrow or index controls',()=>{
- const moves=[];const hooks={useRef:value=>({current:value}),useEffect(){}};const Viewer=load('app/components/MyGalleryViewer.tsx',{react:hooks}).default;
- const tree=Viewer({photo:api.myGalleryPhotos(runs,'me')[0],onClose(){},onMove:d=>moves.push(d),onOpenRun(){}}),frame=find(tree,n=>n.props?.className==='my-gallery-viewer-image'),target={setPointerCapture(){}};
- frame.props.onPointerDown({isPrimary:true,pointerId:1,clientX:200,clientY:100,currentTarget:target});frame.props.onPointerUp({pointerId:1,clientX:70,clientY:105});assert.equal(moves[0],1);
+test('full-size shared viewer supports swiping and keyboard navigation without visible arrows or index controls',()=>{
+ const moves=[];const hooks={useRef:value=>({current:value}),useEffect(){},useState:value=>[value,()=>{}]};const Viewer=load('app/components/PhotoViewer.tsx',{react:hooks}).default;
+ const tree=Viewer({url:'https://example.com/photo.jpg',onClose(){},onMove:d=>moves.push(d)}),frame=find(tree,n=>n.props?.className==='shared-photo-pane'),target={setPointerCapture(){},getBoundingClientRect:()=>({left:0,top:0,width:300,height:200})};
+ frame.props.onPointerDown({pointerId:1,clientX:200,clientY:100,currentTarget:target});frame.props.onPointerUp({pointerId:1,clientX:70,clientY:105,currentTarget:target});assert.equal(moves[0],1);
  tree.props.onKeyDown({key:'ArrowLeft',preventDefault(){}});assert.equal(moves[1],-1);
  assert.equal(find(tree,n=>n.type==='button'&&n.props['aria-label']==='Další fotografie'),undefined);
- frame.props.onPointerDown({isPrimary:true,pointerId:1,clientX:200,clientY:100,currentTarget:target});frame.props.onPointerDown({isPrimary:false,pointerId:2,clientX:150,clientY:100,currentTarget:target});frame.props.onPointerUp({pointerId:1,clientX:50,clientY:100});assert.equal(moves.length,2,'pinching must not trigger a swipe');
+ frame.props.onPointerDown({pointerId:1,clientX:200,clientY:100,currentTarget:target});frame.props.onPointerDown({pointerId:2,clientX:150,clientY:100,currentTarget:target});frame.props.onPointerUp({pointerId:1,clientX:50,clientY:100,currentTarget:target});assert.equal(moves.length,2,'pinching must not trigger a swipe');
 });

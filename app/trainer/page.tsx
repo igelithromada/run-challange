@@ -99,7 +99,7 @@ export default function TrainerPage(){
        }
        setPlansByKey(normalized);
      }catch(e){
-       if(active)console.error("Nepodařilo se načíst osobního trenéra",e);
+       if(active)console.error("Nepodařilo se načíst tréninkového plánu",e);
      }finally{
        if(active)setProfileLoading(false);
      }
@@ -249,13 +249,13 @@ export default function TrainerPage(){
    router.push(routes[item]||"/");
  };
 
- if(loading)return <><Navbar title="Osobní trenér" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/><Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/><main className="container"><div className="tile"><p>Načítám osobního trenéra…</p></div></main></>;
+ if(loading)return <><Navbar title="Tréninkový plán" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/><Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/><main className="container"><div className="tile"><p>Načítám tréninkového plánu…</p></div></main></>;
 
  return <>
-  <Navbar title="Osobní trenér" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
+  <Navbar title="Tréninkový plán" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
   <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/>
   <main className="container progress-page trainer-page">
-   <header className="progress-header"><h1>Osobní trenér</h1></header>
+   <header className="progress-header"><h1>Tréninkový plán</h1></header>
 
    <ActivityTypeSelector value={type} onChange={v=>{if(saving)return;setType(v);setDirty(false);setModalOpen(false);setBulkMode(false);setBulkDates([]);}} ariaLabel="Typ tréninku"/>
    <TrainingGoals key={uid+type} uid={uid} type={type} runs={runs} />

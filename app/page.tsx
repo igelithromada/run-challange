@@ -1,4 +1,5 @@
 "use client";
+import PhotoViewer from "./components/PhotoViewer";
 import React, { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -77,26 +78,6 @@ export default function Page() {
     const frame = requestAnimationFrame(() => document.getElementById(`run-${notificationRunId}`)?.scrollIntoView({ block: "start" }));
     return () => cancelAnimationFrame(frame);
   }, [notificationRunId]);
-
-  useEffect(() => {
-    if (!showImages) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setShowImages(null);
-      if (event.key === "ArrowRight" && showImages.length > 1) {
-        setCurrentImgIndex(index => (index + 1) % showImages.length);
-      }
-      if (event.key === "ArrowLeft" && showImages.length > 1) {
-        setCurrentImgIndex(index => (index - 1 + showImages.length) % showImages.length);
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [showImages]);
 
   const runsQuery = useMemo(() => latestRunsQuery(30), []);
   const runsState = useSharedFirestoreQuery<RunData>("runs:latest:30", runsQuery);
@@ -207,17 +188,17 @@ export default function Page() {
             </div>
           </div>
         <div className="list-container">
-          {runsState.loading ? <LoadingSkeleton count={3} /> : allRuns.filter((run) => (run.type || "běh") === selectedType).map(run => {
+          {runsState.loading ? <LoadingSkeleton count={3} /> : allRuns.map(run => {
             return (
               <ActivityCard
                 key={run.id}
                 run={run}
-                activityType={selectedType}
+                activityType={run.type || "běh"}
                 onUserClick={() => router.push(`/user/${run.uid}`)}
                 onPhotosClick={handleShowImages}
               />
             );          })}
-          {!runsState.loading && allRuns.filter((run) => (run.type || "běh") === selectedType).length === 0 && (
+          {!runsState.loading && allRuns.length === 0 && (
             <div className="activity-empty-state">
               <Footprints size={28} aria-hidden="true" />
               <strong>Zatím tu není žádný záznam</strong>
@@ -233,33 +214,8 @@ export default function Page() {
         </section>
       </div>
 
-      {showImages && (
-        <div className="activity-lightbox" role="dialog" aria-modal="true" aria-label="Galerie fotografií" onClick={() => setShowImages(null)}>
-          <div className="activity-lightbox-top" onClick={e => e.stopPropagation()}>
-            <span>{currentImgIndex + 1} / {showImages.length}</span>
-            <button type="button" className="ui-icon-button" onClick={() => setShowImages(null)} aria-label="Zavřít galerii">×</button>
-          </div>
-          <img src={cloudinaryImageUrl(showImages[currentImgIndex], 1600)} alt={`Fotografie aktivity ${currentImgIndex + 1}`} onClick={e => e.stopPropagation()} />
-          <div className="activity-lightbox-actions" onClick={e => e.stopPropagation()}>
-            {showImages.length > 1 ? (
-              <button type="button" onClick={handlePrev} aria-label="Předchozí fotografie">‹</button>
-            ) : <span />}
-            <button type="button" onClick={() => setShowImages(null)}>Zavřít</button>
-            {showImages.length > 1 ? (
-              <button type="button" onClick={handleNext} aria-label="Další fotografie">›</button>
-            ) : <span />}
-          </div>
-          {showImages.length > 1 && (
-            <div className="activity-lightbox-thumbs" onClick={e => e.stopPropagation()}>
-              {showImages.map((url, index) => (
-                <button key={url + index} type="button" className={index === currentImgIndex ? "active" : ""} onClick={() => setCurrentImgIndex(index)} aria-label={`Fotografie ${index + 1}`}>
-                  <img src={url} alt="" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {showImages && <PhotoViewer url={showImages[currentImgIndex]} onClose={()=>setShowImages(null)} onMove={direction=>setCurrentImgIndex(index=>(index+direction+showImages.length)%showImages.length)}/>}
+
     </>
   );
 }

@@ -172,7 +172,7 @@ export default function TrainingGoals({
             <small className="training-goal-remaining">
               {item.km >= item.goal
                 ? "Cíl splněn"
-                : `Zbývá ${(item.goal - item.km).toFixed(strength ? 0 : 1)} {unit}`}
+                : `Zbývá ${(item.goal - item.km).toFixed(strength ? 0 : 1)} ${unit}`}
             </small>
           </div>
         ))}

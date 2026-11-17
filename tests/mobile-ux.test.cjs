@@ -4,7 +4,7 @@ const fs = require('node:fs'), path = require('node:path'), vm = require('node:v
 function load(file, dependencies = {}, globals = {}) {
   const filename = path.resolve(file), module = { exports: {} }, requireFile = Module.createRequire(filename);
   const code = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
-  vm.runInNewContext(code, { module, exports: module.exports, require: name => dependencies[name] || requireFile(name), console, Date, Intl, URL, File, Blob, Uint8Array, ...globals }, { filename });
+  vm.runInNewContext(code, { module, exports: module.exports, require: name => {if(dependencies[name])return dependencies[name];if(name.startsWith("."))for(const ext of [".ts",".tsx"]){const target=path.resolve(path.dirname(filename),name+ext);if(fs.existsSync(target))return load(target,dependencies,globals);}return requireFile(name);}, console, Date, Intl, URL, File, Blob, Uint8Array, ...globals }, { filename });
   return module.exports;
 }
 const text = node => typeof node === 'string' ? node : typeof node === 'number' ? String(node) : Array.isArray(node) ? node.map(text).join('') : node?.props ? text(node.props.children) : '';

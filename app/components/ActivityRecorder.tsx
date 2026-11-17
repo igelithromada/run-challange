@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Activity, Footprints, Gauge, MapPin, Pause, Play, Square, Smartphone } from "lucide-react";
+import { readRecorderDraft, saveRecorderDraft, clearRecovery } from "../lib/activityRecovery";
 import type { ActivityType } from "../types";
 import InstallPwaPrompt from "./InstallPwaPrompt";
 
@@ -21,11 +22,12 @@ const formatPace=(seconds:number,km:number)=>{
   return `${Math.floor(pace/60)}:${String(pace%60).padStart(2,"0")} min/km`;
 };
 
-export default function ActivityRecorder({ type, onFinished }:{
-  type:ActivityType;
+export default function ActivityRecorder({ type, onFinished, ownerUid }:{
+  type:ActivityType; ownerUid?:string;
   onFinished?: (draft:{type:ActivityType; km:number; seconds:number}) => void;
 }) {
   const [running,setRunning]=useState(false);
+  const [recoveryWarning,setRecoveryWarning]=useState("");
   const [paused,setPaused]=useState(false);
   const [elapsed,setElapsed]=useState(0);
   const [distance,setDistance]=useState(0);
@@ -60,7 +62,15 @@ export default function ActivityRecorder({ type, onFinished }:{
     return Math.max(0,Math.round((now-start-pausedTotalRef.current-currentPause)/1000));
   };
 
+  const persist=()=>{
+    if(distanceRef.current<=0&&startedAtRef.current===null)return;
+    const seconds=runningRef.current?activeSecondsAt(Date.now()):elapsed;
+    const saved=saveRecorderDraft(ownerUid,type,{elapsed:seconds,distance:distanceRef.current,running:runningRef.current,savedAt:Date.now()});
+    if(ownerUid)setRecoveryWarning(saved?"":"Měření se nepodařilo zálohovat do telefonu. Nezavírej aplikaci.");
+  };
+
   const reset=()=>{
+    clearRecovery("gps",ownerUid,type);setRecoveryWarning("");
     setRunning(false);
     setPaused(false);
     setElapsed(0);
@@ -167,6 +177,7 @@ export default function ActivityRecorder({ type, onFinished }:{
         distanceRef.current+=delta;
         setDistance(distanceRef.current);
         lastPointRef.current=p;
+        persist();
       },err=>{
         if(err.code===1) {
           setInitialGpsState("off");
@@ -244,10 +255,12 @@ export default function ActivityRecorder({ type, onFinished }:{
       pausedRef.current=true;
       setElapsed(activeSecondsAt(Date.now()));
       setPaused(true);
+      persist();
       lastPointRef.current=null;
       return;
     }
 
+    if(watchIdRef.current===null){retryGps();return;}
     const now=Date.now();
     if(pausedAtRef.current) pausedTotalRef.current+=now-pausedAtRef.current;
     pausedAtRef.current=null;
@@ -293,6 +306,7 @@ export default function ActivityRecorder({ type, onFinished }:{
     releaseWakeLock();
     const end=Date.now();
     const finalSeconds=Math.max(1,activeSecondsAt(end));
+    saveRecorderDraft(ownerUid,type,{elapsed:finalSeconds,distance:distanceRef.current,running:false,savedAt:end});
     setElapsed(finalSeconds);
     setRunning(false);
     setPaused(false);
@@ -345,6 +359,7 @@ export default function ActivityRecorder({ type, onFinished }:{
     if(!running) return;
     const timer=window.setInterval(()=>{
       setElapsed(activeSecondsAt(Date.now()));
+      persist();
     },1000);
     return()=>window.clearInterval(timer);
   },[running]);
@@ -414,7 +429,18 @@ export default function ActivityRecorder({ type, onFinished }:{
     return()=>document.removeEventListener("visibilitychange",onVisibility);
   },[]);
 
-  useEffect(()=>()=>{stopGps();releaseWakeLock();},[]);
+  useEffect(()=>{
+    const saved=readRecorderDraft(ownerUid,type);
+    if(saved){
+      distanceRef.current=saved.distance;setDistance(saved.distance);setElapsed(saved.elapsed);
+      if(saved.running){
+        startedAtRef.current=Date.now()-saved.elapsed*1000;pausedAtRef.current=Date.now();
+        runningRef.current=true;pausedRef.current=true;setRunning(true);setPaused(true);
+        setGpsError("Měření bylo obnoveno a je pozastavené. Při pokračování znovu ověříme GPS.");
+      }else setGpsError("Dokončené měření bylo obnoveno. Můžeš ho použít pro záznam.");
+    }
+    return()=>{stopGps();releaseWakeLock();};
+  },[ownerUid,type]);
 
   const finishDraft=()=>{
     if(elapsed<=0){
@@ -472,6 +498,7 @@ export default function ActivityRecorder({ type, onFinished }:{
     </div>
 
     {accuracy!==null && <div className="activity-recorder-gps">Přesnost GPS přibližně {accuracy} m{paused?" · měření pozastaveno":""}</div>}
+    {recoveryWarning&&<div className="activity-recorder-warning" role="status">{recoveryWarning}</div>}
     {gpsError && <div className="activity-recorder-error">{gpsError}</div>}
     {backgrounded && <div className="activity-recorder-warning"><Smartphone size={18}/> Telefon je zamčený nebo aplikace běží na pozadí. Prohlížeč může GPS omezit; po návratu zkontroluj výsledek.</div>}
 

@@ -1,4 +1,5 @@
 "use client";
+import PhotoViewer from "../../../components/PhotoViewer";
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -100,15 +101,6 @@ export default function GalleryPage() {
         </button>)}
       </div>
     </main>
-    {lightbox!==null && <div className="admin-lightbox" role="dialog" aria-modal="true" onClick={()=>setLightbox(null)}>
-      <button className="admin-lightbox-close" onClick={()=>setLightbox(null)} aria-label="Zavřít"><X/></button>
-      <img src={photos[lightbox].photoUrl} alt="Fotografie aktivity" onClick={e=>e.stopPropagation()}/>
-      <div className="admin-lightbox-actions" onClick={e=>e.stopPropagation()}><button type="button" className="admin-lightbox-delete" onClick={() => void deleteCurrentPhoto()} disabled={deleting}>{deleting ? "Mažu…" : "Smazat"}</button></div>
-      {photos.length>1 && <>
-        <button className="admin-lightbox-prev" onClick={e=>{e.stopPropagation();setLightbox(i=>(i===null?null:(i-1+photos.length)%photos.length))}} aria-label="Předchozí">‹</button>
-        <button className="admin-lightbox-next" onClick={e=>{e.stopPropagation();setLightbox(i=>(i===null?null:(i+1)%photos.length))}} aria-label="Další">›</button>
-        <span className="admin-lightbox-count">{lightbox+1} / {photos.length}</span>
-      </>}
-    </div>}
+    {lightbox!==null && photos[lightbox] && <PhotoViewer url={photos[lightbox].photoUrl} onClose={()=>setLightbox(null)} onMove={direction=>setLightbox(index=>index===null?null:(index+direction+photos.length)%photos.length)} onDelete={()=>void deleteCurrentPhoto()} deleting={deleting} footer={<span>{photos[lightbox].date}</span>}/>}
   </>;
 }

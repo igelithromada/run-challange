@@ -24,7 +24,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   { id: "myrun", label: "Moje aktivity", route: "/myruns", group: "activity", Icon: Footprints },
   { id: "gallery", label: "Moje galerie", route: "/gallery", group: "tools", Icon: Camera },
   { id: "progress", label: "Můj pokrok", route: "/progress", group: "activity", Icon: TrendingUp },
-  { id: "trainer", label: "Osobní trenér", route: "/trainer", group: "activity", Icon: Dumbbell },
+  { id: "trainer", label: "Tréninkový plán", route: "/trainer", group: "activity", Icon: Dumbbell },
 
   { id: "teams", label: "Týmy", route: "/teams", group: "community", Icon: Users },
   { id: "challenges", label: "Výzvy", route: "/challenges", group: "community", Icon: Trophy },

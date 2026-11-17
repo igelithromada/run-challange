@@ -1,4 +1,5 @@
 "use client";
+import PhotoViewer from "../../components/PhotoViewer";
 import { activityAmount, activityUnit, isStrengthActivity } from "../../lib/activity";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -136,21 +137,8 @@ export default function UserPage() {
         {!filteredRuns.length && <div className="tile activity-empty-state"><strong>Žádné záznamy</strong><p>Tento uživatel zatím nemá pro zvolený typ aktivity žádný záznam.</p></div>}
       </main>
 
-      {showImages && showImages.length > 0 && (
-        <div className="activity-lightbox" role="dialog" aria-modal="true" aria-label="Galerie fotografií" onClick={() => setShowImages(null)}>
-          <div className="activity-lightbox-top" onClick={e => e.stopPropagation()}>
-            <span>{currentImageIndex + 1} / {showImages.length}</span>
-            <button type="button" className="ui-icon-button" onClick={() => setShowImages(null)} aria-label="Zavřít galerii">×</button>
-          </div>
-          <img src={cloudinaryImageUrl(showImages[currentImageIndex], 1600)} alt={`Fotografie ${currentImageIndex + 1}`} onClick={e => e.stopPropagation()} />
-          <div className="activity-lightbox-actions" onClick={e => e.stopPropagation()}>
-            {showImages.length > 1 ? <button type="button" onClick={() => setCurrentImageIndex(i => (i - 1 + showImages.length) % showImages.length)} aria-label="Předchozí fotografie">‹</button> : <span />}
-            <button type="button" className="run-secondary-button" onClick={() => setShowImages(null)}>Zavřít</button>
-            {showImages.length > 1 ? <button type="button" onClick={() => setCurrentImageIndex(i => (i + 1) % showImages.length)} aria-label="Další fotografie">›</button> : <span />}
-          </div>
-          {showImages.length > 1 && <div className="activity-lightbox-thumbs" onClick={e => e.stopPropagation()}>{showImages.map((url, index) => <button key={url + index} type="button" className={index === currentImageIndex ? "active" : ""} onClick={() => setCurrentImageIndex(index)} aria-label={`Fotografie ${index + 1}`}><img src={cloudinaryImageUrl(url, 180)} alt="" /></button>)}</div>}
-        </div>
-      )}
+      {showImages && showImages.length>0 && <PhotoViewer url={showImages[currentImageIndex]} onClose={()=>setShowImages(null)} onMove={direction=>setCurrentImageIndex(index=>(index+direction+showImages.length)%showImages.length)}/>}
+
     </>
   );
 }

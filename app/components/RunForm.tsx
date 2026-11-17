@@ -1,5 +1,6 @@
 "use client";
 import { isStrengthActivity, activityLabel as labelFor } from "../lib/activity";
+import { readFormDraft, saveFormDraft, readRecorderDraft, clearRecovery, draftPhotos } from "../lib/activityRecovery";
 import { preparePhoto } from "../lib/preparePhoto";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -68,6 +69,13 @@ export default function RunForm({ type }: {
   const [uploadStatus, setUploadStatus] = useState("");
   const submissionIdRef = useRef<string | null>(null);
   const formPanelRef = useRef<HTMLElement | null>(null);
+  const persistEnabled = useRef(false);
+  const [recoverable,setRecoverable]=useState<"form"|"gps"|null>(null);
+  const [draftMessage,setDraftMessage]=useState("");
+  const [photoDraftError,setPhotoDraftError]=useState("");
+  const ownerUid=auth.currentUser?.uid;
+  const draftOwner=useRef(ownerUid);
+  if(draftOwner.current!==ownerUid){draftOwner.current=ownerUid;persistEnabled.current=false;}
   const activityLabel = strength ? labelFor(type).toLowerCase() : type === "chůze" ? "chůzi" : "běh";
   const activityPast = "Aktivita byla";
 
@@ -91,14 +99,16 @@ export default function RunForm({ type }: {
     setDurationSeconds(String(draft.seconds % 60).padStart(2, "0"));
     setFiles([]);
     setDescription("");
-    setActivityDate(localDateTime());
-    setError("");
-    setUploadStatus("");
-    setShowGpsRecorder(false);
-    setShowForm(true);
+    const date=localDateTime();setActivityDate(date);
+    persistEnabled.current=true;
+    saveFormDraft(ownerUid,type,{km:draft.km.toFixed(2),minutes:String(Math.floor(draft.seconds/60)),seconds:String(draft.seconds%60).padStart(2,"0"),date,description:"",savedAt:Date.now()});
+    setError("");setUploadStatus("");setShowGpsRecorder(false);setShowForm(true);
   };
 
   const reset = () => {
+    persistEnabled.current=false;clearRecovery("form",ownerUid,type);
+    if(ownerUid)void draftPhotos(ownerUid,type,null).catch(()=>{});
+    setRecoverable(null);setDraftMessage("");setPhotoDraftError("");
     submissionIdRef.current = null;
     setKm("");
     setDurationMinutes("");
@@ -147,7 +157,33 @@ export default function RunForm({ type }: {
     };
   }, [showForm]);
 
-  useEffect(() => { reset(); setShowForm(false); }, [type]);
+  useEffect(()=>{
+    setRecoverable(null);
+    const form=readFormDraft(ownerUid,type),gps=readRecorderDraft(ownerUid,type);
+    if(gps&&(!form||gps.savedAt>form.savedAt))setRecoverable("gps");else if(form)setRecoverable("form");
+  },[ownerUid,type]);
+  useEffect(()=>{
+    if(!persistEnabled.current||!showForm||showGpsRecorder)return;
+    if(!km&&!durationMinutes&&!durationSeconds&&!description&&!files.length)return;
+    const ok=saveFormDraft(ownerUid,type,{km,minutes:durationMinutes,seconds:durationSeconds,date:activityDate,description,submissionId:submissionIdRef.current||undefined,savedAt:Date.now()});
+    setRecoverable("form");setDraftMessage(ok?"Rozepsaný záznam je uložený v tomto telefonu.":"Rozepsaný záznam se nepodařilo zálohovat do telefonu.");
+  },[ownerUid,type,showForm,showGpsRecorder,km,durationMinutes,durationSeconds,activityDate,description,files]);
+  useEffect(()=>{
+    if(!persistEnabled.current||!showForm||showGpsRecorder||!ownerUid)return;
+    let active=true;
+    void draftPhotos(ownerUid,type,files).then(()=>{if(active)setPhotoDraftError("");}).catch(()=>{if(active)setPhotoDraftError("Fotografie se nepodařilo zálohovat. Po obnovení je případně vyber znovu.");});
+    return()=>{active=false;};
+  },[ownerUid,type,showForm,showGpsRecorder,files]);
+  const openForm=async()=>{
+    if(recoverable==="gps"){setShowForm(true);setShowGpsRecorder(true);return;}
+    const stored=readFormDraft(ownerUid,type);
+    if(stored){
+      setKm(stored.km);setDurationMinutes(stored.minutes);setDurationSeconds(stored.seconds);setActivityDate(stored.date);setDescription(stored.description);
+      submissionIdRef.current=stored.submissionId||null;
+      if(ownerUid)try{const restoredFiles=await draftPhotos(ownerUid,type);if(auth.currentUser?.uid!==ownerUid)return;setFiles(restoredFiles);}catch{setPhotoDraftError("Fotografie případně vyber znovu.");}
+    }else reset();
+    persistEnabled.current=true;setShowForm(true);
+  };
 
   const handleSubmit = async () => {
     if (saving) return;
@@ -172,7 +208,7 @@ export default function RunForm({ type }: {
       return;
     }
     if (!navigator.onLine) {
-      setError("Pro uložení aktivity je potřeba připojení k internetu.");
+      setError("Jsi bez internetu. Záznam zůstává rozepsaný v tomto telefonu; odešli ho po připojení.");
       return;
     }
 
@@ -220,6 +256,7 @@ export default function RunForm({ type }: {
       };
 
       submissionIdRef.current ||= crypto.randomUUID();
+      saveFormDraft(ownerUid,type,{km,minutes:durationMinutes,seconds:durationSeconds,date:activityDate,description,submissionId:submissionIdRef.current,savedAt:Date.now()});
       await createRun(runData, submissionIdRef.current);
       reset();
       setShowForm(false);
@@ -242,11 +279,12 @@ export default function RunForm({ type }: {
   return (
     <div className="run-form-shell">
       {!showForm && (
-        <button type="button" className="run-primary-button" onClick={() => { reset(); setShowForm(true); }}>
-          <Plus size={19} aria-hidden="true" /> Přidat záznam
+        <button type="button" className="run-primary-button" onClick={() => void openForm()}>
+          <Plus size={19} aria-hidden="true" /> {recoverable ? "Pokračovat v rozpracované aktivitě" : "Přidat záznam"}
         </button>
       )}
 
+      {!showForm&&recoverable&&<p className="draft-recovery-note">Máš uloženou rozpracovanou aktivitu v tomto telefonu.</p>}
       {showForm && (
         <section ref={formPanelRef} className="run-form-panel" aria-label={`Nový záznam: ${type}`}>
           <div className="run-form-heading">
@@ -254,7 +292,7 @@ export default function RunForm({ type }: {
               <span className="run-form-eyebrow">NOVÁ AKTIVITA</span>
               <h3>Přidat {activityLabel}</h3>
             </div>
-            <button type="button" className="run-form-close" onClick={() => { setShowForm(false); setShowGpsRecorder(false); reset(); }} disabled={saving} aria-label="Zavřít formulář">
+            <button type="button" className="run-form-close" onClick={() => { setShowForm(false); setShowGpsRecorder(false); setRecoverable(readRecorderDraft(ownerUid,type)?"gps":readFormDraft(ownerUid,type)?"form":null); }} disabled={saving} aria-label="Zavřít formulář">
               <X size={19} aria-hidden="true" />
             </button>
           </div>
@@ -267,7 +305,7 @@ export default function RunForm({ type }: {
 
           {showGpsRecorder && !strength && (type === "běh" || type === "chůze") ? (
             <div className="run-form-gps-recorder">
-              <ActivityRecorder type={type} onFinished={handleGpsFinished} />
+              <ActivityRecorder ownerUid={ownerUid} type={type} onFinished={handleGpsFinished} />
             </div>
           ) : (
             <>
@@ -324,6 +362,9 @@ export default function RunForm({ type }: {
                 </div>
               )}
 
+              {draftMessage&&<p className="run-form-status" role="status">{draftMessage}</p>}
+              {photoDraftError&&<p className="run-form-status" role="status">{photoDraftError}</p>}
+              {(km||description||durationMinutes)&&<button type="button" className="run-secondary-button" disabled={saving} onClick={()=>{if(window.confirm("Zahodit rozepsaný záznam?")){reset();setShowForm(false);}}}>Zahodit rozepsaný záznam</button>}
               {uploadStatus && <p className="run-form-status" role="status">{uploadStatus}</p>}
 
               <div className="run-form-actions run-form-actions-single">

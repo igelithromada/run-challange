@@ -10,6 +10,7 @@ import { auth } from "../lib/firebase";
 import { parseActivityDate } from "../lib/runData";
 import { activityAwards, awardTotal } from "../lib/awards";
 import ActivityCalendar from "../components/ActivityCalendar";
+import ProgressComparison from "../components/ProgressComparison";
 import ProgressChart from "../components/ProgressChart";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -18,7 +19,7 @@ import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSe
 import type { RunData } from "../types";
 import { personalHistoryQuery } from "../lib/services/runs";
 
-type ProgressActivity = Pick<RunData, "id" | "uid" | "km" | "minuty" | "tempo" | "timestamp" | "type" | "repetitions">;
+type ProgressActivity = RunData;
 const asNumber = (value: unknown) => {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
@@ -82,7 +83,7 @@ export default function ProgressPage() {
   ];
   const levels = strength ? baseLevels.map((item, index) => ({...item, name:["Začátečník","Pravidelný trénink","Pokročilý","Zkušený sportovec","Silový matador","Legenda","Legenda 2.0"][index], min:item.min*10,next:item.next*10})) : baseLevels;
   const level = [...levels].reverse().find(item => allKm >= item.min) || levels[0];
-  const levelProgress = Math.min(100, Math.max(0, allKm / level.next * 100));
+  const levelProgress = Math.min(100, Math.max(0, (allKm - level.min) / (level.next - level.min) * 100));
 
   const badges = activityAwards(selected, goalType);
   const handleSelect = async (item: string) => {
@@ -99,6 +100,8 @@ export default function ProgressPage() {
     <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/>
     <main className="container progress-page">
       <ActivityTypeSelector value={goalType} onChange={setGoalType} ariaLabel="Typ aktivity pro pokrok" />
+
+      {!personalState.loading && (!personalState.error || selected.length > 0) && <ProgressComparison runs={selected} type={goalType} />}
 
       <ProgressChart key={goalType} runs={selected} activityType={goalType} loading={personalState.loading} error={!!personalState.error} />
 

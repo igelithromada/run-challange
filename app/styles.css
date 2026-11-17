@@ -6264,3 +6264,29 @@ html[data-theme="white"] .challenges-create input[type="file"]::file-selector-bu
 .activity-type-selector > button { flex:1 0 105px; scroll-snap-align:center; }
 .activity-metrics.strength-metrics { display:flex; gap:12px; }
 .activity-metrics.strength-metrics > div { flex:1; }
+
+/* One photo viewer across personal, community and admin screens. */
+.shared-photo-viewer {position:fixed;inset:0;width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;padding:0;border:0;background:#090d13;color:#fff;}
+.shared-photo-viewer[open]{display:flex;flex-direction:column;}
+.shared-photo-viewer::backdrop{background:rgba(0,0,0,.9);}
+.shared-photo-toolbar{display:flex;gap:8px;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;flex-shrink:0;}
+.shared-photo-toolbar button{display:grid;place-items:center;min-width:44px;min-height:44px;border:1px solid #ffffff30;border-radius:12px;background:#ffffff12;color:#fff;cursor:pointer;}
+.shared-photo-toolbar button:disabled{opacity:.35;}
+.shared-photo-close{margin-left:auto;}
+.shared-photo-pane{display:grid;place-items:center;position:relative;min-height:0;flex:1;overflow:hidden;touch-action:none;user-select:none;}
+.shared-photo-pane img{max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain;pointer-events:none;}
+.shared-photo-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:#111822;flex-shrink:0;}
+.shared-photo-footer div{display:flex;flex-direction:column;gap:5px;}
+.shared-photo-footer small{display:block;flex-basis:100%;color:#c1cad5;font-size:.75rem;}
+.progress-comparison{margin:1rem 0 1.25rem;padding:1rem 0;border-bottom:1px solid currentColor; border-color:rgba(180,195,210,.28);}
+.progress-comparison h2{font-size:1.1rem;margin:0 0 .75rem;}
+.progress-comparison-values{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.progress-comparison-values>div{display:flex;flex-direction:column;gap:5px;}
+.progress-comparison-values strong{font-size:1.45rem;}
+.progress-comparison>p{margin:.8rem 0 .35rem;}
+.progress-comparison small,.progress-comparison-values span{opacity:.8;font-size:.8rem;}
+.team-card-stats.team-card-stats-compact{display:flex;flex-wrap:wrap;gap:.45rem .8rem;}
+.team-card-stats-compact .team-activity-stat{white-space:nowrap;font-size:.85rem;}
+
+.activity-kind-label{font-size:.72rem;opacity:.8;font-weight:600;}
+.draft-recovery-note{font-size:.85rem;opacity:.85;margin:.6rem 0;}

@@ -160,6 +160,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("GET /api/notifications/trainer:", error);
-    return NextResponse.json({ error: "Notifikace trenéra se nepodařilo odeslat." }, { status: 500 });
+    return NextResponse.json({ error: "Upozornění tréninkového plánu se nepodařilo odeslat." }, { status: 500 });
   }
 }

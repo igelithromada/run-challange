@@ -413,7 +413,7 @@ export default function SettingsPage() {
         </section>
 
         <section className="tile settings-notification-section">
-          <div className="settings-section-heading"><Bell size={21}/><div><h2>Notifikace osobního trenéra</h2><p>Zapni jen ty typy upozornění, které chceš dostávat, a nastav jejich čas.</p></div></div>
+          <div className="settings-section-heading"><Bell size={21}/><div><h2>Upozornění tréninkového plánu</h2><p>Zapni jen ty typy upozornění, které chceš dostávat, a nastav jejich čas.</p></div></div>
           {trainerDeliveryReady !== true && <p className="settings-delivery-status" role="status">{trainerDeliveryReady === null ? "Ověřuji dostupnost připomínek…" : "Časované připomínky zatím nejsou dostupné. Uložené nastavení zůstává zachované."}</p>}
           <div className="settings-notification-row settings-trainer-day-row">
             <span className="settings-notification-copy"><span className="settings-notification-title">Dnešní plán</span><small>Ranní upozornění, pokud máš na dnešek naplánovaný trénink.</small></span>

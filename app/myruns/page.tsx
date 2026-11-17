@@ -1,4 +1,5 @@
 "use client";
+import PhotoViewer from "../components/PhotoViewer";
 import { isStrengthActivity, activityAmount } from "../lib/activity";
 import { preparePhoto } from "../lib/preparePhoto";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -15,10 +16,11 @@ import LoadingSkeleton from "../components/LoadingSkeleton";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
 import { MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
+import { formatResultDuration } from "../lib/results";
 import { activityMetrics, formatPace } from "../lib/activityMetrics";
 import { showAppToast } from "../components/AppToast";
 import type { RunData as BaseRunData, ActivityType } from "../types";
-import { fetchOlderUserRuns, latestUserRunsQuery, updateRun } from "../lib/services/runs";
+import { personalHistoryQuery, updateRun } from "../lib/services/runs";
 import { getUserProfile } from "../lib/services/users";
 
 type RunData = BaseRunData;
@@ -65,12 +67,8 @@ const formatTime = (minutes: number) => {
 export default function MyRunsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [uid, setUid] = useState("");
-  const [olderRuns, setOlderRuns] = useState<RunData[]>([]);
   const [localUpdates, setLocalUpdates] = useState<Record<string, Partial<RunData>>>({});
   const [deletedIds, setDeletedIds] = useState<Set<string>>(() => new Set());
-  const [olderCursor, setOlderCursor] = useState<import("firebase/firestore").QueryDocumentSnapshot | null>(null);
-  const [loadingOlder, setLoadingOlder] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const [profile, setProfile] = useState({ nickname: "", avatarUrl: "" });
   const [confirmDelete, setConfirmDelete] = useState(true);
   const pageActive = useRef(true);
@@ -108,7 +106,7 @@ export default function MyRunsPage() {
     const unsubAuth = onAuthStateChanged(auth, user => {
       if (!active) return;
       if (!user) { router.push("/login"); return; }
-      setOlderRuns([]);setOlderCursor(null);setLocalUpdates({});setDeletedIds(new Set());setHasMore(true);
+      setLocalUpdates({});setDeletedIds(new Set());
       setUid(user.uid);
       getUserProfile(user.uid).then(data => {
         if (!active || !data) return;
@@ -121,42 +119,21 @@ export default function MyRunsPage() {
     return () => { active = false; unsubAuth(); };
   }, [router]);
 
-  const runsQuery = useMemo(() => latestUserRunsQuery(uid || "__no_user__", 30), [uid]);
-  const runsState = useSharedFirestoreQuery<RunData>("runs:user:" + (uid || "none"), runsQuery);
-  const runs = useMemo(() => Array.from(new Map<string, RunData>([...runsState.data, ...olderRuns].map(run => [run.id, { ...run, ...(localUpdates[run.id] || {}) }] as const)).values()).filter(run => run.uid === uid && !deletedIds.has(run.id)).map(run => ({
-    ...run, km: Number(run.km) || 0, minuty: Number(run.minuty) || 0, tempo: Number(run.tempo) || 0
-  })).sort((a,b) => dateOf(b.timestamp).getTime() - dateOf(a.timestamp).getTime()), [runsState.data, olderRuns, localUpdates, deletedIds, uid]);
+  const runsQuery = useMemo(() => personalHistoryQuery(uid || "__no_user__"), [uid]);
+  const runsState = useSharedFirestoreQuery<RunData>("personal-history:v2:" + (uid || "none"), runsQuery);
+  const runs = useMemo(() => runsState.data.filter(run => run.uid === uid && !deletedIds.has(run.id)).map(run => ({ ...run, ...(localUpdates[run.id] || {}) })).sort((a,b) => dateOf(b.timestamp).getTime() - dateOf(a.timestamp).getTime()), [runsState.data, localUpdates, deletedIds, uid]);
   const loading = runsState.loading;
-  useEffect(() => { if (!runsState.loading && runsState.data.length < 30) setHasMore(false); }, [runsState.loading, runsState.data.length]);
-  const loadOlderRuns = async () => {
-    const cursor = olderCursor || runsState.lastDocument;
-    if (!cursor || loadingOlder || !hasMore || !uid) return;
-    setLoadingOlder(true);
-    try {
-      const next = await fetchOlderUserRuns(uid, cursor, 30);
-      if (!pageActive.current || auth.currentUser?.uid !== uid) return;
-      const items = next.items;
-      setOlderRuns(previous => [...previous, ...items.filter(item => !previous.some(old => old.id === item.id) && !runsState.data.some(current => current.id === item.id))]);
-      setOlderCursor(next.lastDocument || cursor);
-      setHasMore(next.items.length === 30);
-    } catch (err) {
-      if (pageActive.current) {
-        console.error("Nepodařilo se načíst starší aktivity", err);
-        setActionError("Starší záznamy se nepodařilo načíst.");
-      }
-    } finally {
-      if (pageActive.current) setLoadingOlder(false);
-    }
-  };
+  const [visibleCount, setVisibleCount] = useState(30);
+  useEffect(() => { setVisibleCount(30); }, [selectedType, dateFrom, dateTo]);
   useEffect(() => {
     // Krátký Firestore výpadek nesmí rušit už načtený seznam aktivit.
     // Chybu zobrazíme jen tehdy, když se nepodařilo načíst vůbec žádná data.
-    if (runsState.error && !runsState.loading && runsState.data.length === 0 && olderRuns.length === 0) {
+    if (runsState.error && !runsState.loading && runsState.data.length === 0) {
       setError("Chyba při načítání dat.");
     } else if (!runsState.error) {
       setError("");
     }
-  }, [runsState.error, runsState.loading, runsState.data.length, olderRuns.length]);
+  }, [runsState.error, runsState.loading, runsState.data.length ]);
 
   useEffect(() => { if (error) showAppToast(error, "error"); }, [error]);
   useEffect(() => { if (actionError) showAppToast(actionError, "error"); }, [actionError]);
@@ -171,6 +148,7 @@ export default function MyRunsPage() {
   const strength = isStrengthActivity(selectedType);
   useEffect(() => { setEditingId(null); }, [selectedType]);
   const metrics = activityMetrics(filteredRuns);
+  const summaryUnavailable = loading && runs.length === 0 ? "…" : runsState.error && runs.length === 0 ? "—" : null;
   const totalKm = metrics.km;
   const totalMin = metrics.minutes;
   const avgTempo = metrics.pace;
@@ -292,15 +270,15 @@ export default function MyRunsPage() {
         </div>
       </details>
       <div className="tile-group activity-summary-grid">
-        <div className="tile"><ListChecks/><span>Počet aktivit</span><strong>{filteredRuns.length}</strong></div>
-        <div className="tile"><MapPin/><span>{strength ? "Celkem opakování" : "Celkem km"}</span><strong>{strength ? metrics.repetitions.toLocaleString("cs-CZ") : totalKm.toFixed(2)+" km"}</strong></div>
-        <div className="tile"><Clock3/><span>{strength ? "Zaznamenaný čas" : "Čas"}</span><strong>{strength && totalMin === 0 ? "—" : (totalMin / 60).toFixed(2)+" h"}</strong></div>
-        {!strength && <div className="tile"><Gauge/><span>Prům. tempo</span><strong>{formatTime(avgTempo)} /km</strong></div>}
+        <div className="tile"><ListChecks/><span>Počet aktivit</span><strong>{summaryUnavailable ?? filteredRuns.length}</strong></div>
+        <div className="tile"><MapPin/><span>{strength ? "Celkem opakování" : "Celkem km"}</span><strong>{summaryUnavailable ?? (strength ? metrics.repetitions.toLocaleString("cs-CZ") : totalKm.toFixed(2)+" km")}</strong></div>
+        <div className="tile"><Clock3/><span>{strength ? "Zaznamenaný čas" : "Čas"}</span><strong>{summaryUnavailable ?? (strength && totalMin === 0 ? "—" : formatResultDuration(totalMin))}</strong></div>
+        {!strength && <div className="tile"><Gauge/><span>Prům. tempo</span><strong>{summaryUnavailable ?? formatTime(avgTempo)} /km</strong></div>}
       </div>
       <h2 className="centered-title">Moje záznamy</h2>
 
       <div className="list-container myruns-list">
-        {filteredRuns.map(run => editingId === run.id ? <section key={run.id} className="run-form-panel activity-edit-form" aria-label="Upravit aktivitu">
+        {filteredRuns.slice(0, visibleCount).map(run => editingId === run.id ? <section key={run.id} className="run-form-panel activity-edit-form" aria-label="Upravit aktivitu">
           <div className="run-form-heading"><div><span className="run-form-eyebrow">ÚPRAVA AKTIVITY</span><h3>Upravit aktivitu</h3></div><button type="button" className="run-form-close" onClick={() => { setEditingId(null); setFile(null); setActionError(""); }} disabled={busy} aria-label="Zavřít formulář">×</button></div>
           <label className="run-form-field"><span>{strength ? "Počet opakování" : "Vzdálenost (km)"}</span><input type="number" min={strength ? "1" : "0.1"} step={strength ? "1" : "0.01"} value={km} onChange={e => setKm(e.target.value)} /></label>
           <div className="run-form-field"><span>Celkový čas <small>{strength ? "volitelné" : "minuty a sekundy"}</small></span><div className="run-form-time-fields"><label className="run-form-unit-field"><input aria-label="Minuty" type="number" min="0" value={durationMinutes} onChange={e=>setDurationMinutes(e.target.value.replace(/[^0-9]/g,"").slice(0,4))}/></label><label className="run-form-unit-field"><input aria-label="Sekundy" type="number" min="0" max="59" value={durationSeconds} onChange={e=>setDurationSeconds(e.target.value.replace(/[^0-9]/g,"").slice(0,2))}/></label></div></div>
@@ -310,20 +288,11 @@ export default function MyRunsPage() {
           <div className="run-form-actions run-form-actions-single"><button type="button" className="run-primary-button" disabled={busy} onClick={() => handleUpdate(run.id)}>{busy ? "Ukládám…" : "Uložit změny"}</button></div>
         </section> : <ActivityCard key={run.id} run={run} activityType={selectedType} onEdit={() => handleEdit(run)} onDelete={() => handleDelete(run.id)} onPhotosClick={(images, _fallback, startIndex = 0) => { setCurrentImageIndex(startIndex); setShowImageUrls(images); setShowImageRunId(run.id); }} />)}
       </div>
-      {showImageUrls && showImageUrls.length > 0 && <div className="activity-lightbox" onClick={() => setShowImageUrls(null)}>
-        <img loading="lazy" decoding="async" src={cloudinaryImageUrl(showImageUrls[currentImageIndex], 1600)} alt={`Fotografie ${currentImageIndex + 1}`} onClick={e => e.stopPropagation()} />
-        <div className="activity-lightbox-actions" onClick={e => e.stopPropagation()}>
-          {showImageUrls.length > 1 && <button onClick={() => setCurrentImageIndex(i => (i - 1 + showImageUrls.length) % showImageUrls.length)} aria-label="Předchozí fotografie">❮</button>}
-          <button onClick={() => void handleDeletePhoto()} disabled={deletingPhoto} aria-label="Smazat fotografii">{deletingPhoto ? "Mažu…" : "Smazat"}</button>
-          <button type="button" className="run-secondary-button" onClick={() => { setShowImageUrls(null); setShowImageRunId(null); setCurrentImageIndex(0); }}>Zavřít</button>
-          {showImageUrls.length > 1 && <button onClick={() => setCurrentImageIndex(i => (i + 1) % showImageUrls.length)} aria-label="Další fotografie">❯</button>}
-        </div>
-        {showImageUrls.length > 1 && <p>{currentImageIndex + 1} / {showImageUrls.length}</p>}
-      </div>}
+      {showImageUrls && showImageUrls.length>0 && <PhotoViewer url={showImageUrls[currentImageIndex]} onClose={()=>{setShowImageUrls(null);setShowImageRunId(null);setCurrentImageIndex(0);}} onMove={direction=>setCurrentImageIndex(index=>(index+direction+showImageUrls.length)%showImageUrls.length)} onDelete={()=>void handleDeletePhoto()} deleting={deletingPhoto}/>}
       {loading && runs.length === 0 && <LoadingSkeleton count={3} />}
-      {hasMore && runs.length >= 30 && <button className="activity-load-more" onClick={loadOlderRuns} disabled={loadingOlder}>{loadingOlder ? "Načítám starší záznamy…" : "Načíst starší záznamy"}</button>}
+      {visibleCount < filteredRuns.length && <button className="activity-load-more" onClick={() => setVisibleCount(count => count + 30)}>Zobrazit další záznamy</button>}
 
-      {!loading && filteredRuns.length === 0 && <div className="tile activity-empty-state"><strong>Zatím tu nic není.</strong><p>Pro zvolené období nemáš žádné záznamy. Zkus jiný filtr nebo přidej novou aktivitu.</p></div>}
+      {!loading && !runsState.error && filteredRuns.length === 0 && <div className="tile activity-empty-state"><strong>Zatím tu nic není.</strong><p>Pro zvolené období nemáš žádné záznamy. Zkus jiný filtr nebo přidej novou aktivitu.</p></div>}
     </div>
   </>;
 }

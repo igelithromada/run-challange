@@ -260,6 +260,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
           </button>
           <div className="activity-person">
             <span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{resolvedNickname}</span>
+            <small className="activity-kind-label">{activityLabel(activityType)}</small>
             {teamName && <small className="activity-team-line"><span className="activity-team-avatar">{teamAvatarUrl ? <img src={cloudinaryImageUrl(teamAvatarUrl, 48)} alt="" /> : "T"}</span><b>Tým</b> · {teamName}</small>}
           </div>
           {date && <time className="activity-date" dateTime={date.toISOString()}>{date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}

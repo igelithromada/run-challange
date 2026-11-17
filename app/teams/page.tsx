@@ -275,11 +275,14 @@ export default function TeamsPage() {
                         </div>
                         {team.description && <p className="team-card-description">{team.description}</p>}
                         <p className="team-card-meta">{team.memberCount || 0} {(team.memberCount || 0) === 1 ? "člen" : "členů"}</p>
-                        <div className="team-card-stats">
-                          <span className="team-activity-stat"><ActivityTypeIcon type="běh" size={18} /><span className="sr-only">Běh: </span>{Number(stats.runningKm || 0).toFixed(1)} km · {Number(stats.runningActivities || 0)} aktivit</span>
-                          <span className="team-activity-stat"><ActivityTypeIcon type="chůze" size={18} /><span className="sr-only">Chůze: </span>{Number(stats.walkingKm || 0).toFixed(1)} km · {Number(stats.walkingActivities || 0)} aktivit</span>
-                          <span className="team-activity-stat"><ActivityTypeIcon type="dřepy" size={18} /><span className="sr-only">Dřepy: </span>{Number(stats.squatRepetitions || 0).toLocaleString("cs-CZ")} opakování · {Number(stats.squatActivities || 0)} aktivit</span>
-                          <span className="team-activity-stat"><ActivityTypeIcon type="kliky" size={18} /><span className="sr-only">Kliky: </span>{Number(stats.pushupRepetitions || 0).toLocaleString("cs-CZ")} opakování · {Number(stats.pushupActivities || 0)} aktivit</span>
+                        <div className="team-card-stats team-card-stats-compact">
+                          {([
+                            {type:"běh", amount:stats.runningKm, unit:"km"},
+                            {type:"chůze", amount:stats.walkingKm, unit:"km"},
+                            {type:"dřepy", amount:stats.squatRepetitions, unit:"×"},
+                            {type:"kliky", amount:stats.pushupRepetitions, unit:"×"},
+                          ] as const).filter(item=>Number(item.amount)>0).map(item=><span key={item.type} className="team-activity-stat"><ActivityTypeIcon type={item.type} size={18}/><span className="sr-only">{item.type}: </span>{Number(item.amount).toLocaleString("cs-CZ",{maximumFractionDigits:item.unit==="km"?1:0})} {item.unit}</span>)}
+                          {![stats.runningKm,stats.walkingKm,stats.squatRepetitions,stats.pushupRepetitions].some(value=>Number(value)>0)&&<small>Zatím bez aktivit</small>}
                         </div>
                       </div>
                       <ChevronRight className="team-card-chevron" size={20} />
