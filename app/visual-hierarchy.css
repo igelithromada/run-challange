@@ -178,3 +178,5 @@ html[data-theme="white"] {
 .container .activity-recorder-metrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;}
 .container .activity-recorder-metrics > .app-metric + .app-metric {border-inline-start:1px solid var(--hierarchy-line);}
 .container .activity-card-modern {gap:.35rem !important;}
+.container .app-metric strong.app-metric-value {white-space:normal !important;}
+.container .results-person-details {margin-left:0 !important;}
