@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Award, CalendarDays, Footprints, Medal, Trophy, CheckCircle2, Lock, Zap, Flame } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { parseActivityDate } from "../lib/runData";
+import ActivityCalendar from "../components/ActivityCalendar";
 import ProgressChart from "../components/ProgressChart";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -27,12 +28,6 @@ const formatPace = (pace: number) => {
   const seconds = Math.round(pace * 60);
   return `${Math.floor(seconds/60)}′${String(seconds%60).padStart(2,"0")}″ /km`;
 };
-const mondayOf = (date: Date) => {
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  d.setDate(d.getDate() - ((d.getDay()+6)%7));
-  return d;
-};
-
 export default function ProgressPage() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -62,11 +57,10 @@ export default function ProgressPage() {
   const fastest = sorted.filter(run => asNumber(run.tempo)>0).reduce<ProgressActivity | null>((best, run) => !best || asNumber(run.tempo)<asNumber(best.tempo) ? run : best, null);
   const dailyTotals = new Map<string, number>();
   selected.forEach(run => { const d=activityDate(run); if (!Number.isNaN(d.getTime())) dailyTotals.set(dateKey(d),(dailyTotals.get(dateKey(d))||0)+asNumber(run.km)); });
-  const maxDay = Math.max(0, ...Array.from(dailyTotals.values()));
   const monthlyTotals = new Map<string, number>();
   selected.forEach(run => { const d=activityDate(run); if (!Number.isNaN(d.getTime())) { const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; monthlyTotals.set(key,(monthlyTotals.get(key)||0)+asNumber(run.km)); } });
   const bestMonth = Math.max(0, ...Array.from(monthlyTotals.values()));
-  const activityDays = new Set(selected.map(run => dateKey(activityDate(run)))).size;
+  const bestMonthKey = Array.from(monthlyTotals.entries()).sort((a,b)=>b[1]-a[1])[0]?.[0];
   const streak = (() => {
     let count=0; const cursor=new Date(now.getFullYear(),now.getMonth(),now.getDate());
     if (!dailyTotals.has(dateKey(cursor))) cursor.setDate(cursor.getDate()-1);
@@ -98,15 +92,6 @@ export default function ProgressPage() {
     { title:"Deset aktivit", detail:"Zaznamenáno 10 aktivit", icon:"📅", done:allActivities>=10 },
     { title:"Padesát aktivit", detail:"Zaznamenáno 50 aktivit", icon:"💪", done:allActivities>=50 }
   ];
-  const calendarDays = (() => {
-    const end = new Date(now.getFullYear(),now.getMonth(),now.getDate());
-    const start = mondayOf(end);
-    start.setDate(start.getDate()-77);
-    const days: Date[]=[];
-    for (let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) days.push(new Date(d));
-    return days;
-  })();
-
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
     if (item==="logout") { await signOut(auth); router.push("/login"); }
@@ -133,26 +118,18 @@ export default function ProgressPage() {
 
       <section className="progress-section">
         <div className="progress-section-title"><Award/><div><h2>Odznaky a úspěchy</h2><p>{badges.filter(b=>b.done).length} z {badges.length} získaných odznaků</p></div></div>
-        <div className="progress-badges-grid">{badges.map(badge=><article key={badge.title} className={badge.done?"progress-badge earned":"progress-badge locked"}><span>{badge.done?badge.icon:"🔒"}</span><div><strong>{badge.title}</strong><p>{badge.detail}</p></div>{badge.done?<CheckCircle2 size={18}/>:<Lock size={17}/>}</article>)}</div>
+        <div className="progress-badges-scroll" role="group" tabIndex={0} aria-label="Odznaky a úspěchy, posouvej doleva nebo doprava">{badges.map(badge=><article key={badge.title} className={badge.done?"progress-badge earned":"progress-badge locked"}><span>{badge.done?badge.icon:"🔒"}</span><div><strong>{badge.title}</strong><p>{badge.detail}</p></div>{badge.done?<CheckCircle2 size={18}/>:<Lock size={17}/>}</article>)}</div>
       </section>
 
-      <section className="tile progress-calendar">
-        <div className="progress-section-title"><CalendarDays/><div><h2>Kalendář aktivit</h2><p>Posledních 12 týdnů pro kategorii {goalType === "chůze" ? "chůzi" : "běh"} – čím sytější zelená, tím větší vzdálenost.</p></div></div>
-        <div className="progress-calendar-with-days">
-          <div className="progress-calendar-day-labels" aria-hidden="true">{["Po","Út","St","Čt","Pá","So","Ne"].map(day=><span key={day}>{day}</span>)}</div>
-          <div className="progress-calendar-grid">{calendarDays.map(day=>{const km=dailyTotals.get(dateKey(day))||0;return <div key={dateKey(day)} className={`progress-day ${km===0?"":km<3?"level-1":km<7?"level-2":km<12?"level-3":"level-4"}`} title={`${day.toLocaleDateString("cs-CZ", {weekday:"long", day:"numeric", month:"numeric",year:"numeric"})}: ${km.toFixed(1)} km`} aria-label={`${day.toLocaleDateString("cs-CZ", {weekday:"long", day:"numeric",month:"numeric"})}: ${km.toFixed(1)} km`}/>})}</div>
-        </div>
-        <div className="progress-calendar-legend"><span>Méně</span><i/><i/><i/><i/><span>Více</span></div>
-        <p className="progress-calendar-summary">{activityDays} aktivních dní · {maxDay.toFixed(1)} km nejvíce za jeden den</p>
-      </section>
+      <ActivityCalendar runs={selected} />
 
       <section className="tile progress-records">
         <div className="progress-section-title"><Trophy/><div><h2>Osobní rekordy</h2><p>Nejlepší výkony v kategorii {goalType}.</p></div></div>
         <div className="progress-record-grid">
-          <div className="progress-record-item progress-record"><span className="progress-record-icon"><Footprints size={20}/></span><small>Nejdelší aktivita</small><strong>{longest?asNumber(longest.km).toFixed(2)+" km":"—"}</strong></div>
-          <div className="progress-record-item progress-record"><span className="progress-record-icon"><Zap size={20}/></span><small>Nejrychlejší tempo</small><strong>{fastest?formatPace(asNumber(fastest.tempo)):"—"}</strong></div>
-          <div className="progress-record-item progress-record"><span className="progress-record-icon"><CalendarDays size={20}/></span><small>Nejvíce za měsíc</small><strong>{bestMonth.toFixed(1)} km</strong></div>
-          <div className="progress-record-item progress-record"><span className="progress-record-icon"><Flame size={20}/></span><small>Aktuální série</small><strong>{streak} {streak===1?"den":"dní"}</strong></div>
+          <div className="progress-record-item progress-record"><span className="progress-record-icon"><Footprints size={20}/></span><small>Nejdelší aktivita</small><strong>{longest?asNumber(longest.km).toFixed(2)+" km":"—"}</strong><em>{longest?activityDate(longest).toLocaleDateString("cs-CZ"):"Zatím bez aktivity"}</em></div>
+          <div className="progress-record-item progress-record"><span className="progress-record-icon"><Zap size={20}/></span><small>Nejrychlejší tempo</small><strong>{fastest?formatPace(asNumber(fastest.tempo)):"—"}</strong><em>{fastest?activityDate(fastest).toLocaleDateString("cs-CZ"):"Zatím bez aktivity"}</em></div>
+          <div className="progress-record-item progress-record"><span className="progress-record-icon"><CalendarDays size={20}/></span><small>Nejvíce za měsíc</small><strong>{bestMonth.toFixed(1)} km</strong><em>{bestMonthKey?new Date(bestMonthKey+"-01T12:00:00").toLocaleDateString("cs-CZ",{month:"long",year:"numeric"}):"Zatím bez aktivity"}</em></div>
+          <div className="progress-record-item progress-record"><span className="progress-record-icon"><Flame size={20}/></span><small>Aktuální série</small><strong>{streak} {streak===1?"den":"dní"}</strong><em>Aktivní dny za sebou</em></div>
         </div>
       </section>
 

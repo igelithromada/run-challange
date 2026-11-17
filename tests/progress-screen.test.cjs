@@ -26,7 +26,7 @@ test('progress has weekday labels and no introductory text, goals editor or chal
   for(const day of ['Po','Út','St','Čt','Pá','So','Ne'])assert.ok(html.includes(`<span>${day}</span>`));
   assert.match(html,/Osobní rekordy/);
 });
-const text=n=>typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
+const text=n=>typeof n==='number'?String(n):typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
 function find(n,p){if(!n)return;if(Array.isArray(n)){for(const c of n){const r=find(c,p);if(r)return r;}return;}if(p(n))return n;return find(n.props?.children,p);}
 test('trainer goals load existing walking targets and save only that activity category',async()=>{
   let hook=0;const slots=[],effects=[],writes=[];let savedMonthly;
@@ -39,4 +39,16 @@ test('trainer goals load existing walking targets and save only that activity ca
   find(weekly,n=>n.type==='input').props.onChange({target:{value:'60'}});find(monthly,n=>n.type==='input').props.onChange({target:{value:'240'}});
   tree=render();find(tree,n=>n.type==='button'&&text(n).includes('Uložit cíle')).props.onClick();await new Promise(r=>setImmediate(r));
   assert.equal(writes[0].uid,'owner');assert.equal(writes[0].patch.progressGoalsByType.chůze.weekly,60);assert.equal(writes[0].patch.progressGoalsByType.běh,undefined);assert.equal(savedMonthly,240);
+});
+
+test('calendar shows day details for every activity on that day and can navigate back and forward',()=>{
+  let index=0;const values=[];const hooks={useMemo:fn=>fn(),useState:initial=>{const i=index++;if(!(i in values))values[i]=typeof initial==='function'?initial():initial;return[values[i],v=>values[i]=typeof v==='function'?v(values[i]):v];}};
+  const Calendar=load('app/components/ActivityCalendar.tsx',{react:hooks}).default;
+  const now=new Date();
+  const render=()=>{index=0;return Calendar({runs:[{id:'1',km:2,minuty:10,timestamp:now},{id:'2',km:3,minuty:20,timestamp:now}]});};
+  let tree=render(),cell=find(tree,n=>n.type==='button'&&n.props['aria-label']?.endsWith(', 5 km'));
+  assert.ok(cell);cell.props.onClick();tree=render();assert.match(text(find(tree,n=>n.type==='output')),/5 km · 2 aktivit/);
+  find(tree,n=>n.props?.['aria-label']==='Předchozích 12 týdnů').props.onClick();tree=render();
+  assert.equal(find(tree,n=>n.props?.['aria-label']==='Dalších 12 týdnů').props.disabled,false);
+  find(tree,n=>n.props?.['aria-label']==='Dalších 12 týdnů').props.onClick();tree=render();assert.equal(find(tree,n=>n.props?.['aria-label']==='Dalších 12 týdnů').props.disabled,true);
 });

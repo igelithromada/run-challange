@@ -44,8 +44,6 @@ export default function TrainerPage(){
    } catch {}
  }, []);
  const [profileLoading,setProfileLoading]=useState(true);
- const [monthlyGoal,setMonthlyGoal]=useState(100);
- const [goalsByType,setGoalsByType]=useState<Record<ActivityType,number>>({běh:100,chůze:100});
  const [dirty,setDirty]=useState(false);
  const [modalOpen,setModalOpen]=useState(false);
  const [bulkMode,setBulkMode]=useState(false);
@@ -99,10 +97,6 @@ export default function TrainerPage(){
          normalized[(storedLegacy.type||"běh")+"|"+storedLegacy.monthKey]=storedLegacy as Plan;
        }
        setPlansByKey(normalized);
-       const goals=data?.progressGoalsByType||{};
-       const nextGoals={běh:num(goals.běh?.monthly??(data.progressGoals?.type==="běh"?data.progressGoals?.monthly:100))||100,chůze:num(goals.chůze?.monthly??(data.progressGoals?.type==="chůze"?data.progressGoals?.monthly:100))||100};
-       setGoalsByType(nextGoals);
-       setMonthlyGoal(nextGoals[type]);
      }catch(e){
        if(active)console.error("Nepodařilo se načíst osobního trenéra",e);
      }finally{
@@ -129,7 +123,6 @@ export default function TrainerPage(){
    setBulkMode(false);
  },[type,currentMonth,plansByKey]);
 
- useEffect(()=>{setMonthlyGoal(goalsByType[type]||100);},[type,goalsByType]);
 
  useEffect(()=>{ if(!selectedDate||!selectedDate.startsWith(currentMonth)) setSelectedDate(dateKey(month)); },[currentMonth,selectedDate,month]);
 
@@ -151,19 +144,7 @@ export default function TrainerPage(){
  };
  const plannedTotal=dates.reduce((s,d)=>s+num(dayKm[d]),0);
  const completed=dates.reduce((s,d)=>s+Math.min(actualFor(d),num(dayKm[d])),0);
- const monthActualTotal=runs.filter(r=>(r.type||"běh")===type&&monthKeyOf(activityDate(r))===currentMonth).reduce((s,r)=>s+num(r.km),0);
- const percent=monthlyGoal?Math.min(100,monthActualTotal/monthlyGoal*100):0;
  const planPercent=plannedTotal?Math.min(100,completed/plannedTotal*100):0;
- const currentWeekStart=monday(new Date());
- const currentWeekEnd=new Date(currentWeekStart);
- currentWeekEnd.setDate(currentWeekStart.getDate()+6);
- const weekActualTotal=runs.filter(r=>{
-   if((r.type||"běh")!==type)return false;
-   const d=activityDate(r);
-   return d>=currentWeekStart&&d<=new Date(currentWeekEnd.getFullYear(),currentWeekEnd.getMonth(),currentWeekEnd.getDate(),23,59,59);
- }).reduce((s,r)=>s+num(r.km),0);
- const weekPlannedTotal=dates.filter(key=>{const d=new Date(key+"T00:00:00");return d>=currentWeekStart&&d<=currentWeekEnd;}).reduce((s,d)=>s+num(dayKm[d]),0);
- const weekPlanPercent=weekPlannedTotal?Math.min(100,weekActualTotal/weekPlannedTotal*100):0;
  const selectedInfo=selectedDate?cellInfo(new Date(selectedDate+"T00:00:00")):cellInfo(new Date());
 
  const todayKey=dateKey(new Date());
@@ -275,7 +256,7 @@ export default function TrainerPage(){
    <header className="progress-header"><h1>Osobní trenér</h1></header>
 
    <ActivityTypeSelector value={type} onChange={v=>{if(saving)return;setType(v);setDirty(false);setModalOpen(false);setBulkMode(false);setBulkDates([]);}} ariaLabel="Typ tréninku"/>
-   <TrainingGoals key={uid+type} uid={uid} type={type} runs={runs} onSaved={monthly=>setGoalsByType(previous=>({...previous,[type]:monthly}))} />
+   <TrainingGoals key={uid+type} uid={uid} type={type} runs={runs} />
 
    <section className="tile trainer-plan-card">
     <div className="progress-section-title"><TrendingUp/><div><h2>Plán na měsíc</h2><p>{monthTitle(month)} · {type}</p></div></div>
@@ -288,7 +269,7 @@ export default function TrainerPage(){
     <div className="trainer-calendar-weekdays">{["Po","Út","St","Čt","Pá","So","Ne"].map(d=><span key={d}>{d}</span>)}</div>
     <div className="trainer-calendar-toolbar">
       <button type="button" className={`trainer-bulk-toggle ${bulkMode?"active":""}`} onClick={()=>{setBulkMode(v=>!v);setBulkDates([]);setModalOpen(false);}}>
-        {bulkMode?"Zrušit výběr":"☑ Hromadně"}
+        {bulkMode?"Zrušit výběr":"Hromadný výběr"}
       </button>
       {bulkMode&&<span>Vyber dny, které chceš naplánovat</span>}
     </div>
@@ -320,23 +301,16 @@ export default function TrainerPage(){
       <button type="button" className="progress-save" disabled={!bulkDates.length||saving} onClick={()=>void saveBulk()}><Save size={17}/> {saving?"Ukládám…":"Naplánovat"}</button>
     </div>}
 
+    <div className="trainer-plan-summary" aria-label="Souhrn měsíčního plánu">
+      <div><span>Naplánováno</span><strong>{plannedTotal.toFixed(1)} km</strong></div>
+      <div><span>Splněno z plánu</span><strong>{completed.toFixed(1)} km</strong></div>
+      <div><span>Plnění plánu</span><strong>{planPercent.toFixed(0)} %</strong></div>
+      <div><span>Tréninkové dny</span><strong>{dates.length}</strong></div>
+    </div>
+    <p className="chart-hint">Tady se počítají pouze naplánované tréninky. V cílech nahoře se počítají všechny tvoje aktivity.</p>
+
    </section>
 
-   <section className="tile trainer-summary-card">
-    <div className="progress-section-title"><Target/><div><h2>Plnění měsíce</h2><p>Souhrn skutečného pohybu a plnění naplánovaných tréninků.</p></div></div>
-    <div className="trainer-score"><div><span>{monthActualTotal.toFixed(1)} / {monthlyGoal.toFixed(1)} km</span><strong>{percent.toFixed(0)} %</strong></div><div className="progress-track"><i style={{width:`${percent}%`}}/></div></div>
-    <div className="trainer-stats">
-      <div><span>Plán měsíce</span><strong>{plannedTotal.toFixed(1)} km</strong></div>
-      <div><span>Měsíční cíl</span><strong>{monthlyGoal.toFixed(0)} km</strong></div>
-      <div><span>Naplánované dny</span><strong>{dates.length}</strong></div>
-      <div><span>Splnění plánu</span><strong>{planPercent.toFixed(0)} %</strong></div>
-    </div>
-    <div className="trainer-week-summary">
-      <div><span>Tento týden</span><strong>{weekActualTotal.toFixed(1)} / {weekPlannedTotal.toFixed(1)} km</strong></div>
-      <div><span>Plnění týdne</span><strong>{weekPlanPercent.toFixed(0)} %</strong></div>
-    </div>
-    <p className="trainer-goal-note">Kalendář zůstává hlavním místem pro plánování. Tady máš souhrn měsíce i aktuálního týdne na jednom místě.</p>
-   </section>
 
   </main>
   {modalOpen && <div className="trainer-day-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="trainer-day-modal-title">

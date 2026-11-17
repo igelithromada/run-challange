@@ -14,7 +14,7 @@ export default function TrainingGoals({
   uid: string;
   type: ActivityType;
   runs: GoalRun[];
-  onSaved: (monthly: number) => void;
+  onSaved?: (monthly: number) => void;
 }) {
   const [weekly, setWeekly] = useState("25"),
     [monthly, setMonthly] = useState("100"),
@@ -91,7 +91,7 @@ export default function TrainingGoals({
         progressGoals: { weekly: w, monthly: m, type },
       });
       setSaved({ weekly: w, monthly: m });
-      onSaved(m);
+      onSaved?.(m);
       setMessage("Cíle uloženy.");
     } catch {
       setMessage("Cíle se nepodařilo uložit. Zkus to znovu.");
@@ -107,45 +107,48 @@ export default function TrainingGoals({
       <div className="progress-section-title">
         <Target />
         <div>
-          <h2 id="training-goals-title">Moje cíle</h2>
+          <h2 id="training-goals-title">Cíle a plnění</h2>
           <p>
-            Týdenní a měsíční vzdálenost pro {type === "běh" ? "běh" : "chůzi"}.
+            Všechny aktivity pro {type === "běh" ? "běh" : "chůzi"}. Aktuální týden a měsíc.
           </p>
         </div>
       </div>
-      <div className="progress-goal-inputs">
-        <label>
-          Týdenní cíl (km)
-          <input
-            type="number"
-            min="0.1"
-            step="0.1"
-            value={weekly}
+      <details className="training-goals-editor">
+        <summary>Upravit cíle</summary>
+        <div className="progress-goal-inputs">
+          <label>
+            Týdenní cíl (km)
+            <input
+              type="number"
+              min="0.1"
+              step="0.1"
+              value={weekly}
+              disabled={loading || saving || failed}
+              onChange={(e) => setWeekly(e.target.value)}
+            />
+          </label>
+          <label>
+            Měsíční cíl (km)
+            <input
+              type="number"
+              min="0.1"
+              step="0.1"
+              value={monthly}
+              disabled={loading || saving || failed}
+              onChange={(e) => setMonthly(e.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            className="progress-save"
+            onClick={() => void save()}
             disabled={loading || saving || failed}
-            onChange={(e) => setWeekly(e.target.value)}
-          />
-        </label>
-        <label>
-          Měsíční cíl (km)
-          <input
-            type="number"
-            min="0.1"
-            step="0.1"
-            value={monthly}
-            disabled={loading || saving || failed}
-            onChange={(e) => setMonthly(e.target.value)}
-          />
-        </label>
-        <button
-          type="button"
-          className="progress-save"
-          onClick={() => void save()}
-          disabled={loading || saving || failed}
-        >
-          <Save size={17} />
-          {saving ? "Ukládám…" : "Uložit cíle"}
-        </button>
-      </div>
+          >
+            <Save size={17} />
+            {saving ? "Ukládám…" : "Uložit cíle"}
+          </button>
+        </div>
+      </details>
       <div className="progress-goal-bars">
         {[
           { name: "Tento týden", km: weekKm, goal: saved.weekly },
@@ -155,7 +158,8 @@ export default function TrainingGoals({
             <div className="progress-bar-heading">
               <strong>{item.name}</strong>
               <span>
-                {item.km.toFixed(1)} / {item.goal} km
+                {item.km.toFixed(1)} / {item.goal} km ·{" "}
+                {Math.round((item.km / item.goal) * 100)} %
               </span>
             </div>
             <div className="progress-track">
@@ -165,6 +169,11 @@ export default function TrainingGoals({
                 }}
               />
             </div>
+            <small className="training-goal-remaining">
+              {item.km >= item.goal
+                ? "Cíl splněn"
+                : `Zbývá ${(item.goal - item.km).toFixed(1)} km`}
+            </small>
           </div>
         ))}
       </div>
