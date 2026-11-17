@@ -27,7 +27,7 @@ function refreshTotals(){
 }
 export async function sandboxRequest(path:string,method:string,body:any,search:URLSearchParams):Promise<Response>{
  if(!state().signedIn)return reply({error:'Nejdřív vstup jako tester.'},401);
- if(path==='/api/routes/recommended'||path==='/api/admin/routes')return reply({routes:[{id:'sandbox-route',name:'TEST · Ukázkový okruh',description:'Syntetická trasa pro test mapy a výškového profilu.',distance:'1,8 km',gpxUrl:'/sandbox-route.gpx',groupId:'sandbox',groupTitle:'Testovací trasy'}]});
+ if((path==='/api/routes/recommended'||path==='/api/admin/routes')&&method==='GET')return reply({routes:[{id:'sandbox-route',name:'TEST · Ukázkový okruh',description:'Syntetická trasa pro test mapy a výškového profilu.',distance:'1,8 km',gpxUrl:'/sandbox-route.gpx',groupId:'sandbox',groupTitle:'Testovací trasy'}]});
  if(path==='/api/routes/gpx')return new Response(await (await fetch('/sandbox-route.gpx')).text(),{headers:{'Content-Type':'application/gpx+xml'}});
  if(path==='/api/media/upload'){
   const file=body instanceof FormData?body.get('file'):null;if(!(file instanceof Blob))return reply({error:'Chybí fotografie.'},400);
@@ -71,6 +71,7 @@ export async function sandboxRequest(path:string,method:string,body:any,search:U
   return reply({ok:true,liked:likedBy.includes(TEST_UID),likeCount:likedBy.length,commentCount:comments.length,likes:likedBy.map((uid:string)=>({uid,...state().docs['publicProfiles/'+uid]})),comments,comment,isAdmin:false});
  }
  if(path==='/api/teams/manage'||path==='/api/challenges/manage'){
+  if(path.includes('/challenges/')&&body.action==='refresh'){for(const c of rows('challenges')){const today=day(new Date().toISOString());state().docs['challenges/'+c.id]={...c,state:c.startDate>today?'planned':c.endDate<today?'completed':'active'};}refreshTotals();return reply({ok:true});}
   const teams=path.includes('/teams/'),collection=teams?'teams':'challenges',key=String((teams?body.teamId:body.challengeId)||id()),action=body.action,sub=teams?'members':'participants';
   if(action==='listMine'){const items=rows(collection).filter(t=>state().docs[`${collection}/${t.id}/${sub}/${TEST_UID}`]?.active);return reply({ok:true,items,hasMore:false});}
   if(action==='create'){
