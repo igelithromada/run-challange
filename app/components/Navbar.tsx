@@ -164,7 +164,7 @@ function NotificationsBell() {
     if (target) router.push(target);
   };
 
-  if (!open && unreadCount === 0 && notifications.length === 0) return <span className="site-navbar-spacer" aria-hidden="true" />;
+  if (!open && unreadCount === 0 && notifications.length === 0) return <span className="site-navbar-spacer notification-wrap" aria-hidden="true" />;
 
   return <div className="notification-wrap">
     <button type="button" ref={bellRef} className="site-navbar-button notification-button" aria-expanded={open} aria-controls="notifications-panel" onClick={() => { setOpen(value => !value); void load(); }} aria-label={`Upozornění, ${unreadCount} nepřečtených`}>

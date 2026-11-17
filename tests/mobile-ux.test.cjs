@@ -62,4 +62,5 @@ test('the header hides the notification bell when there are no notifications', (
   const html = renderToStaticMarkup(React.createElement(Navbar, { onMenuClick() {} }));
   assert.doesNotMatch(html, /aria-label="Upozornění/);
   assert.match(html, /aria-label="Otevřít navigaci"/);
+  assert.match(html, /class="site-navbar-spacer notification-wrap"/, 'preserves the four-column header layout when the bell is hidden');
 });
