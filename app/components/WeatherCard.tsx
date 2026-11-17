@@ -1,161 +1,131 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import type { WeatherHour, WeatherResponse } from "../lib/weather";
-import {
-  Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudSnow,
-  CloudSun, Sun, Wind, Droplets, Thermometer, RefreshCw
-} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Wind, Droplets, RefreshCw } from "lucide-react";
+import type { WeatherResponse } from "../lib/weather";
+import { formatPrecipitation, upcomingWeatherHours, weatherIsNight, weatherTime } from "../lib/weather";
+import WeatherVisual, { weatherDescription } from "./WeatherVisual";
 
-
-function conditionIcon(type = "") {
-  const value = type.toUpperCase();
-  if (value.includes("THUNDER")) return CloudLightning;
-  if (value.includes("SNOW") || value.includes("SLEET") || value.includes("HAIL")) return CloudSnow;
-  if (value.includes("RAIN")) return CloudRain;
-  if (value.includes("DRIZZLE")) return CloudDrizzle;
-  if (value.includes("FOG") || value.includes("HAZE")) return CloudFog;
-  if (value.includes("CLOUDY") && (value.includes("PARTLY") || value.includes("MOSTLY"))) return CloudSun;
-  if (value.includes("CLOUD")) return Cloud;
-  if (value.includes("CLEAR") || value.includes("SUN")) return Sun;
-  return CloudSun;
-}
-
-function RainIcon({ size = 22, className = "" }: { size?: number; className?: string }) {
-  return (
-    <span className={`weather-rain-combo ${className}`} style={{ width: size, height: size }}>
-      <Cloud size={size} strokeWidth={1.8} />
-      <Droplets className="weather-rain-drops" size={Math.max(10, Math.round(size * 0.55))} strokeWidth={2.4} />
-    </span>
-  );
-}
-
-function hourLabel(item: WeatherHour) {
-  const raw = item?.displayDateTime;
-  if (raw?.hours !== undefined) return `${String(raw.hours).padStart(2, "0")}:00`;
-  const date = item?.interval?.startTime ? new Date(item.interval.startTime) : null;
-  return date ? date.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Prague" }) : "—";
-}
+const REFRESH_MS = 15 * 60 * 1000;
+const temperatureLabel = (value?: number) => typeof value === "number" && Number.isFinite(value) ? `${Math.round(value)}°` : "—";
+const probabilityLabel = (value?: number | null) => typeof value === "number" && Number.isFinite(value) ? `${Math.round(value)} %` : "—";
 
 export default function WeatherCard() {
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState("");
+  const [now, setNow] = useState(() => Date.now());
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
+  const mounted = useRef(false);
+  const request = useRef<AbortController | null>(null);
+  const lastAttempt = useRef(0);
 
-  const loadWeather = async (forceRefresh = false) => {
+  const loadWeather = useCallback(async () => {
+    if (request.current) return;
     const controller = new AbortController();
+    request.current = controller;
+    lastAttempt.current = Date.now();
+    setRefreshing(true);
     const timeout = window.setTimeout(() => controller.abort(), 10000);
     try {
-      const response = await fetch("/api/weather", {
-        ...(forceRefresh ? { cache: "reload" as RequestCache } : {}),
-        signal: controller.signal,
-      });
-      const data = await response.json();
-      setWeather(data);
-      setLastUpdated(new Date().toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit" }));
-    } catch {
-      setWeather({ configured: true, error: "Počasí se nepodařilo načíst. Zkus to později." });
+      // The server shares a 15-minute cache. Manual refresh does not bypass it.
+      const response = await fetch("/api/weather", { cache: "no-cache", signal: controller.signal });
+      const result: WeatherResponse = await response.json();
+      if (!response.ok || result.error || !result.current) throw new Error(result.error || "Počasí se nepodařilo načíst.");
+      if (mounted.current && request.current === controller) {
+        setWeather(result);
+        setNow(Date.now());
+        setError("");
+      }
+    } catch (cause) {
+      if (mounted.current && request.current === controller) setError(cause instanceof Error && cause.name !== "AbortError" ? cause.message : "Počasí se nepodařilo načíst. Zkus to znovu.");
     } finally {
       window.clearTimeout(timeout);
-      setLoading(false);
+      if (request.current === controller) {
+        request.current = null;
+        if (mounted.current) setRefreshing(false);
+      }
     }
-  };
-
-  useEffect(() => {
-    loadWeather();
-    const timer = window.setInterval(loadWeather, 30 * 60 * 1000);
-    return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    mounted.current = true;
+    void loadWeather();
+    // Advance the first visible hour even while the page remains open.
+    const clock = window.setInterval(() => setNow(Date.now()), 30000);
+    const refresh = window.setInterval(() => void loadWeather(), REFRESH_MS);
+    const resume = () => {
+      if (document.visibilityState === "hidden") return;
+      setNow(Date.now());
+      if (Date.now() - lastAttempt.current >= REFRESH_MS) void loadWeather();
+    };
+    window.addEventListener("focus", resume);
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      mounted.current = false;
+      request.current?.abort();
+      request.current = null;
+      window.clearInterval(clock);
+      window.clearInterval(refresh);
+      window.removeEventListener("focus", resume);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [loadWeather]);
+
   const current = weather?.current;
-  const condition = current?.weatherCondition;
-  const Icon = conditionIcon(condition?.type);
-  const hours: WeatherHour[] = (weather?.hourly || []).slice(0, 8);
-  const temperature = current?.temperature?.degrees;
-  const feelsLike = current?.feelsLikeTemperature?.degrees;
+  const timeZone = weather?.timeZone?.id || "Europe/Prague";
+  const hours = upcomingWeatherHours(weather?.hourly, now);
+  const firstHour = hours[0];
   const wind = current?.wind?.speed?.value;
   const windUnit = current?.wind?.speed?.unit === "KILOMETERS_PER_HOUR" ? "km/h" : "m/s";
-  const rainValues = [current?.precipitation?.probability?.percent, ...hours.slice(0, 6).map(item => item?.precipitation?.probability?.percent)].filter(value => typeof value === "number");
-  const rainChance = rainValues.length ? Math.max(...rainValues) : undefined;
-  const currentRainMm = current?.precipitation?.amount;
-  const formatMm = (value?: number | null) => value !== undefined && value !== null ? `${value.toFixed(value >= 10 ? 0 : 1)} mm` : "—";
+  const periodLabel = firstHour ? `${weatherTime(firstHour.interval?.startTime, timeZone)}–${weatherTime(firstHour.interval?.endTime, timeZone)}` : "Tato hodina";
 
-  return (
-    <section className="tile weather-card" style={{ marginBottom: "1.25rem", overflow: "hidden" }} aria-label="Předpověď počasí">
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Počasí pro pohyb</h2>
-          <p style={{ margin: "0.2rem 0 0", opacity: 0.78, fontSize: "0.85rem" }}>Dolní Lhota u Ostravy</p>
+  return <section className="tile weather-card weather-card-improved" aria-label="Předpověď počasí" aria-busy={refreshing}>
+    {!current ? <p className="weather-loading" role="status">{error || "Načítám předpověď…"}</p> : <>
+      <div className="weather-current-grid">
+        <div className="weather-current-main">
+          <div className="weather-current-icon-block">
+            <WeatherVisual type={current.weatherCondition?.type} size={104} className="weather-main-icon" night={weatherIsNight(current, now, timeZone)} />
+            <span>Dolní Lhota u Ostravy</span>
+          </div>
+          <div className="weather-current-copy">
+            <strong className="weather-temperature">{temperatureLabel(current.temperature?.degrees)}{typeof current.temperature?.degrees === "number" ? "C" : ""}</strong>
+            <span className="weather-description">{current.weatherCondition?.description?.text || weatherDescription(current.weatherCondition?.type)}</span>
+            {typeof current.feelsLikeTemperature?.degrees === "number" && <small>Pocitově {temperatureLabel(current.feelsLikeTemperature.degrees)}C</small>}
+          </div>
         </div>
-        <button type="button" className="ui-icon-button weather-refresh-button" onClick={() => void loadWeather(true)} aria-label="Obnovit počasí" title="Obnovit počasí">
-          <RefreshCw size={18} />
-        </button>
+        <div className="weather-stat-grid">
+          <div className="weather-stat-card"><Wind size={24} /><strong>{typeof wind === "number" ? `${Math.round(wind)} ${windUnit}` : "—"}</strong><small>Vítr</small></div>
+          <div className="weather-stat-card weather-precipitation-stat" title={`Očekávané srážky ${periodLabel}. Množství a pravděpodobnost platí pro stejné období.`}>
+            <WeatherVisual type="RAIN" size={28} />
+            <strong>{formatPrecipitation(firstHour?.precipitation?.amount)}</strong>
+            <small>Srážky {periodLabel}<br />Pravděp. {probabilityLabel(firstHour?.precipitation?.probability?.percent)}</small>
+          </div>
+          <div className="weather-stat-card"><Droplets className="weather-humidity-icon" size={24} /><strong>{probabilityLabel(current.relativeHumidity)}</strong><small>Vlhkost</small></div>
+        </div>
       </div>
-
-      {loading && !weather ? (
-        <p style={{ margin: "1.2rem 0 0" }}>Načítám předpověď…</p>
-      ) : !weather?.configured ? (
-        <div style={{ marginTop: "1rem", padding: "0.85rem", borderRadius: "12px", background: "rgba(0,0,0,0.12)" }}>
-          <strong>Google Počasí čeká na propojení</strong>
-          <p style={{ margin: "0.35rem 0 0", fontSize: "0.9rem" }}>Je potřeba doplnit klíč Google Weather API do nastavení projektu na Vercelu.</p>
+      {hours.length > 0 ? <section className="weather-hour-section" aria-labelledby="weather-hour-heading">
+        <h3 id="weather-hour-heading">Předpověď po hodinách</h3>
+        <div className="weather-hour-grid weather-hour-scroll" tabIndex={0} role="group" aria-label="Předpověď na 12 hodin, posouvej doleva nebo doprava">
+          {hours.map(item => {
+            const start = Date.parse(item.interval?.startTime || "");
+            const end = Date.parse(item.interval?.endTime || "") || start + 3600000;
+            const activeHour = start <= now && now < end;
+            const period = `${weatherTime(item.interval?.startTime, timeZone)}–${weatherTime(item.interval?.endTime, timeZone)}`;
+            return <div key={item.interval?.startTime} className="weather-hour-card" title={`Předpověď pro ${period}`}>
+              <small className="weather-hour-time">{activeHour ? "Teď" : weatherTime(item.interval?.startTime, timeZone)}</small>
+              <div className="weather-hour-main"><WeatherVisual type={item.weatherCondition?.type} size={48} className="weather-hour-icon" night={weatherIsNight(item, item.interval?.startTime || now, timeZone)} /><strong>{temperatureLabel(item.temperature?.degrees)}</strong></div>
+              <strong className="weather-hour-amount">{formatPrecipitation(item.precipitation?.amount)}</strong>
+              <span>Pravděp. {probabilityLabel(item.precipitation?.probability?.percent)}</span>
+            </div>;
+          })}
         </div>
-      ) : weather?.error || !current ? (
-        <p style={{ margin: "1rem 0 0" }}>{weather?.error || "Předpověď není momentálně dostupná."}</p>
-      ) : (
-        <>
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem", margin: "1.25rem 0" }}>
-            {((condition?.type || "").toUpperCase().includes("RAIN") || (condition?.type || "").toUpperCase().includes("DRIZZLE") || (condition?.type || "").toUpperCase().includes("THUNDER"))
-              ? <RainIcon size={68} className="weather-main-icon weather-condition-rain" />
-              : <Icon size={54} strokeWidth={1.5} className="weather-main-icon" />}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: "2.6rem", lineHeight: 1, fontWeight: 700 }}>{Math.round(temperature ?? 0)}°C</div>
-              <div style={{ marginTop: "0.35rem", fontWeight: 600 }}>{condition?.description?.text || "Aktuální počasí"}</div>
-              {feelsLike !== undefined && <div style={{ opacity: 0.78, fontSize: "0.85rem" }}>Pocitově {Math.round(feelsLike)}°C</div>}
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "0.5rem", marginBottom: "1.1rem" }}>
-            <div style={{ background: "rgba(0,0,0,0.12)", borderRadius: "12px", padding: "0.65rem 0.5rem", textAlign: "center" }}>
-              <Wind size={19} style={{ margin: "0 auto 0.25rem" }} />
-              <strong style={{ display: "block" }}>{wind !== undefined ? Math.round(wind) : "—"} {wind !== undefined ? windUnit : ""}</strong>
-              <small>Vítr</small>
-            </div>
-            <div style={{ background: "rgba(0,0,0,0.12)", borderRadius: "12px", padding: "0.65rem 0.5rem", textAlign: "center" }}>
-              <RainIcon size={19} className="weather-stat-icon" />
-              <strong style={{ display: "block" }}>{rainChance !== undefined ? `${rainChance}%` : "—"}</strong>
-              <small>{formatMm(currentRainMm)} · Déšť</small>
-            </div>
-            <div style={{ background: "rgba(0,0,0,0.12)", borderRadius: "12px", padding: "0.65rem 0.5rem", textAlign: "center" }}>
-              <Droplets className="weather-humidity-icon" size={19} style={{ margin: "0 auto 0.25rem" }} />
-              <strong style={{ display: "block" }}>{current.relativeHumidity !== undefined ? `${current.relativeHumidity}%` : "—"}</strong>
-              <small>Vlhkost</small>
-            </div>
-          </div>
-
-          {hours.length > 0 && (
-            <>
-              <h3 style={{ margin: "0 0 0.65rem", fontSize: "1rem" }}>Předpověď po hodinách</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "0.5rem" }}>
-                {hours.map((item, index) => {
-                  const HourIcon = conditionIcon(item?.weatherCondition?.type);
-                  return (
-                    <div key={item?.interval?.startTime || index} style={{ textAlign: "center", padding: "0.6rem 0.25rem", borderRadius: "12px", background: "rgba(0,0,0,0.12)" }}>
-                      <small>{hourLabel(item)}</small>
-                      {(item?.weatherCondition?.type || "").toUpperCase().includes("RAIN") || (item?.weatherCondition?.type || "").toUpperCase().includes("DRIZZLE") ? <RainIcon size={23} className="weather-hour-icon" /> : <HourIcon className="weather-hour-icon" size={23} style={{ display: "block", margin: "0.35rem auto" }} />}
-                      <strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong>
-                      <small style={{ display: "block", opacity: 0.8 }}>
-                        {item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}%` : "—"} déšť
-                        {item?.precipitation?.amount !== undefined && item?.precipitation?.amount !== null ? ` · ${formatMm(item.precipitation.amount)}` : ""}
-                      </small>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-          <p style={{ margin: "0.85rem 0 0", fontSize: "0.72rem", opacity: 0.7, textAlign: "right" }}>Zdroj: {weather.source || "Google Weather"} · obnoveno {lastUpdated}</p>
-        </>
-      )}
-    </section>
-  );
+        <p className="weather-precipitation-note">mm = očekávané množství srážek za hodinu · % = pravděpodobnost srážek</p>
+      </section> : <p className="weather-message">Aktuální hodinová předpověď není dostupná. Obnov počasí.</p>}
+      <p className="weather-source">Zdroj: {weather?.source || "Open-Meteo"} · data načtena {weatherTime(weather?.fetchedAt, timeZone)}</p>
+    </>}
+    <div className="weather-refresh-row">
+      {current && error && <p className="weather-refresh-error" role="status">{error} Zobrazuji poslední dostupná data.</p>}
+      <button type="button" className="ui-icon-button weather-refresh-button" disabled={refreshing} onClick={() => void loadWeather()} aria-label="Obnovit počasí" title="Obnovit počasí"><RefreshCw size={18} /></button>
+    </div>
+  </section>;
 }

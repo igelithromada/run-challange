@@ -8,7 +8,7 @@ async function fetchWithTimeout(url: string, timeoutMs = 8000) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, { next: { revalidate: 1800 }, signal: controller.signal });
+    return await fetch(url, { next: { revalidate: 900 }, signal: controller.signal });
   } finally {
     clearTimeout(timeout);
   }
@@ -37,7 +37,7 @@ function conditionType(code: number) {
   if ((code >= 71 && code <= 77 || code >= 85 && code <= 86)) return "SNOW";
   if ((code >= 51 && code <= 67 || code >= 80 && code <= 82)) return "RAIN";
   if (code >= 45 && code <= 48) return "FOG";
-  if (code >= 1 && code <= 2) return "PARTLY_CLOUDY";
+  if (code === 2) return "PARTLY_CLOUDY";
   if (code === 3) return "CLOUDY";
   return "CLEAR";
 }
@@ -47,7 +47,7 @@ async function openMeteo() {
   url.searchParams.set("latitude", String(LATITUDE));
   url.searchParams.set("longitude", String(LONGITUDE));
   url.searchParams.set("timezone", "Europe/Prague");
-  url.searchParams.set("forecast_days", "2");
+  url.searchParams.set("forecast_days", "3");
   url.searchParams.set("timeformat", "unixtime");
   url.searchParams.set(
     "current",
@@ -55,7 +55,7 @@ async function openMeteo() {
   );
   url.searchParams.set(
     "hourly",
-    "temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m"
+    "temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m,is_day"
   );
   url.searchParams.set("wind_speed_unit", "kmh");
 
@@ -65,12 +65,18 @@ async function openMeteo() {
   const data = await response.json();
   const c = data.current;
   const h = data.hourly;
-  const start = Math.max(0, h.time.findIndex((time: number) => time >= c.time));
+  if (!c || !h || !Array.isArray(h.time)) throw new Error("Neplatná data počasí");
+  const now = Date.now();
+  const hourStart = Math.floor(now / 3600000) * 3600;
+  const start = h.time.findIndex((time: number) => time >= hourStart);
+  if (start < 0) throw new Error("Předpověď neobsahuje aktuální hodiny");
+  const numberOrNull = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value : null;
 
   return {
     configured: true,
     source: "Open-Meteo",
     current: {
+      isDay: c.is_day === 1 ? true : c.is_day === 0 ? false : undefined,
       temperature: { degrees: c.temperature_2m },
       feelsLikeTemperature: { degrees: c.apparent_temperature },
       weatherCondition: {
@@ -79,35 +85,40 @@ async function openMeteo() {
       },
       wind: { speed: { value: c.wind_speed_10m, unit: "KILOMETERS_PER_HOUR" } },
       precipitation: {
-        probability: { percent: h.precipitation_probability[start] ?? null },
+        probability: { percent: numberOrNull(h.precipitation_probability?.[start + 1]) },
         amount: c.precipitation ?? null
       },
       relativeHumidity: c.relative_humidity_2m
     },
-    hourly: h.time.slice(start, start + 12).map((time: number, offset: number) => {
+    hourly: h.time.slice(start, start + 24).map((time: number, offset: number) => {
       const i = start + offset;
+      // Open-Meteo's precipitation and weather code describe the preceding hour.
+      // The 08:00 accumulation therefore belongs to the visible 07:00–08:00 slot.
+      const endIndex = i + 1;
       return {
-        interval: { startTime: new Date(time * 1000).toISOString() },
+        interval: { startTime: new Date(time * 1000).toISOString(), endTime: new Date((time + 3600) * 1000).toISOString() },
+        isDay: h.is_day?.[i] === 1 ? true : h.is_day?.[i] === 0 ? false : undefined,
         temperature: { degrees: h.temperature_2m[i] },
         weatherCondition: {
-          type: conditionType(h.weather_code[i]),
-          description: { text: description(h.weather_code[i], h.precipitation[i]) }
+          type: typeof h.weather_code?.[endIndex] === "number" ? conditionType(h.weather_code[endIndex]) : "UNKNOWN",
+          description: { text: description(h.weather_code?.[endIndex], h.precipitation?.[endIndex]) }
         },
         precipitation: {
-          probability: { percent: h.precipitation_probability[i] ?? 0 },
-          amount: h.precipitation[i] ?? null
+          probability: { percent: numberOrNull(h.precipitation_probability?.[endIndex]) },
+          amount: numberOrNull(h.precipitation?.[endIndex])
         }
       };
     }),
     timeZone: { id: "Europe/Prague" },
-    fetchedAt: new Date().toISOString()
+    fetchedAt: new Date(now).toISOString(),
+    observedAt: typeof c.time === "number" ? new Date(c.time * 1000).toISOString() : undefined
   };
 }
 
 export async function GET() {
   try {
     return NextResponse.json(await openMeteo(), {
-      headers: { "Cache-Control": "s-maxage=900, stale-while-revalidate=1800" }
+      headers: { "Cache-Control": "public, max-age=0, s-maxage=900, must-revalidate" }
     });
   } catch (error) {
     console.error("Načtení počasí z Open-Meteo selhalo:", error);

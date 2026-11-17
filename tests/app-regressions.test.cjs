@@ -44,11 +44,12 @@ test('GPX proxy accepts a valid file over the old 2 MB limit and rejects off-sit
 test('weather distinguishes rain showers from snow and preserves absolute forecast times',async()=>{
   let requested;
   const data={current:{time:1794852900,weather_code:80,temperature_2m:10,precipitation:1,wind_speed_10m:20},hourly:{time:[1794852000,1794855600,1794859200],weather_code:[80,81,85],temperature_2m:[10,11,12],precipitation:[1,2,3],precipitation_probability:[50,60,70]}};
-  const weather=loadIsolated('app/api/weather/route.ts',{}, {fetch:async url=>{requested=String(url);return Response.json(data);}});
+  class WeatherClock extends Date { static now(){return data.current.time * 1000;} }
+  const weather=loadIsolated('app/api/weather/route.ts',{}, {Date:WeatherClock,fetch:async url=>{requested=String(url);return Response.json(data);}});
   const response=await weather.GET(), body=await response.json();
   assert.equal(response.status,200);assert.equal(body.current.weatherCondition.type,'RAIN');
   assert.equal(body.hourly[0].weatherCondition.type,'RAIN');assert.equal(body.hourly[1].weatherCondition.type,'SNOW');
-  assert.equal(body.hourly[0].interval.startTime,new Date(1794855600*1000).toISOString());
+  assert.equal(body.hourly[0].interval.startTime,new Date(1794852000*1000).toISOString());
   assert.equal(new URL(requested).searchParams.get('timeformat'),'unixtime');
 });
 test('theme startup preserves cache timestamp so a newer remote theme wins',async()=>{

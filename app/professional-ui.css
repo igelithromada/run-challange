@@ -799,3 +799,21 @@ html[data-theme="light"] .activity-card-modern .activity-date { background: tran
 .weather-page .weather-hour-scroll { display: flex; flex-wrap: nowrap; gap: .55rem !important; width: 100%; min-width: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: thin; padding: 2px 0 .45rem; }
 .weather-page .weather-hour-scroll > .weather-hour-card { box-sizing: border-box; flex: 0 0 104px; scroll-snap-align: start; }
 .weather-refresh-row { display: flex; justify-content: flex-end; margin-top: .65rem; }
+
+/* Jediný SVG symbol počasí, bez samostatně pozicovaných vrstev. */
+.weather-symbol { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; vertical-align: middle; line-height: 0; color: var(--ui-muted-strong, #eef3f7); }
+.weather-symbol > svg { display: block; position: static; width: 100%; height: 100%; overflow: visible; }
+.weather-symbol .wx-cloud { stroke: var(--ui-muted-strong, #eef3f7); }
+.weather-symbol .wx-sun { stroke: #f4be35; }
+.weather-symbol .wx-moon { stroke: var(--ui-muted-strong, #eef3f7); }
+.weather-symbol .wx-rain { stroke: #4da3ff; }
+.weather-symbol .wx-lightning { stroke: #f4be35; }
+.weather-symbol .wx-snow { stroke: #8dcfff; }
+.weather-symbol-partly .wx-cloud { fill: var(--ui-bg, #17364b); }
+.weather-page .weather-hour-card .weather-symbol { margin: 0; }
+.weather-page .weather-hour-card .weather-hour-amount { font-size: .86rem !important; font-weight: 750; opacity: 1; color: var(--ui-text); }
+.weather-page .weather-stat-card.weather-precipitation-stat { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+.weather-page .weather-stat-card.weather-precipitation-stat small { white-space: normal; line-height: 1.4; }
+.weather-precipitation-note { margin: .65rem 0 0; font-size: .71rem; line-height: 1.5; color: var(--ui-muted); }
+.weather-refresh-row { align-items: center; gap: .75rem; }
+.weather-refresh-error { margin: 0; font-size: .8rem; color: var(--ui-danger); }

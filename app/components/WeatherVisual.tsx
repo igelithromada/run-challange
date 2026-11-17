@@ -1,74 +1,46 @@
 "use client";
 
-import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudSnow, Droplets, Moon, Sun } from "lucide-react";
-
 function weatherKind(type = "") {
   const value = type.toUpperCase();
   if (value.includes("THUNDER")) return "storm";
-  if (value.includes("SNOW") || value.includes("SLEET") || value.includes("HAIL")) return "snow";
-  if (value.includes("RAIN")) return "rain";
+  if (/SNOW|SLEET|HAIL/.test(value)) return "snow";
   if (value.includes("DRIZZLE")) return "drizzle";
-  if (value.includes("FOG") || value.includes("HAZE")) return "fog";
-  if (value.includes("PARTLY") || value.includes("MOSTLY")) return "partly";
+  if (value.includes("RAIN")) return "rain";
+  if (/FOG|HAZE/.test(value)) return "fog";
+  if (/PARTLY|MOSTLY/.test(value)) return "partly";
   if (value.includes("CLOUD")) return "cloud";
-  if (value.includes("CLEAR") || value.includes("SUN")) return "sun";
-  return "partly";
+  if (/CLEAR|SUN/.test(value)) return "sun";
+  return "unknown";
 }
 
 export function weatherDescription(type = "") {
-  const kind = weatherKind(type);
-  if (kind === "partly") return "Polojasno";
-  if (kind === "cloud") return "Zataženo";
-  if (kind === "sun") return "Jasno";
-  if (kind === "rain") return "Déšť";
-  if (kind === "drizzle") return "Mrholení";
-  if (kind === "storm") return "Bouřka";
-  if (kind === "snow") return "Sněžení";
-  if (kind === "fog") return "Mlha";
-  return "Polojasno";
+  const labels = { sun: "Jasno", partly: "Polojasno", cloud: "Zataženo", rain: "Déšť", drizzle: "Mrholení", storm: "Bouřka", snow: "Sněžení", fog: "Mlha", unknown: "Počasí není dostupné" };
+  return labels[weatherKind(type)];
 }
 
-export default function WeatherVisual({
-  type,
-  size,
-  className = "",
-  night = false,
-}: {
-  type?: string;
-  size: number;
-  className?: string;
-  night?: boolean;
+const cloud = "M6 16a4 4 0 0 1-.9-7.9A6 6 0 0 1 16.7 6 4.5 4.5 0 1 1 1.8 10H6Z";
+
+/** One viewBox for the entire symbol: CSS cannot move its cloud, rain or sun apart. */
+export default function WeatherVisual({ type, size, className = "", night = false }: {
+  type?: string; size: number; className?: string; night?: boolean;
 }) {
   const kind = weatherKind(type);
-  const Icon =
-    kind === "storm" ? CloudLightning :
-    kind === "snow" ? CloudSnow :
-    kind === "rain" ? CloudRain :
-    kind === "drizzle" ? CloudDrizzle :
-    kind === "fog" ? CloudFog :
-    kind === "cloud" ? Cloud :
-    night && kind === "sun" ? Moon : Sun;
-
-  return (
-    <span
-      className={`weather-visual-wrap weather-visual-${kind} ${night && kind === "sun" ? "weather-night-clear" : ""} ${className}`}
-      style={{ width: size, height: size }}
-      aria-label={weatherDescription(type)}
-      title={weatherDescription(type)}
-    >
-      {kind === "partly" ? (
-        <>
-          <Sun className="weather-sun" size={Math.round(size * .58)} strokeWidth={2.7} />
-          <Cloud className="weather-cloud" size={Math.round(size * .58)} strokeWidth={1.9} />
-        </>
-      ) : kind === "rain" || kind === "drizzle" ? (
-        <>
-          <Cloud className="weather-visual-cloud" size={Math.round(size * .72)} strokeWidth={1.9} />
-          <Droplets className="weather-visual-drops" size={Math.max(16, Math.round(size * .46))} strokeWidth={2.5} />
-        </>
-      ) : (
-        <Icon className="weather-visual-icon" size={Math.round(size * .72)} strokeWidth={1.9} />
-      )}
-    </span>
-  );
+  const label = weatherDescription(type);
+  const sun = <g className="wx-sun"><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4m0-14.2-1.4 1.4M6.3 17.7l-1.4 1.4" /></g>;
+  const moon = <path className="wx-moon" d="M20.5 13.5A8.5 8.5 0 0 1 10.5 3a8.5 8.5 0 1 0 10 10.5Z" />;
+  return <span className={`weather-symbol weather-symbol-${kind} ${className}`} style={{ width: size, height: size }} role="img" aria-label={label} title={label}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      {kind === "sun" ? (night ? moon : sun) : kind === "partly" ? <>
+        <g transform="translate(-.3,-.3) scale(.7)">{night ? moon : sun}</g>
+        <path className="wx-cloud" d="M9 21a4 4 0 0 1-.9-7.9A5.5 5.5 0 0 1 18 12a4.5 4.5 0 1 1 .5 9H9Z" />
+      </> : <>
+        <path className="wx-cloud" d={cloud} />
+        {kind === "rain" && <path className="wx-rain" d="m7 19-1 3m7-3-1 3m7-3-1 3" />}
+        {kind === "drizzle" && <path className="wx-rain" d="M7 20v.5m5 1v.5m5-2v.5" />}
+        {kind === "storm" && <><path className="wx-lightning" d="m13 16-4 5h4l-1 3 5-6h-4l1-2" /><path className="wx-rain" d="m5 19-.6 2m15-2-.6 2" /></>}
+        {kind === "snow" && <path className="wx-snow" d="M7 19v4m-2-2h4m6-2v4m-2-2h4" />}
+        {kind === "fog" && <path className="wx-cloud" d="M3 19h18M5 22h14" />}
+      </>}
+    </svg>
+  </span>;
 }

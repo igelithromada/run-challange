@@ -54,7 +54,7 @@ export default function RunWeatherRecommendation({ linkToWeather = true, type }:
       }
     };
     void loadWeather();
-    const timer = window.setInterval(loadWeather, 30 * 60 * 1000);
+    const timer = window.setInterval(loadWeather, 15 * 60 * 1000);
     return () => { active = false; controller?.abort(); window.clearInterval(timer); };
   }, []);
 
