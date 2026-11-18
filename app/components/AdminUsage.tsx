@@ -7,6 +7,13 @@ import { FIRESTORE_LIMITS, type ServiceUsage } from "../lib/serviceUsage";
 
 const format = new Intl.NumberFormat("cs-CZ", { maximumFractionDigits: 2 });
 const firebase = "https://console.firebase.google.com/project/dolni-lhota-run";
+const monitoringApi = "https://console.cloud.google.com/apis/library/monitoring.googleapis.com?project=dolni-lhota-run";
+const monitoringStatus = {
+  api_disabled: "Cloud Monitoring API je pro projekt vypnuté.",
+  permissions: "Serverový účet nemá přístup k metrikám Firestore.",
+  query: "Cloud Monitoring odmítl dotaz na metriky Firestore.",
+  unavailable: "Cloud Monitoring teď nevrátil údaje.",
+} as const;
 
 function Meter({ title, used, limit }: { title: string; used: number | null; limit: number }) {
   if (used === null) return <p>{title} · údaj není dostupný</p>;
@@ -60,7 +67,9 @@ export default function AdminUsage() {
           <Meter title="Čtení" used={data.firestore.reads} limit={FIRESTORE_LIMITS.reads} />
           <Meter title="Zápisy" used={data.firestore.writes} limit={FIRESTORE_LIMITS.writes} />
           <Meter title="Smazání" used={data.firestore.deletes} limit={FIRESTORE_LIMITS.deletes} />
-        </> : data && <p>Údaje se nepodařilo načíst. Ověř přístup ke Cloud Monitoringu.</p>}
+        </> : data && !data.firestoreIssue && <p>Údaje se nepodařilo načíst.</p>}
+        {data?.firestoreIssue && <p>{monitoringStatus[data.firestoreIssue]}</p>}
+        {data?.firestoreIssue === "api_disabled" && <p><a href={monitoringApi} target="_blank" rel="noreferrer">Otevřít Cloud Monitoring API</a></p>}
         <a href={firebase + "/firestore/usage"} target="_blank" rel="noreferrer">Otevřít spotřebu ve Firebase</a>
       </section>
       <section>

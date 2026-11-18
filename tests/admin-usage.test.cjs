@@ -15,6 +15,7 @@ test("service usage is admin-only, starts at Pacific midnight, and keeps partial
   }).outputText;
   let now = "2026-07-15T13:00:00Z";
   let requests = 0;
+  let apiDisabled = false;
   class Clock extends Date {
     constructor(value = now) { super(value); }
   }
@@ -27,6 +28,7 @@ test("service usage is admin-only, starts at Pacific midnight, and keeps partial
     fetch: async url => {
       requests++;
       const filter = url.searchParams.get("filter");
+      if (apiDisabled) return Response.json({ error: { details: [{ reason: "SERVICE_DISABLED" }] } }, { status: 403 });
       if (filter.includes("delete_ops_count")) return new Response(null, { status: 403 });
       return Response.json({ timeSeries: [{ points: [{ value: { int64Value: "7" } }, { value: { int64Value: "9" } }] }] });
     },
@@ -49,6 +51,7 @@ test("service usage is admin-only, starts at Pacific midnight, and keeps partial
   const response = await mod.exports.GET(authorized());
   assert.equal(response.headers.get("cache-control"), "private, no-store");
   const data = await response.json();
+  assert.equal(data.firestoreIssue, "permissions");
   assert.deepEqual(data.firestore, { since: "2026-07-15T07:00:00.000Z", reads: 16, writes: 16, deletes: null });
   assert.deepEqual(data.cloudinary, { credits: 6.5, limit: 25, storage: 2000, bandwidth: null });
   await mod.exports.GET(authorized());
@@ -58,5 +61,11 @@ test("service usage is admin-only, starts at Pacific midnight, and keeps partial
   now = "2026-11-18T08:01:00Z";
   assert.equal((await (await mod.exports.GET(authorized())).json()).firestore.since, "2026-11-18T08:00:00.000Z");
   assert.equal(requests, 9);
+  apiDisabled = true;
+  now = "2026-11-18T08:30:00Z";
+  const disabled = await (await mod.exports.GET(authorized())).json();
+  assert.equal(disabled.firestoreIssue, "api_disabled");
+  assert.equal(disabled.firestore, null);
+  assert.equal(disabled.cloudinary.credits, 6.5);
   assert.equal((await mod.exports.GET(new Request(url))).status, 403);
 });

@@ -1,8 +1,11 @@
 export const FIRESTORE_LIMITS = { reads: 50_000, writes: 20_000, deletes: 20_000 } as const;
 export const CLOUDINARY_FREE_CREDITS = 25;
 
+export type MonitoringIssue = "api_disabled" | "permissions" | "query" | "unavailable";
+
 export type ServiceUsage = {
   checkedAt: string;
+  firestoreIssue: MonitoringIssue | null;
   firestore: {
     since: string;
     reads: number | null;

@@ -2,7 +2,7 @@ import { getApps } from "firebase-admin/app";
 import { NextResponse } from "next/server";
 import { authErrorResponse, requireAdmin } from "../../../lib/apiAuth";
 import { getCloudinaryUsage } from "../../../lib/cloudinaryAdmin";
-import { CLOUDINARY_FREE_CREDITS, type ServiceUsage } from "../../../lib/serviceUsage";
+import { CLOUDINARY_FREE_CREDITS, type MonitoringIssue, type ServiceUsage } from "../../../lib/serviceUsage";
 
 export const runtime = "nodejs";
 const headers = { "Cache-Control": "private, no-store" };
@@ -13,6 +13,19 @@ function pacificMidnight(now: Date) {
   const candidate = new Date(Date.parse(date + "T08:00:00Z"));
   const hour = new Intl.DateTimeFormat("en-GB", { timeZone, hour: "numeric", hourCycle: "h23" }).format(candidate);
   return new Date(candidate.getTime() - Number(hour) * 3_600_000);
+}
+
+class MonitoringError extends Error {
+  constructor(readonly issue: MonitoringIssue) { super(issue); }
+}
+
+async function monitoringError(response: Response) {
+  const body = await response.json().catch(() => null);
+  const details: Array<{ reason?: string }> = Array.isArray(body?.error?.details) ? body.error.details : [];
+  if (details.some(detail => detail.reason === "SERVICE_DISABLED")) return new MonitoringError("api_disabled");
+  if (response.status === 401 || response.status === 403) return new MonitoringError("permissions");
+  if (response.status === 400) return new MonitoringError("query");
+  return new MonitoringError("unavailable");
 }
 
 async function documentOperations(project: string, token: string, operation: "read" | "write" | "delete", start: Date, end: Date) {
@@ -26,7 +39,7 @@ async function documentOperations(project: string, token: string, operation: "re
   let total = 0;
   do {
     const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal });
-    if (!response.ok) throw new Error(`Cloud Monitoring HTTP ${response.status}`);
+    if (!response.ok) throw await monitoringError(response);
     const data = await response.json();
     for (const series of data.timeSeries ?? []) {
       for (const point of series.points ?? []) {
@@ -39,17 +52,23 @@ async function documentOperations(project: string, token: string, operation: "re
   } while (true);
 }
 
-async function firestoreUsage(now: Date): Promise<ServiceUsage["firestore"]> {
+async function firestoreUsage(now: Date): Promise<Pick<ServiceUsage, "firestore" | "firestoreIssue">> {
   const { credential, projectId } = getApps()[0]?.options ?? {};
   const project = projectId || process.env.FIREBASE_PROJECT_ID;
-  if (!credential || !project) return null;
+  if (!credential || !project) throw new MonitoringError("permissions");
 
   const { access_token } = await credential.getAccessToken();
   const since = pacificMidnight(now);
   const operations = ["read", "write", "delete"] as const;
   const results = await Promise.allSettled(operations.map(operation => documentOperations(project, access_token, operation, since, now)));
   const [reads, writes, deletes] = results.map(result => result.status === "fulfilled" ? result.value : null);
-  return reads === null && writes === null && deletes === null ? null : { since: since.toISOString(), reads, writes, deletes };
+  const failures = results.flatMap(result => result.status === "rejected"
+    ? [result.reason instanceof MonitoringError ? result.reason.issue : "unavailable" as const]
+    : []);
+  const firestore = reads === null && writes === null && deletes === null
+    ? null : { since: since.toISOString(), reads, writes, deletes };
+  const firestoreIssue = failures.find(issue => issue !== "unavailable") ?? failures[0] ?? null;
+  return { firestore, firestoreIssue };
 }
 
 function nonNegative(value: unknown) {
@@ -70,7 +89,10 @@ async function collect(now: Date): Promise<ServiceUsage> {
   const [firestore, cloudinary] = await Promise.allSettled([firestoreUsage(now), cloudinaryUsage()]);
   return {
     checkedAt: now.toISOString(),
-    firestore: firestore.status === "fulfilled" ? firestore.value : null,
+    ...(firestore.status === "fulfilled" ? firestore.value : {
+      firestore: null,
+      firestoreIssue: firestore.reason instanceof MonitoringError ? firestore.reason.issue : "unavailable",
+    }),
     cloudinary: cloudinary.status === "fulfilled" ? cloudinary.value : null,
   };
 }
