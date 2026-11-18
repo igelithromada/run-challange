@@ -193,7 +193,7 @@ export default function TeamDetailPage() {
 
         <header className="team-detail-header">
           <div className="team-detail-avatar">
-            {team.avatarUrl ? <img src={cloudinaryImageUrl(team.avatarUrl, 160)} alt="" /> : <Users size={30} />}
+            {team.avatarUrl ? <img src={cloudinaryImageUrl(team.avatarUrl, 160)} alt="" loading="lazy" decoding="async" /> : <Users size={30} />}
           </div>
           <div>
             <span className="progress-eyebrow">TÝM</span>
@@ -227,7 +227,7 @@ export default function TeamDetailPage() {
           <div className="team-members-list">
             {members.map(member => (
               <button key={member.id} type="button" className="team-member-row" onClick={() => router.push("/user/" + member.id)}>
-                <span className="team-member-avatar">{member.avatarUrl ? <img src={cloudinaryImageUrl(member.avatarUrl, 96)} alt="" /> : (member.nickname || "U").charAt(0).toUpperCase()}</span>
+                <span className="team-member-avatar">{member.avatarUrl ? <img src={cloudinaryImageUrl(member.avatarUrl, 96)} alt="" loading="lazy" decoding="async" /> : (member.nickname || "U").charAt(0).toUpperCase()}</span>
                 <span><strong>{member.nickname || "Uživatel"}</strong></span>
                 {member.id === team.managerId && <Crown size={16} aria-label="Správce týmu" />}
               </button>

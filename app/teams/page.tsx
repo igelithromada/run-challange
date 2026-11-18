@@ -252,7 +252,7 @@ export default function TeamsPage() {
                   <article key={team.id} className={`tile team-card ${joined ? "team-card-joined" : ""}`} onClick={() => router.push("/teams/" + team.id)}>
                     <div className="team-card-main">
                       <div className="team-avatar">
-                        {team.avatarUrl ? <img src={cloudinaryImageUrl(team.avatarUrl, 96)} alt="" /> : <Users size={22} />}
+                        {team.avatarUrl ? <img src={cloudinaryImageUrl(team.avatarUrl, 96)} alt="" loading="lazy" decoding="async" /> : <Users size={22} />}
                       </div>
                       <div className="team-card-info">
                         <div className="team-card-title-row">

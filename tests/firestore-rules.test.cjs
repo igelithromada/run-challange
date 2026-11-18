@@ -63,3 +63,30 @@ test('only eligible members can subscribe to the chat revision', { skip: !proces
     await env.cleanup();
   }
 });
+
+test('gallery pagination can detect legacy records without a timestamp', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
+  const { getCountFromServer, limit, orderBy, startAfter, Timestamp } = require('firebase/firestore');
+  const env = await initializeTestEnvironment({ projectId: 'demo-run-challenge', firestore: { rules: fs.readFileSync('firestore.rules', 'utf8') } });
+  const uid = 'gallery-test';
+  const paths = ['gallery-new', 'gallery-old', 'gallery-undated'];
+  try {
+    await env.withSecurityRulesDisabled(async context => {
+      const db = context.firestore();
+      await Promise.all([
+        setDoc(doc(db, 'runs', paths[0]), { uid, timestamp: Timestamp.fromMillis(2) }),
+        setDoc(doc(db, 'runs', paths[1]), { uid, timestamp: Timestamp.fromMillis(1) }),
+        setDoc(doc(db, 'runs', paths[2]), { uid }),
+      ]);
+    });
+    const db = env.authenticatedContext(uid).firestore();
+    const own = query(collection(db, 'runs'), where('uid', '==', uid));
+    const dated = query(own, orderBy('timestamp', 'desc'));
+    const first = await getDocs(query(dated, limit(1)));
+    const next = await getDocs(query(dated, startAfter(first.docs[0]), limit(1)));
+    if (first.docs[0]?.id !== paths[0] || next.docs[0]?.id !== paths[1]) throw new Error('Unexpected gallery page order');
+    const [total, ordered] = await Promise.all([getCountFromServer(own), getCountFromServer(dated)]);
+    if (total.data().count !== 3 || ordered.data().count !== 2) throw new Error('Unexpected dated/undated counts');
+  } finally {
+    await env.cleanup();
+  }
+});

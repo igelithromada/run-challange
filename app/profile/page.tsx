@@ -1,4 +1,5 @@
 "use client";
+import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { preparePhoto } from "../lib/preparePhoto";
 
 import { useEffect, useRef, useState } from "react";
@@ -246,7 +247,7 @@ export default function ProfilePage() {
         <section className="tile settings-avatar">
           <div className="settings-avatar-preview">
             {avatarUrl ? (
-              <img src={avatarUrl} alt="Profilový avatar" />
+              <img src={cloudinaryImageUrl(avatarUrl, 256)} alt="Profilový avatar" loading="lazy" decoding="async" />
             ) : (
               <span>{(nickname || email).charAt(0).toUpperCase() || "?"}</span>
             )}

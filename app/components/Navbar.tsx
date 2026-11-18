@@ -223,7 +223,7 @@ function NotificationsBell() {
         {error && <div className="notification-error" role="alert">{error}<button type="button" disabled={busy || loading} onClick={() => void load()}>Zkusit znovu</button></div>}
         <div className="notification-list">
           {notifications.length ? notifications.map(notification => <button type="button" key={notification.id} className={`notification-item ${notification.read ? "" : "is-unread"}`} disabled={busy} onClick={() => void openNotification(notification)}>
-            <span className="notification-avatar">{notification.actorAvatarUrl ? <img src={cloudinaryImageUrl(notification.actorAvatarUrl, 64)} alt="" /> : notification.teamId ? <Users size={18} /> : notification.challengeId ? <Flag size={18} /> : notification.type === "social_like" ? <Heart size={18} /> : <MessageCircle size={18} />}</span>
+            <span className="notification-avatar">{notification.actorAvatarUrl ? <img src={cloudinaryImageUrl(notification.actorAvatarUrl, 64)} alt="" loading="lazy" decoding="async" /> : notification.teamId ? <Users size={18} /> : notification.challengeId ? <Flag size={18} /> : notification.type === "social_like" ? <Heart size={18} /> : <MessageCircle size={18} />}</span>
             <span className="notification-copy"><strong>{notification.title}</strong><span>{notification.body}</span>{notification.createdAt && <time>{new Date(notification.createdAt).toLocaleString("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}</span>
             {!notification.read && <i aria-hidden="true" />}
           </button>) : <p className="notification-empty">{loading ? "Načítám upozornění…" : error ? "" : "Zatím žádná upozornění."}</p>}

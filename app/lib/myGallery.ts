@@ -58,6 +58,6 @@ export function myGalleryPhotos(
   return photos.sort(
     (a, b) =>
       (b.date?.getTime() || 0) - (a.date?.getTime() || 0) ||
-      a.runId.localeCompare(b.runId),
+      (a.runId === b.runId ? 0 : a.runId > b.runId ? -1 : 1),
   );
 }

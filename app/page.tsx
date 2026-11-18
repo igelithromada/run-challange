@@ -105,13 +105,6 @@ export default function Page() {
   const allRuns = useMemo(() => mergeActivityFeed(olderRuns, runs), [olderRuns, runs]);
   const canLoadMore = olderCursor ? hasMore : runs.length >= 30;
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      ["/myruns", "/statistics", "/teams", "/weather"].forEach(path => router.prefetch(path));
-    }, 1200);
-    return () => window.clearTimeout(timer);
-  }, [router]);
-
   const loadOlderRuns = async () => {
     const cursor = olderCursor || runsState.lastDocument;
     if (!cursor || olderRequest.current || !canLoadMore) return;

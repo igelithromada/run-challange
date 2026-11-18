@@ -115,6 +115,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
   const elementRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const routeSvgRef = useRef<SVGSVGElement | null>(null);
+  const [nearViewport, setNearViewport] = useState(false);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [stats, setStats] = useState<RouteStats | null>(null);
   const [samples, setSamples] = useState<RouteSample[]>([]);
@@ -124,7 +125,25 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
 
   useEffect(() => {
     const element = elementRef.current;
-    if (!element) return;
+    if (!element || interactive || nearViewport) return;
+    if (typeof IntersectionObserver === "undefined") {
+      let active = true;
+      queueMicrotask(() => { if (active) setNearViewport(true); });
+      return () => { active = false; };
+    }
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        observer.disconnect();
+        setNearViewport(true);
+      }
+    }, { rootMargin: "160px" });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [interactive, nearViewport]);
+
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element || (!interactive && !nearViewport)) return;
 
     selectedCoordinate.current = null;
     setSamples([]); setStats(null); setState("loading");
@@ -146,7 +165,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
 
         const response = await fetch(
           "/api/routes/gpx?url=" + encodeURIComponent(gpxUrl),
-          { signal: controller.signal, cache: "no-store" }
+          { signal: controller.signal }
         );
         if (!response.ok) throw new Error("GPX se nepodařilo načíst.");
 
@@ -376,7 +395,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
       mapRef.current = null;
       updateOverlay.current = null;
     };
-  }, [gpxUrl, laps, interactive, mapStyle]);
+  }, [gpxUrl, laps, interactive, nearViewport, routeColor]);
   return (
     <div className={`route-visualization route-visualization-${mapStyle} ${interactive ? "route-visualization-interactive" : "route-visualization-preview"} route-map-loading-${state}`}>
       {stats && (
@@ -401,7 +420,7 @@ export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, inte
           </svg>
         </div>
 
-        {state === "loading" && (
+        {state === "loading" && (interactive || nearViewport) && (
           <div className="route-map-state route-map-loading-state">
             <div className="route-map-loading-placeholder" aria-hidden="true"><span /><span /><span /></div>
             <div className="route-map-loading-copy"><LoaderCircle className="route-map-spin" size={20} /><span>Načítám trasu…</span></div>

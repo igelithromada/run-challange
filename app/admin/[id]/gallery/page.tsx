@@ -3,6 +3,7 @@ import PhotoViewer from "../../../components/PhotoViewer";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { activityThumbnailUrl } from "../../../lib/imageUrl";
 import { auth } from "../../../lib/firebase";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/Sidebar";
@@ -85,10 +86,15 @@ export default function GalleryPage() {
 
       {!loading && !error && photos.length===0 && <div className="tile empty-state"><Camera size={28}/><strong>Žádné fotografie</strong><span>Uživatel zatím nemá fotografie u svých aktivit.</span></div>}
       <div className="admin-gallery-grid">
-        {photos.map((photo,index)=><button type="button" className="admin-gallery-item" key={photo.id} onClick={()=>setLightbox(index)}>
-          <img src={photo.photoUrl} alt="Fotografie aktivity" loading="lazy"/>
-          <span>{photo.date}</span>
-        </button>)}
+        {photos.map((photo, index) => {
+          const thumbnail = activityThumbnailUrl(photo.photoUrl);
+          return <button type="button" className="admin-gallery-item" key={photo.id} onClick={() => setLightbox(index)}
+            aria-label={`Otevřít fotografii z aktivity · ${photo.date}`}>
+            {thumbnail ? <img src={thumbnail} alt="" loading="lazy" decoding="async" fetchPriority="low" />
+              : <Camera size={24} aria-hidden="true" />}
+            <span>{photo.date}</span>
+          </button>;
+        })}
       </div>
     </main>
     {lightbox!==null && photos[lightbox] && <PhotoViewer url={photos[lightbox].photoUrl} onClose={()=>setLightbox(null)} onMove={direction=>setLightbox(index=>index===null?null:(index+direction+photos.length)%photos.length)} onDelete={()=>void deleteCurrentPhoto()} deleting={deleting} footer={<span>{photos[lightbox].date}</span>}/>}

@@ -913,7 +913,7 @@ html[data-theme="white"] .progress-chart-period input { color-scheme:light; }
 
 .my-gallery-types { margin-bottom:1rem; }.my-gallery-types .tile-button { min-width:0; }
 .my-gallery-grid { columns:2; column-gap:.6rem; margin:1rem 0; }
-.my-gallery-photo { display:block; position:relative; width:100%; padding:0; margin:0 0 .6rem; border:0; background:transparent; color:var(--ui-text); cursor:pointer; break-inside:avoid; border-radius:12px; overflow:hidden; }
+.my-gallery-photo { display:block; position:relative; width:100%; min-height:140px; padding:0; margin:0 0 .6rem; border:0; background:transparent; color:var(--ui-text); cursor:pointer; break-inside:avoid; border-radius:12px; overflow:hidden; }
 .my-gallery-photo img { width:100%; height:auto; display:block; }.my-gallery-photo-date { position:absolute; bottom:.4rem; left:.4rem; padding:.2rem .4rem; border-radius:6px; color:white; background:rgba(0,0,0,.6); font-size:.7rem; }
 .my-gallery-placeholder { display:flex; min-height:140px; align-items:center; justify-content:center; flex-direction:column; gap:.5rem; background:var(--ui-bg); font-size:.8rem; }
 .my-gallery-empty { display:flex; flex-direction:column; align-items:center; gap:.5rem; text-align:center; }

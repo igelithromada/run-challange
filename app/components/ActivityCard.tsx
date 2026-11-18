@@ -63,6 +63,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
   const [commentText, setCommentText] = useState("");
   const [socialLoading, setSocialLoading] = useState(false);
   const [socialBusy, setSocialBusy] = useState(false);
+  const cardRef = useRef<HTMLElement>(null);
   const likeLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const likeLongPressTriggered = useRef(false);
   const [socialError, setSocialError] = useState("");
@@ -82,15 +83,29 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
     const uid = run.uid;
     if (!uid) return;
     let cancelled = false;
-    getPublicProfiles([uid]).then(profiles => {
-      if (cancelled) return;
-      const profile = profiles[uid];
-      if (profile?.nickname) setResolvedNickname(profile.nickname);
-      if (profile?.avatarUrl) setResolvedAvatarUrl(profile.avatarUrl);
-    }).catch(error => {
-      console.warn("Nepodařilo se načíst veřejný profil aktivity", error);
-    });
-    return () => { cancelled = true; };
+    function loadProfile(userId: string) {
+      void getPublicProfiles([userId]).then(profiles => {
+        if (cancelled) return;
+        const profile = profiles[userId];
+        if (profile?.nickname) setResolvedNickname(profile.nickname);
+        if (profile?.avatarUrl) setResolvedAvatarUrl(profile.avatarUrl);
+      }).catch(error => {
+        console.warn("Nepodařilo se načíst veřejný profil aktivity", error);
+      });
+    }
+    const element = cardRef.current;
+    if (!element || typeof IntersectionObserver === "undefined") {
+      loadProfile(uid);
+      return () => { cancelled = true; };
+    }
+    const observer = new IntersectionObserver(entries => {
+      if (!cancelled && entries.some(entry => entry.isIntersecting)) {
+        observer.disconnect();
+        loadProfile(uid);
+      }
+    }, { rootMargin: "160px" });
+    observer.observe(element);
+    return () => { cancelled = true; observer.disconnect(); };
   }, [run.uid]);
 
   useEffect(() => {
@@ -253,7 +268,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
 
   return (
     <>
-      <article id={`run-${run.id}`} className="tile list-tile activity-card activity-card-modern">
+      <article ref={cardRef} id={`run-${run.id}`} className="tile list-tile activity-card activity-card-modern">
         <header className="activity-card-top">
           <button type="button" className="activity-avatar" onClick={onUserClick} disabled={!onUserClick} aria-label={`Profil uživatele ${resolvedNickname}`}>
             {resolvedAvatarUrl ? <img src={cloudinaryImageUrl(resolvedAvatarUrl, 128)} alt="" loading="lazy" decoding="async" /> : resolvedNickname.charAt(0).toUpperCase()}
@@ -261,7 +276,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
           <div className="activity-person">
             <span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{resolvedNickname}</span>
             <small className="activity-kind-label">{activityLabel(activityType)}</small>
-            {teamName && <small className="activity-team-line"><span className="activity-team-avatar">{teamAvatarUrl ? <img src={cloudinaryImageUrl(teamAvatarUrl, 48)} alt="" /> : "T"}</span><b>Tým</b> · {teamName}</small>}
+            {teamName && <small className="activity-team-line"><span className="activity-team-avatar">{teamAvatarUrl ? <img src={cloudinaryImageUrl(teamAvatarUrl, 48)} alt="" loading="lazy" decoding="async" /> : "T"}</span><b>Tým</b> · {teamName}</small>}
           </div>
           <div className="activity-record-byline">
             {date && <time className="activity-date" dateTime={date.toISOString()}>{date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}
@@ -316,7 +331,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
               likeUsers.length ? (
                 <>
                   <div className="social-user-list">
-                    {likeUsers.map(user => <button key={user.uid} type="button" className="social-user-row" onClick={() => routerSafeUser(user.uid)}><span className="activity-avatar">{user.avatarUrl ? <img src={cloudinaryImageUrl(user.avatarUrl, 64)} alt="" /> : user.nickname.charAt(0).toUpperCase()}</span><strong>{user.nickname}</strong></button>)}
+                    {likeUsers.map(user => <button key={user.uid} type="button" className="social-user-row" onClick={() => routerSafeUser(user.uid)}><span className="activity-avatar">{user.avatarUrl ? <img src={cloudinaryImageUrl(user.avatarUrl, 64)} alt="" loading="lazy" decoding="async" /> : user.nickname.charAt(0).toUpperCase()}</span><strong>{user.nickname}</strong></button>)}
                   </div>
                   {likesTruncated && <p className="social-modal-note">Zobrazeno je prvních 100 reakcí.</p>}
                 </>
@@ -326,7 +341,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
                 <div className="social-comment-list">
                   {comments.length ? comments.map(comment => (
                     <article className="social-comment" key={comment.id}>
-                      <div className="activity-avatar">{comment.avatarUrl ? <img src={cloudinaryImageUrl(comment.avatarUrl, 64)} alt="" /> : comment.nickname.charAt(0).toUpperCase()}</div>
+                      <div className="activity-avatar">{comment.avatarUrl ? <img src={cloudinaryImageUrl(comment.avatarUrl, 64)} alt="" loading="lazy" decoding="async" /> : comment.nickname.charAt(0).toUpperCase()}</div>
                       <div className="social-comment-body">
                         <div className="social-comment-heading"><div className="social-comment-meta"><strong>{comment.nickname}</strong><time>{formatCommentDate(comment.createdAt)}</time></div>
                         {(comment.mine || isAdmin) && editingCommentId !== comment.id && <div className="social-comment-tools">
