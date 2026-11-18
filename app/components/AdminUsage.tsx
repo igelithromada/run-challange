@@ -10,7 +10,8 @@ const firebase = "https://console.firebase.google.com/project/dolni-lhota-run";
 const monitoringApi = "https://console.cloud.google.com/apis/library/monitoring.googleapis.com?project=dolni-lhota-run";
 const monitoringStatus = {
   api_disabled: "Cloud Monitoring API je pro projekt vypnuté.",
-  permissions: "Serverový účet nemá přístup k metrikám Firestore.",
+  permissions: "Cloud Monitoring zamítl přístup serverového účtu.",
+  token: "Cloud Monitoring nepřijal přístupový token serverového účtu.",
   query: "Cloud Monitoring odmítl dotaz na metriky Firestore.",
   unavailable: "Cloud Monitoring teď nevrátil údaje.",
 } as const;

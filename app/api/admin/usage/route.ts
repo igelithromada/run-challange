@@ -23,7 +23,10 @@ async function monitoringError(response: Response) {
   const body = await response.json().catch(() => null);
   const details: Array<{ reason?: string }> = Array.isArray(body?.error?.details) ? body.error.details : [];
   if (details.some(detail => detail.reason === "SERVICE_DISABLED")) return new MonitoringError("api_disabled");
-  if (response.status === 401 || response.status === 403) return new MonitoringError("permissions");
+  if (response.status === 401 || details.some(detail => detail.reason === "ACCESS_TOKEN_SCOPE_INSUFFICIENT")) {
+    return new MonitoringError("token");
+  }
+  if (response.status === 403) return new MonitoringError("permissions");
   if (response.status === 400) return new MonitoringError("query");
   return new MonitoringError("unavailable");
 }

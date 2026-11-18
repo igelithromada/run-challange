@@ -69,3 +69,35 @@ test("service usage is admin-only, starts at Pacific midnight, and keeps partial
   assert.equal(disabled.cloudinary.credits, 6.5);
   assert.equal((await mod.exports.GET(new Request(url))).status, 403);
 });
+
+// Opt-in deployment smoke check. Output contains only HTTP status and fixed diagnostic categories.
+if (process.env.DLH_PROBE_MONITORING === "1") {
+  test("production Cloud Monitoring connectivity", { timeout: 20_000 }, async t => {
+    try {
+      const { cert } = require("firebase-admin/app");
+      const projectId = process.env.FIREBASE_PROJECT_ID;
+      const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+      const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+      if (!projectId || !clientEmail || !privateKey) {
+        t.diagnostic("MONITORING_PROBE NO_BUILD_CREDENTIALS");
+        return;
+      }
+      const expected = process.env.DLH_EXPECTED_MONITORING_EMAIL;
+      const identity = expected === clientEmail ? "MATCHES_IAM_ACCOUNT" : "DIFFERENT_ACCOUNT";
+      const { access_token } = await cert({ projectId, clientEmail, privateKey }).getAccessToken();
+      const now = new Date();
+      const url = new URL(`https://monitoring.googleapis.com/v3/projects/${encodeURIComponent(projectId)}/timeSeries`);
+      url.searchParams.set("filter", 'metric.type="firestore.googleapis.com/document/read_ops_count" AND resource.type="firestore.googleapis.com/Database" AND resource.labels.database_id="(default)"');
+      url.searchParams.set("interval.startTime", new Date(now.getTime() - 3600_000).toISOString());
+      url.searchParams.set("interval.endTime", now.toISOString());
+      url.searchParams.set("view", "HEADERS");
+      const result = await fetch(url, { headers: { Authorization: `Bearer ${access_token}` }, signal: AbortSignal.timeout(9000) });
+      const data = await result.json().catch(() => null);
+      const known = ["SERVICE_DISABLED", "IAM_PERMISSION_DENIED", "ACCESS_TOKEN_SCOPE_INSUFFICIENT", "BILLING_DISABLED", "USER_PROJECT_DENIED", "CONSUMER_INVALID"];
+      const reason = data?.error?.details?.map(detail => detail.reason).find(reason => known.includes(reason));
+      t.diagnostic(`MONITORING_PROBE ${identity} ${result.status} ${reason ?? "NO_REASON"}`);
+    } catch {
+      t.diagnostic("MONITORING_PROBE TOKEN_OR_NETWORK_ERROR");
+    }
+  });
+}
