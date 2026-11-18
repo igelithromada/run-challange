@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { Award, CalendarDays, Footprints, Medal, Trophy, CheckCircle2, Lock, Zap, Flame } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { parseActivityDate } from "../lib/runData";
-import { activityAwards, awardTotal, type Award } from "../lib/awards";
+import { activityAwards, awardTotal, type Award as ProgressAward } from "../lib/awards";
 import ActivityCalendar from "../components/ActivityCalendar";
 import ProgressChart from "../components/ProgressChart";
 import Navbar from "../components/Navbar";
@@ -31,7 +31,7 @@ const formatPace = (pace: number) => {
   const seconds = Math.round(pace * 60);
   return `${Math.floor(seconds/60)}′${String(seconds%60).padStart(2,"0")}″ /km`;
 };
-function AwardSection({ title, awards, icon }: { title: string; awards: Award[]; icon: React.ReactNode }) {
+function AwardSection({ title, awards, icon }: { title: string; awards: ProgressAward[]; icon: React.ReactNode }) {
   const repeatable = awards.some(award => award.repeatable);
   const summary = repeatable ? `Získáno ${awardTotal(awards)}×`
     : `Splněno ${awards.filter(award => award.count > 0).length} z ${awards.length}`;
