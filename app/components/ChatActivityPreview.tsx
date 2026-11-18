@@ -1,9 +1,25 @@
-import Link from 'next/link';
-import {ActivityTypeIcon} from './ActivityTypeSelector';
-import {activityLabel,isStrengthActivity} from '../lib/activity';
-import {cloudinaryImageUrl} from '../lib/imageUrl';
-import type {ChatActivity} from '../lib/chat';
-export default function ChatActivityPreview({activity,select,passive=false}:{activity:ChatActivity;select?:()=>void;passive?:boolean}){
- const content=<><span className="chat-activity-icon"><ActivityTypeIcon type={activity.type} size={24}/></span><span className="chat-activity-copy"><strong>{activityLabel(activity.type)} · {activity.amount.toLocaleString('cs-CZ')} {isStrengthActivity(activity.type)?'opakování':'km'}</strong><small>{activity.date?new Date(activity.date).toLocaleString('cs-CZ',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}):'Bez data'}{activity.minutes>0?' · '+Math.floor(activity.minutes)+' min':''}</small>{activity.description&&<span>{activity.description}</span>}</span>{activity.imageUrl&&<img src={cloudinaryImageUrl(activity.imageUrl,160)} alt="" loading="lazy"/>}</>;
- return passive?<div className="chat-activity-preview">{content}</div>:select?<button type="button" className="chat-activity-preview" onClick={select}>{content}</button>:<Link className="chat-activity-preview" href={'/#run-'+encodeURIComponent(activity.id)} aria-label={'Otevřít záznam: '+activityLabel(activity.type)}>{content}</Link>;
+import Image from 'next/image';
+import type { ChatActivity } from '../lib/chat';
+
+function Thumbnails({ activity }: { activity: ChatActivity }) {
+  return activity.thumbnails.map((url, index) => (
+    <Image key={url} src={url} width={96} height={96} unoptimized
+      alt={`Fotka ${index + 1} ze záznamu`} />
+  ));
+}
+
+export default function ChatActivityPreview({ activity, select }: {
+  activity: ChatActivity;
+  select?: () => void;
+}) {
+  if (select) {
+    return <button type="button" className="chat-photo-strip chat-photo-option" onClick={select}
+      aria-label={`Připojit fotky ze záznamu (${activity.thumbnails.length})`}>
+      <Thumbnails activity={activity} />
+    </button>;
+  }
+
+  return <div className="chat-photo-strip" aria-label="Fotky ze záznamu">
+    <Thumbnails activity={activity} />
+  </div>;
 }

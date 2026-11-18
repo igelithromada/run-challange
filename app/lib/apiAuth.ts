@@ -1,5 +1,5 @@
 import type { DecodedIdToken } from "firebase-admin/auth";
-import type { Firestore } from "firebase-admin/firestore";
+import type { DocumentSnapshot, Firestore } from "firebase-admin/firestore";
 import { getAdminServices } from "./firebaseAdmin";
 
 export class ApiAuthError extends Error {
@@ -19,15 +19,16 @@ function bearerToken(request: Request): string {
 export async function requireUser(request: Request, options: { allowBlocked?: boolean } = {}): Promise<{
   decoded: DecodedIdToken;
   adminDb: Firestore;
+  profile?: DocumentSnapshot;
 }> {
   const { adminAuth, adminDb } = getAdminServices();
   const decoded = await adminAuth.verifyIdToken(bearerToken(request), true);
-  if (!options.allowBlocked) {
-    const profile = await adminDb.collection("users").doc(decoded.uid).get();
+  const profile = options.allowBlocked ? undefined : await adminDb.collection("users").doc(decoded.uid).get();
+  if (profile) {
     if (profile.data()?.deleting === true) throw new ApiAuthError("DELETING");
     if (profile.data()?.blocked === true) throw new ApiAuthError("BLOCKED");
   }
-  return { decoded, adminDb };
+  return { decoded, adminDb, profile };
 }
 
 export async function requireAdmin(request: Request): Promise<{

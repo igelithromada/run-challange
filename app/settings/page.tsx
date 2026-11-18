@@ -40,7 +40,7 @@ export default function SettingsPage() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [trainerDeliveryReady, setTrainerDeliveryReady] = useState<boolean | null>(null);
   const [trainerNotifications, setTrainerNotifications] = useState({ enabled: false, today: true, tomorrow: true, todayTime: "07:00", tomorrowTime: "18:00" });
-  const [socialNotifications, setSocialNotifications] = useState({ likes: true, comments: true, teams: true, challenges: true });
+  const [socialNotifications, setSocialNotifications] = useState({ likes: true, comments: true, teams: true, challenges: true, chat: true });
   const socialBusyRef = useRef(false);
   const [socialBusy, setSocialBusy] = useState(false);
   const trainerBusyRef = useRef(false);
@@ -100,7 +100,7 @@ export default function SettingsPage() {
           const remoteDefaultActivity = (data.defaultActivity === "dřepy" || data.defaultActivity === "kliky" || data.defaultActivity === "chůze") ? data.defaultActivity : "běh";
           setDefaultActivity(remoteDefaultActivity);
           const remoteSocial = data.socialNotifications || {};
-          setSocialNotifications({ likes: remoteSocial.likes !== false, comments: remoteSocial.comments !== false, teams: remoteSocial.teams !== false, challenges: remoteSocial.challenges !== false });
+          setSocialNotifications({ likes: remoteSocial.likes !== false, comments: remoteSocial.comments !== false, teams: remoteSocial.teams !== false, challenges: remoteSocial.challenges !== false, chat: remoteSocial.chat !== false });
           const remoteNotifications = data.trainerNotifications || {};
           const remoteTrainerEnabled = remoteNotifications.enabled === true;
           setTrainerNotifications({
@@ -325,6 +325,10 @@ export default function SettingsPage() {
   const socialNotificationSection = (
     <section id="notifications" className="tile settings-notification-section">
       <div className="settings-section-heading"><Bell size={21} /><div><h2>Upozornění</h2><p>Vyber, na co chceš upozornění během používání aplikace.</p></div></div>
+      <label className="settings-notification-row">
+        <span className="settings-notification-copy"><span className="settings-notification-title"><MessageCircle size={18} /> Společný chat</span><small>Upozorni mě na nové zprávy během používání aplikace.</small></span>
+        <input type="checkbox" disabled={socialBusy} checked={socialNotifications.chat} onChange={e => void updateSocialNotifications({ chat: e.target.checked })} />
+      </label>
       <label className="settings-notification-row">
         <span className="settings-notification-copy"><span className="settings-notification-title"><Heart size={18} /> To se mi líbí</span><small>Upozorni mě, když někdo označí můj záznam.</small></span>
         <input type="checkbox" disabled={socialBusy} checked={socialNotifications.likes} onChange={e => void updateSocialNotifications({ likes: e.target.checked })} />

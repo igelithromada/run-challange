@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-const keys = ["likes", "comments", "teams", "challenges"] as const;
+const keys = ["likes", "comments", "teams", "challenges", "chat"] as const;
 export async function POST(request: Request) {
   try {
     const { decoded, adminDb } = await requireUser(request);

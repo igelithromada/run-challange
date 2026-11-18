@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { DocumentReference, Firestore, QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import { collectCloudinaryPublicIds, deleteCloudinaryImages, isUserCloudinaryPublicId } from "./cloudinaryAdmin";
@@ -179,6 +180,27 @@ async function removeUserFromTeams(adminDb: Firestore, uid: string) {
   return cleaned;
 }
 
+async function removeUserChatData(db: Firestore, uid: string) {
+  const messages = await db.collection("communityChat").where("uid", "==", uid).get();
+  const meta = db.collection("chatMeta").doc("community");
+
+  for (let i = 0; i < messages.docs.length; i += 450) {
+    const batch = db.batch();
+    for (const message of messages.docs.slice(i, i + 450)) {
+      // Leave an anonymous tombstone so pagination and links from replies still work.
+      batch.set(message.ref, {
+        deleted: true,
+        createdAt: message.data().createdAt,
+        deletedAt: FieldValue.serverTimestamp(),
+      });
+    }
+    batch.set(meta, { revision: randomUUID() }, { merge: true });
+    await batch.commit();
+  }
+
+  await db.collection("chatRateLimits").doc(uid).delete();
+}
+
 export async function deleteUserData(adminDb: Firestore, uid: string) {
   await adminDb.collection("users").doc(uid).set({deleting:true},{merge:true});
   const [runsSnapshot, userSnapshot] = await Promise.all([
@@ -229,6 +251,7 @@ export async function deleteUserData(adminDb: Firestore, uid: string) {
     removeUserNotifications(adminDb, uid),
     removeUserFromTeams(adminDb, uid),
     removeUserFromChallenges(adminDb, uid),
+    removeUserChatData(adminDb, uid),
   ]);
 
   await deleteSubcollections(adminDb.collection("users").doc(uid));
