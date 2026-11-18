@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
 import { getActiveTeamMemberships } from "../../../lib/teams/server";
+import { isActivityType, isValidDateOnly } from "../../../lib/validation";
+import type { ChallengeData, ChallengeList } from "../../../types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +17,39 @@ export async function POST(request: Request) {
     const snapshotData = (snap: { id: string; data(): unknown }) => ({ ...(snap.data() as Record<string, unknown>), id: snap.id });
     const reply = (data: unknown) => NextResponse.json({ data }, { headers: { "Cache-Control": "private, no-store" } });
     if (resource === "teamMemberships") return reply(await getActiveTeamMemberships(adminDb, decoded.uid));
+    if (resource === "challengeList") {
+      const { state, activityType, monthStart, monthEnd } = body.filters ?? {};
+      if (
+        (state !== "active" && state !== "planned" && state !== "completed") ||
+        !isActivityType(activityType) || !isValidDateOnly(monthStart) || !isValidDateOnly(monthEnd) ||
+        monthStart > monthEnd
+      ) {
+        return NextResponse.json({ error: "Neplatný filtr výzev." }, { status: 400 });
+      }
+
+      const snapshot = await adminDb.collection("challenges").where("state", "==", state).get();
+      const visible = snapshot.docs.filter(doc => {
+        const challenge = doc.data();
+        return !challenge.deleting && challenge.activityType === activityType &&
+          typeof challenge.startDate === "string" && typeof challenge.endDate === "string" &&
+          typeof challenge.name === "string" &&
+          challenge.startDate <= monthEnd && challenge.endDate >= monthStart;
+      });
+      const items = visible.map(doc => ({ ...doc.data(), id: doc.id }) as ChallengeData)
+        .sort((a, b) => a.startDate.localeCompare(b.startDate) || a.name.localeCompare(b.name, "cs") || a.id.localeCompare(b.id));
+      const joinedIds: string[] = [];
+      // Batch the caller's memberships without re-reading the challenge documents.
+      const membershipRefs = visible.map(doc => doc.ref.collection("participants").doc(decoded.uid));
+      const batchSize = 200;
+      for (let offset = 0; offset < membershipRefs.length; offset += batchSize) {
+        const memberships = await adminDb.getAll(...membershipRefs.slice(offset, offset + batchSize));
+        for (const membership of memberships) {
+          const challengeId = membership.ref.parent.parent?.id;
+          if (challengeId && membership.data()?.active === true) joinedIds.push(challengeId);
+        }
+      }
+      return reply({ items, joinedIds } satisfies ChallengeList);
+    }
     if (resource === "teams" || resource === "challenges") {
       const snapshot = await adminDb.collection(collectionName).get();
       return reply(snapshot.docs.filter(snap => !snap.data().deleting).map(snapshotData));

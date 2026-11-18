@@ -12,11 +12,13 @@ import ChallengeSummaryCard from "../components/ChallengeSummaryCard";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
-import { fetchChallengesPage, getActiveChallengeIdsForUser } from "../lib/services/challenges";
+import { fetchChallengeList } from "../lib/services/challenges";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
 import FormField from "../components/FormField";
+import type { ActivityType, ChallengeData, ChallengeKind, ChallengeList, ChallengeState } from "../types";
+import styles from "./page.module.css";
 
 async function uploadChallengeImage(file: File) {
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Povolené jsou pouze JPG, PNG a WebP.");
@@ -29,9 +31,14 @@ async function uploadChallengeImage(file: File) {
   if (!response.ok || typeof data.secureUrl !== "string") throw new Error(data.error || "Obrázek se nepodařilo nahrát.");
   return { secureUrl: data.secureUrl, publicId: typeof data.publicId === "string" ? data.publicId : "" };
 }
-import type { ActivityType, ChallengeData, ChallengeKind } from "../types";
 
 const MONTHS = ["Leden","Únor","Březen","Duben","Květen","Červen","Červenec","Srpen","Září","Říjen","Listopad","Prosinec"];
+
+const CHALLENGE_STATES = [
+  { value: "active", label: "Aktivní", empty: "V tomto měsíci nejsou žádné aktivní výzvy." },
+  { value: "planned", label: "Plánované", empty: "V tomto měsíci nejsou žádné plánované výzvy." },
+  { value: "completed", label: "Dokončené", empty: "V tomto měsíci nejsou žádné dokončené výzvy." },
+] as const;
 
 function monthKey(date: Date) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}`; }
 
@@ -52,12 +59,12 @@ export default function ChallengesPage() {
   const [avatarUrl,setAvatarUrl]=useState("");
   const [avatarPublicId,setAvatarPublicId]=useState("");
   const [uploadingImage,setUploadingImage]=useState(false);
-  const [groups,setGroups]=useState<Record<ChallengeData["state"], ChallengeData[]>>({active:[],planned:[],completed:[]});
-  const [loading,setLoading]=useState(true);
-  const [error,setError]=useState<Error|null>(null);
-  const [joinedChallengeIds,setJoinedChallengeIds]=useState<Set<string>>(new Set());
+  const [selectedState, setSelectedState] = useState<ChallengeState>("active");
+  const [lists, setLists] = useState<Record<string, ChallengeList>>({});
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
-  useEffect(()=>{ const unsub=onAuthStateChanged(auth,u=>{ if(!u){router.push("/login");return;} setUser(u); try{const v=localStorage.getItem("dolni-lhota-default-activity-v1"); if(v==="běh"||v==="chůze"||v==="dřepy"||v==="kliky")setActivityType(v);}catch{} }); return ()=>unsub(); },[router]);
+  useEffect(()=>{ const unsub=onAuthStateChanged(auth,u=>{ setUser(u); if(!u){router.push("/login");return;} try{const v=localStorage.getItem("dolni-lhota-default-activity-v1"); if(v==="běh"||v==="chůze"||v==="dřepy"||v==="kliky")setActivityType(v);}catch{} }); return ()=>unsub(); },[router]);
 
   const request=async(action:string,payload:Record<string,unknown>)=>{
     if(!auth.currentUser)throw new Error("Nejsi přihlášen.");
@@ -73,13 +80,12 @@ export default function ChallengesPage() {
       const data=await request("create",{name,description,kind:challengeKindFor(activityType,kind),activityType,goal:Number(goal),startDate,endDate,avatarUrl,avatarPublicId});
       const createdChallenge = data.challenge as ChallengeData | undefined;
       setName("");setDescription("");setGoal("");setStartDate("");setEndDate("");setAvatarUrl("");setAvatarPublicId("");
-      setJoinedChallengeIds(current => new Set([...current, data.id]));
+      setLists({});
+      setFailedKey(null);
+      setLoadAttempt(current => current + 1);
       if (createdChallenge) {
-        setGroups(current => ({
-          active: createdChallenge.state === "active" ? [createdChallenge, ...current.active.filter(item => item.id !== createdChallenge.id)] : current.active.filter(item => item.id !== createdChallenge.id),
-          planned: createdChallenge.state === "planned" ? [createdChallenge, ...current.planned.filter(item => item.id !== createdChallenge.id)] : current.planned.filter(item => item.id !== createdChallenge.id),
-          completed: current.completed.filter(item => item.id !== createdChallenge.id),
-        }));
+        setSelectedState(createdChallenge.state);
+        setActivityType(createdChallenge.activityType);
       }
       showAppToast("Výzva byla vytvořena.","success");
       setShowCreate(false);
@@ -95,28 +101,24 @@ export default function ChallengesPage() {
   const monthEnd = `${monthKey(monthEndDate)}-${String(monthEndDate.getDate()).padStart(2, "0")}`;
   const shift=(delta:number)=>{setMonth(current=>new Date(current.getFullYear(),current.getMonth()+delta,1));};
 
+  const uid = user?.uid;
+  const listKey = JSON.stringify([uid, activityType, key, selectedState]);
+  const list = lists[listKey];
+  const selectedTab = CHALLENGE_STATES.find(tab => tab.value === selectedState) ?? CHALLENGE_STATES[0];
+
   useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    request("refresh", {}).then(() => Promise.all((["active","planned","completed"] as const).map(async state => {
-      const result = await fetchChallengesPage(activityType, state, monthStart, monthEnd, 10);
-      return [state, result] as const;
-    }))).then(async results => {
-      if (cancelled) return;
-      const nextGroups = { active: results[0][1].items, planned: results[1][1].items, completed: results[2][1].items };
-      setGroups(nextGroups);
-      const allItems = [...nextGroups.active, ...nextGroups.planned, ...nextGroups.completed];
-      const joinedIds = await getActiveChallengeIdsForUser(user.uid, allItems.map(item => item.id));
-      if (!cancelled) setJoinedChallengeIds(new Set(joinedIds));
-    }).catch(e => {
-      if (!cancelled) setError(e instanceof Error ? e : new Error("Výzvy se nepodařilo načíst."));
-    }).finally(() => {
-      if (!cancelled) setLoading(false);
-    });
-    return () => { cancelled = true; };
-  }, [activityType, monthStart, monthEnd, user]);
+    if (!uid || list || failedKey === listKey) return;
+    const controller = new AbortController();
+    const { signal } = controller;
+    void fetchChallengeList(activityType, selectedState, monthStart, monthEnd, signal)
+      .then(result => {
+        if (!signal.aborted) setLists(current => ({ ...current, [listKey]: result }));
+      })
+      .catch(() => {
+        if (!signal.aborted) setFailedKey(listKey);
+      });
+    return () => controller.abort();
+  }, [activityType, failedKey, list, listKey, loadAttempt, monthStart, monthEnd, selectedState, uid]);
 
   return <>
     <Navbar title="Výzvy" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
@@ -173,8 +175,46 @@ export default function ChallengesPage() {
       )}
       <div className="challenge-type-switch"><ActivityTypeSelector value={activityType} onChange={value=>setActivityType(value)} ariaLabel="Filtr typu aktivity" /></div>
       <div className="challenge-month"><button onClick={()=>shift(-1)} aria-label="Předchozí měsíc"><ChevronLeft/></button><strong>{MONTHS[month.getMonth()]} {month.getFullYear()}</strong><button onClick={()=>shift(1)} aria-label="Další měsíc"><ChevronRight/></button></div>
-      {loading?<LoadingSkeleton count={4}/>:error?<div className="tile teams-empty">Výzvy se nepodařilo načíst.</div>:([["active",groups.active],["planned",groups.planned],["completed",groups.completed]] as const).map(([state,items])=><section key={state} className="challenge-group"><h2>{state==="active"?"Aktivní":state==="planned"?"Plánované":"Dokončené"}</h2><div className="teams-grid">{items.map(c => <ChallengeSummaryCard key={c.id} challenge={c} joined={joinedChallengeIds.has(c.id)} />)}</div></section>)}
-      {!loading&&!error&&!groups.active.length&&!groups.planned.length&&!groups.completed.length&&<div className="tile teams-empty"><Trophy size={30}/><strong>V tomto měsíci nejsou žádné výzvy.</strong><p>Zkus jiný měsíc nebo vytvoř vlastní výzvu.</p></div>}
+      <div className={`teams-tabs ${styles.stateTabs}`} role="group" aria-label="Stav výzvy">
+        {CHALLENGE_STATES.map(tab => (
+          <button
+            key={tab.value}
+            type="button"
+            aria-pressed={selectedState === tab.value}
+            onClick={() => { setFailedKey(null); setSelectedState(tab.value); }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <section aria-label={`${selectedTab.label} výzvy`} aria-busy={!list && failedKey !== listKey}>
+        {failedKey === listKey ? (
+          <div className="tile teams-empty" role="alert">
+            <strong>Výzvy se nepodařilo načíst.</strong>
+            <button type="button" className="run-secondary-button" onClick={() => setFailedKey(null)}>
+              Zkusit znovu
+            </button>
+          </div>
+        ) : !list ? (
+          <LoadingSkeleton count={4} />
+        ) : list.items.length ? (
+          <div className="teams-grid">
+            {list.items.map(challenge => (
+              <ChallengeSummaryCard
+                key={challenge.id}
+                challenge={challenge}
+                joined={list.joinedIds.includes(challenge.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="tile teams-empty">
+            <Trophy size={30} />
+            <strong>{selectedTab.empty}</strong>
+            <p>Zkus jiný měsíc nebo typ aktivity.</p>
+          </div>
+        )}
+      </section>
     </main>
   </>;
 }

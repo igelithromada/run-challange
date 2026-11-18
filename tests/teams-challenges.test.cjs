@@ -260,3 +260,58 @@ test('team strength totals stay separate and reconcile edits, duplicate syncs, t
   db.store.get('runs/r').type='kliky';await syncRunTeamContributions(db,'r');assert.equal(db.store.get('teams/t')['stats.squatRepetitions'],0);assert.equal(db.store.get('teams/t')['stats.pushupRepetitions'],60);assert.equal(db.store.get('teams/t')['stats.squatActivities'],0);
   db.store.get('runs/r').deleting=true;await syncRunTeamContributions(db,'r');await syncRunTeamContributions(db,'r');assert.equal(db.store.get('teams/t')['stats.pushupRepetitions'],0);assert.equal(db.store.get('teams/t')['stats.pushupActivities'],0);assert.equal(db.store.has('teams/t/activityContributions/r'),false);
 });
+
+test('challenge list queries one state and batches only the caller’s visible memberships', async () => {
+  const read = require('../app/api/community/read/route.ts');
+  const filters = { state: 'active', activityType: 'běh', monthStart: '2026-11-01', monthEnd: '2026-11-30' };
+  const current = { name: 'Běh', state: 'active', activityType: 'běh', startDate: '2026-10-30', endDate: '2026-11-04' };
+  db = new DB({
+    'challenges/current': current,
+    'challenges/later': { ...current, startDate: '2026-11-02' },
+    'challenges/hidden': { ...current, deleting: true },
+    'challenges/otherActivity': { ...current, activityType: 'chůze' },
+    'challenges/old': { ...current, endDate: '2026-10-31' },
+    'challenges/planned': { ...current, state: 'planned' },
+    'challenges/done': { ...current, state: 'completed' },
+    'challenges/current/participants/u': { active: true },
+    'challenges/later/participants/u': { active: false },
+    'challenges/later/participants/other': { active: true },
+  });
+  const collection = db.collection.bind(db);
+  const queries = [];
+  db.collection = name => {
+    const query = collection(name);
+    const where = query.where.bind(query);
+    query.where = (...args) => { queries.push([name, ...args]); return where(...args); };
+    return query;
+  };
+  const membershipBatches = [];
+  db.getAll = async (...refs) => {
+    membershipBatches.push(refs.map(ref => ref.path));
+    return Promise.all(refs.map(async ref => {
+      const snap = await ref.get();
+      const [, id] = ref.path.split('/');
+      return { ...snap, ref: { parent: { parent: { id } } } };
+    }));
+  };
+
+  const request = { resource: 'challengeList', userId: 'other', filters };
+  const { status, body } = await call(read, request);
+  assert.equal(status, 200);
+  assert.deepEqual(body.data.items.map(item => item.id), ['current', 'later']);
+  assert.deepEqual(body.data.joinedIds, ['current']);
+  assert.deepEqual(queries, [['challenges', 'state', '==', 'active']]);
+  assert.deepEqual(membershipBatches, [['challenges/current/participants/u', 'challenges/later/participants/u']]);
+
+  for (const [state, id] of [['planned', 'planned'], ['completed', 'done']]) {
+    const result = await call(read, { ...request, filters: { ...filters, state } });
+    assert.equal(result.status, 200);
+    assert.deepEqual(result.body.data.items.map(item => item.id), [id]);
+    assert.deepEqual(result.body.data.joinedIds, []);
+  }
+
+  const empty = await call(read, { ...request, filters: { ...filters, activityType: 'kliky' } });
+  assert.deepEqual(empty.body.data, { items: [], joinedIds: [] });
+  assert.equal(membershipBatches.length, 3);
+  assert.equal((await call(read, { ...request, filters: { ...filters, state: 'unknown' } })).status, 400);
+});

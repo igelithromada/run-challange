@@ -38,6 +38,8 @@ export interface TeamData {
 export type ChallengeKind = "distance"|"activities"|"activeDays"|"sharedDistance"|"repetitions"|"sharedRepetitions";
 export type ChallengeState = "planned"|"active"|"completed";
 
+export type ChallengeList = { items: ChallengeData[]; joinedIds: string[] };
+
 export interface ChallengeData {
   deleting?: boolean;
   id:string; organizationId?:string; name:string; description?:string; createdBy?:string; avatarUrl?:string;
