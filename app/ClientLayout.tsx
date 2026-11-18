@@ -9,10 +9,12 @@ import { mergePublicProfile } from "./lib/services/publicProfiles";
 import { getUserProfile, mergeUserProfile } from "./lib/services/users";
 import FloatingChat from "./components/FloatingChat";
 import AppToast from "./components/AppToast";
+import { subscribeToFreshReactions } from "./lib/freshReactionSignal";
 import { removeChatPush } from "./lib/pushNotifications";
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   useThemeLoader();
+  useEffect(subscribeToFreshReactions, []);
 
   useEffect(() => beforeAuthStateChanged(auth, async nextUser => {
     if (auth.currentUser && nextUser?.uid !== auth.currentUser.uid) {

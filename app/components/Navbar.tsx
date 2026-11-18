@@ -6,6 +6,7 @@ import { Bell, Flag, Heart, Home, Menu, MessageCircle, Settings, Users, X } from
 import { auth } from "../lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { cachedNotificationCount, clearNotificationCount, loadNotificationCount, NOTIFICATION_REFRESH_MS, rememberNotificationCount } from "../lib/notificationCount";
+import { FRESH_REACTION } from "../lib/freshReactionSignal";
 import { notificationTarget } from "../lib/notifications/target";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 
@@ -77,11 +78,14 @@ function NotificationsBell() {
   const requestVersion = useRef(0);
   const mutationBusy = useRef(false);
   const bellRef = useRef<HTMLButtonElement>(null);
+  const panelOpen = useRef(false);
+  const detailPending = useRef(false);
 
   const load = useCallback(async () => {
     const user = auth.currentUser;
-    if (!user || mutationBusy.current) return;
+    if (!user || mutationBusy.current || detailPending.current) return;
     const version = ++requestVersion.current;
+    detailPending.current = true;
     setLoading(true);
     try {
       const token = await user.getIdToken();
@@ -97,6 +101,7 @@ function NotificationsBell() {
     } catch {
       if (version === requestVersion.current && auth.currentUser?.uid === user.uid) setError("Upozornění se nepodařilo načíst. Zkus to znovu.");
     } finally {
+      detailPending.current = false;
       if (version === requestVersion.current) setLoading(false);
     }
   }, []);
@@ -105,20 +110,34 @@ function NotificationsBell() {
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
     let checking = false;
+    let urgent = false;
+
+    const freshReaction = (event: Event) => {
+      if ((event as CustomEvent<{ uid: string }>).detail?.uid !== auth.currentUser?.uid) return;
+      urgent = true;
+      clearTimeout(timer);
+      timer = setTimeout(refresh, 150);
+    };
 
     async function refresh() {
       clearTimeout(timer);
       const user = auth.currentUser;
       if (!active || !user || checking || document.visibilityState !== "visible") return;
-      if (mutationBusy.current) {
-        timer = setTimeout(refresh, 60_000);
+      if (mutationBusy.current || (urgent && panelOpen.current && detailPending.current)) {
+        timer = setTimeout(refresh, urgent ? 500 : 60_000);
         return;
       }
       const version = requestVersion.current;
+      const immediate = urgent;
+      urgent = false;
       checking = true;
       try {
-        const count = await loadNotificationCount(user);
-        if (active && auth.currentUser?.uid === user.uid && version === requestVersion.current && !mutationBusy.current) {
+        if (immediate && panelOpen.current) {
+          await load();
+          return;
+        }
+        const count = await loadNotificationCount(user, immediate);
+        if (active && !urgent && auth.currentUser?.uid === user.uid && version === requestVersion.current && !mutationBusy.current) {
           setUnreadCount(count);
           if (!count) setNotifications(previous => previous.some(item => !item.read) ? [] : previous);
         }
@@ -129,7 +148,7 @@ function NotificationsBell() {
         if (active && auth.currentUser) {
           const checkedAt = cachedNotificationCount(auth.currentUser.uid)?.checkedAt;
           const remaining = checkedAt === undefined ? 60_000 : checkedAt + NOTIFICATION_REFRESH_MS - Date.now();
-          timer = setTimeout(refresh, Math.max(60_000, remaining));
+          timer = setTimeout(refresh, urgent ? 150 : Math.max(60_000, remaining));
         }
       }
     }
@@ -138,11 +157,14 @@ function NotificationsBell() {
       ++requestVersion.current;
       clearTimeout(timer);
       if (!user) clearNotificationCount();
+      panelOpen.current = false;
+      urgent = false;
       setNotifications([]); setUnreadCount(user ? cachedNotificationCount(user.uid)?.count ?? 0 : 0);
       setOpen(false); setError(""); setLoading(false);
       void refresh();
     });
     window.addEventListener("online", refresh);
+    window.addEventListener(FRESH_REACTION, freshReaction);
     document.addEventListener("visibilitychange", refresh);
     function invalidate() { ++requestVersion.current; }
     return () => {
@@ -150,19 +172,20 @@ function NotificationsBell() {
       invalidate();
       unsubscribe(); clearTimeout(timer);
       window.removeEventListener("online", refresh);
+      window.removeEventListener(FRESH_REACTION, freshReaction);
       document.removeEventListener("visibilitychange", refresh);
     };
-  }, []);
+  }, [load]);
 
   const notificationRef = useRef<HTMLDivElement>(null);
-  const close = () => { setOpen(false); bellRef.current?.focus(); };
+  const close = () => { panelOpen.current = false; setOpen(false); bellRef.current?.focus(); };
   useEffect(() => {
     if (!open) return;
     const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { setOpen(false); bellRef.current?.focus(); }
+      if (event.key === "Escape") { panelOpen.current = false; setOpen(false); bellRef.current?.focus(); }
     };
     const outside = (event: PointerEvent) => {
-      if (event.target instanceof Node && !notificationRef.current?.contains(event.target)) setOpen(false);
+      if (event.target instanceof Node && !notificationRef.current?.contains(event.target)) { panelOpen.current = false; setOpen(false); }
     };
     window.addEventListener("keydown", escape);
     document.addEventListener("pointerdown", outside);
@@ -212,7 +235,7 @@ function NotificationsBell() {
   if (!open && unreadCount === 0 && notifications.length === 0) return null;
 
   return <div className="notification-wrap" ref={notificationRef}>
-    <button type="button" ref={bellRef} className="site-navbar-button notification-button" aria-expanded={open} aria-controls="notifications-panel" onClick={() => { setOpen(!open); if (!open) void load(); }} aria-label={`Upozornění, ${unreadCount} nepřečtených`}>
+    <button type="button" ref={bellRef} className="site-navbar-button notification-button" aria-expanded={open} aria-controls="notifications-panel" onClick={() => { panelOpen.current = !open; setOpen(!open); if (!open) void load(); }} aria-label={`Upozornění, ${unreadCount} nepřečtených`}>
       <Bell size={21} strokeWidth={2.2} aria-hidden="true" />
       {unreadCount > 0 && <span className="notification-badge" aria-hidden="true">{unreadCount > 99 ? "99+" : unreadCount}</span>}
     </button>

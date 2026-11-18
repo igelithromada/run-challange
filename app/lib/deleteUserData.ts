@@ -77,6 +77,7 @@ async function removeUserNotifications(adminDb: Firestore, uid: string) {
     list.slice(i, i + 450).forEach(ref => batch.delete(ref));
     await batch.commit();
   }
+  await adminDb.collection("notificationSignals").doc(uid).delete();
   return list.length;
 }
 

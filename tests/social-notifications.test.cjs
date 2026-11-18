@@ -4,7 +4,7 @@ const fs = require('node:fs'), path = require('node:path'), vm = require('node:v
 function load(file, auth) {
   const filename = path.resolve(file), module = { exports: {} }, req = Module.createRequire(filename);
   const code = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  vm.runInNewContext(code, { module, exports: module.exports, URL, console: { error() {} }, require: name => name.endsWith('/apiAuth') ? auth : req(name) });
+  vm.runInNewContext(code, { module, exports: module.exports, URL, console: { error() {} }, require: name => name.endsWith('/apiAuth') ? auth : name.endsWith('/runData') ? req(name + '.ts') : req(name) });
   return module.exports;
 }
 function fixture(preferences = {}) {
@@ -40,4 +40,33 @@ test('notification preferences are respected, and comments notify the activity o
 test('a notification write failure cannot silently save a like without its notification', async () => {
   const f = fixture(); f.fail(); assert.equal((await f.post({ action: 'like' })).status, 500);
   assert.deepEqual(f.records.get('runs/run').likedBy, []);
+});
+
+test('recent reactions signal the recipient while older ones still go into the ordinary inbox', async () => {
+  const recent = fixture();
+  const run = recent.records.get('runs/run');
+  run.createdAt = { toDate: () => new Date(Date.now() - 60_000) };
+  run.timestamp = new Date(Date.now() - 48 * 3600_000).toISOString();
+  assert.equal((await recent.post({ action: 'like' })).status, 200);
+  const first = recent.records.get('notificationSignals/owner').revision;
+  assert.ok(first);
+  assert.equal(recent.records.has('notificationSignals/wife'), false);
+
+  await recent.post({ action: 'like' });
+  assert.notEqual(recent.records.get('notificationSignals/owner').revision, first);
+  const afterUnlike = recent.records.get('notificationSignals/owner').revision;
+  assert.equal((await recent.post({ action: 'comment', text: 'Super!' })).status, 200);
+  assert.notEqual(recent.records.get('notificationSignals/owner').revision, afterUnlike);
+
+  const old = fixture();
+  old.records.get('runs/run').timestamp = new Date(Date.now() - 48 * 3600_000).toISOString();
+  assert.equal((await old.post({ action: 'like' })).status, 200);
+  old.setUid('owner');
+  assert.equal((await (await old.get()).json()).unreadCount, 1);
+  assert.equal(old.records.has('notificationSignals/owner'), false);
+
+  const muted = fixture({ comments: false });
+  muted.records.get('runs/run').timestamp = new Date().toISOString();
+  await muted.post({ action: 'comment', text: 'Super!' });
+  assert.equal(muted.records.has('notificationSignals/owner'), false);
 });

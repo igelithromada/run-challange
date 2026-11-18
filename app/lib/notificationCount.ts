@@ -15,15 +15,23 @@ export function clearNotificationCount() {
   pending = undefined;
 }
 
+export function expireNotificationCount(uid: string) {
+  if (current?.uid === uid) current = { ...current, checkedAt: Number.NEGATIVE_INFINITY };
+  if (pending?.uid === uid) {
+    generation++;
+    pending = undefined;
+  }
+}
+
 export function rememberNotificationCount(uid: string, count: number) {
   generation++;
   pending = undefined;
   current = { uid, count, checkedAt: Date.now() };
 }
 
-export function loadNotificationCount(user: User) {
+export function loadNotificationCount(user: User, force = false) {
   const saved = cachedNotificationCount(user.uid);
-  if (saved && Date.now() - saved.checkedAt < NOTIFICATION_REFRESH_MS) {
+  if (!force && saved && Date.now() - saved.checkedAt < NOTIFICATION_REFRESH_MS) {
     return Promise.resolve(saved.count);
   }
   if (pending?.uid === user.uid) return pending.request;

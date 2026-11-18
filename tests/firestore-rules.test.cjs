@@ -90,3 +90,21 @@ test('gallery pagination can detect legacy records without a timestamp', { skip:
     await env.cleanup();
   }
 });
+
+test('fresh reaction revisions are only readable by their recipient and server-writable', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async () => {
+  const env = await initializeTestEnvironment({ projectId: 'demo-run-challenge', firestore: { rules: fs.readFileSync('firestore.rules', 'utf8') } });
+  try {
+    await env.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'notificationSignals/owner'), { revision: 'signal' });
+    });
+    const owner = env.authenticatedContext('owner').firestore();
+    const other = env.authenticatedContext('other').firestore();
+    await assertSucceeds(getDoc(doc(owner, 'notificationSignals/owner')));
+    await assertFails(getDoc(doc(other, 'notificationSignals/owner')));
+    await assertFails(getDocs(collection(owner, 'notificationSignals')));
+    await assertFails(setDoc(doc(owner, 'notificationSignals/owner'), { revision: 'invalid' }));
+    await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'notificationSignals/owner')));
+  } finally {
+    await env.cleanup();
+  }
+});

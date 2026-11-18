@@ -89,6 +89,10 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /notificationSignals/{userId} {
+      allow get: if signedIn() && request.auth.uid == userId;
+    }
+
     match /chatMeta/community {
       function canReadChat() {
         let account = get(/databases/$(database)/documents/users/$(request.auth.uid));

@@ -1,13 +1,26 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { FieldPath, FieldValue, type Firestore, type Transaction } from "firebase-admin/firestore";
 import { requireUser as requireApiUser, authErrorResponse } from "../../../lib/apiAuth";
+import { parseActivityDate } from "../../../lib/runData";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_SOCIAL_COMMENTS = 100;
 const MAX_SOCIAL_LIKE_USERS = 100;
+
+const FRESH_ACTIVITY_MS = 24 * 60 * 60 * 1000;
+
+function isFreshActivity(run: FirebaseFirestore.DocumentData) {
+  const published = parseActivityDate(run.createdAt) ?? parseActivityDate(run.timestamp);
+  const age = published ? Date.now() - published.getTime() : Infinity;
+  return age >= 0 && age < FRESH_ACTIVITY_MS;
+}
+
+function signalReaction(db: Firestore, tx: Transaction, uid: string) {
+  tx.set(db.collection("notificationSignals").doc(uid), { revision: randomUUID() });
+}
 
 async function prepareSocialNotification(
   adminDb: Firestore,
@@ -190,9 +203,16 @@ export async function POST(request: Request) {
         const liked = current.includes(decoded.uid);
         const next = liked ? current.filter(id => id !== decoded.uid) : [...current, decoded.uid];
         const notification = !liked ? await prepareSocialNotification(adminDb, transaction, data.uid, decoded.uid, actorNickname, actorAvatarUrl, "like", runId) : null;
+        const fresh = isFreshActivity(data);
+        const removedUnread = liked && fresh && data.uid
+          ? (await transaction.get(notificationRef)).data()
+          : undefined;
         transaction.update(runRef, { likedBy: next, likeCount: next.length });
         if (notification) transaction.set(notificationRef, notification);
         if (liked) transaction.delete(notificationRef);
+        if (fresh && (notification || (removedUnread && removedUnread.recipientUid === data.uid && removedUnread.read !== true))) {
+          signalReaction(adminDb, transaction, data.uid);
+        }
         return { liked: !liked, likeCount: next.length };
       });
       return NextResponse.json(result);
@@ -211,9 +231,13 @@ export async function POST(request: Request) {
 
     await adminDb.runTransaction(async transaction => {
       const currentRun = await transaction.get(runRef);
-      const currentCount = Number(currentRun.data()?.commentCount) || 0;
-      const notification = await prepareSocialNotification(adminDb, transaction, currentRun.data()?.uid, decoded.uid, nickname, avatarUrl, "comment", runId, text);
-      if (notification) transaction.set(adminDb.collection("notifications").doc(`social_comment_${commentRef.id}`), notification);
+      const run = currentRun.data() || {};
+      const currentCount = Number(run.commentCount) || 0;
+      const notification = await prepareSocialNotification(adminDb, transaction, run.uid, decoded.uid, nickname, avatarUrl, "comment", runId, text);
+      if (notification) {
+        transaction.set(adminDb.collection("notifications").doc(`social_comment_${commentRef.id}`), notification);
+        if (isFreshActivity(run)) signalReaction(adminDb, transaction, notification.recipientUid);
+      }
       transaction.set(commentRef, {
         uid: decoded.uid,
         nickname,
