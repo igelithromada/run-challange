@@ -4,7 +4,6 @@ import {
   Dumbbell,
   Footprints,
   Map,
-  MessageCircle,
   ShieldCheck,
   SlidersHorizontal,
   Trophy,
@@ -27,7 +26,6 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   { id: "progress", label: "Můj pokrok", route: "/progress", group: "activity", Icon: TrendingUp },
   { id: "trainer", label: "Tréninkový plán", route: "/trainer", group: "activity", Icon: Dumbbell },
 
-  { id: "chat", label: "Společný chat", route: "/chat", group: "community", Icon: MessageCircle },
   { id: "teams", label: "Týmy", route: "/teams", group: "community", Icon: Users },
   { id: "challenges", label: "Výzvy", route: "/challenges", group: "community", Icon: Trophy },
 

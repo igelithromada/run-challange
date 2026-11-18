@@ -1,13 +1,17 @@
 "use client";
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {onAuthStateChanged} from 'firebase/auth';
-import {MessageCircle,Send,Trash2} from 'lucide-react';
+import {MessageCircle,Reply,Trash2} from 'lucide-react';
 import {useRouter} from 'next/navigation';
 import {auth} from '../lib/firebase';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 
-type Message={id:string;uid:string;nickname:string;text:string;deleted:boolean;createdAt:string|null;canDelete:boolean};
+import ChatComposer from '../components/ChatComposer';
+import ChatActivityPreview from '../components/ChatActivityPreview';
+import type {ChatActivity,ChatReply} from '../lib/chat';
+
+type Message={id:string;uid:string;nickname:string;text:string;deleted:boolean;createdAt:string|null;canDelete:boolean;activity?:ChatActivity|null;activityUnavailable?:boolean;reply?:ChatReply|null};
 type Page={messages:Message[];hasMore:boolean;cursor:string|null;revision?:string;unchanged?:boolean};
 async function request(init?:RequestInit,before?:string,revision?:string):Promise<Page>{
  const user=auth.currentUser;if(!user)throw new Error('Nejsi přihlášen.');
@@ -15,14 +19,14 @@ async function request(init?:RequestInit,before?:string,revision?:string):Promis
  const data=await response.json();if(!response.ok)throw new Error(data.error||'Chat není dostupný.');return data;
 }
 export default function ChatPage(){
- const router=useRouter(),[uid,setUid]=useState(''),[menu,setMenu]=useState(false),[messages,setMessages]=useState<Message[]>([]),[text,setText]=useState(''),[error,setError]=useState(''),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[olderBusy,setOlderBusy]=useState(false),[more,setMore]=useState(false),[cursor,setCursor]=useState<string|null>(null),[newMessages,setNewMessages]=useState(false);
- const list=useRef<HTMLDivElement>(null),generation=useRef(0),pending=useRef<{text:string;id:string}|null>(null),sending=useRef(false),initial=useRef(true),revision=useRef<string|undefined>(undefined);
- useEffect(()=>onAuthStateChanged(auth,user=>{generation.current++;setUid(user?.uid||'');setMessages([]);setText('');pending.current=null;initial.current=true;revision.current=undefined;setCursor(null);setMore(false);if(!user)router.push('/login');}),[router]);
+ const router=useRouter(),[uid,setUid]=useState(''),[menu,setMenu]=useState(false),[messages,setMessages]=useState<Message[]>([]),[reply,setReply]=useState<ChatReply|null>(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[olderBusy,setOlderBusy]=useState(false),[more,setMore]=useState(false),[cursor,setCursor]=useState<string|null>(null),[newMessages,setNewMessages]=useState(false);
+ const list=useRef<HTMLDivElement>(null),generation=useRef(0),initial=useRef(true),lastFull=useRef(0),revision=useRef<string|undefined>(undefined);
+ useEffect(()=>onAuthStateChanged(auth,user=>{generation.current++;setUid(user?.uid||'');setMessages([]);setReply(null);initial.current=true;revision.current=undefined;lastFull.current=0;setCursor(null);setMore(false);if(!user)router.push('/login');}),[router]);
  const bottom=()=>{const el=list.current;if(el)el.scrollTop=el.scrollHeight;setNewMessages(false);};
  const refresh=useCallback(async()=>{
   const version=generation.current;if(!uid||auth.currentUser?.uid!==uid)return;
   try{
-   const data=await request(undefined,undefined,revision.current);if(version!==generation.current)return;revision.current=data.revision;if(data.unchanged){setError('');return;}
+   const full=Date.now()-lastFull.current>60000;const data=await request(undefined,undefined,full?undefined:revision.current);if(full)lastFull.current=Date.now();if(version!==generation.current)return;revision.current=data.revision;if(data.unchanged){setError('');return;}
    const el=list.current,nearBottom=!el||el.scrollHeight-el.scrollTop-el.clientHeight<100;
    setMessages(old=>{const map=new Map(old.map(m=>[m.id,m]));let added=false;for(const message of data.messages){if(!map.has(message.id))added=true;map.set(message.id,message);}if(added&&!nearBottom&&!initial.current)setNewMessages(true);return [...map.values()].sort((a,b)=>(a.createdAt||'').localeCompare(b.createdAt||'')||a.id.localeCompare(b.id));});
    if(initial.current){setMore(data.hasMore);setCursor(data.cursor);initial.current=false;}
@@ -36,13 +40,10 @@ export default function ChatPage(){
   const visible=()=>{if(document.visibilityState==='visible')void refresh();};document.addEventListener('visibilitychange',visible);window.addEventListener('online',visible);
   return()=>{active=false;clearTimeout(timer);document.removeEventListener('visibilitychange',visible);window.removeEventListener('online',visible);};
  },[uid,refresh]);
- const send=async()=>{
-  const message=text.trim();if(!message||message.length>1000||sending.current||!uid)return;
-  const version=generation.current;sending.current=true;setBusy(true);setError('');
-  const attempt=pending.current?.text===message?pending.current:{text:message,id:crypto.randomUUID()};pending.current=attempt;
-  try{await request({method:'POST',body:JSON.stringify({text:message,clientId:attempt.id})});if(version!==generation.current)return;pending.current=null;setText(current=>current.trim()===message?'':current);await refresh();requestAnimationFrame(bottom);}
-  catch(e){if(version===generation.current)setError(e instanceof Error?e.message:'Zprávu se nepodařilo odeslat.');}
-  finally{sending.current=false;if(version===generation.current)setBusy(false);}
+ const send=async(text:string,activityId?:string,replyTo?:string,clientId?:string)=>{
+  const version=generation.current;setError('');
+  try{await request({method:'POST',body:JSON.stringify({text,activityId,replyTo,clientId})});if(version!==generation.current)return false;await refresh();requestAnimationFrame(bottom);return true;}
+  catch(e){if(version===generation.current)setError(e instanceof Error?e.message:'Zprávu se nepodařilo odeslat.');return false;}
  };
  const older=async()=>{
   if(!cursor||olderBusy)return;const version=generation.current,el=list.current,height=el?.scrollHeight||0,top=el?.scrollTop||0;setOlderBusy(true);
@@ -56,11 +57,10 @@ export default function ChatPage(){
   <div ref={list} className="chat-messages" role="log" aria-label="Zprávy ve společném chatu" aria-live="polite" aria-relevant="additions text" tabIndex={0} onScroll={()=>{const el=list.current;if(el&&el.scrollHeight-el.scrollTop-el.clientHeight<100)setNewMessages(false);}}>
    {more&&<button className="tile-button chat-older" disabled={olderBusy} onClick={()=>void older()}>{olderBusy?'Načítám…':'Starší zprávy'}</button>}
    {loading&&!messages.length?<p role="status">Načítám chat…</p>:!messages.length&&!error?<p className="chat-empty">Zatím tu není žádná zpráva. Napiš první.</p>:null}
-   {messages.map(message=><article key={message.id} className={`chat-message${message.uid===uid?' is-mine':''}`}><header><strong>{message.nickname}</strong><time dateTime={message.createdAt||undefined}>{message.createdAt?new Date(message.createdAt).toLocaleString('cs-CZ',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}):'Právě teď'}</time>{message.canDelete&&!message.deleted&&<button type="button" className="chat-delete" aria-label="Odstranit zprávu" title="Odstranit zprávu" onClick={()=>void remove(message.id)}><Trash2 size={16}/></button>}</header><p className={message.deleted?'chat-deleted':''}>{message.deleted?'Zpráva byla odstraněna.':message.text}</p></article>)}
+   {messages.map(message=><article key={message.id} className={`chat-message${message.uid===uid?' is-mine':''}`}><header><strong>{message.nickname}</strong><time dateTime={message.createdAt||undefined}>{message.createdAt?new Date(message.createdAt).toLocaleString('cs-CZ',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}):'Právě teď'}</time>{message.canDelete&&!message.deleted&&<button type="button" className="chat-delete" aria-label="Odstranit zprávu" title="Odstranit zprávu" onClick={()=>void remove(message.id)}><Trash2 size={16}/></button>}</header>{!message.deleted&&message.reply&&<blockquote className="chat-reply-preview"><strong>{message.reply.nickname}</strong><span>{message.reply.text}</span></blockquote>}{!message.deleted&&message.activity&&<ChatActivityPreview activity={message.activity}/>} {!message.deleted&&message.activityUnavailable&&<p className="chat-deleted">Aktivita už není dostupná.</p>}<p className={message.deleted?'chat-deleted':''}>{message.deleted?'Zpráva byla odstraněna.':message.text}</p>{!message.deleted&&<button type="button" className="chat-reply-button" onClick={()=>setReply({id:message.id,nickname:message.nickname,text:message.text||'Sdílená aktivita'})}><Reply size={16}/> Odpovědět</button>}</article>)}
   </div>
   {newMessages&&<button className="tile-button" onClick={bottom}>Nové zprávy ↓</button>}
   {error&&<p className="chat-error" role="alert">{error} <button type="button" onClick={()=>void refresh()}>Zkusit načíst znovu</button></p>}
-  <form className="chat-compose" onSubmit={e=>{e.preventDefault();void send();}}><label htmlFor="chat-text" className="sr-only">Zpráva do společného chatu</label><textarea id="chat-text" value={text} maxLength={1000} rows={2} disabled={!uid} placeholder="Napiš zprávu…" onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send();}}}/><button type="submit" className="run-primary-button" disabled={!uid||busy||!text.trim()} aria-label="Odeslat zprávu"><Send size={20}/><span>{busy?'Odesílám…':'Odeslat'}</span></button></form>
-  <small className="chat-hint">Enter odešle · Shift + Enter nový řádek · {text.length}/1000</small>
+  <ChatComposer key={uid} uid={uid} reply={reply} onCancelReply={()=>setReply(null)} onSend={send}/>
  </section></main></>;
 }

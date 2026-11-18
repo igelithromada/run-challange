@@ -7,6 +7,7 @@ import NetworkStatus from "./components/NetworkStatus";
 import { setHapticsEnabled, triggerHaptic } from "./lib/haptics";
 import { mergePublicProfile } from "./lib/services/publicProfiles";
 import { getUserProfile, mergeUserProfile } from "./lib/services/users";
+import FloatingChat from "./components/FloatingChat";
 import AppToast from "./components/AppToast";
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
@@ -180,6 +181,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
         <NetworkStatus />
         <AppToast />
         {children}
+        <FloatingChat/>
       </div>
     </>
   );

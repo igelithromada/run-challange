@@ -1,11 +1,12 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),ts=require('typescript');
+const projectionModule={exports:{}};vm.runInNewContext(ts.transpileModule(fs.readFileSync('app/lib/chat.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{module:projectionModule,exports:projectionModule.exports,Date});
 function setup(){
  const docs=new Map([['users/member',{nickname:'Radek',role:'user'}],['users/other',{nickname:'Verča',role:'user'}],['users/admin',{nickname:'Správce',role:'admin'}]]);let uid='member',unauthorized=false,writes=0;
  const snapshot=path=>({id:path.split('/').at(-1),exists:docs.has(path),data:()=>docs.get(path)});
  const ref=path=>({id:path.split('/').at(-1),path,get:async()=>snapshot(path)});
- const db={collection:name=>({doc:id=>ref(name+'/'+id),orderBy:()=>({limit:()=>({get:async()=>({docs:[...docs.keys()].filter(p=>p.startsWith(name+'/')).map(snapshot).sort((a,b)=>b.data().createdAt.toDate()-a.data().createdAt.toDate())}),startAfter:()=>({get:async()=>({docs:[]})})})})}),runTransaction:async fn=>fn({get:async r=>snapshot(r.path),set:(r,d)=>{writes++;docs.set(r.path,d)},update:(r,d)=>{writes++;docs.set(r.path,{...docs.get(r.path),...d})}})};
+ const db={collection:name=>({doc:id=>ref(name+'/'+id),where:(field,op,value)=>({get:async()=>({docs:[...docs.keys()].filter(p=>p.startsWith(name+'/')&&docs.get(p)[field]===value).map(snapshot)})}),orderBy:()=>({limit:()=>({get:async()=>({docs:[...docs.keys()].filter(p=>p.startsWith(name+'/')).map(snapshot).sort((a,b)=>b.data().createdAt.toDate()-a.data().createdAt.toDate())}),startAfter:()=>({get:async()=>({docs:[]})})})})}),runTransaction:async fn=>fn({get:async r=>snapshot(r.path),set:(r,d)=>{writes++;docs.set(r.path,d)},update:(r,d)=>{writes++;docs.set(r.path,{...docs.get(r.path),...d})}})};
  const module={exports:{}},file='app/api/chat/route.ts';const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
- vm.runInNewContext(code,{module,exports:module.exports,require:n=>n==='next/server'?{NextResponse:{json:(data,options)=>Response.json(data,options)}}:n==='firebase-admin/firestore'?{FieldValue:{serverTimestamp:()=>({toDate:()=>new Date()})}}:n==='../../lib/apiAuth'?{requireUser:async()=>{if(unauthorized)throw new Error('auth');if(docs.get('users/'+uid)?.blocked)throw new Error('blocked');return{decoded:{uid},adminDb:db}},authErrorResponse:e=>e.message==='auth'?{message:'Nejsi přihlášen.',status:401}:e.message==='blocked'?{message:'Blokováno',status:403}:null}:require(n),Date,URL,console});
+ vm.runInNewContext(code,{module,exports:module.exports,require:n=>n==='../../lib/chat'?projectionModule.exports:n==='next/server'?{NextResponse:{json:(data,options)=>Response.json(data,options)}}:n==='firebase-admin/firestore'?{FieldValue:{serverTimestamp:()=>({toDate:()=>new Date()})}}:n==='../../lib/apiAuth'?{requireUser:async()=>{if(unauthorized)throw new Error('auth');if(docs.get('users/'+uid)?.blocked)throw new Error('blocked');return{decoded:{uid},adminDb:db}},authErrorResponse:e=>e.message==='auth'?{message:'Nejsi přihlášen.',status:401}:e.message==='blocked'?{message:'Blokováno',status:403}:null}:require(n),Date,URL,console});
  const api=module.exports,request=(method,body,query='')=>api[method](new Request('https://example.com/api/chat'+query,{method,...(method==='GET'?{}:{body:JSON.stringify(body)})}));return{docs,request,user:u=>uid=u,deny:()=>unauthorized=true,writes:()=>writes};
 }
 test('chat rejects unauthenticated access and blocked senders',async()=>{const s=setup();s.deny();for(const method of ['GET','POST','DELETE'])assert.equal((await s.request(method,{})).status,401);const b=setup();b.docs.get('users/member').blocked=true;assert.equal((await b.request('POST',{text:'Zpráva',clientId:'one'})).status,403);});
@@ -14,3 +15,26 @@ test('chat deduplicates retry requests and rate limits a different message',asyn
 test('only author or admin can retract a message; tombstones erase text but retain ordering',async()=>{const s=setup();await s.request('POST',{text:'Ahoj',clientId:'one'});s.user('other');assert.equal((await s.request('DELETE',{id:'member_one'})).status,403);assert.equal(s.docs.get('communityChat/member_one').text,'Ahoj');s.user('admin');assert.equal((await s.request('DELETE',{id:'member_one'})).status,200);assert.equal(s.docs.get('communityChat/member_one').deleted,true);assert.equal(s.docs.get('communityChat/member_one').text,'');assert.ok(s.docs.get('communityChat/member_one').createdAt);});
 test('chat returns safe chronological messages and does not expose internal fields',async()=>{const s=setup();await s.request('POST',{text:'<script>text only</script>',clientId:'one'});const response=await s.request('GET');assert.equal(response.headers.get('cache-control'),'private, no-store');const data=await response.json();assert.equal(data.messages.length,1);assert.equal(data.messages[0].canDelete,true);assert.equal(data.messages[0].text,'<script>text only</script>');assert.equal(data.hasMore,false);assert.equal((await s.request('GET',null,'?before=../bad')).status,400);});
 test('unchanged chat polling returns only a revision and does not resend history',async()=>{const s=setup();await s.request('POST',{text:'Ahoj',clientId:'one'});const first=await(await s.request('GET')).json();const next=await(await s.request('GET',null,'?revision='+encodeURIComponent(first.revision))).json();assert.equal(next.unchanged,true);assert.deepEqual(next.messages,[]);});
+
+test('activity picker returns only the latest three own public activity previews',async()=>{
+ const s=setup();for(let i=0;i<5;i++)s.docs.set('runs/r'+i,{uid:'member',type:i===4?'kliky':'běh',repetitions:30,km:i,timestamp:new Date(2026,0,i+1),email:'private'});
+ s.docs.set('runs/foreign',{uid:'other',timestamp:new Date(2027,0,1)});
+ const data=await(await s.request('GET',null,'?picker=activities')).json();
+ assert.deepEqual(data.activities.map(a=>a.id),['r4','r3','r2']);assert.equal(data.activities[0].amount,30);assert.equal(data.activities[0].email,undefined);
+});
+test('shared activity is validated on the server and can be sent without text',async()=>{
+ const s=setup();s.docs.set('runs/own',{uid:'member',type:'dřepy',repetitions:45});s.docs.set('runs/foreign',{uid:'other'});
+ assert.equal((await s.request('POST',{activityId:'foreign',clientId:'bad'})).status,400);
+ assert.equal((await s.request('POST',{activityId:'missing',clientId:'bad'})).status,400);
+ assert.equal((await s.request('POST',{activityId:'own',clientId:'one',activity:{amount:999}})).status,200);
+ let data=await(await s.request('GET')).json();assert.equal(data.messages[0].activity.amount,45);
+ s.docs.delete('runs/own');data=await(await s.request('GET')).json();assert.equal(data.messages[0].activityUnavailable,true);
+});
+test('replies resolve the original message and respect its later deletion',async()=>{
+ const s=setup();await s.request('POST',{text:'Původní text',clientId:'one'});s.user('other');
+ assert.equal((await s.request('POST',{text:'Reakce',replyTo:'missing',clientId:'bad'})).status,400);
+ await s.request('POST',{text:'Reakce',replyTo:'member_one',clientId:'two'});
+ let data=await(await s.request('GET')).json();assert.equal(data.messages.find(m=>m.id==='other_two').reply.text,'Původní text');
+ s.user('member');await s.request('DELETE',{id:'member_one'});
+ data=await(await s.request('GET')).json();assert.equal(data.messages.find(m=>m.id==='other_two').reply.text,'Původní zpráva byla odstraněna.');
+});
