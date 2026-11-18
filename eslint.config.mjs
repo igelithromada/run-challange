@@ -10,6 +10,11 @@ export default defineConfig([
       "react-hooks/static-components": "warn",
     },
   },
+  {
+    files: ["tests/**/*.cjs"],
+    // The isolated VM tests inject their own CommonJS module object.
+    rules: { "@next/next/no-assign-module-variable": "off" },
+  },
   globalIgnores([
     ".next/**",
     "node_modules/**",

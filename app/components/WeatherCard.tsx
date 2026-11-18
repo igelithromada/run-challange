@@ -115,7 +115,7 @@ export default function WeatherCard() {
     if (knownPosition) acceptPosition(knownPosition);
     else navigator.geolocation.getCurrentPosition(acceptPosition, rejectPosition, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
   };
-  locateRef.current = position => chooseLocation(true, position);
+  useEffect(() => { locateRef.current = position => chooseLocation(true, position); });
 
   useEffect(() => {
     if (!followLocation || !navigator.geolocation) return;

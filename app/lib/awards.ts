@@ -1,7 +1,7 @@
-import { activityAmount, isStrengthActivity } from "./activity";
+import { activityAmount, isStrengthActivity, recordActivityType } from "./activity";
 import { parseActivityDate } from "./runData";
 import type { ActivityType } from "../types";
-export type AwardRun = { id: string; repetitions?:number; km: number | string; timestamp?: unknown; type?: string };
+export type AwardRun = { id: string; repetitions?:number; km: number | string; timestamp?: unknown; type?: string; activityType?: string; deleting?: boolean };
 export type Award = {
   id: string;
   title: string;
@@ -31,9 +31,8 @@ export function activityAwards(
     morning = 0,
     night = 0;
   for (const run of runs) {
-    if ((run.type || "běh") !== type) continue;
+    if (run.deleting || recordActivityType(run) !== type) continue;
     if (seen.has(run.id)) continue;
-    seen.add(run.id);
     const date = parseActivityDate(run.timestamp),
       distance = activityAmount(run);
     if (
@@ -43,6 +42,7 @@ export function activityAwards(
       distance <= 0
     )
       continue;
+    seen.add(run.id);
     const parts = Object.fromEntries(
         czechTime.formatToParts(date).map((p) => [p.type, p.value]),
       ),
@@ -66,6 +66,7 @@ export function activityAwards(
     longestStreak = Math.max(longestStreak, current);
     previous = day;
   }
+  const reachedAmount = (amount: number, target: number) => Math.round(amount * 1e8) >= target * 1e8;
   const bestMonth = Math.max(0, ...months.values());
   const one = (
     id: string,
@@ -91,22 +92,22 @@ export function activityAwards(
       activities >= 1,
     ),
     ...(strength ? [
-      one("reps100", "První stovka", "Celkem 100 opakování", "🥉", km >= 100),
-      one("reps500", "Pět set", "Celkem 500 opakování", "🥈", km >= 500),
-      one("reps1000", "Tisícovka", "Celkem 1 000 opakování", "🥇", km >= 1000),
-      one("reps5000", "Pět tisíc", "Celkem 5 000 opakování", "🏆", km >= 5000),
-      one("month1000", "Silný měsíc", "1 000 opakování v jednom měsíci", "💪", bestMonth >= 1000),
+      one("reps100", "První stovka", "Celkem 100 opakování", "🥉", reachedAmount(km, 100)),
+      one("reps500", "Pět set", "Celkem 500 opakování", "🥈", reachedAmount(km, 500)),
+      one("reps1000", "Tisícovka", "Celkem 1 000 opakování", "🥇", reachedAmount(km, 1000)),
+      one("reps5000", "Pět tisíc", "Celkem 5 000 opakování", "🏆", reachedAmount(km, 5000)),
+      one("month1000", "Silný měsíc", "1 000 opakování v jednom měsíci", "💪", reachedAmount(bestMonth, 1000)),
     ] : [
-    one("km10", "Desítka", "Celkem 10 km", "🔟", km >= 10),
-    one("km50", "Padesátka", "Celkem 50 km", "🥉", km >= 50),
-    one("km100", "Stovka", "Celkem 100 km", "🥈", km >= 100),
-    one("km250", "Čtvrt tisíce", "Celkem 250 km", "🥇", km >= 250),
+    one("km10", "Desítka", "Celkem 10 km", "🔟", reachedAmount(km, 10)),
+    one("km50", "Padesátka", "Celkem 50 km", "🥉", reachedAmount(km, 50)),
+    one("km100", "Stovka", "Celkem 100 km", "🥈", reachedAmount(km, 100)),
+    one("km250", "Čtvrt tisíce", "Celkem 250 km", "🥇", reachedAmount(km, 250)),
     one(
       "month100",
       "Stokilometrový měsíc",
       "100 km v jednom kalendářním měsíci",
       "🌙",
-      bestMonth >= 100,
+      reachedAmount(bestMonth, 100),
     ),
     ]),
     one(
@@ -134,7 +135,7 @@ export function activityAwards(
       id: "morning",
       title: "Ranní ptáče",
       detail: "Každá aktivita od 5:00 do 7:59 · český čas",
-      icon: "🌅",
+      icon: "🐦",
       count: morning,
       repeatable: true,
     },

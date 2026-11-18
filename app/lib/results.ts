@@ -1,3 +1,4 @@
+import { recordActivityType } from "./activity";
 import { normalizeActivityType } from "./validation";
 import { activityAwards, awardTotal, type Award } from "./awards";
 import { activityMetrics, type ActivityMetric } from "./activityMetrics";
@@ -70,7 +71,7 @@ export function resultRuns(
     end = to ? Date.parse(to + "T23:59:59.999") : Infinity;
   if (Number.isNaN(start) || Number.isNaN(end) || start > end) return [];
   return runs.filter((run) => {
-    if (!run.uid || (run.type || "běh") !== type) return false;
+    if (!run.uid || recordActivityType(run) !== type) return false;
     const date = parseActivityDate(run.timestamp);
     return date !== null && date.getTime() >= start && date.getTime() <= end;
   });
@@ -92,7 +93,7 @@ export function resultPeople(
       avatar = items.find((r) => r.avatarUrl);
     const awards = activityAwards(
       items,
-      normalizeActivityType(items[0]?.type),
+      normalizeActivityType(recordActivityType(items[0])),
     );
     return {
       awards,

@@ -271,20 +271,26 @@ html[data-theme="white"] .metric-pace { --metric-mark: #945b03; }
 html[data-theme="white"] .metric-repetitions { --metric-mark: #7853ad; }
 
 .activity-type-selector { padding-bottom: .65rem; }
-.activity-card-meta { display: grid; justify-items: end; align-self: start; gap: .15rem; }
-.activity-card-meta .activity-awards-button {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
+.activity-record-byline { display: grid; justify-items: end; align-self: start; gap: .15rem; }
+.activity-awards-anchor { min-height: 1px; min-width: 1px; }
+.activity-record-byline .activity-awards-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .22rem;
+  min-width: 36px;
+  min-height: 34px;
   border: 0;
   border-radius: 8px;
   padding: 0;
   background: transparent;
-  color: var(--hierarchy-muted);
+  color: #ffd282;
+  font: inherit;
+  font-size: .78rem;
   cursor: pointer;
 }
-.activity-awards-button:hover { background: var(--ui-bg-soft); }
+html[data-theme="white"] .activity-record-byline .activity-awards-button { color: #865300; }
+.activity-record-byline .activity-awards-button:hover { background: var(--ui-bg-soft); }
 
 .activity-awards-dialog {
   width: min(90vw, 360px);
@@ -308,24 +314,40 @@ html[data-theme="dark"] .activity-awards-dialog { background: #191b20; }
 }
 .activity-awards-dialog h2, .challenge-results-header h2 { margin: 0; }
 .activity-awards-dialog small { color: var(--ui-muted); }
-.activity-awards-grid {
-  list-style: none;
+.award-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: .4rem;
-  padding: 0;
-  margin: .75rem 0 0;
+  gap: .45rem;
+  margin-top: .7rem;
 }
-.activity-awards-grid li {
+.award-metrics-scroll {
   display: flex;
-  align-items: center;
-  gap: .48rem;
-  padding: .52rem .45rem;
-  background: var(--ui-bg-soft);
-  border: 1px solid var(--ui-border);
-  border-radius: 10px;
+  overflow-x: auto;
+  padding-bottom: .6rem;
+  scroll-snap-type: x proximity;
 }
-.activity-awards-grid strong { display: block; font-size: .77rem; overflow-wrap: anywhere; }
+.award-metrics-scroll > .award-metric {
+  flex: 0 0 min(78%, 220px);
+  scroll-snap-align: start;
+}
+.award-metrics > .award-metric.app-metric {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  text-align: start;
+  min-width: 0;
+  padding: .65rem !important;
+  border: 1px solid var(--hierarchy-line) !important;
+  border-radius: 12px !important;
+  background: var(--ui-bg-soft) !important;
+}
+.award-metric .app-metric-icon { color: var(--hierarchy-accent); }
+.award-metric .app-metric-heading { justify-content: flex-start !important; text-align: start !important; }
+.award-metric .app-metric-detail { text-align: start; overflow-wrap: anywhere; }
+.award-metric.is-locked .app-metric-value { opacity: .72; }
+@media (max-width: 350px) {
+  .award-metrics:not(.award-metrics-scroll) { grid-template-columns: 1fr; }
+}
 
 .challenge-results-section { display: grid; gap: .85rem; }
 .challenge-results-header { flex-wrap: wrap; }

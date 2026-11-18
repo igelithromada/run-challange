@@ -248,13 +248,13 @@ export default function ActivityRecorder({ type, onFinished, ownerUid }:{
     if(!started) setRequestingLocation(false);
   };
 
-  const pause=()=>{
+  const pause=(now: number)=>{
     if(!runningRef.current) return;
 
     if(!pausedRef.current){
-      pausedAtRef.current=Date.now();
+      pausedAtRef.current=now;
       pausedRef.current=true;
-      setElapsed(activeSecondsAt(Date.now()));
+      setElapsed(activeSecondsAt(now));
       setPaused(true);
       persist();
       lastPointRef.current=null;
@@ -262,7 +262,6 @@ export default function ActivityRecorder({ type, onFinished, ownerUid }:{
     }
 
     if(watchIdRef.current===null){retryGps();return;}
-    const now=Date.now();
     if(pausedAtRef.current) pausedTotalRef.current+=now-pausedAtRef.current;
     pausedAtRef.current=null;
     pausedRef.current=false;
@@ -506,7 +505,7 @@ export default function ActivityRecorder({ type, onFinished, ownerUid }:{
     <div className="activity-recorder-actions">
       {!running && elapsed===0 && !requestingLocation && <button type="button" className="run-primary-button gps-action-full" onClick={start}><Play size={18}/> Spustit {activityName.toLowerCase()}</button>}
       {requestingLocation && <button type="button" className="run-primary-button gps-action-full" disabled><MapPin size={18}/> Získávám polohu…</button>}
-      {running && !gpsUnavailable && <button type="button" className="run-secondary-button gps-action" onClick={pause}>{paused?<Play size={18}/>:<Pause size={18}/>} {paused?"Pokračovat":"Pozastavit"}</button>}
+      {running && !gpsUnavailable && <button type="button" className="run-secondary-button gps-action" onClick={()=>pause(Date.now())}>{paused?<Play size={18}/>:<Pause size={18}/>} {paused?"Pokračovat":"Pozastavit"}</button>}
       {running && gpsUnavailable && <button type="button" className="run-secondary-button gps-action" onClick={retryGps}><MapPin size={18}/> Zkusit GPS znovu</button>}
       {running && <button type="button" className="run-primary-button gps-action" onClick={stop}><Square size={17}/> Ukončit</button>}
       {canContinue && <button type="button" className="run-primary-button gps-action" onClick={finishDraft}>Použít měření a vytvořit záznam</button>}

@@ -75,7 +75,12 @@ export default function RunForm({ type }: {
   const [photoDraftError,setPhotoDraftError]=useState("");
   const ownerUid=auth.currentUser?.uid;
   const draftOwner=useRef(ownerUid);
-  if(draftOwner.current!==ownerUid){draftOwner.current=ownerUid;persistEnabled.current=false;}
+  useEffect(() => {
+    if (draftOwner.current !== ownerUid) {
+      draftOwner.current = ownerUid;
+      persistEnabled.current = false;
+    }
+  }, [ownerUid]);
   const activityLabel = strength ? labelFor(type).toLowerCase() : type === "chůze" ? "chůzi" : "běh";
   const activityPast = "Aktivita byla";
 

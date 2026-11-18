@@ -1,7 +1,6 @@
 "use client";
 
-import "./globals.css";
-import "./fixes.css";
+import "./styles.css";
 
 import { RefreshCw } from "lucide-react";
 

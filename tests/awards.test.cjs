@@ -29,3 +29,21 @@ test('gallery is in tools and awards include every existing badge plus the two r
  const {NAVIGATION_ITEMS}=load('app/lib/navigation.ts');assert.equal(NAVIGATION_ITEMS.find(i=>i.id==='gallery').group,'tools');
  const awards=activityAwards([]);assert.equal(awards.length,11);assert.equal(awards.filter(a=>a.repeatable).length,2);assert.equal(awardTotal(awards),0);
 });
+
+test('achievements count each activity family independently, including legacy records and exact kilometre thresholds', () => {
+ const records = [
+  ...Array.from({ length: 100 }, (_, index) => run('run'+index,'2026-11-16T12:00:00Z',.1)),
+  run('walk','2026-11-16T12:00:00Z',9,'chůze'),
+  { ...run('push','2026-11-16T12:00:00Z',0), type:undefined, activityType:'kliky', repetitions:500 },
+  { ...run('squat','2026-11-16T12:00:00Z',0,'dřepy'), repetitions:99 },
+  { ...run('deleting','2026-11-16T12:00:00Z',10,'chůze'), deleting:true },
+ ];
+ const running = activityAwards(records,'běh',now), walking = activityAwards(records,'chůze',now);
+ const pushups = activityAwards(records,'kliky',now), squats = activityAwards(records,'dřepy',now);
+ assert.equal(count(running,'km10'),1);
+ assert.equal(count(walking,'km10'),0);
+ assert.equal(count(pushups,'reps500'),1);
+ assert.equal(count(squats,'reps100'),0);
+ assert.equal(pushups.some(award => award.id.startsWith('km')),false);
+ assert.equal(running.some(award => award.id.startsWith('reps')),false);
+});

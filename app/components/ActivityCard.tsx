@@ -266,7 +266,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
             <small className="activity-kind-label">{activityLabel(activityType)}</small>
             {teamName && <small className="activity-team-line"><span className="activity-team-avatar">{teamAvatarUrl ? <img src={cloudinaryImageUrl(teamAvatarUrl, 48)} alt="" /> : "T"}</span><b>Tým</b> · {teamName}</small>}
           </div>
-          <div className="activity-card-meta">
+          <div className="activity-record-byline">
             {date && <time className="activity-date" dateTime={date.toISOString()}>{date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}
             {run.uid && <ActivityAwardsButton key={run.uid} uid={run.uid} nickname={resolvedNickname} />}
           </div>

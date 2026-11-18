@@ -2,7 +2,7 @@ import "./styles.css";
 import "./professional-ui.css";
 import "./visual-hierarchy.css";
 import "./chat.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ReactNode } from "react";
 import ClientLayout from "./ClientLayout";
 
@@ -14,7 +14,12 @@ export const metadata: Metadata = {
   description: "Běžecká a pohybová výzva Dolní Lhota.",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icon.svg" },
-  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
   themeColor: "#17364b",
 };
 

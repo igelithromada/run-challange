@@ -42,8 +42,9 @@ export default function ProgressChart({
     () => progressPoints(runs, from, to),
     [runs, from, to],
   );
+  const [chartNow] = useState(Date.now);
   const start = Date.parse(from + "T00:00:00"),
-    end = Math.min(Date.parse(to + "T23:59:59.999"), Date.now());
+    end = Math.min(Date.parse(to + "T23:59:59.999"), chartNow);
   const max = points.at(-1)?.totalKm || 1;
   const px = (time: number) =>
       2 + ((time - start) / Math.max(1, end - start)) * 96,

@@ -1,12 +1,13 @@
 "use client";
 import Metric from "../components/Metric";
-import { activityAmount, activityUnit, isStrengthActivity } from "../lib/activity";
+import AwardMetrics from "../components/AwardMetrics";
+import { activityAmount, activityUnit, isStrengthActivity, recordActivityType } from "../lib/activity";
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { Award, CalendarDays, Footprints, Medal, Trophy, CheckCircle2, Lock, Zap, Flame } from "lucide-react";
+import { Award, CalendarDays, Footprints, Medal, Trophy, Zap, Flame } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { parseActivityDate } from "../lib/runData";
 import { activityAwards, awardTotal, type Award as ProgressAward } from "../lib/awards";
@@ -37,13 +38,7 @@ function AwardSection({ title, awards, icon }: { title: string; awards: Progress
     : `Splněno ${awards.filter(award => award.count > 0).length} z ${awards.length}`;
   return <section className="progress-section">
     <div className="progress-section-title">{icon}<div><h2>{title}</h2><p>{summary}</p></div></div>
-    <div className="progress-badges-scroll" role="group" tabIndex={0} aria-label={title}>
-      {awards.map(award => <article key={award.id} className={award.count > 0 ? "progress-badge earned" : "progress-badge locked"}>
-        <span aria-hidden="true">{award.icon}</span>
-        <div><strong>{award.title} {repeatable && <b className="award-count">{award.count}×</b>}</strong><p>{award.detail}</p></div>
-        {award.count > 0 ? <CheckCircle2 size={18} aria-label="Získáno"/> : <Lock size={17} aria-label="Zatím nezískáno"/>}
-      </article>)}
-    </div>
+    <AwardMetrics awards={awards} label={title} scroll={!repeatable}/>
   </section>;
 }
 
@@ -66,7 +61,7 @@ export default function ProgressPage() {
   const personalQuery = useMemo(() => personalHistoryQuery(uid || "__no_user__"), [uid]);
   const personalState = useSharedFirestoreQuery<ProgressActivity>("personal-history:v2:" + (uid || "none"), personalQuery);
   const mine = useMemo(() => personalState.data, [personalState.data]);
-  const selected = useMemo(() => mine.filter(run => (run.type || "běh") === goalType), [mine, goalType]);
+  const selected = useMemo(() => mine.filter(run => recordActivityType(run) === goalType), [mine, goalType]);
   const now = new Date();
   const strength = isStrengthActivity(goalType), unit = activityUnit(goalType);
   const allKm = selected.reduce((sum, run) => sum + activityAmount(run), 0);

@@ -29,7 +29,7 @@ export default function ChatComposer({ uid, reply, onCancelReply, onSend }: {
   const pending = useRef<{ key: string; id: string } | null>(null);
   const sending = useRef(false);
   const latestReply = useRef(reply);
-  latestReply.current = reply;
+  useEffect(() => { latestReply.current = reply; }, [reply]);
 
   useEffect(() => { if (reply) input.current?.focus(); }, [reply]);
 
