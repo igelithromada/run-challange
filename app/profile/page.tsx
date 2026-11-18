@@ -1,7 +1,7 @@
 "use client";
 import { preparePhoto } from "../lib/preparePhoto";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, signOut, updatePassword } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import AvatarCropper from "../components/AvatarCropper";
@@ -203,31 +203,10 @@ export default function ProfilePage() {
     router.replace("/login");
   };
 
-  const handleSelect = async (item: string) => {
-    setMenuVisible(false);
-    if (item === "logout") {
-      await handleLogout();
-      return;
-    }
-    if (item === "home") {
-      router.push("/");
-      return;
-    }
-    if (item === "profile") {
-      router.push("/profile");
-      return;
-    }
-    if (item === "trainer") {
-      router.push("/trainer");
-      return;
-    }
-    router.push("/" + (item === "myrun" ? "myruns" : item));
-  };
-
   return (
     <>
       <Navbar title="Můj účet" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} />
 
       <main className="container profile-page">
 

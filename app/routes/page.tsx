@@ -161,32 +161,10 @@ export default function RoutesPage() {
       return a.route.name.localeCompare(b.route.name, "cs");
     });
 
-  const handleSelect = async (item: string) => {
-    setMenuVisible(false);
-    if (item === "logout") {
-      const { signOut } = await import("firebase/auth");
-      const { auth } = await import("../lib/firebase");
-      await signOut(auth);
-      router.push("/login");
-      return;
-    }
-    if (item === "home") router.push("/");
-    else if (item === "myrun") router.push("/myruns");
-    else if (item === "teams") router.push("/teams");
-    else if (item === "progress") router.push("/progress");
-    else if (item === "trainer") router.push("/trainer");
-    else if (item === "statistics") router.push("/statistics");
-    else if (item === "participants") router.push("/participants");
-    else if (item === "weather") router.push("/weather");
-    else if (item === "settings") router.push("/settings");
-    else if (item === "routes") router.push("/routes");
-    else router.push("/");
-  };
-
   return (
     <>
       <Navbar title="Doporučené trasy" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} />
 
       <main className="container routes-page">
         {adminAccess === "allowed" && showRouteForm && (

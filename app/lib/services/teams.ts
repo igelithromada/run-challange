@@ -1,4 +1,4 @@
-import { collection, doc, query, orderBy, setDoc, limit, startAfter, type Query, type SetOptions, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
+import { collection, query, orderBy, limit, startAfter, type Query, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
 import { db } from "../firebase";
 import { readCommunity } from "./community";
 import type { TeamData } from "../../types";
@@ -22,10 +22,6 @@ export async function fetchTeamsPage(
   return { items, lastDocument: items.length ? { id: items[items.length - 1].id } as QueryDocumentSnapshot<DocumentData, DocumentData> : null, hasMore: offset + pageSize < teams.length };
 }
 
-export function teamRef(teamId: string) {
-  return doc(db, "teams", teamId);
-}
-
 export async function getTeam(teamId: string): Promise<TeamData | null> {
   return readCommunity("team", teamId);
 }
@@ -38,12 +34,4 @@ export async function getActiveTeamIdsForUser(userId: string): Promise<string[]>
 export async function getTeamMemberIds(teamId: string): Promise<string[]> {
   const members = await readCommunity<Array<{id: string}> | null>("teamMembers", teamId);
   return (members || []).map(member => member.id);
-}
-
-export async function mergeTeam(
-  teamId: string,
-  data: Partial<Omit<TeamData, "id">>,
-  options: SetOptions = { merge: true }
-): Promise<void> {
-  await setDoc(teamRef(teamId), data, options);
 }

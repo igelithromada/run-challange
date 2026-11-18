@@ -62,9 +62,9 @@ export async function POST(request:Request){
       const challenge=adminDb.collection("challenges").doc();
       const nameRef=adminDb.collection("challengeNames").doc(key(name));
       await adminDb.runTransaction(async tx=>{
-        const [userSnap,nameSnap]=await Promise.all([tx.get(userRef),tx.get(nameRef)]);
+        // Read the creator document before updating the per-user creation state.
+        const [,nameSnap]=await Promise.all([tx.get(userRef),tx.get(nameRef)]);
         if(nameSnap.exists)throw new Error("CHALLENGE_NAME_TAKEN");
-        const user=userSnap.exists?userSnap.data()||{}:{};
         const existingSnap=await tx.get(adminDb.collection("challenges").where("createdBy","==",uid));
         const activeOrPlannedCount=existingSnap.docs.filter(d=>{
           const state=d.data()?.state;

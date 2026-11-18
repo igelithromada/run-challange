@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Footprints } from "lucide-react";
 import { ACTIVITY_TYPES, activityLabel } from "../lib/activity";
 import type { ActivityType } from "../types";
@@ -43,10 +42,12 @@ export default function ActivityTypeSelector({
   value,
   onChange,
   ariaLabel = "Typ aktivity",
+  disabled = false,
 }: {
   value: ActivityType;
   onChange: (value: ActivityType) => void;
   ariaLabel?: string;
+  disabled?: boolean;
 }) {
   return (
     <div className="activity-type-selector" role="group" aria-label={ariaLabel}>
@@ -55,6 +56,7 @@ export default function ActivityTypeSelector({
           key={type}
           type="button"
           className={value === type ? "active" : ""}
+          disabled={disabled}
           aria-pressed={value === type}
           onClick={() => onChange(type)}
         >

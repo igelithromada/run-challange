@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Camera, ShieldCheck, User, Footprints, Ban, UserCheck, Trash2, KeyRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { auth } from "../lib/firebase";
@@ -189,21 +188,12 @@ export default function AdminPage() {
     }
   };
 
-  const handleSelect = async (item: string) => {
-    setMenuVisible(false);
-    if (item === "logout") { await signOut(auth); router.push("/login"); return; }
-    if (item === "myrun") { router.push("/myruns"); return; }
-    if (item === "home") { router.push("/"); return; }
-    if (item === "trainer") { router.push("/trainer"); return; }
-    router.push("/" + item);
-  };
-
-  if (adminAccess !== "allowed") return <><Navbar title="Administrace" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")} /><Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect} /><main className="container"><div className="tile admin-loading">Ověřuji administrátorská oprávnění…</div></main></>;
+  if (adminAccess !== "allowed") return <><Navbar title="Administrace" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")} /><Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} /><main className="container"><div className="tile admin-loading">Ověřuji administrátorská oprávnění…</div></main></>;
 
   return (
     <>
       <Navbar title="Administrace" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} />
       <main className="container admin-page">
         <header className="admin-header">
           <span className="admin-eyebrow">SPRÁVA APLIKACE</span>

@@ -1,14 +1,13 @@
 "use client";
 import PhotoViewer from "../../../components/PhotoViewer";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
 import { auth } from "../../../lib/firebase";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/Sidebar";
 import useAdminGuard from "../../../lib/useAdminGuard";
-import { Camera, X } from "lucide-react";
+import { Camera } from "lucide-react";
 import { fetchRuns, userRunsQuery } from "../../../lib/services/runs";
 import { showAppToast } from "../../../components/AppToast";
 
@@ -75,20 +74,11 @@ export default function GalleryPage() {
     } finally { setDeleting(false); }
   };
 
-  const handleSelect=async(item:string)=>{
-    setMenuVisible(false);
-    if(item==="logout"){await signOut(auth);router.push("/login");return;}
-    if(item==="myrun"){router.push("/myruns");return;}
-    if(item==="home"){router.push("/");return;}
-    if(item==="trainer"){router.push("/trainer");return;}
-    router.push("/"+item);
-  };
-
-  if(adminAccess!=="allowed") return <><Navbar title="Galerie uživatele" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")} /><Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/><main className="container"><div className="tile">Ověřuji administrátorská oprávnění…</div></main></>;
+  if(adminAccess!=="allowed") return <><Navbar title="Galerie uživatele" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")} /><Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)}/><main className="container"><div className="tile">Ověřuji administrátorská oprávnění…</div></main></>;
 
   return <>
     <Navbar title="Galerie uživatele" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")} />
-    <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/>
+    <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)}/>
     <main className="container admin-gallery-page">
       <div className="admin-page-intro"><span className="admin-eyebrow">ADMINISTRACE</span><h1>Galerie uživatele</h1><p>{photos.length} fotografií · kliknutím otevřeš náhled.</p></div>
       {loading && <div className="tile">Načítám galerii…</div>}

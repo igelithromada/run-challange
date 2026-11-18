@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { Camera } from "lucide-react";
 import { auth } from "../lib/firebase";
@@ -85,16 +85,6 @@ export default function GalleryPage() {
         photos[(index + direction + photos.length) % photos.length].key,
       );
   };
-  const navigate = async (item: string) => {
-    setMenu(false);
-    if (item === "logout") {
-      await signOut(auth);
-      router.push("/login");
-    } else
-      router.push(
-        item === "home" ? "/" : item === "myrun" ? "/myruns" : "/" + item,
-      );
-  };
   return (
     <>
       <Navbar
@@ -105,7 +95,6 @@ export default function GalleryPage() {
       <Sidebar
         visible={menu}
         onClose={() => setMenu(false)}
-        onSelect={navigate}
       />
       <main className="container my-gallery-page">
             {state.error && (

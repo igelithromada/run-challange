@@ -111,10 +111,6 @@ function calculateStats(coordinates: Coordinate[], elevations: (number | null)[]
   };
 }
 
-function formatKm(value: number) {
-  return value >= 10 ? value.toFixed(0) : value.toFixed(1);
-}
-
 export default function RouteMap({ gpxUrl, mapUrl: _mapUrl, name, laps = 1, interactive = true, mapStyle = "standard" }: Props) {
   const elementRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);

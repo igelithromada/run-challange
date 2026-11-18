@@ -33,7 +33,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
       const interactive = target.closest("button, a, [role='button'], input[type='checkbox'], input[type='radio'], select, summary");
       if (!interactive) return;
       if ((interactive as HTMLButtonElement).disabled) return;
-      triggerHaptic("light");
+      triggerHaptic();
     };
 
     document.addEventListener("click", handleInteraction, true);

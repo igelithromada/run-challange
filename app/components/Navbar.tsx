@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, Flag, Heart, Home, Menu, MessageCircle, Settings, Users, X } from "lucide-react";
 import { auth } from "../lib/firebase";

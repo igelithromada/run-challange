@@ -5,7 +5,7 @@ import { activityAmount, activityUnit, isStrengthActivity, recordActivityType } 
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { Award, CalendarDays, Footprints, Medal, Trophy, Zap, Flame } from "lucide-react";
 import { auth } from "../lib/firebase";
@@ -101,18 +101,10 @@ export default function ProgressPage() {
   const remaining = Math.max(0, level.next - allKm);
   const experienceAmount = (amount: number) => amount.toLocaleString("cs-CZ", { maximumFractionDigits: strength ? 0 : 2 }) + " " + unit;
   const awards = useMemo(() => activityAwards(selected, goalType), [selected, goalType]);
-  const handleSelect = async (item: string) => {
-    setMenuVisible(false);
-    if (item==="logout") { await signOut(auth); router.push("/login"); }
-    else if (item==="home") router.push("/");
-    else if (item==="myrun") router.push("/myruns");
-    else if (item==="trainer") router.push("/trainer");
-    else router.push("/"+item);
-  };
 
   return <>
     <Navbar title="Můj pokrok" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
-    <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/>
+    <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)}/>
     <main className="container progress-page">
       <ActivityTypeSelector value={goalType} onChange={setGoalType} ariaLabel="Typ aktivity pro pokrok" />
 

@@ -1,7 +1,7 @@
 import { activityAmount } from "../activity";
 import { isActivityType } from "../validation";
 import { notifyChallengeState } from "../notifications/community";
-import { FieldValue, Timestamp, type QueryDocumentSnapshot } from "firebase-admin/firestore";
+import { Timestamp, type QueryDocumentSnapshot } from "firebase-admin/firestore";
 
 function pragueDate(value: unknown): string {
   const date = value instanceof Date ? value : value instanceof Timestamp ? value.toDate() : new Date(value as any);

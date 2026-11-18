@@ -5,9 +5,9 @@ import { activityAmount, activityUnit, isStrengthActivity, ACTIVITY_TYPES } from
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Check, ChevronLeft, ChevronRight, Save, Target, TrendingUp } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Save, TrendingUp } from "lucide-react";
 import { auth } from "../lib/firebase";
 import TrainingGoals from "../components/TrainingGoals";
 import Navbar from "../components/Navbar";
@@ -47,7 +47,6 @@ export default function TrainerPage(){
    } catch {}
  }, []);
  const [profileLoading,setProfileLoading]=useState(true);
- const [dirty,setDirty]=useState(false);
  const [modalOpen,setModalOpen]=useState(false);
  const [bulkMode,setBulkMode]=useState(false);
  const [bulkDates,setBulkDates]=useState<string[]>([]);
@@ -189,7 +188,7 @@ export default function TrainerPage(){
      const savedPlan=await persistPlan(next);
      setPlan(savedPlan);setPlansByKey(cur=>({...cur,[planKey(type,currentMonth)]:savedPlan}));
      setDates(savedPlan.dates);setDayKm(Object.fromEntries(savedPlan.dates.map(d=>[d,String(savedPlan.dayKm?.[d]??"")])));
-     setDirty(false);setModalOpen(false);return true;
+     setModalOpen(false);return true;
    }catch(error){setSaveError(error instanceof Error&&error.message?error.message:"Plán se nepodařilo uložit. Zkus to prosím znovu.");return false;}
    finally{setSaving(false);}
  };
@@ -212,14 +211,14 @@ export default function TrainerPage(){
    finally{setSaving(false);}
  };
 
- const updateSelectedKm=(value:string)=>{if(!selectedIsPast){setDayKm(cur=>({...cur,[selectedDate]:value}));setDirty(true);}};
+ const updateSelectedKm=(value:string)=>{if(!selectedIsPast){setDayKm(cur=>({...cur,[selectedDate]:value}));}};
 
  const openDayEditor=(key:string)=>{
    const d=new Date(key+"T00:00:00");
    if(d.getMonth()!==month.getMonth()||d.getFullYear()!==month.getFullYear())return;
    setSelectedDate(key);
    setModalOpen(true);
-   setDirty(false);
+
  };
 
  const showQuickInfo=(key:string,x:number,y:number)=>{
@@ -245,21 +244,16 @@ export default function TrainerPage(){
    }
    openDayEditor(s.key);
  };
- const handleSelect=async(item:string)=>{
-   setMenuVisible(false);if(item==="logout"){await signOut(auth);router.push("/login");return;}
-   const routes:Record<string,string>={home:"/",myrun:"/myruns",teams:"/teams",progress:"/progress",trainer:"/trainer",statistics:"/statistics",participants:"/participants",weather:"/weather",settings:"/settings",admin:"/admin"};
-   router.push(routes[item]||"/");
- };
 
- if(loading)return <><Navbar title="Tréninkový plán" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/><Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/><main className="container"><div className="tile"><p>Načítám tréninkového plánu…</p></div></main></>;
+ if(loading)return <><Navbar title="Tréninkový plán" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/><Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)}/><main className="container"><div className="tile"><p>Načítám tréninkového plánu…</p></div></main></>;
 
  return <>
   <Navbar title="Tréninkový plán" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
-  <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect}/>
+  <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)}/>
   <main className="container progress-page trainer-page">
    <header className="progress-header"><h1>Tréninkový plán</h1></header>
 
-   <ActivityTypeSelector value={type} onChange={v=>{if(saving)return;setType(v);setDirty(false);setModalOpen(false);setBulkMode(false);setBulkDates([]);}} ariaLabel="Typ tréninku"/>
+   <ActivityTypeSelector value={type} onChange={v=>{if(saving)return;setType(v);setModalOpen(false);setBulkMode(false);setBulkDates([]);}} ariaLabel="Typ tréninku"/>
    <TrainingGoals key={uid+type} uid={uid} type={type} runs={runs} />
 
    <section className="tile trainer-plan-card">

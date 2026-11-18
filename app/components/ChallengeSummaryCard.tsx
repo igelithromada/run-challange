@@ -22,7 +22,6 @@ export default function ChallengeSummaryCard({ challenge, joined, authorName, de
   const total = Number(challenge.sharedProgress || 0);
   const state = challenge.state === "active" ? "Probíhá" : challenge.state === "planned" ? "Plánovaná" : "Dokončená";
   const period = `${dateLabel(challenge.startDate, true)} – ${dateLabel(challenge.endDate, true)}`;
-  const crossYear = challenge.startDate.slice(0, 4) !== challenge.endDate.slice(0, 4);
   const content = <>
     <header className="activity-card-top">
       <div className="activity-avatar">

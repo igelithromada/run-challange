@@ -1,16 +1,15 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { auth } from "../../../lib/firebase";
-import { signOut } from "firebase/auth";
 import useAdminGuard from "../../../lib/useAdminGuard";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/Sidebar";
 import ActivityCard from "../../../components/ActivityCard";
 import ActivityTypeSelector from "../../../components/ActivityTypeSelector";
 import { showAppToast } from "../../../components/AppToast";
-import type { RunData, ActivityType } from "../../../types";
+import type { RunData } from "../../../types";
 import { userRunsQuery } from "../../../lib/services/runs";
 import { useSharedFirestoreQuery } from "../../../lib/useSharedFirestoreQuery";
 
@@ -66,20 +65,11 @@ export default function RecordsPage() {
     }
   };
 
-  const handleSelect = async (item:string) => {
-    setMenuVisible(false);
-    if (item==="logout") { await signOut(auth); router.push("/login"); return; }
-    if (item==="myrun") { router.push("/myruns"); return; }
-    if (item==="home") { router.push("/"); return; }
-    if (item==="trainer") { router.push("/trainer"); return; }
-    router.push("/"+item);
-  };
-
-  if (adminAccess !== "allowed") return <><Navbar title="Záznamy uživatele" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")} /><Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect} /><main className="container"><div className="tile">Ověřuji administrátorská oprávnění…</div></main></>;
+  if (adminAccess !== "allowed") return <><Navbar title="Záznamy uživatele" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")} /><Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} /><main className="container"><div className="tile">Ověřuji administrátorská oprávnění…</div></main></>;
 
   return <>
     <Navbar title="Záznamy uživatele" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")} />
-    <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} onSelect={handleSelect} />
+    <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)} />
     <main className="container admin-records-page">
       <div className="admin-page-intro">
         <span className="admin-eyebrow">ADMINISTRACE</span>
@@ -91,7 +81,7 @@ export default function RecordsPage() {
 
       <div className="list-container">
         {runs.filter(r => (r.type||"běh")===selectedType).map(run => {
-          const images = Array.isArray(run.imageUrls) && run.imageUrls.length ? run.imageUrls : run.imageUrl ? [run.imageUrl] : [];
+
           return <ActivityCard key={run.id}
             run={{...run, km:run.km??0,minuty:run.minuty??0,tempo:run.tempo??0}}
             activityType={selectedType}

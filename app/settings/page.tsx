@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { onAuthStateChanged, signOut, updatePassword } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -13,7 +13,7 @@ import { getChatPushStatus, registerChatPush, removeChatPush, registerTrainerPus
 import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
 import { setHapticsEnabled } from "../lib/haptics";
-import { invalidatePublicProfileCache, mergePublicProfile } from "../lib/services/publicProfiles";
+import { invalidatePublicProfileCache } from "../lib/services/publicProfiles";
 import { getUserProfile, saveUserSettings, invalidateUserProfileCache } from "../lib/services/users";
 
 const DEFAULT_COLOR = "#36D1DC";
@@ -27,7 +27,6 @@ const normalizeTheme = (value: unknown) => {
 export default function SettingsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
   const [theme, setTheme] = useState("default");
   const [customColor, setCustomColor] = useState(DEFAULT_COLOR);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -35,9 +34,6 @@ export default function SettingsPage() {
   const [hapticsEnabled, setHapticsEnabledState] = useState(true);
   const [defaultActivity, setDefaultActivity] = useState<import("../types").ActivityType>("běh");
   const [saving, setSaving] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
-  const [passwordSaving, setPasswordSaving] = useState(false);
   const [trainerDeliveryReady, setTrainerDeliveryReady] = useState<boolean | null>(null);
   const [trainerNotifications, setTrainerNotifications] = useState({ enabled: false, today: true, tomorrow: true, todayTime: "07:00", tomorrowTime: "18:00" });
   const [socialNotifications, setSocialNotifications] = useState({ likes: true, comments: true, teams: true, challenges: true, chat: true });
@@ -66,13 +62,14 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
+    let active = true;
     const unsub = onAuthStateChanged(auth, async user => {
+      if (!active) return;
       if (!user) { router.replace("/login"); return; }
       setUserId(user.uid);
-      setEmail(user.email || "");
       try {
         const data = await getUserProfile(user.uid);
-        if (data) {
+        if (active && auth.currentUser?.uid === user.uid && data) {
           const remoteTheme = normalizeTheme(data.theme);
           const remoteColor = data.customColor || DEFAULT_COLOR;
           const remoteGradient = data.gradientEnabled !== false;
@@ -118,51 +115,53 @@ export default function SettingsPage() {
         console.error("Nepodařilo se načíst nastavení:", error);
       }
     });
-    return () => unsub();
+    return () => { active = false; unsub(); };
   }, [router]);
 
   const flash = (message: string, type: "success" | "error" | "info" = "success") => {
     showAppToast(message, type);
   };
 
-  const saveSettings = async (patch: Record<string, unknown>) => {
-    const activeUserId = userId || auth.currentUser?.uid;
-    const currentUser = auth.currentUser;
-    if (!activeUserId || !currentUser) throw new Error("Nejsi přihlášen.");
+  const settingsWrite = useRef(false);
+
+  async function runSettingsWrite(action: () => Promise<void>, errorMessage: string) {
+    if (settingsWrite.current) return;
+    settingsWrite.current = true;
     setSaving(true);
     try {
-      const themeChanged = "theme" in patch || "customColor" in patch || "gradientEnabled" in patch;
-      if (themeChanged) {
-        const token = await currentUser.getIdToken(true);
-        const response = await fetch("/api/settings/appearance", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            theme: patch.theme ?? theme,
-            customColor: patch.customColor ?? customColor,
-            gradientEnabled: patch.gradientEnabled ?? gradientEnabled,
-          }),
-        });
-        const result = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(result.error || "Vzhled se nepodařilo uložit.");
-        invalidateUserProfileCache(currentUser.uid);
-        return;
-      }
-      await saveUserSettings(activeUserId, { ...patch });
-      if ("defaultActivity" in patch) {
-        await mergePublicProfile(activeUserId, { activityType: defaultActivity });
-      }
+      await action();
+    } catch (error) {
+      flash(error instanceof Error ? error.message : errorMessage, "error");
     } finally {
+      settingsWrite.current = false;
       setSaving(false);
     }
-  };
+  }
 
-  const handleThemeChange = async (selectedTheme: string) => {
-    setTheme(selectedTheme);
-    await applyTheme(selectedTheme, customColor, gradientEnabled);
-    await saveSettings({ theme: selectedTheme });
-    flash("Vzhled uložen");
-  };
+  async function saveAppearance(nextTheme: string, nextColor: string, nextGradient: boolean) {
+    const currentUser = auth.currentUser;
+    if (!currentUser) throw new Error("Nejsi přihlášen.");
+    const token = await currentUser.getIdToken();
+    const response = await fetch("/api/settings/appearance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ theme: nextTheme, customColor: nextColor, gradientEnabled: nextGradient }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "Vzhled se nepodařilo uložit.");
+    invalidateUserProfileCache(currentUser.uid);
+    return auth.currentUser?.uid === currentUser.uid;
+  }
+
+  function handleThemeChange(selectedTheme: string) {
+    return runSettingsWrite(async () => {
+      if (!await saveAppearance(selectedTheme, customColor, gradientEnabled)) return;
+      setTheme(selectedTheme);
+      setShowColorPicker(false);
+      await applyTheme(selectedTheme, customColor, gradientEnabled);
+      flash("Vzhled uložen");
+    }, "Vzhled se nepodařilo uložit.");
+  }
 
   const handleCustomColorLiveChange = async (color: string) => {
     setCustomColor(color);
@@ -170,70 +169,57 @@ export default function SettingsPage() {
     await applyTheme("custom", color, gradientEnabled);
   };
 
-  const handleCustomColorFinalSave = async () => {
-    await applyTheme("custom", customColor, gradientEnabled);
-    await saveSettings({ theme: "custom", customColor });
-    setShowColorPicker(false);
-    flash("Vlastní vzhled uložen");
-  };
+  function handleCustomColorFinalSave() {
+    return runSettingsWrite(async () => {
+      if (!await saveAppearance("custom", customColor, gradientEnabled)) return;
+      await applyTheme("custom", customColor, gradientEnabled);
+      setShowColorPicker(false);
+      flash("Vlastní vzhled uložen");
+    }, "Vlastní vzhled se nepodařilo uložit.");
+  }
 
-  const handleGradientChange = async (enabled: boolean) => {
-    const previous = gradientEnabled;
-    setGradientEnabled(enabled);
-    try {
+  function handleGradientChange(enabled: boolean) {
+    return runSettingsWrite(async () => {
+      if (!await saveAppearance(theme, customColor, enabled)) return;
+      setGradientEnabled(enabled);
       await applyTheme(theme, customColor, enabled);
-      await saveSettings({ gradientEnabled: enabled });
       flash(enabled ? "Gradient zapnutý" : "Gradient vypnutý");
-    } catch (error) {
-      setGradientEnabled(previous);
-      await applyTheme(theme, customColor, previous);
-      console.error("Nepodařilo se uložit gradient", error);
-      flash("Nastavení gradientu se nepodařilo uložit", "error");
-    }
-  };
+    }, "Nastavení gradientu se nepodařilo uložit.");
+  }
 
-  const handleHapticsChange = async (enabled: boolean) => {
-    setHapticsEnabledState(enabled);
-    setHapticsEnabled(enabled);
-    try { localStorage.setItem("dolni-lhota-haptics-v1", enabled ? "true" : "false"); } catch {}
-    try {
-      await saveSettings({ hapticsEnabled: enabled });
+  function handleHapticsChange(enabled: boolean) {
+    return runSettingsWrite(async () => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      await saveUserSettings(currentUser.uid, { hapticsEnabled: enabled });
+      if (auth.currentUser?.uid !== currentUser.uid) return;
+      setHapticsEnabledState(enabled);
+      setHapticsEnabled(enabled);
+      try { localStorage.setItem("dolni-lhota-haptics-v1", enabled ? "true" : "false"); } catch {}
       flash(enabled ? "Haptická odezva zapnuta" : "Haptická odezva vypnuta");
-    } catch (error) {
-      console.error("Nepodařilo se uložit haptickou odezvu", error);
-      flash("Nastavení haptiky se nepodařilo uložit");
-    }
-  };
+    }, "Nastavení haptiky se nepodařilo uložit.");
+  }
 
-  const handleDefaultActivityChange = async (value: import("../types").ActivityType) => {
-    const activeUserId = userId || auth.currentUser?.uid;
-    const currentUser = auth.currentUser;
-    if (!activeUserId || !currentUser) {
-      flash("Nejsi přihlášen.");
-      return;
-    }
-    setSaving(true);
-    try {
-      const token = await currentUser.getIdToken(true);
+  function handleDefaultActivityChange(value: ActivityType) {
+    return runSettingsWrite(async () => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const token = await currentUser.getIdToken();
       const response = await fetch("/api/settings/default-activity", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ defaultActivity: value })
+        body: JSON.stringify({ defaultActivity: value }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Výchozí aktivitu se nepodařilo uložit.");
       invalidateUserProfileCache(currentUser.uid);
       invalidatePublicProfileCache(currentUser.uid);
+      if (auth.currentUser?.uid !== currentUser.uid) return;
       setDefaultActivity(value);
       try { localStorage.setItem(DEFAULT_ACTIVITY_KEY, value); } catch {}
       flash(`Výchozí aktivita: ${value}`);
-    } catch (error) {
-      console.error("Nepodařilo se uložit výchozí aktivitu", error);
-      flash(error instanceof Error ? error.message : "Výchozí aktivitu se nepodařilo uložit.");
-    } finally {
-      setSaving(false);
-    }
-  };
+    }, "Výchozí aktivitu se nepodařilo uložit.");
+  }
 
   useEffect(() => {
     let active = true;
@@ -389,34 +375,10 @@ export default function SettingsPage() {
     </section>
   );
 
-  const handlePasswordChange = async () => {
-    if (newPassword.length < 6) { flash("Nové heslo musí mít alespoň 6 znaků."); return; }
-    if (newPassword !== newPasswordConfirm) { flash("Nová hesla se neshodují."); return; }
-    if (!auth.currentUser) { flash("Nejsi přihlášen."); return; }
-    setPasswordSaving(true);
-    try {
-      await updatePassword(auth.currentUser, newPassword);
-      setNewPassword("");
-      setNewPasswordConfirm("");
-      flash("Heslo bylo změněno.");
-    } catch (error) {
-      const code = error && typeof error === "object" && "code" in error ? String((error as {code?: unknown}).code || "") : "";
-      flash(code.includes("requires-recent-login") ? "Z bezpečnostních důvodů se nejprve odhlaš a znovu přihlas. Potom změnu hesla zopakuj." : "Heslo se nepodařilo změnit. Zkus to prosím znovu.");
-    } finally { setPasswordSaving(false); }
-  };
-
-  const handleSelect = async (item: string) => {
-    setMenuVisible(false);
-    if (item === "logout") { await signOut(auth); router.push("/login"); return; }
-    if (item === "home") { router.push("/"); return; }
-    if (item === "trainer") { router.push("/trainer"); return; }
-    router.push("/" + (item === "myrun" ? "myruns" : item));
-  };
-
   return (
     <>
       <Navbar title="Nastavení" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} />
 
       <main className="container settings-page">
         <section className="tile">
@@ -424,27 +386,27 @@ export default function SettingsPage() {
 
           <label className="settings-animation-toggle">
             <span><strong>Gradient efekt</strong><small>Plynulý barevný přechod pozadí. Vypnutím zůstane jedna barva.</small></span>
-            <input type="checkbox" checked={gradientEnabled} onChange={e => void handleGradientChange(e.target.checked)} />
+            <input type="checkbox" disabled={saving} checked={gradientEnabled} onChange={e => void handleGradientChange(e.target.checked)} />
           </label>
 
           <div className="theme-options">
-            <ThemeItem icon={<Sun size={19}/>} color="#f4f7f9" active={theme === "light"} onClick={() => void handleThemeChange("light")} text="Světlý" />
-            <ThemeItem icon={<Moon size={19}/>} color="#000000" active={theme === "dark"} onClick={() => void handleThemeChange("dark")} text="Tmavý" />
-            <ThemeItem icon={<Palette size={19}/>} color="linear-gradient(180deg,#36D1DC,#5B86E5)" active={theme === "default"} onClick={() => void handleThemeChange("default")} text="Výchozí" />
-            <ThemeItem icon={<Clock3 size={19}/>} color="linear-gradient(180deg,#4facfe,#1b2430)" active={theme === "auto"} onClick={() => void handleThemeChange("auto")} text="Podle času" />
-            <ThemeItem icon={<CloudSun size={19}/>} color="linear-gradient(180deg,#ffd166,#4facfe)" active={theme === "weather"} onClick={() => void handleThemeChange("weather")} text="Podle počasí" />
+            <ThemeItem disabled={saving} icon={<Sun size={19}/>} color="#f4f7f9" active={theme === "light"} onClick={() => void handleThemeChange("light")} text="Světlý" />
+            <ThemeItem disabled={saving} icon={<Moon size={19}/>} color="#000000" active={theme === "dark"} onClick={() => void handleThemeChange("dark")} text="Tmavý" />
+            <ThemeItem disabled={saving} icon={<Palette size={19}/>} color="linear-gradient(180deg,#36D1DC,#5B86E5)" active={theme === "default"} onClick={() => void handleThemeChange("default")} text="Výchozí" />
+            <ThemeItem disabled={saving} icon={<Clock3 size={19}/>} color="linear-gradient(180deg,#4facfe,#1b2430)" active={theme === "auto"} onClick={() => void handleThemeChange("auto")} text="Podle času" />
+            <ThemeItem disabled={saving} icon={<CloudSun size={19}/>} color="linear-gradient(180deg,#ffd166,#4facfe)" active={theme === "weather"} onClick={() => void handleThemeChange("weather")} text="Podle počasí" />
           </div>
 
           <div className={`custom-theme-box ${theme === "custom" ? "active" : ""}`}>
-            <button type="button" className="custom-theme-trigger" onClick={() => { setShowColorPicker(v => !v); setTheme("custom"); void applyTheme("custom", customColor, gradientEnabled); }}>
+            <button type="button" className="custom-theme-trigger" disabled={saving} onClick={() => { setShowColorPicker(v => !v); setTheme("custom"); void applyTheme("custom", customColor, gradientEnabled); }}>
               <span className="theme-color-dot" style={{ background: customColor }} />
               <span><strong>Vlastní barva</strong><small>{customColor.toUpperCase()}</small></span>
               <Check size={19} className={theme === "custom" ? "theme-check" : "theme-check hidden"} />
             </button>
             {showColorPicker && (
               <div className="custom-picker">
-                <HexColorPicker color={customColor} onChange={color => void handleCustomColorLiveChange(color)} />
-                <button type="button" className="tile-button" onClick={() => void handleCustomColorFinalSave()}>Uložit vlastní barvu</button>
+                <HexColorPicker color={customColor} onChange={color => { if (!saving) void handleCustomColorLiveChange(color); }} />
+                <button type="button" className="tile-button" disabled={saving} onClick={() => void handleCustomColorFinalSave()}>Uložit vlastní barvu</button>
               </div>
             )}
           </div>
@@ -454,7 +416,7 @@ export default function SettingsPage() {
 
         <section className="tile">
           <div className="settings-section-heading"><SlidersHorizontal size={21}/><div><h2>Chování aplikace</h2><p>Výchozí typ aktivity pro rychlé přidávání záznamů.</p></div></div>
-          <ActivityTypeSelector value={defaultActivity as ActivityType} onChange={(value) => void handleDefaultActivityChange(value)} ariaLabel="Výchozí aktivita" />
+          <ActivityTypeSelector disabled={saving} value={defaultActivity} onChange={(value) => void handleDefaultActivityChange(value)} ariaLabel="Výchozí aktivita" />
         </section>
 
         <section className="tile settings-notification-section">
@@ -478,7 +440,7 @@ export default function SettingsPage() {
           <div className="settings-section-heading"><Smartphone size={21}/><div><h2>Haptická odezva</h2><p>Velmi jemné krátké zavibrování při kliknutí a přepnutí ovládacích prvků.</p></div></div>
           <label className="settings-animation-toggle">
             <span><strong>Haptická odezva</strong><small>Telefon krátce zavibruje při interakci. Nastavení se uloží i pro příště.</small></span>
-            <input type="checkbox" checked={hapticsEnabled} onChange={e => void handleHapticsChange(e.target.checked)} />
+            <input type="checkbox" disabled={saving} checked={hapticsEnabled} onChange={e => void handleHapticsChange(e.target.checked)} />
           </label>
         </section>
 
@@ -487,9 +449,9 @@ export default function SettingsPage() {
   );
 }
 
-function ThemeItem({ color, active, onClick, text, icon }: { color: string; active: boolean; onClick: () => void; text: string; icon?: React.ReactNode }) {
+function ThemeItem({ color, active, onClick, text, icon, disabled }: { disabled: boolean; color: string; active: boolean; onClick: () => void; text: string; icon?: React.ReactNode }) {
   return (
-    <button type="button" className={`theme-option ${active ? "active" : ""}`} onClick={onClick}>
+    <button type="button" disabled={disabled} className={`theme-option ${active ? "active" : ""}`} onClick={onClick}>
       <span className="theme-color-dot" style={{ background: color }}>{icon}</span>
       <span>{text}</span>
       {active && <Check size={18} />}

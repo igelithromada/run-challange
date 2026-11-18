@@ -1,7 +1,7 @@
 "use client";
 import { isStrengthActivity, activityLabel } from "../lib/activity";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Metric from "./Metric";
 import { ActivityTypeIcon } from "./ActivityTypeSelector";
 import ActivityGallery from "./ActivityGallery";
@@ -50,9 +50,6 @@ async function socialRequest(runId: string, init?: RequestInit) {
 
 export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamAvatarUrl, activityType, onUserClick, onPhotosClick, onEdit, onDelete }: Props) {
   const strength = isStrengthActivity(activityType);
-  const tempo = Number(run.tempo) || 0;
-  const range = activityType === "chůze" ? { min: 8, max: 20 } : { min: 3, max: 8 };
-  const pos = Math.min(100, Math.max(0, ((range.max - tempo) / (range.max - range.min)) * 100));
   const date = run.timestamp instanceof Date ? run.timestamp : run.timestamp?.seconds ? new Date(run.timestamp.seconds * 1000) : null;
   const images = Array.isArray(run.imageUrls) && run.imageUrls.length ? run.imageUrls : run.imageUrl ? [run.imageUrl] : [];
   const [liked, setLiked] = useState(() => !!auth.currentUser?.uid && (run.likedBy || []).includes(auth.currentUser?.uid || ""));

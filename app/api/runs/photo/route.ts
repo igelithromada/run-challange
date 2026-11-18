@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
-import { deleteCloudinaryImages, collectCloudinaryPublicIds, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
+import { deleteCloudinaryImages, collectCloudinaryPublicIds } from "../../../lib/cloudinaryAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

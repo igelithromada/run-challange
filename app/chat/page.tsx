@@ -76,7 +76,7 @@ export default function ChatPage(){
   catch(e){if(version===generation.current)setError(e instanceof Error?e.message:'Starší zprávy nelze načíst.');}finally{setOlderBusy(false);}
  };
  const remove=async(id:string)=>{const version=generation.current;try{await request({method:'DELETE',body:JSON.stringify({id})});if(version!==generation.current)return;setMessages(old=>old.map(m=>m.id===id?{...m,deleted:true,text:''}:m));}catch(e){setError(e instanceof Error?e.message:'Zprávu nelze odstranit.');}};
- return <><Navbar title="Společný chat" onMenuClick={()=>setMenu(true)} onHomeClick={()=>router.push('/')}/><Sidebar visible={menu} onClose={()=>setMenu(false)} onSelect={()=>{}}/>
+ return <><Navbar title="Společný chat" onMenuClick={()=>setMenu(true)} onHomeClick={()=>router.push('/')}/><Sidebar visible={menu} onClose={()=>setMenu(false)}/>
  <main className="container chat-page"><section className="tile chat-panel" aria-label="Společný chat">
   <header className="chat-heading"><MessageCircle size={22}/><div><h1>Společný chat </h1></div></header>
   <div ref={list} className="chat-messages" role="log" aria-label="Zprávy ve společném chatu" aria-live="polite" aria-relevant="additions text" tabIndex={0} onScroll={()=>{const el=list.current;if(el&&el.scrollHeight-el.scrollTop-el.clientHeight<100){setNewMessages(false);markRead();}}}>

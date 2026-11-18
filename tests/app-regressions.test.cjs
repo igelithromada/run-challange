@@ -140,3 +140,19 @@ test('a notification can load an activity outside the current feed, including wa
  assert.equal(await runs.fetchRunById('deleted'),null);
  await assert.rejects(()=>runs.fetchRunById('bad/id'));assert.equal(reads,2);
 });
+
+test('activity feed keeps newest first and fresh records override paged copies', () => {
+ const { mergeActivityFeed } = require('../app/lib/runData.ts');
+ const older = [
+  { id: 'old', timestamp: '2026-11-01T12:00:00Z' },
+  { id: 'updated', timestamp: '2026-11-02T12:00:00Z' },
+  { id: 'deleted', timestamp: '2026-11-03T12:00:00Z' },
+ ];
+ const latest = [
+  { id: 'new', timestamp: '2026-11-06T12:00:00Z' },
+  { id: 'updated', timestamp: '2026-11-05T12:00:00Z' },
+  { id: 'deleted', timestamp: '2026-11-03T12:00:00Z', deleting: true },
+ ];
+ assert.deepEqual(mergeActivityFeed(older, latest).map(run => run.id), ['new', 'updated', 'old']);
+ assert.equal(mergeActivityFeed(older, latest)[1].timestamp, latest[1].timestamp);
+});

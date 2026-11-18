@@ -95,7 +95,7 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
         { includeMetadataChanges: true },
         snapshot => {
           const next: SharedQueryState<T> = {
-            data: snapshot.docs.filter(item => item.data()?.deleting !== true).map(item => ({ id: item.id, ...item.data() } as T)),
+            data: snapshot.docs.filter(item => item.data()?.deleting !== true).map(item => ({ ...item.data(), id: item.id } as T)),
             loading: false,
             error: null,
             fromCache: snapshot.metadata.fromCache,

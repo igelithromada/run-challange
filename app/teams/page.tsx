@@ -2,8 +2,8 @@
 import Metric from "../components/Metric";
 import { preparePhoto } from "../lib/preparePhoto";
 
-import React, { useEffect, useState } from "react";
-import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Plus, Users, X } from "lucide-react";
 import { auth } from "../lib/firebase";
@@ -99,7 +99,7 @@ export default function TeamsPage() {
     if (!trimmedName || !user || creating) return;
     setCreating(true);
     try {
-      const result = await teamRequest("create", {
+      await teamRequest("create", {
         name: trimmedName,
         description: description.trim(),
         avatarUrl, avatarPublicId,
@@ -182,25 +182,10 @@ export default function TeamsPage() {
     if (teamsError) showAppToast("Týmy se nepodařilo načíst. Zkus stránku obnovit.", "error");
   }, [teamsError]);
 
-  const handleSelect = async (item: string) => {
-    setMenuVisible(false);
-    if (item === "logout") {
-      await signOut(auth);
-      router.push("/login");
-      return;
-    }
-    const routes: Record<string, string> = {
-      home: "/", myrun: "/myruns", teams: "/teams", challenges: "/challenges", routes: "/routes", settings: "/settings",
-      statistics: "/statistics", participants: "/participants", progress: "/progress",
-      trainer: "/trainer", weather: "/weather", admin: "/admin",
-    };
-    router.push(routes[item] || "/");
-  };
-
   return (
     <>
       <Navbar title="Týmy" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} />
 
       <main className="container teams-page">
         <header className="teams-header">

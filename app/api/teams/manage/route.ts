@@ -39,9 +39,9 @@ export async function POST(request: Request) {
       const nameRef = adminDb.collection("teamNames").doc(nameKey);
 
       await adminDb.runTransaction(async tx => {
-        const [userSnap,nameSnap] = await Promise.all([tx.get(userRef),tx.get(nameRef)]);
+        // Read the creator document before updating the per-user creation counter.
+        const [,nameSnap] = await Promise.all([tx.get(userRef),tx.get(nameRef)]);
         if (nameSnap.exists) throw new Error("TEAM_NAME_TAKEN");
-        const userData = userSnap.exists ? userSnap.data() || {} : {};
         const createdTeams = await tx.get(adminDb.collection("teams").where("createdBy", "==", uid));
         const createdCount = createdTeams.docs.filter(team => !team.data().deleting).length;
         if (createdCount >= 5) throw new Error("TEAM_CREATE_LIMIT");

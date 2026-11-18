@@ -1,7 +1,6 @@
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, serverTimestamp, type SetOptions } from "firebase/firestore";
 import { db } from "../firebase";
 import type { UserData } from "../../types";
-import { getPublicProfiles } from "./publicProfiles";
 
 const USER_PROFILE_CACHE_TTL = 10_000;
 const userProfileCache = new Map<string, { data: UserData | null; expiresAt: number }>();
@@ -65,15 +64,4 @@ export async function mergeUserProfile(
 ): Promise<void> {
   await setDoc(doc(db, "users", uid), data, options);
   invalidateUserProfileCache(uid);
-}
-
-export async function getUserAvatars(uids: string[]): Promise<Record<string, string>> {
-  const profiles = await getPublicProfiles(uids);
-  const result: Record<string, string> = {};
-
-  Object.entries(profiles).forEach(([uid, profile]) => {
-    result[uid] = profile.avatarUrl || "";
-  });
-
-  return result;
 }

@@ -3,9 +3,9 @@ import Metric from "../../components/Metric";
 import { preparePhoto } from "../../lib/preparePhoto";
 
 import React, { useEffect, useState } from "react";
-import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Camera, Check, Save, Users, Crown, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, Save, Users, Crown, Trash2 } from "lucide-react";
 import { auth } from "../../lib/firebase";
 import { ActivityTypeIcon } from "../../components/ActivityTypeSelector";
 import Navbar from "../../components/Navbar";
@@ -44,7 +44,7 @@ export default function TeamDetailPage() {
     return result;
   };
 
-  const load = async (uid: string) => {
+  const load = async () => {
     if (!id) return;
     const data = await getTeam(id);
     if (!data) {
@@ -84,7 +84,7 @@ export default function TeamDetailPage() {
       }
       setUser(currentUser);
       try {
-        await load(currentUser.uid);
+        await load();
       } catch (error) {
         console.error("Nepodařilo se načíst tým", error);
         if (active) {
@@ -107,7 +107,7 @@ export default function TeamDetailPage() {
     setSaving(true);
     try {
       await request("edit", { name, description, avatarUrl, avatarPublicId });
-      await load(user!.uid);
+      await load();
       showAppToast("Nastavení týmu bylo uloženo.", "success");
     } catch (error) {
       showAppToast(error instanceof Error ? error.message : "Nastavení se nepodařilo uložit.", "error");
@@ -174,23 +174,8 @@ export default function TeamDetailPage() {
     }
   };
 
-  const handleSelect = async (item: string) => {
-    setMenuVisible(false);
-    if (item === "logout") {
-      await signOut(auth);
-      router.push("/login");
-      return;
-    }
-    const routes: Record<string, string> = {
-      home: "/", myrun: "/myruns", teams: "/teams", progress: "/progress",
-      trainer: "/trainer", statistics: "/statistics", participants: "/participants",
-      weather: "/weather", settings: "/settings", admin: "/admin",
-    };
-    router.push(routes[item] || "/");
-  };
-
   if (loading) {
-    return <><Navbar title="Tým" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} /><Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} /><main className="container"><div className="tile"><p>Načítám tým…</p></div></main></>;
+    return <><Navbar title="Tým" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} /><Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} /><main className="container"><div className="tile"><p>Načítám tým…</p></div></main></>;
   }
 
   if (!team) return null;
@@ -201,7 +186,7 @@ export default function TeamDetailPage() {
   return (
     <>
       <Navbar title={team.name || "Tým"} onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} />
 
       <main className="container team-detail-page">
         <button className="ui-icon-button team-back-button" type="button" onClick={() => router.push("/teams")} aria-label="Zpět na týmy" title="Zpět na týmy"><ArrowLeft size={19} /></button>

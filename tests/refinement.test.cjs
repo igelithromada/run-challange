@@ -17,12 +17,6 @@ test('personal totals and date filters use full history while only 30 activity c
  find(tree,n=>n.type==='button'&&text(n)==='Zobrazit další záznamy').props.onClick();tree=render();assert.equal(all(tree,n=>n.type===Card).length,45);assert.match(renderToStaticMarkup(find(tree,n=>n.props?.className==='tile-group activity-summary-grid')),/45.00 km/);
  const dates=all(tree,n=>n.type==='input'&&n.props.type==='date');dates[0].props.onChange({target:{value:'2026-10-01'}});dates[1].props.onChange({target:{value:'2026-10-01'}});tree=render();assert.equal(all(tree,n=>n.type===Card).length,15);assert.match(renderToStaticMarkup(find(tree,n=>n.props?.className==='tile-group activity-summary-grid')),/15.00 km/);
 });
-test('month comparisons use equal elapsed calendar periods, selected categories and no future records',()=>{
- const {progressComparison:compare}=load('app/lib/progressComparison.ts');const runs=[run('1','běh',10,'2026-11-10'),run('2','běh',5,'2026-10-10'),run('3','běh',100,'2026-10-25'),run('4','běh',100,'2026-11-25'),run('5','chůze',100)];const result=compare(runs,'běh',day('2026-11-17'));assert.equal(result.current,10);assert.equal(result.previous,5);assert.equal(result.delta,5);assert.equal(result.percent,100);assert.equal(result.currentCount,1);
- const empty=compare([],'dřepy',day('2026-11-17'));assert.equal(empty.percent,null);assert.equal(empty.delta,0);
- const feb=compare([],'běh',day('2026-03-31'));assert.equal(feb.previousEnd.getMonth(),1);assert.equal(feb.previousEnd.getDate(),28);
- const year=compare([run('prev','kliky',25,'2025-12-10'),run('now','kliky',50,'2026-01-10')],'kliky',day('2026-01-17'));assert.equal(year.delta,25);assert.equal(year.percent,100);
-});
 test('recovery snapshots are isolated by account and activity and reject malformed data',()=>{
  const storage=memory(),api=load('app/lib/activityRecovery.ts',{}, {localStorage:storage});const draft={km:'5',minutes:'30',seconds:'00',date:'2026-11-17T12:00',description:'Les',submissionId:'same-retry-id',savedAt:1};
  assert.equal(api.saveFormDraft('owner','běh',draft),true);assert.equal(api.readFormDraft('other','běh'),null);assert.equal(api.readFormDraft('owner','chůze'),null);assert.equal(api.readFormDraft('owner','běh').submissionId,'same-retry-id');

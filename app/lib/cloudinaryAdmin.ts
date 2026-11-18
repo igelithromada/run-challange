@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 
 const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "dvb4jm8cw";
 const API_KEY = process.env.CLOUDINARY_API_KEY;

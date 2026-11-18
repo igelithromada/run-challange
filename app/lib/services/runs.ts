@@ -1,4 +1,4 @@
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import {
   collection,
   getDocs,
@@ -15,7 +15,6 @@ import {
   type DocumentData,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "../firebase";
 import type { RunData } from "../../types";
 
 export type NewRunData = Omit<RunData, "id">;
@@ -42,24 +41,6 @@ export function userRunsQuery(uid: string): Query<DocumentData, DocumentData> {
   return query(runsCollection(), where("uid", "==", uid), orderBy("timestamp", "desc"));
 }
 
-export function latestUserRunsQuery(uid: string, pageSize = 30): Query<DocumentData, DocumentData> {
-  return query(runsCollection(), where("uid", "==", uid), orderBy("timestamp", "desc"), limit(pageSize));
-}
-
-export function userRunsForDateRangeQuery(uid: string, start: Date, end: Date): Query<DocumentData, DocumentData> {
-  return query(
-    runsCollection(),
-    where("uid", "==", uid),
-    where("timestamp", ">=", Timestamp.fromDate(start)),
-    where("timestamp", "<=", Timestamp.fromDate(end)),
-    orderBy("timestamp", "desc"),
-  );
-}
-
-export function teamRunsQuery(teamId: string): Query<DocumentData, DocumentData> {
-  return query(runsCollection(), where("teamId", "==", teamId));
-}
-
 export function olderRunsQuery(cursor: QueryDocumentSnapshot<DocumentData, DocumentData>, pageSize = 20): Query<DocumentData, DocumentData> {
   return query(runsCollection(), orderBy("timestamp", "desc"), startAfter(cursor), limit(pageSize));
 }
@@ -67,26 +48,6 @@ export function olderRunsQuery(cursor: QueryDocumentSnapshot<DocumentData, Docum
 export async function fetchRuns(runQuery: Query<DocumentData, DocumentData>): Promise<RunData[]> {
   const snapshot = await getDocs(runQuery);
   return snapshot.docs.map(mapRunSnapshot);
-}
-
-export async function fetchAllRuns(pageSize = 500): Promise<RunData[]> {
-  const items: RunData[] = [];
-  let cursor: QueryDocumentSnapshot<DocumentData, DocumentData> | null = null;
-
-  while (true) {
-    const nextQuery: Query<DocumentData, DocumentData> = cursor
-      ? olderRunsQuery(cursor, pageSize)
-      : latestRunsQuery(pageSize);
-    const snapshot = await getDocs(nextQuery);
-    if (!snapshot.docs.length) break;
-
-    items.push(...snapshot.docs.map(mapRunSnapshot));
-    cursor = snapshot.docs[snapshot.docs.length - 1];
-
-    if (snapshot.docs.length < pageSize) break;
-  }
-
-  return items;
 }
 
 export async function createRun(data: NewRunData, submissionId?: string): Promise<string> {
@@ -116,11 +77,6 @@ export async function updateRun(id: string, data: Partial<RunData>): Promise<voi
   if (!response.ok) throw new Error(result.error || "Záznam se nepodařilo upravit.");
 }
 
-export async function fetchOlderUserRuns(uid: string, cursor: QueryDocumentSnapshot<DocumentData, DocumentData>, pageSize = 30) {
-  const snapshot = await getDocs(query(runsCollection(), where("uid", "==", uid), orderBy("timestamp", "desc"), startAfter(cursor), limit(pageSize)));
-  return { items: snapshot.docs.map(mapRunSnapshot), lastDocument: snapshot.docs.at(-1) || null };
-}
-
 export async function fetchOlderRuns(
   cursor: QueryDocumentSnapshot<DocumentData, DocumentData>,
   pageSize = 20
@@ -133,12 +89,12 @@ export async function fetchOlderRuns(
 }
 
 export function mapRunSnapshot(data: { id: string; data(): Record<string, unknown> }): RunData {
-  return { id: data.id, ...data.data() } as RunData;
+  return { ...data.data(), id: data.id } as RunData;
 }
 
 /** A notification may point outside the currently loaded feed page. */
 export async function fetchRunById(id: string): Promise<RunData | null> {
   if (!id || id.includes("/")) throw new Error("Neplatné ID aktivity.");
   const snapshot = await getDoc(doc(db, "runs", id));
-  return snapshot.exists() ? mapRunSnapshot(snapshot) : null;
+  return snapshot.exists() && snapshot.data().deleting !== true ? mapRunSnapshot(snapshot) : null;
 }

@@ -1,7 +1,7 @@
 "use client";
 import { isStrengthActivity } from "../lib/activity";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { Search, SlidersHorizontal } from "lucide-react";
 import ResultsSummary from "../components/ResultsSummary";
@@ -138,16 +138,6 @@ export default function StatisticsPage() {
       onOpen={() => router.push("/user/" + encodeURIComponent(person.uid))}
     />
   );
-  const handleSelect = async (item: string) => {
-    setMenuVisible(false);
-    if (item === "logout") {
-      await signOut(auth);
-      router.push("/login");
-    } else
-      router.push(
-        item === "home" ? "/" : item === "myrun" ? "/myruns" : "/" + item,
-      );
-  };
   return (
     <>
       <Navbar
@@ -158,7 +148,6 @@ export default function StatisticsPage() {
       <Sidebar
         visible={menuVisible}
         onClose={() => setMenuVisible(false)}
-        onSelect={handleSelect}
       />
       <main
         className={`container statistics-page unified-results${sort === "alpha" && view === "jednotlivci" ? " has-alphabet" : ""}`}

@@ -3,7 +3,7 @@ import { isStrengthActivity, activityLabel as labelFor } from "../lib/activity";
 import { readFormDraft, saveFormDraft, readRecorderDraft, clearRecovery, draftPhotos } from "../lib/activityRecovery";
 import { preparePhoto } from "../lib/preparePhoto";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { auth } from "../lib/firebase";
 import { ImagePlus, MapPin, Plus, Save, X } from "lucide-react";
 import { showAppToast } from "./AppToast";

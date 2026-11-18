@@ -36,7 +36,7 @@ test('team membership notifications are atomic, self-suppressed, preference-awar
  await join();assert.equal((await messages('owner')).length,0);
  assert.equal((await call(teams,{action:'leave',teamId:id},'member')).status,200);
  assert.equal((await messages('owner')).length,1);
- assert.equal((await call(settings,{socialNotifications:{likes:true,comments:false,teams:false,challenges:false}})).status,200);
+ assert.equal((await call(settings,{socialNotifications:{likes:true,comments:false,teams:false,challenges:false,chat:false}})).status,200);
  await join();assert.equal((await messages('owner')).length,1);
  assert.equal((await call(teams,{action:'transfer',teamId:id,newManagerId:'member'})).status,200);
  assert.equal((await messages('member')).length,1);
@@ -44,7 +44,7 @@ test('team membership notifications are atomic, self-suppressed, preference-awar
  assert.equal((await call(settings,{socialNotifications:{teams:'false'}})).status,400);
  await Promise.all([call(settings,{socialNotifications:{likes:false}}),call(settings,{socialNotifications:{comments:true}})]);
  const prefs=(await db.doc('users/owner').get()).data().socialNotifications;
- assert.deepEqual(prefs,{likes:false,comments:true,teams:false,challenges:false});
+ assert.deepEqual(prefs,{likes:false,comments:true,teams:false,challenges:false,chat:false});
 });
 test('challenge joins notify the organiser once and respect independent preferences', {skip},async()=>{
  await clean();await db.doc('users/owner').set({});await db.doc('users/member').set({});

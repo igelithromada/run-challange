@@ -1,12 +1,13 @@
 "use client";
 import Metric from "../components/Metric";
 import PhotoViewer from "../components/PhotoViewer";
-import { isStrengthActivity, activityAmount } from "../lib/activity";
+import { isStrengthActivity, activityAmount, recordActivityType } from "../lib/activity";
+import { parseActivityDate } from "../lib/runData";
 import { preparePhoto } from "../lib/preparePhoto";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Timestamp } from "firebase/firestore";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
@@ -14,15 +15,13 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import ActivityCard from "../components/ActivityCard";
 import LoadingSkeleton from "../components/LoadingSkeleton";
-import { cloudinaryImageUrl } from "../lib/imageUrl";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
 import { MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
 import { formatResultDuration } from "../lib/results";
-import { activityMetrics, formatPace } from "../lib/activityMetrics";
+import { activityMetrics } from "../lib/activityMetrics";
 import { showAppToast } from "../components/AppToast";
 import type { RunData as BaseRunData, ActivityType } from "../types";
 import { personalHistoryQuery, updateRun } from "../lib/services/runs";
-import { getUserProfile } from "../lib/services/users";
 
 type RunData = BaseRunData;
 const uploadToCloudinary = async (file: File) => {
@@ -49,17 +48,8 @@ const uploadToCloudinary = async (file: File) => {
     publicId: typeof result.publicId === "string" ? result.publicId : "",
   };
 };
-const dateOf = (value: RunData["timestamp"]) => {
-  if (value instanceof Date) return value;
-  if (value && "toDate" in value && typeof value.toDate === "function") return value.toDate();
-  if (value && "seconds" in value) return new Date(value.seconds * 1000);
-  return new Date(0);
-};
+const dateOf = (timestamp: RunData["timestamp"]) => parseActivityDate(timestamp) ?? new Date(0);
 const toLocalInput = (date: Date) => new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0,16);
-const durationString = (minutes: number) => {
-  const seconds = Math.round(minutes * 60);
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2,"0")}`;
-};
 const formatTime = (minutes: number) => {
   const seconds = Math.max(0, Math.round(minutes * 60));
   return `${Math.floor(seconds / 60)}′${String(seconds % 60).padStart(2,"0")}″`;
@@ -70,8 +60,6 @@ export default function MyRunsPage() {
   const [uid, setUid] = useState("");
   const [localUpdates, setLocalUpdates] = useState<Record<string, Partial<RunData>>>({});
   const [deletedIds, setDeletedIds] = useState<Set<string>>(() => new Set());
-  const [profile, setProfile] = useState({ nickname: "", avatarUrl: "" });
-  const [confirmDelete, setConfirmDelete] = useState(true);
   const pageActive = useRef(true);
 
   useEffect(() => { pageActive.current = true; return () => { pageActive.current = false; }; }, []);
@@ -94,7 +82,6 @@ export default function MyRunsPage() {
   const [dateTo, setDateTo] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [km, setKm] = useState("");
-  const [duration, setDuration] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
   const [durationSeconds, setDurationSeconds] = useState("");
   const [activityDate, setActivityDate] = useState("");
@@ -109,13 +96,6 @@ export default function MyRunsPage() {
       if (!user) { router.push("/login"); return; }
       setLocalUpdates({});setDeletedIds(new Set());
       setUid(user.uid);
-      getUserProfile(user.uid).then(data => {
-        if (!active || !data) return;
-        setProfile({ nickname: data.nickname || "", avatarUrl: data.avatarUrl || "" });
-        setConfirmDelete(data.confirmDelete !== false);
-      }).catch(err => {
-        if (active) console.error("Nepodařilo se načíst profil", err);
-      });
     });
     return () => { active = false; unsubAuth(); };
   }, [router]);
@@ -140,7 +120,7 @@ export default function MyRunsPage() {
   useEffect(() => { if (actionError) showAppToast(actionError, "error"); }, [actionError]);
 
   const filteredRuns = runs.filter(run => {
-    if ((run.type || "běh") !== selectedType) return false;
+    if (recordActivityType(run) !== selectedType) return false;
     const date = dateOf(run.timestamp);
     if (dateFrom && date < new Date(dateFrom + "T00:00:00")) return false;
     if (dateTo && date > new Date(dateTo + "T23:59:59.999")) return false;
@@ -156,7 +136,7 @@ export default function MyRunsPage() {
 
 
   const handleEdit = (run: RunData) => {
-    setEditingId(run.id); setKm(String(activityAmount(run))); setDuration(durationString(Number(run.minuty)));
+    setEditingId(run.id); setKm(String(activityAmount(run)));
     const totalSeconds = Math.round(Number(run.minuty) * 60); setDurationMinutes(String(Math.floor(totalSeconds / 60))); setDurationSeconds(String(totalSeconds % 60).padStart(2,"0"));
     setActivityDate(toLocalInput(dateOf(run.timestamp))); setDescription(run.description || ""); setFile(null); setActionError("");
   };
@@ -246,18 +226,10 @@ export default function MyRunsPage() {
       setActionError(err instanceof Error ? err.message : "Záznam se nepodařilo smazat.");
     }
   };
-  const handleSelect = async (item: string) => {
-    setMenuVisible(false);
-    if (item === "logout") { await signOut(auth); router.push("/login"); }
-    else if (item === "home") router.push("/");
-    else if (item === "myrun") router.push("/myruns");
-    else if (item === "trainer") router.push("/trainer");
-    else router.push("/" + item);
-  };
 
   return <>
     <Navbar title="Moje aktivity" onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-    <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+    <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} />
     <div className="container myruns-page">
       <div className="control-caption">Typ aktivity</div>
       <ActivityTypeSelector value={selectedType as import("../types").ActivityType} onChange={setSelectedType} />

@@ -14,3 +14,16 @@ export function parseActivityDate(value: unknown): Date | null {
   } else return null;
   return Number.isFinite(date.getTime()) ? date : null;
 }
+
+/** A fresh snapshot takes precedence over a paged copy of the same activity. */
+export function mergeActivityFeed<T extends { id: string; timestamp?: unknown; deleting?: boolean }>(
+  older: T[],
+  latest: T[],
+): T[] {
+  const unique = new Map([...older, ...latest].map(run => [run.id, run] as const));
+  return [...unique.values()]
+    .filter(run => !run.deleting)
+    .map(run => ({ run, time: parseActivityDate(run.timestamp)?.getTime() ?? -Infinity }))
+    .sort((left, right) => right.time - left.time || right.run.id.localeCompare(left.run.id))
+    .map(({ run }) => run);
+}

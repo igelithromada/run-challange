@@ -2,10 +2,10 @@
 import PhotoViewer from "../../components/PhotoViewer";
 import { activityAmount, activityUnit, isStrengthActivity } from "../../lib/activity";
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { auth } from "../../lib/firebase";
-import { signOut, onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import ActivityCard from "../../components/ActivityCard";
@@ -66,32 +66,6 @@ export default function UserPage() {
     if (id && authUid) void fetchUser();
   }, [id, authUid]);
 
-
-
-  const handleSelect = async (item: string) => {
-    setMenuVisible(false);
-    if (item === "logout") {
-      await signOut(auth);
-      router.replace("/login");
-      return;
-    }
-    const paths: Record<string, string> = {
-      home: "/",
-      myrun: "/myruns",
-      teams: "/teams",
-      progress: "/progress",
-      trainer: "/trainer",
-      statistics: "/statistics",
-      participants: "/participants",
-      weather: "/weather",
-      routes: "/routes",
-      settings: "/settings",
-      profile: "/profile",
-      admin: "/admin",
-    };
-    router.push(paths[item] || "/");
-  };
-
   const runNickname = runs.find(run => typeof run.nickname === "string" && run.nickname.trim())?.nickname?.trim() || "";
   const runEmailName = runs.find(run => typeof run.email === "string" && run.email.trim())?.email?.split("@")[0]?.trim() || "";
   const profileName = userInfo.nickname || runNickname || runEmailName || "Uživatel";
@@ -107,7 +81,7 @@ export default function UserPage() {
   return (
     <>
       <Navbar title={profileName} onMenuClick={() => setMenuVisible(true)} onHomeClick={() => router.push("/")} />
-      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} onSelect={handleSelect} />
+      <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} />
       <main className="container user-page-modern">
         <header className="user-page-header">
           <div className="user-page-avatar">
@@ -121,7 +95,7 @@ export default function UserPage() {
         <div className="list-container user-activity-list">
           {filteredRuns.map(run => {
             const teamName = run.teamId ? teams.find(team => team.id === run.teamId)?.name || null : null;
-            const images = Array.isArray(run.imageUrls) && run.imageUrls.length ? run.imageUrls : run.imageUrl ? [run.imageUrl] : [];
+
             return (
               <ActivityCard
                 key={run.id}

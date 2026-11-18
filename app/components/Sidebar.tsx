@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { UserRound, X } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
@@ -9,7 +9,7 @@ import { getUserProfile } from "../lib/services/users";
 import { NAVIGATION_GROUPS, NAVIGATION_ITEMS } from "../lib/navigation";
 import { usePathname, useRouter } from "next/navigation";
 
-type SidebarProps = { visible: boolean; onClose: () => void; onSelect: (item: string) => void };
+type SidebarProps = { visible: boolean; onClose: () => void };
 
 export default function Sidebar({ visible, onClose }: SidebarProps) {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -28,28 +28,18 @@ export default function Sidebar({ visible, onClose }: SidebarProps) {
   useEffect(() => {
     let active = true;
     const unsubscribe = onAuthStateChanged(auth, async user => {
-      if (!user) {
-        if (active) {
-          setIsAdmin(false);
-          setNickname("");
-          setEmail("");
-        }
-        return;
-      }
+      if (!active) return;
+      setIsAdmin(false);
+      setNickname("");
+      setEmail(user?.email || "");
+      if (!user) return;
       try {
         const profile = await getUserProfile(user.uid);
-        if (active) {
+        if (active && auth.currentUser?.uid === user.uid) {
           setIsAdmin(profile?.role === "admin");
           setNickname(profile?.nickname || "");
-          setEmail(user.email || "");
         }
-      } catch {
-        if (active) {
-          setIsAdmin(false);
-          setNickname("");
-          setEmail(user.email || "");
-        }
-      }
+      } catch { /* The account link stays available with the email as its label. */ }
     });
     return () => {
       active = false;
