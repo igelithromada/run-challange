@@ -6275,3 +6275,13 @@ html[data-theme="white"] .challenges-create input[type="file"]::file-selector-bu
 
 .activity-kind-label{font-size:.72rem;opacity:.8;font-weight:600;}
 .draft-recovery-note{font-size:.85rem;opacity:.85;margin:.6rem 0;}
+
+.admin-usage > summary { cursor: pointer; font-weight: 700; }
+.admin-usage > summary svg { margin-inline: .4rem; vertical-align: middle; }
+.admin-usage-body { display: grid; gap: 1rem; margin-top: 1rem; }
+.admin-usage-body > section { border-top: 1px solid var(--ui-border, #8798ab); padding-top: .75rem; }
+.admin-usage-body h3 { margin: 0 0 .5rem; }
+.admin-usage-body a { color: inherit; text-decoration: underline; }
+.admin-usage-actions, .admin-usage-meter > div { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .4rem 1rem; }
+.admin-usage-meter { margin-block: .65rem; }
+.admin-usage-meter progress { width: 100%; accent-color: var(--ui-accent, #69bfdb); }

@@ -8,6 +8,7 @@ import { auth } from "../lib/firebase";
 import { getAllUserProfiles, updateUserProfile } from "../lib/services/users";
 import useAdminGuard from "../lib/useAdminGuard";
 import Navbar from "../components/Navbar";
+import AdminUsage from "../components/AdminUsage";
 import Sidebar from "../components/Sidebar";
 import { showAppToast } from "../components/AppToast";
 
@@ -203,6 +204,8 @@ export default function AdminPage() {
         </header>
 
 
+
+        <AdminUsage />
 
         <section className="tile admin-registration-code">
           <div className="admin-section-heading"><KeyRound size={21}/><div><h2>Registrační kód</h2><span>Spravuješ kód, který je potřeba pro vytvoření nového účtu.</span></div></div>

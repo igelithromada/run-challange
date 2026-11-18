@@ -98,3 +98,15 @@ export async function deleteCloudinaryImages(publicIds: string[]) {
 
   return { deleted, failed };
 }
+
+export async function getCloudinaryUsage() {
+  requireCloudinaryCredentials();
+  const basic = Buffer.from(`${API_KEY}:${API_SECRET}`).toString("base64");
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(CLOUD_NAME)}/usage`, {
+    headers: { Authorization: `Basic ${basic}` },
+    cache: "no-store",
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!response.ok) throw new Error(`Cloudinary Usage HTTP ${response.status}`);
+  return response.json();
+}
