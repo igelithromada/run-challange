@@ -16,7 +16,7 @@ import { RunData } from "./types";
 import { useSharedFirestoreQuery } from "./lib/useSharedFirestoreQuery";
 import { latestRunsQuery, fetchOlderRuns, fetchRunById } from "./lib/services/runs";
 import { showAppToast } from "./components/AppToast";
-import { mergeActivityFeed } from "./lib/runData";
+import { mergeActivityFeed, RECENT_ACTIVITY_LIMIT } from "./lib/runData";
 import { recordActivityType } from "./lib/activity";
 import { normalizeActivityType } from "./lib/validation";
 import { getUserProfile } from "./lib/services/users";
@@ -99,11 +99,11 @@ export default function Page() {
     return () => cancelAnimationFrame(frame);
   }, [notificationRunId]);
 
-  const runsQuery = useMemo(() => latestRunsQuery(30), []);
-  const runsState = useSharedFirestoreQuery<RunData>("runs:latest:30", runsQuery);
+  const runsQuery = useMemo(() => latestRunsQuery(RECENT_ACTIVITY_LIMIT), []);
+  const runsState = useSharedFirestoreQuery<RunData>(`runs:latest:${RECENT_ACTIVITY_LIMIT}`, runsQuery);
   const runs = runsState.data;
   const allRuns = useMemo(() => mergeActivityFeed(olderRuns, runs), [olderRuns, runs]);
-  const canLoadMore = olderCursor ? hasMore : runs.length >= 30;
+  const canLoadMore = olderCursor ? hasMore : runs.length >= RECENT_ACTIVITY_LIMIT;
 
   const loadOlderRuns = async () => {
     const cursor = olderCursor || runsState.lastDocument;

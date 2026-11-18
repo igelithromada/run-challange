@@ -1,9 +1,18 @@
-import { activityThumbnailUrl } from './imageUrl';
+import { parseActivityDate } from './runData';
 
 export const CHAT_CHANGED = 'dolni-lhota:chat-changed';
-export const MAX_CHAT_PHOTOS = 6;
-export type ChatPhotoSelection = { activityId: string; thumbnail: string };
-export type ChatActivity = { id: string; thumbnails: string[] };
+
+export type ChatRecord = {
+  id: string;
+  nickname: string;
+  type: string;
+  timestamp: string | null;
+  description: string;
+  km: number;
+  minuty: number;
+  tempo: number;
+  repetitions: number;
+};
 export type ChatReply = { id: string; nickname: string; text: string };
 export type ChatUnread = {
   version: string;
@@ -12,35 +21,24 @@ export type ChatUnread = {
   newestIncomingAt?: number;
 };
 
-export function chatPhotos(data: Record<string, unknown> | undefined) {
-  if (!data || data.deleting === true) return [];
-  const images = [...(Array.isArray(data.imageUrls) ? data.imageUrls : []), data.imageUrl];
-  const photos = new Map<string, string>();
-  for (const url of images) {
-    if (typeof url !== 'string') continue;
-    const thumbnail = activityThumbnailUrl(url, { width: 192, height: 192 });
-    if (thumbnail && !photos.has(thumbnail)) photos.set(thumbnail, url);
-    if (photos.size === MAX_CHAT_PHOTOS) break;
-  }
-  return Array.from(photos, ([thumbnail, url]) => ({ thumbnail, url }));
-}
+export function chatRecord(id: string, run: Record<string, unknown> | undefined): ChatRecord | null {
+  if (!run || run.deleting || typeof run.uid !== 'string' || !run.uid) return null;
+  const nickname = typeof run.nickname === 'string' ? run.nickname.trim().slice(0, 80) : '';
+  const type = typeof run.type === 'string' && run.type ? run.type : run.activityType;
+  const amount = (value: unknown) => {
+    const number = typeof value === 'number' || typeof value === 'string' ? Number(value) : 0;
+    return Number.isFinite(number) && number > 0 ? number : 0;
+  };
 
-export function chatActivity(id: string, data: Record<string, unknown> | undefined): ChatActivity | null {
-  const thumbnails = chatPhotos(data).map(photo => photo.thumbnail);
-  return thumbnails.length ? { id, thumbnails } : null;
-}
-
-
-// Keep existing attachment IDs stable and use the same display variant as activity cards.
-export function chatPreviewUrl(thumbnail: string) {
-  return thumbnail.replace('/f_auto,q_auto:eco,c_limit,w_192,h_192/', '/f_auto,q_auto:eco,c_limit,w_640,h_720/');
-}
-
-export function groupChatPhotos(photos: ChatPhotoSelection[]): ChatActivity[] {
-  const groups = new Map<string, ChatActivity>();
-  for (const { activityId, thumbnail } of photos) {
-    if (!groups.has(activityId)) groups.set(activityId, { id: activityId, thumbnails: [] });
-    groups.get(activityId)!.thumbnails.push(thumbnail);
-  }
-  return Array.from(groups.values());
+  return {
+    id,
+    nickname: nickname || 'Uživatel',
+    type: typeof type === 'string' && type ? type : 'běh',
+    timestamp: parseActivityDate(run.timestamp)?.toISOString() ?? null,
+    description: typeof run.description === 'string' ? run.description.trim().slice(0, 1000) : '',
+    km: amount(run.km),
+    minuty: amount(run.minuty),
+    tempo: amount(run.tempo),
+    repetitions: amount(run.repetitions),
+  };
 }

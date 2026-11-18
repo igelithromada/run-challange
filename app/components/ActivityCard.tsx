@@ -1,14 +1,11 @@
 "use client";
-import { formatCompactActivityTime, formatMetricNumber, numberValue } from "../lib/activityMetrics";
-import { isStrengthActivity, activityLabel } from "../lib/activity";
 
 import { useEffect, useRef, useState } from "react";
-import Metric from "./Metric";
-import { ActivityTypeIcon } from "./ActivityTypeSelector";
+import { ActivityCardHeading, ActivityCardStats } from "./ActivityCardContent";
 import ActivityGallery from "./ActivityGallery";
 import ActivityAwardsButton from "./ActivityAwardsButton";
 import { auth } from "../lib/firebase";
-import { Clock3, Gauge, Heart, MapPin, MessageCircle, Pencil, Trash2, X, Send } from "lucide-react";
+import { Heart, MessageCircle, Pencil, Trash2, X, Send } from "lucide-react";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { getPublicProfiles } from "../lib/services/publicProfiles";
 import { showAppToast } from "./AppToast";
@@ -45,7 +42,6 @@ async function socialRequest(runId: string, init?: RequestInit) {
 }
 
 export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamAvatarUrl, activityType, onUserClick, onPhotosClick, onEdit, onDelete }: Props) {
-  const strength = isStrengthActivity(activityType);
   const date = run.timestamp instanceof Date ? run.timestamp : run.timestamp?.seconds ? new Date(run.timestamp.seconds * 1000) : null;
   const images = Array.isArray(run.imageUrls) && run.imageUrls.length ? run.imageUrls : run.imageUrl ? [run.imageUrl] : [];
   const [liked, setLiked] = useState(() => !!auth.currentUser?.uid && (run.likedBy || []).includes(auth.currentUser?.uid || ""));
@@ -265,32 +261,10 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
   return (
     <>
       <article ref={cardRef} id={`run-${run.id}`} className="tile list-tile activity-card activity-card-modern">
-        <header className="activity-card-top">
-          <button type="button" className="activity-avatar" onClick={onUserClick} disabled={!onUserClick} aria-label={`Profil uživatele ${resolvedNickname}`}>
-            {resolvedAvatarUrl ? <img src={cloudinaryImageUrl(resolvedAvatarUrl, 128)} alt="" loading="lazy" decoding="async" /> : resolvedNickname.charAt(0).toUpperCase()}
-          </button>
-          <div className="activity-person">
-            <div className="activity-person-name">
-              <span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{resolvedNickname}</span>
-              {run.uid && <ActivityAwardsButton key={run.uid} uid={run.uid} nickname={resolvedNickname} />}
-            </div>
-            <small className="activity-kind-label">{activityLabel(activityType)}</small>
-            {teamName && <small className="activity-team-line"><span className="activity-team-avatar">{teamAvatarUrl ? <img src={cloudinaryImageUrl(teamAvatarUrl, 48)} alt="" loading="lazy" decoding="async" /> : "T"}</span><b>Tým</b> · {teamName}</small>}
-          </div>
-          <div className="activity-record-byline">
-            {date && <time className="activity-date" dateTime={date.toISOString()}>{date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}
-          </div>
-        </header>
-
-        {run.description?.trim() && <div className="activity-description">{run.description.trim()}</div>}
-
-        <div className={strength ? "activity-metrics strength-metrics" : "activity-metrics"}>
-          {strength
-            ? <Metric icon={<ActivityTypeIcon type={activityType}/>} label="Opakování" tone="repetitions" value={formatMetricNumber(numberValue(run.repetitions), 0)}/>
-            : <Metric icon={<MapPin/>} label="Vzdálenost" tone="distance" value={formatMetricNumber(numberValue(run.km))} unit="km"/>}
-          {(!strength || Number(run.minuty) > 0) && <Metric icon={<Clock3/>} label="Čas" tone="time" value={formatCompactActivityTime(Number(run.minuty))}/>}
-          {!strength && <Metric icon={<Gauge/>} label="Tempo" tone="pace" value={formatCompactActivityTime(Number(run.tempo))} unit="/km"/>}
-        </div>
+        <ActivityCardHeading nickname={resolvedNickname} avatarUrl={resolvedAvatarUrl} activityType={activityType} date={date}
+          onUserClick={onUserClick} teamName={teamName} teamAvatarUrl={teamAvatarUrl}
+          badge={run.uid && <ActivityAwardsButton key={run.uid} uid={run.uid} nickname={resolvedNickname} />}/>
+        <ActivityCardStats run={run} activityType={activityType}/>
 
         {images.length > 0 && <ActivityGallery key={run.id} images={images} onOpen={index => onPhotosClick(images, run.imageUrl || "", index)} />}
 

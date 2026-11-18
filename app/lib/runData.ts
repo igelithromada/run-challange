@@ -1,3 +1,5 @@
+export const RECENT_ACTIVITY_LIMIT = 30;
+
 /** Accept ISO dates and Firestore's JSON timestamp representation. */
 export function parseActivityDate(value: unknown): Date | null {
   if (value === null || value === undefined) return null;

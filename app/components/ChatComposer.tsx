@@ -1,26 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { Send, X } from 'lucide-react';
+import { ListPlus, Send, X } from 'lucide-react';
 import { auth } from '../lib/firebase';
-import { groupChatPhotos, MAX_CHAT_PHOTOS, type ChatActivity, type ChatPhotoSelection, type ChatReply } from '../lib/chat';
+import type { ChatRecord, ChatReply } from '../lib/chat';
+import { activityLabel } from '../lib/activity';
 import ChatActivityPreview from './ChatActivityPreview';
 
 const attachmentTrigger = /(^|\s)@$/;
-const samePhoto = (photo: ChatPhotoSelection, activityId: string, thumbnail: string) =>
-  photo.activityId === activityId && photo.thumbnail === thumbnail;
-
 export default function ChatComposer({ uid, reply, onCancelReply, onSend }: {
   uid: string;
   reply: ChatReply | null;
   onCancelReply: () => void;
-  onSend: (text: string, photos: ChatPhotoSelection[], replyId: string | undefined, clientId: string) => Promise<boolean>;
+  onSend: (text: string, activityId: string | undefined, replyId: string | undefined, clientId: string) => Promise<boolean>;
 }) {
   const [text, setText] = useState('');
-  const [photos, setPhotos] = useState<ChatPhotoSelection[]>([]);
-  const [selection, setSelection] = useState<ChatPhotoSelection[]>([]);
+  const [record, setRecord] = useState<ChatRecord | null>(null);
   const [picker, setPicker] = useState(false);
-  const [activities, setActivities] = useState<ChatActivity[]>([]);
+  const [records, setRecords] = useState<ChatRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -50,20 +47,20 @@ export default function ChatComposer({ uid, reply, onCancelReply, onSend }: {
     viewport?.addEventListener('scroll', fitPicker);
     setLoading(true);
     setError('');
-    setActivities([]);
+    setRecords([]);
 
     async function load() {
       try {
-        const response = await fetch('/api/chat?picker=activities', {
+        const response = await fetch('/api/chat?picker=records', {
           cache: 'no-store',
           signal: controller.signal,
           headers: { Authorization: 'Bearer ' + await user!.getIdToken() },
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Fotky se nepodařilo načíst.');
-        if (!controller.signal.aborted) setActivities(data.activities || []);
+        if (!response.ok) throw new Error(data.error || 'Záznamy se nepodařilo načíst.');
+        if (!controller.signal.aborted) setRecords(data.records || []);
       } catch (error) {
-        if (!controller.signal.aborted) setError(error instanceof Error ? error.message : 'Fotky se nepodařilo načíst.');
+        if (!controller.signal.aborted) setError(error instanceof Error ? error.message : 'Záznamy se nepodařilo načíst.');
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -77,17 +74,8 @@ export default function ChatComposer({ uid, reply, onCancelReply, onSend }: {
     };
   }, [picker, uid]);
 
-  function toggle(activityId: string, thumbnail: string) {
-    setSelection(current => {
-      if (current.some(photo => samePhoto(photo, activityId, thumbnail))) {
-        return current.filter(photo => !samePhoto(photo, activityId, thumbnail));
-      }
-      return current.length >= MAX_CHAT_PHOTOS ? current : [...current, { activityId, thumbnail }];
-    });
-  }
-
-  function closePicker(confirm: boolean) {
-    if (confirm) setPhotos(selection);
+  function closePicker(selected?: ChatRecord) {
+    if (selected) setRecord(selected);
     pickerPanel.current?.close();
     setPicker(false);
     setText(current => current.replace(attachmentTrigger, '$1'));
@@ -103,17 +91,17 @@ export default function ChatComposer({ uid, reply, onCancelReply, onSend }: {
 
   async function submit() {
     const message = text.trim();
-    if (picker || (!message && !photos.length) || sending.current || !uid) return;
+    if (picker || (!message && !record) || sending.current || !uid) return;
     sending.current = true;
     setBusy(true);
-    const key = JSON.stringify([message, photos, reply?.id]);
+    const key = JSON.stringify([message, record?.id, reply?.id]);
     const attempt = pending.current?.key === key ? pending.current : { key, id: crypto.randomUUID() };
     pending.current = attempt;
     try {
-      if (await onSend(message, photos, reply?.id, attempt.id)) {
+      if (await onSend(message, record?.id, reply?.id, attempt.id)) {
         pending.current = null;
         setText(current => current.trim() === message ? '' : current);
-        setPhotos(current => current === photos ? [] : current);
+        setRecord(current => current === record ? null : current);
         if (latestReply.current?.id === reply?.id) onCancelReply();
       }
     } finally {
@@ -129,50 +117,54 @@ export default function ChatComposer({ uid, reply, onCancelReply, onSend }: {
     {picker && <dialog ref={pickerPanel} className="chat-activity-picker"
       aria-labelledby="chat-picker-title" onCancel={event => {
         event.preventDefault();
-        closePicker(false);
+        closePicker();
       }}>
-      <header><strong id="chat-picker-title">Vyber fotky ze záznamů</strong><button type="button" className="ui-icon-button" aria-label="Zrušit výběr fotek" onClick={() => closePicker(false)}><X size={18}/></button></header>
-      <div className="chat-photo-picker-list">
-      {loading ? <p role="status">Načítám fotky…</p> : error ? <p role="alert">{error}</p> : activities.length
-        ? activities.map(item => <ChatActivityPreview key={item.id} activities={[item]} select={toggle}
-            selected={(id, url) => selection.some(photo => samePhoto(photo, id, url))}
-            atLimit={selection.length >= MAX_CHAT_PHOTOS} />)
-        : <p>Zatím nemáš v záznamech žádné fotky ke sdílení.</p>}
-      </div>
-      <div className="chat-photo-picker-actions">
-        <span aria-live="polite">Vybráno {selection.length} / {MAX_CHAT_PHOTOS}</span>
-        <button type="button" className="tile-button" onClick={() => closePicker(true)}>Hotovo</button>
+      <header>
+        <strong id="chat-picker-title">Poslední záznamy</strong>
+        <button type="button" className="ui-icon-button" aria-label="Zavřít výběr záznamu" onClick={() => closePicker()}><X size={18}/></button>
+      </header>
+      <div className="chat-record-picker-list">
+        {loading ? <p role="status">Načítám záznamy…</p> : error ? <p role="alert">{error}</p> : records.length
+          ? records.map(item => <div key={item.id} className="chat-record-option">
+              <ChatActivityPreview record={item}/>
+              <button type="button" onClick={() => closePicker(item)}
+                aria-label={`Připojit záznam: ${item.nickname}, ${activityLabel(item.type)}`}>
+                Připojit
+              </button>
+            </div>)
+          : <p>Zatím tu nejsou žádné záznamy ke sdílení.</p>}
       </div>
     </dialog>}
-    {!picker && photos.length > 0 && <div className="chat-selected-activity">
-      <ChatActivityPreview activities={groupChatPhotos(photos)} />
-      <button type="button" aria-label="Odebrat všechny připojené fotky" onClick={() => setPhotos([])}><X size={18}/></button>
+    {!picker && record && <div className="chat-selected-activity">
+      <ChatActivityPreview record={record}/>
+      <button type="button" aria-label="Odebrat připojený záznam" onClick={() => setRecord(null)}><X size={18}/></button>
     </div>}
-    {photos.length > 0 && <label className="chat-activity-message-label" htmlFor="chat-text">Zpráva k fotkám</label>}
     <form className="chat-compose" onSubmit={e => { e.preventDefault(); void submit(); }}>
-      {!photos.length && <label htmlFor="chat-text" className="sr-only">Zpráva do společného chatu</label>}
+      <button type="button" className="ui-icon-button chat-attach-record" disabled={!uid || busy}
+        aria-haspopup="dialog" aria-label="Připojit záznam" title="Připojit záznam" onClick={() => setPicker(true)}>
+        <ListPlus size={20}/>
+      </button>
+      <label htmlFor="chat-text" className="sr-only">Zpráva do společného chatu</label>
       <textarea ref={input} id="chat-text" value={text} maxLength={1000} rows={2} disabled={!uid}
-        placeholder={photos.length ? 'Napiš něco k fotkám…' : 'Napiš zprávu… @ připojí fotky'}
+        placeholder={record ? 'Napiš něco k záznamu…' : 'Napiš zprávu…'}
         onChange={e => {
           const value = e.target.value;
           const open = attachmentTrigger.test(value);
-          if (open && !picker) setSelection(photos);
           setText(value);
           setPicker(open);
         }}
         onKeyDown={e => {
           if (e.nativeEvent.isComposing) return;
-          if (e.key === 'Escape' && picker) closePicker(false);
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             if (!picker) void submit();
           }
         }} />
       <button type="submit" className="run-primary-button"
-        disabled={!uid || picker || busy || (!text.trim() && !photos.length)} aria-label="Odeslat zprávu">
+        disabled={!uid || picker || busy || (!text.trim() && !record)} aria-label="Odeslat zprávu">
         <Send size={20}/><span>{busy ? 'Odesílám…' : 'Odeslat'}</span>
       </button>
     </form>
-    <small className="chat-hint">@ připojí fotky · Enter odešle · {text.length}/1000</small>
+    <small className="chat-hint">@ připojí záznam · Enter odešle · {text.length}/1000</small>
   </>;
 }

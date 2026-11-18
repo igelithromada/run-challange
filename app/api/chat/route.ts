@@ -1,5 +1,6 @@
 import {randomUUID} from 'node:crypto';
-import {chatActivity,chatPhotos,groupChatPhotos,MAX_CHAT_PHOTOS,type ChatPhotoSelection} from '../../lib/chat';
+import {chatRecord,type ChatRecord} from '../../lib/chat';
+import {mergeActivityFeed,RECENT_ACTIVITY_LIMIT} from '../../lib/runData';
 import {after,NextResponse} from 'next/server';
 import {FieldValue, type QueryDocumentSnapshot, type Timestamp} from 'firebase-admin/firestore';
 import {requireUser,authErrorResponse} from '../../lib/apiAuth';
@@ -41,11 +42,10 @@ function failure(error:unknown){
  console.error('Chat request failed',error);
  return NextResponse.json({error:'Chat se nepodařilo načíst nebo uložit. Zkus to znovu.'},{status:500,headers});
 }
-function activityTime(value: unknown): number {
- if (value instanceof Date) return value.getTime();
- if (typeof value === 'string') return Date.parse(value) || 0;
- if (value && typeof value === 'object' && 'seconds' in value && typeof value.seconds === 'number') return value.seconds * 1000;
- return 0;
+function attachedRecordIds(message: FirebaseFirestore.DocumentData): string[] {
+ if (message.deleted) return [];
+ const ids = Array.isArray(message.photos) ? message.photos.map(photo => photo?.activityId) : [];
+ return [...new Set([message.activityId, ...ids].filter(id => validId(id, 230)))];
 }
 
 export async function PATCH(request: Request) {
@@ -73,25 +73,7 @@ export async function GET(request:Request){
  try{
   const {adminDb,decoded,profile}=await requireUser(request);
   const params=new URL(request.url).searchParams;
-  const gallery = params.get('gallery');
-  if (gallery !== null) {
-   const unavailable = () => NextResponse.json({ error: 'Fotky už nejsou dostupné.' }, { status: 404, headers });
-   if (!validId(gallery, 230)) return unavailable();
-   const message = (await adminDb.collection('communityChat').doc(gallery).get()).data();
-   if (!message || message.deleted) return unavailable();
-   const requested = params.get('thumbnail');
-   const activityId = params.get('activityId') || message.activityId;
-   if (!requested || !validId(activityId, 230)) return unavailable();
-   const allowed = Array.isArray(message.photos)
-    ? message.photos.some((photo: ChatPhotoSelection) => photo.activityId === activityId && photo.thumbnail === requested)
-    : activityId === message.activityId && (!message.thumbnail || requested === message.thumbnail);
-   if (!allowed) return unavailable();
-   const run = await adminDb.collection('runs').doc(activityId).get();
-   const photos = chatPhotos(run.data());
-   const index = photos.findIndex(photo => photo.thumbnail === requested);
-   if (index < 0) return unavailable();
-   return NextResponse.json({ images: photos.map(photo => photo.url), index }, { headers });
-  }
+  if (params.has('gallery')) return NextResponse.json({ error: 'Chat už fotky nesdílí.' }, { status: 404, headers });
   if (params.get('view') === 'unread') {
    const meta = await adminDb.collection('chatMeta').doc('community').get();
    const readAt = profile?.data()?.chatReadAt as Timestamp | undefined;
@@ -117,16 +99,13 @@ export async function GET(request:Request){
    } while (cursor && unread < 100);
    return NextResponse.json({ version, enabled, unread, newestIncomingAt }, { headers });
   }
-  if(params.get('picker')==='activities'){
-   // Equality-only query uses the existing index; sort before limiting to three.
-   const mine=await adminDb.collection('runs').where('uid','==',decoded.uid).get();
-   const activities = mine.docs
-    .map(doc => ({ photos: chatActivity(doc.id, doc.data()), timestamp: doc.data().timestamp }))
-    .filter(item => item.photos)
-    .sort((a, b) => activityTime(b.timestamp) - activityTime(a.timestamp))
-    .slice(0, 3)
-    .map(item => item.photos);
-   return NextResponse.json({activities},{headers});
+  if (params.get('picker') === 'activities') return NextResponse.json({ activities: [] }, { headers });
+  if (params.get('picker') === 'records') {
+   const snapshot = await adminDb.collection('runs').orderBy('timestamp', 'desc').limit(RECENT_ACTIVITY_LIMIT).get();
+   const recent = mergeActivityFeed([], snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+   return NextResponse.json({
+    records: recent.map(run => chatRecord(run.id, run)).filter(record => record !== null),
+   }, { headers });
   }
   const before=params.get('before');
   if(before&&!validId(before,230))return NextResponse.json({error:'Neplatná stránka chatu.'},{status:400,headers});
@@ -159,36 +138,32 @@ export async function GET(request:Request){
    hasMore = snapshot.size > PAGE_SIZE;
    visible = snapshot.docs.slice(0, PAGE_SIZE);
   }
-  const activityIds = new Set<string>();
-  for (const doc of visible) {
-   const message = doc.data() || { deleted: true };
-   if (message.deleted) continue;
-   if (validId(message.activityId, 230)) activityIds.add(message.activityId);
-   if (Array.isArray(message.photos)) {
-    for (const photo of message.photos) if (validId(photo.activityId, 230)) activityIds.add(photo.activityId);
+  const records = new Map<string, ChatRecord>();
+  const ids = [...new Set(visible.flatMap(doc => attachedRecordIds(doc.data() ?? {})))];
+  for (let i = 0; i < ids.length; i += 50) {
+   const batch = await Promise.all(ids.slice(i, i + 50).map(id => adminDb.collection('runs').doc(id).get()));
+   for (const run of batch) {
+    const record = chatRecord(run.id, run.data());
+    if (record) records.set(run.id, record);
    }
   }
-  const attachments = new Map<string, ReturnType<typeof chatActivity>>();
-  const ids = [...activityIds];
-  for (let i = 0; i < ids.length; i += 50) {
-   await Promise.all(ids.slice(i, i + 50).map(async id => {
-    const run = await adminDb.collection('runs').doc(id).get();
-    attachments.set(id, chatActivity(id, run.data()));
-   }));
-  }
   const replies=new Map<string,{id:string;nickname:string;text:string}>();
-  await Promise.all([...new Set(visible.filter(doc=>!doc.data()?.deleted).map(doc=>doc.data()?.reply?.id).filter((id):id is string=>validId(id,230)))].map(async id=>{const parent=await adminDb.collection('communityChat').doc(id).get();const data=parent.data();replies.set(id,{id,nickname:!data?.deleted?String(data?.nickname||'Uživatel'):'',text:!parent.exists||data?.deleted?'Původní zpráva byla odstraněna.':String(data?.text||'Sdílené fotky').slice(0,120)});}));
+  await Promise.all([...new Set(visible.filter(doc=>!doc.data()?.deleted).map(doc=>doc.data()?.reply?.id).filter((id):id is string=>validId(id,230)))].map(async id=>{const parent=await adminDb.collection('communityChat').doc(id).get();const data=parent.data();replies.set(id,{id,nickname:!data?.deleted?String(data?.nickname||'Uživatel'):'',text:!parent.exists||data?.deleted?'Původní zpráva byla odstraněna.':String(data?.text||'Sdílený záznam').slice(0,120)});}));
   const messages=visible.map(doc=>{
    const d=doc.data() || { deleted: true };
-   const source = attachments.get(d.activityId);
-   const activity = source && d.thumbnail
-    ? (source.thumbnails.includes(d.thumbnail) ? { id: source.id, thumbnails: [d.thumbnail] } : null)
-    : source;
-   const selections: ChatPhotoSelection[] = Array.isArray(d.photos) && !d.deleted ? d.photos : [];
-   const activities = groupChatPhotos(selections.filter(photo =>
-    attachments.get(photo.activityId)?.thumbnails.includes(photo.thumbnail)
-   ));
-   return{id:doc.id,uid:String(d.uid||''),nickname:String(d.nickname||'Uživatel'),text:d.deleted?'':String(d.text||''),deleted:d.deleted===true,createdAt:d.createdAt?.toDate?.().toISOString()||null,canDelete:admin||d.uid===decoded.uid,activity:d.deleted?null:activity||null,activities,activityUnavailable:!d.deleted&&((!!d.activityId&&!activity)||activities.reduce((count,item)=>count+item.thumbnails.length,0)<selections.length),reply:d.deleted?null:replies.get(d.reply?.id)||null};}).reverse();
+   const attachedIds = attachedRecordIds(d);
+   const attachments = attachedIds.flatMap(id => {
+    const record = records.get(id);
+    return record ? [record] : [];
+   });
+   return {
+    id: doc.id, uid: String(d.uid || ''), nickname: String(d.nickname || 'Uživatel'),
+    text: d.deleted ? '' : String(d.text || ''), deleted: d.deleted === true,
+    createdAt: d.createdAt?.toDate?.().toISOString() || null, canDelete: admin || d.uid === decoded.uid,
+    records: attachments, activityUnavailable: attachments.length < attachedIds.length,
+    reply: d.deleted ? null : replies.get(d.reply?.id) || null,
+   };
+  }).reverse();
   return NextResponse.json({
    messages, hasMore, cursor: changes ? null : visible.at(-1)?.id || null,
    ...(before ? {} : { revision, delta: changes !== null }),
@@ -200,22 +175,15 @@ export async function POST(request:Request){
   const {adminDb,decoded}=await requireUser(request);
   const body=await request.json().catch(()=>null);
   const text=typeof body?.text==='string'?body.text.replace(/\r\n?/g,'\n').trim():'';
-  const photos: unknown = body?.photos;
-  const validSelection = (value: unknown): value is ChatPhotoSelection => {
-   if (!value || typeof value !== 'object' || !('activityId' in value) || !('thumbnail' in value)) return false;
-   return validId(value.activityId, 230) && typeof value.thumbnail === 'string' && !!value.thumbnail && value.thumbnail.length <= 2048;
-  };
-  if (photos !== undefined && (!Array.isArray(photos) || photos.length > MAX_CHAT_PHOTOS ||
-      !photos.every(validSelection) || body.activityId !== undefined || body.thumbnail !== undefined)) {
-   return NextResponse.json({ error: 'Neplatný výběr fotek.' }, { status: 400, headers });
+  const activityId = body?.activityId;
+  if (body?.thumbnail !== undefined || (body?.photos !== undefined && (!Array.isArray(body.photos) || body.photos.length > 0))) {
+   return NextResponse.json({ error: 'Fotky už nelze sdílet. Obnov stránku chatu a vyber záznam.' }, { status: 400, headers });
   }
-  const selections: ChatPhotoSelection[] = Array.isArray(photos)
-   ? [...new Map<string, ChatPhotoSelection>(photos.map(photo => [JSON.stringify([photo.activityId, photo.thumbnail]), { activityId: photo.activityId, thumbnail: photo.thumbnail }])).values()]
-   : [];
-  if((!text&&!body?.activityId&&!selections.length)||text.length>1000||!validId(body?.clientId)||(body?.activityId&&!validId(body.activityId,230))||(body?.replyTo&&!validId(body.replyTo,230)))return NextResponse.json({error:'Napiš zprávu o délce 1 až 1000 znaků.'},{status:400,headers});
-  const thumbnail = body?.thumbnail;
-  if (thumbnail !== undefined && (!body?.activityId || typeof thumbnail !== 'string' || thumbnail.length > 2048)) {
-   return NextResponse.json({ error: 'Neplatný výběr fotky.' }, { status: 400, headers });
+  if (activityId != null && !validId(activityId, 230)) {
+   return NextResponse.json({ error: 'Neplatný záznam.' }, { status: 400, headers });
+  }
+  if ((!text && !activityId) || text.length > 1000 || !validId(body?.clientId) || (body?.replyTo && !validId(body.replyTo, 230))) {
+   return NextResponse.json({ error: 'Napiš zprávu o délce 1 až 1000 znaků nebo připoj záznam.' }, { status: 400, headers });
   }
   const message=adminDb.collection('communityChat').doc(`${decoded.uid}_${body.clientId}`);
   const rate=adminDb.collection('chatRateLimits').doc(decoded.uid);
@@ -224,33 +192,21 @@ export async function POST(request:Request){
    if(existing.exists)return {id:message.id,duplicate:true};
    const recent=await tx.get(rate),profile=await tx.get(adminDb.collection('users').doc(decoded.uid));
    if(profile.data()?.blocked||profile.data()?.deleting)return {forbidden:true};
-   let activityId:string|null=null,reply=null;
-   if (body.activityId) {
-    const activity = await tx.get(adminDb.collection('runs').doc(body.activityId));
-    const photos = chatActivity(activity.id, activity.data());
-    if (!photos || activity.data()?.uid !== decoded.uid || (thumbnail !== undefined && !photos.thumbnails.includes(thumbnail))) {
-     return { invalidActivity: true };
-    }
-    activityId = activity.id;
-   }
-   for (const group of groupChatPhotos(selections)) {
-    const record = await tx.get(adminDb.collection('runs').doc(group.id));
-    const available = chatActivity(group.id, record.data());
-    if (!available || record.data()?.uid !== decoded.uid ||
-        !group.thumbnails.every(thumbnail => available.thumbnails.includes(thumbnail))) {
-     return { invalidActivity: true };
-    }
+   let reply = null;
+   if (activityId) {
+    const activity = await tx.get(adminDb.collection('runs').doc(activityId));
+    if (!chatRecord(activity.id, activity.data())) return { invalidActivity: true };
    }
    if(body.replyTo){const parent=await tx.get(adminDb.collection('communityChat').doc(body.replyTo));if(!parent.exists||parent.data()?.deleted)return {invalidReply:true};reply={id:parent.id};}
    const now=Date.now();
    if(now-Number(recent.data()?.lastSentAt||0)<3000)return {limited:true};
    await recordChange(tx, adminDb, message.id);
    const nickname=String(profile.data()?.nickname||'Uživatel').slice(0,40);
-   tx.set(message,{uid:decoded.uid,nickname,text,activityId,thumbnail:thumbnail ?? null,photos:selections.length ? selections : null,reply,createdAt:FieldValue.serverTimestamp(),deleted:false});
+   tx.set(message,{uid:decoded.uid,nickname,text,activityId:activityId ?? null,reply,createdAt:FieldValue.serverTimestamp(),deleted:false});
    tx.set(rate,{lastSentAt:now});
    return {id:message.id};
   });
-  if('invalidActivity'in result)return NextResponse.json({error:'Sdílet můžeš jen fotky z vlastního záznamu.'},{status:400,headers});
+  if('invalidActivity'in result)return NextResponse.json({error:'Tento záznam už není dostupný.'},{status:400,headers});
   if('invalidReply'in result)return NextResponse.json({error:'Původní zpráva už není dostupná.'},{status:400,headers});
   if('forbidden'in result)return NextResponse.json({error:'Tento účet nemůže odesílat zprávy.'},{status:403,headers});
   if('limited'in result)return NextResponse.json({error:'Před další zprávou chvíli počkej.'},{status:429,headers:{...headers,'Retry-After':'3'}});

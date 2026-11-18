@@ -50,3 +50,52 @@ test('form recovery restores typed data and photos and preserves them when merel
  const render=()=>h.render(()=>Form({type:'kliky'}));render();let tree=render();await find(tree,n=>n.type==='button'&&text(n).includes('Pokračovat v rozpracované')).props.onClick();for(let attempt=0;attempt<100;attempt++){await new Promise(resolve=>setImmediate(resolve));tree=render();if(find(tree,n=>n.type==='input'&&n.props['aria-label']==='Počet opakování'))break;}assert.equal(find(tree,n=>n.type==='input'&&n.props['aria-label']==='Počet opakování').props.value,'40');assert.equal(find(tree,n=>n.type==='textarea').props.value,'Domácí trénink');assert.match(text(tree),/Vybráno fotografií: 1/);
  find(tree,n=>n.type==='button'&&n.props['aria-label']==='Zavřít formulář').props.onClick();render();assert.equal(recovery.readFormDraft('owner','kliky').km,'40');assert.equal((await recovery.draftPhotos('owner','kliky')).length,1);
 });
+
+test('chat keeps a draft and sends its text with the selected record', async () => {
+ const h = hooks();
+ const record = { id: 'shared', nickname: 'Verča', type: 'kliky', repetitions: 25 };
+ const sent = [];
+ const document = { activeElement: null };
+ const field = {
+   value: 'Pěkný výkon! ',
+   blur() {},
+   focus() { document.activeElement = this; },
+   setSelectionRange() {},
+   scrollIntoView() {},
+ };
+ const Composer = load('app/components/ChatComposer.tsx', {
+   react: h.api,
+   '../lib/firebase': { auth: { currentUser: { uid: 'owner', getIdToken: async () => 'test-token' } } },
+   './ChatActivityPreview': blank,
+ }, {
+   document, window: { innerHeight: 768 },
+   requestAnimationFrame: callback => callback(),
+   crypto: { randomUUID: () => 'request-id' },
+   fetch: async url => {
+     assert.equal(url, '/api/chat?picker=records');
+     return { ok: true, json: async () => ({ records: [record] }) };
+   },
+ }).default;
+ const render = () => h.render(() => Composer({
+   uid: 'owner', reply: null, onCancelReply() {},
+   onSend: async (...args) => { sent.push(args); return true; },
+ }));
+ const textarea = tree => find(tree, node => node.type === 'textarea');
+ let tree = render();
+ textarea(tree).props.ref.current = field;
+ textarea(tree).props.onChange({ target: { value: 'Pěkný výkon! @' } });
+ render();
+ await new Promise(resolve => setImmediate(resolve));
+ tree = render();
+ find(tree, node => node.type === 'button' && node.props['aria-label'] === 'Připojit záznam: Verča, Kliky').props.onClick();
+ tree = render();
+ assert.equal(document.activeElement, field);
+ assert.equal(textarea(tree).props.value, 'Pěkný výkon! ');
+ assert.equal(textarea(tree).props.placeholder, 'Napiš něco k záznamu…');
+ textarea(tree).props.onChange({ target: { value: 'Pěkný výkon! Příště se přidám.' } });
+ tree = render();
+ find(tree, node => node.type === 'form').props.onSubmit({ preventDefault() {} });
+ await new Promise(resolve => setImmediate(resolve));
+ assert.deepEqual(sent, [['Pěkný výkon! Příště se přidám.', 'shared', undefined, 'request-id']]);
+ assert.equal(textarea(render()).props.value, '');
+});
