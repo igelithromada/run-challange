@@ -233,3 +233,132 @@ html body .container:is(.container) .activity-card-modern > .activity-descriptio
 html body .container:is(.container) .activity-card-modern > .activity-metrics {margin:0 !important;}
 html body .container:is(.container) .activity-card-modern > .activity-metrics + .activity-card-actions,
 html body .container:is(.container) .app-metric-grid + .results-person-details {border-top:0 !important;}
+
+.site-navbar-inner .site-navbar-button.notification-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  gap: .16rem;
+  padding-inline: 0;
+}
+.site-navbar-inner .notification-button svg { flex: 0 0 auto; }
+.site-navbar-inner .notification-badge {
+  position: static;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  min-width: 1rem;
+  min-height: 1rem;
+  padding-inline: .14rem;
+  border-radius: 99px;
+  color: #fff;
+  background: #b91c1c;
+  font: 700 .63rem/1 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.activity-metrics .metric-accent .app-metric-icon {
+  position: relative;
+  isolation: isolate;
+}
+.activity-metrics .metric-accent .app-metric-icon::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inline-size: .92rem;
+  block-size: .92rem;
+  inset-inline-start: -.21rem;
+  inset-block-start: -.07rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--metric-mark) 28%, transparent);
+}
+.metric-distance { --metric-mark: #38c8c6; }
+.metric-time { --metric-mark: #7aa7f4; }
+.metric-pace { --metric-mark: #f3b750; }
+.metric-repetitions { --metric-mark: #b297f3; }
+
+.activity-awards-dialog {
+  width: min(90vw, 360px);
+  max-height: 80dvh;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--ui-border);
+  border-radius: 18px;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+}
+.activity-awards-dialog::backdrop { background: rgb(0 0 0 / 58%); }
+.activity-awards-dialog > section { padding: .9rem; }
+.activity-awards-dialog header, .challenge-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .65rem;
+}
+.activity-awards-dialog h2, .challenge-results-header h2 { margin: 0; }
+.activity-awards-dialog small { color: var(--ui-muted); }
+.activity-awards-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(62px, 1fr));
+  gap: .4rem;
+  padding: 0;
+  margin: .75rem 0 0;
+}
+.activity-awards-grid li {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: .25rem;
+  padding: .45rem .3rem;
+  background: var(--ui-bg-soft);
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+}
+.activity-awards-grid strong { font-size: .76rem; }
+
+.challenge-results-section { display: grid; gap: .85rem; }
+.challenge-results-header { flex-wrap: wrap; }
+.challenge-goal-status, .challenge-result-winner, .challenge-progress-caption {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .8rem;
+  color: var(--hierarchy-muted);
+}
+.challenge-goal-status.is-reached { color: var(--ui-success, var(--hierarchy-text)); }
+.challenge-result-list { display: grid; gap: .55rem; margin: 0; padding: 0; list-style: none; }
+.challenge-result-entry {
+  border: 1px solid var(--hierarchy-line);
+  border-radius: 12px;
+  padding: .72rem;
+  background: var(--ui-bg-soft);
+}
+.challenge-result-entry.is-mine { border-color: var(--hierarchy-accent); }
+.challenge-result-entry > header {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  align-items: center;
+  gap: .45rem;
+  margin-bottom: .55rem;
+}
+.challenge-result-entry strong { overflow-wrap: anywhere; }
+.challenge-result-rank { font-variant-numeric: tabular-nums; color: var(--hierarchy-muted); }
+.challenge-result-winner svg { color: light-dark(#886016, #f4c36d); flex-shrink: 0; }
+.challenge-goal-progress { display: grid; gap: .35rem; }
+.challenge-progress-values { display: flex; align-items: baseline; justify-content: space-between; gap: .4rem; }
+.challenge-progress-values strong { font-size: 1.18rem; }
+.challenge-progress-values b, .challenge-progress-values small { color: var(--hierarchy-muted); font-size: .84rem; }
+.challenge-goal-progress progress { width: 100%; height: .55rem; accent-color: var(--hierarchy-accent); }
+.challenge-goal-progress.is-reached progress { accent-color: var(--ui-success, var(--hierarchy-accent)); }
+
+.site-navbar-inner:has(.notification-wrap) {
+  grid-template-columns: 44px minmax(0,1fr) 49px 44px !important;
+}
+.site-navbar-inner .site-navbar-button.notification-button { width: 100%; }
+@media (max-width: 600px) {
+  .site-navbar-inner:has(.notification-wrap) {
+    grid-template-columns: 40px minmax(0,1fr) 49px 40px !important;
+  }
+}

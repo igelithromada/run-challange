@@ -119,14 +119,22 @@ function NotificationsBell() {
     };
   }, [load]);
 
+  const notificationRef = useRef<HTMLDivElement>(null);
   const close = () => { setOpen(false); bellRef.current?.focus(); };
   useEffect(() => {
     if (!open) return;
     const escape = (event: KeyboardEvent) => {
       if (event.key === "Escape") { setOpen(false); bellRef.current?.focus(); }
     };
+    const outside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !notificationRef.current?.contains(event.target)) setOpen(false);
+    };
     window.addEventListener("keydown", escape);
-    return () => window.removeEventListener("keydown", escape);
+    document.addEventListener("pointerdown", outside);
+    return () => {
+      window.removeEventListener("keydown", escape);
+      document.removeEventListener("pointerdown", outside);
+    };
   }, [open]);
 
   const markRead = async (notification?: AppNotification) => {
@@ -166,15 +174,14 @@ function NotificationsBell() {
 
   if (!open && unreadCount === 0 && notifications.length === 0) return null;
 
-  return <div className="notification-wrap">
+  return <div className="notification-wrap" ref={notificationRef}>
     <button type="button" ref={bellRef} className="site-navbar-button notification-button" aria-expanded={open} aria-controls="notifications-panel" onClick={() => { setOpen(value => !value); void load(); }} aria-label={`Upozornění, ${unreadCount} nepřečtených`}>
       <Bell size={21} strokeWidth={2.2} aria-hidden="true" />
-      {unreadCount > 0 && <span className="notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>}
+      {unreadCount > 0 && <span className="notification-badge" aria-hidden="true">{unreadCount > 99 ? "99+" : unreadCount}</span>}
     </button>
     {open && <>
-      <button type="button" className="notification-backdrop" aria-label="Zavřít upozornění" onClick={close} />
       <section id="notifications-panel" className="notification-panel" aria-label="Upozornění" aria-busy={busy || loading}>
-        <header className="notification-panel-header"><div><strong>Upozornění</strong><small>{unreadCount ? `${unreadCount} nepřečtených` : "Všechno přečteno"}</small></div><button type="button" onClick={close} aria-label="Zavřít"><X size={18}/></button></header>
+        <header className="notification-panel-header"><div><strong>Upozornění</strong><small>{unreadCount ? `${unreadCount} nepřečtených` : "Všechno přečteno"}</small></div><button type="button" className="ui-icon-button" onClick={close} aria-label="Zavřít upozornění"><X size={18}/></button></header>
         {unreadCount > 0 && <button type="button" className="notification-mark-all" disabled={busy} onClick={() => void markRead()}>Označit vše jako přečtené</button>}
         {error && <div className="notification-error" role="alert">{error}<button type="button" disabled={busy || loading} onClick={() => void load()}>Zkusit znovu</button></div>}
         <div className="notification-list">

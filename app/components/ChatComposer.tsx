@@ -25,7 +25,7 @@ export default function ChatComposer({ uid, reply, onCancelReply, onSend }: {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const input = useRef<HTMLTextAreaElement>(null);
-  const pickerPanel = useRef<HTMLElement>(null);
+  const pickerPanel = useRef<HTMLDialogElement>(null);
   const pending = useRef<{ key: string; id: string } | null>(null);
   const sending = useRef(false);
   const latestReply = useRef(reply);
@@ -37,11 +37,21 @@ export default function ChatComposer({ uid, reply, onCancelReply, onSend }: {
     const user = auth.currentUser;
     if (!picker || !user || user.uid !== uid) return;
     const controller = new AbortController();
-    pickerPanel.current?.focus({ preventScroll: true });
+    const panel = pickerPanel.current;
+    const viewport = window.visualViewport;
+    function fitPicker() {
+      panel?.style.setProperty('--picker-height', (viewport?.height ?? window.innerHeight) + 'px');
+      panel?.style.setProperty('--picker-top', (viewport?.offsetTop ?? 0) + 'px');
+    }
+    input.current?.blur();
+    fitPicker();
+    panel?.showModal();
+    viewport?.addEventListener('resize', fitPicker);
+    viewport?.addEventListener('scroll', fitPicker);
     setLoading(true);
     setError('');
     setActivities([]);
-    const frame = requestAnimationFrame(() => pickerPanel.current?.scrollIntoView({ block: 'nearest' }));
+
     async function load() {
       try {
         const response = await fetch('/api/chat?picker=activities', {
@@ -59,7 +69,12 @@ export default function ChatComposer({ uid, reply, onCancelReply, onSend }: {
       }
     }
     void load();
-    return () => { controller.abort(); cancelAnimationFrame(frame); };
+    return () => {
+      controller.abort();
+      panel?.close();
+      viewport?.removeEventListener('resize', fitPicker);
+      viewport?.removeEventListener('scroll', fitPicker);
+    };
   }, [picker, uid]);
 
   function toggle(activityId: string, thumbnail: string) {
@@ -73,6 +88,7 @@ export default function ChatComposer({ uid, reply, onCancelReply, onSend }: {
 
   function closePicker(confirm: boolean) {
     if (confirm) setPhotos(selection);
+    pickerPanel.current?.close();
     setPicker(false);
     setText(current => current.replace(attachmentTrigger, '$1'));
     const field = input.current;
@@ -110,11 +126,12 @@ export default function ChatComposer({ uid, reply, onCancelReply, onSend }: {
     {reply && <div className="chat-selected-reply"><div><small>Odpovídáš uživateli {reply.nickname}</small>
       <p>{reply.text.slice(0, 120)}</p></div><button type="button" aria-label="Zrušit odpověď" onClick={onCancelReply}><X size={18}/></button>
     </div>}
-    {picker && <section ref={pickerPanel} className="chat-activity-picker" tabIndex={-1}
-      aria-label="Fotky z posledních tří záznamů" onKeyDown={event => {
-        if (event.key === 'Escape') closePicker(false);
+    {picker && <dialog ref={pickerPanel} className="chat-activity-picker"
+      aria-labelledby="chat-picker-title" onCancel={event => {
+        event.preventDefault();
+        closePicker(false);
       }}>
-      <header><strong>Vyber fotky ze záznamů</strong><button type="button" aria-label="Zrušit výběr fotek" onClick={() => closePicker(false)}><X size={18}/></button></header>
+      <header><strong id="chat-picker-title">Vyber fotky ze záznamů</strong><button type="button" className="ui-icon-button" aria-label="Zrušit výběr fotek" onClick={() => closePicker(false)}><X size={18}/></button></header>
       <div className="chat-photo-picker-list">
       {loading ? <p role="status">Načítám fotky…</p> : error ? <p role="alert">{error}</p> : activities.length
         ? activities.map(item => <ChatActivityPreview key={item.id} activities={[item]} select={toggle}
@@ -126,7 +143,7 @@ export default function ChatComposer({ uid, reply, onCancelReply, onSend }: {
         <span aria-live="polite">Vybráno {selection.length} / {MAX_CHAT_PHOTOS}</span>
         <button type="button" className="tile-button" onClick={() => closePicker(true)}>Hotovo</button>
       </div>
-    </section>}
+    </dialog>}
     {!picker && photos.length > 0 && <div className="chat-selected-activity">
       <ChatActivityPreview activities={groupChatPhotos(photos)} />
       <button type="button" aria-label="Odebrat všechny připojené fotky" onClick={() => setPhotos([])}><X size={18}/></button>

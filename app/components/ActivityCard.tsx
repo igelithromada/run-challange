@@ -5,6 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Metric from "./Metric";
 import { ActivityTypeIcon } from "./ActivityTypeSelector";
 import ActivityGallery from "./ActivityGallery";
+import ActivityAwardsButton from "./ActivityAwardsButton";
 import { auth } from "../lib/firebase";
 import { Clock3, Gauge, Heart, MapPin, MessageCircle, Pencil, Trash2, X, Send } from "lucide-react";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
@@ -271,9 +272,9 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
         {run.description?.trim() && <div className="activity-description">{run.description.trim()}</div>}
 
         <div className={strength ? "activity-metrics strength-metrics" : "activity-metrics"}>
-          {strength ? <Metric icon={<ActivityTypeIcon type={activityType} size={19}/>} label="Opakování" value={Number(run.repetitions || 0).toLocaleString("cs-CZ")}/> : <Metric icon={<MapPin size={19}/>} label="Vzdálenost" value={<>{run.km} <small>km</small></>}/>}
-          {(!strength || Number(run.minuty)>0) && <Metric icon={<Clock3 size={19}/>} label="Čas" value={formatTime(run.minuty)}/>}
-          {!strength && <Metric icon={<Gauge size={19}/>} label="Tempo" value={<>{formatTime(run.tempo)} <small>/km</small></>}/>}
+          {strength ? <Metric icon={<ActivityTypeIcon type={activityType} size={19}/>} label="Opakování" className="metric-accent metric-repetitions" value={Number(run.repetitions || 0).toLocaleString("cs-CZ")}/> : <Metric icon={<MapPin size={19}/>} label="Vzdálenost" className="metric-accent metric-distance" value={<>{run.km} <small>km</small></>}/>}
+          {(!strength || Number(run.minuty)>0) && <Metric icon={<Clock3 size={19}/>} label="Čas" className="metric-accent metric-time" value={formatTime(run.minuty)}/>}
+          {!strength && <Metric icon={<Gauge size={19}/>} label="Tempo" className="metric-accent metric-pace" value={<>{formatTime(run.tempo)} <small>/km</small></>}/>}
 
         </div>
 
@@ -297,6 +298,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
           <button type="button" className={`activity-social-button ${commentCount > 0 ? "has-comments" : ""}`} onClick={() => void loadSocial("comments")} aria-label={`Komentáře · ${commentCount}`}>
             <MessageCircle size={20} /><span>{commentCount}</span>
           </button>
+          {run.uid && <ActivityAwardsButton key={run.uid} uid={run.uid} nickname={resolvedNickname} />}
           <span className="activity-actions-spacer" />
           {onEdit && <button type="button" className="activity-manage-button" onClick={onEdit} aria-label="Upravit záznam" title="Upravit záznam"><Pencil size={18} aria-hidden="true" /></button>}
           {onDelete && <button type="button" className="activity-manage-button activity-delete-button" onClick={onDelete} aria-label="Smazat záznam" title="Smazat záznam"><Trash2 size={18} aria-hidden="true" /></button>}
