@@ -1,47 +1,161 @@
 "use client";
-import {useEffect,useRef,useState} from 'react';
-import {Send,X} from 'lucide-react';
-import {auth} from '../lib/firebase';
-import type {ChatActivity,ChatReply} from '../lib/chat';
-import ChatActivityPreview from './ChatActivityPreview';
-export default function ChatComposer({uid,reply,onCancelReply,onSend}:{uid:string;reply:ChatReply|null;onCancelReply:()=>void;onSend:(text:string,activityId?:string,replyId?:string,clientId?:string,thumbnail?:string)=>Promise<boolean>}){
- const [text,setText]=useState(''),[activity,setActivity]=useState<ChatActivity|null>(null),[picker,setPicker]=useState(false),[activities,setActivities]=useState<ChatActivity[]>([]),[loading,setLoading]=useState(false),[error,setError]=useState(''),[busy,setBusy]=useState(false);
- const input=useRef<HTMLTextAreaElement>(null),pending=useRef<{key:string;id:string}|null>(null),sending=useRef(false),version=useRef(0),latestReply=useRef(reply);latestReply.current=reply;
- useEffect(()=>{version.current++;setText('');setActivity(null);setPicker(false);setActivities([]);pending.current=null;},[uid]);
- useEffect(()=>{if(reply)input.current?.focus();},[reply]);
- useEffect(()=>{
-  if(!picker||!uid)return;let active=true;const generation=version.current;setLoading(true);setError('');setActivities([]);
-  (async()=>{try{const user=auth.currentUser;if(!user||user.uid!==uid)return;const response=await fetch('/api/chat?picker=activities',{cache:'no-store',headers:{Authorization:'Bearer '+await user.getIdToken()}});const data=await response.json();if(!response.ok)throw new Error(data.error||'Aktivity nelze načíst.');if(active&&generation===version.current)setActivities(data.activities||[]);}catch(e){if(active)setError(e instanceof Error?e.message:'Aktivity nelze načíst.');}finally{if(active)setLoading(false);}})();
-  return()=>{active=false;};
- },[picker,uid]);
- function selectPhoto(item: ChatActivity, thumbnail: string) {
-  setActivity({ id: item.id, thumbnails: [thumbnail] });
-  setPicker(false);
-  setText(current => current.replace(/(^|\s)@$/, '$1'));
 
-  // Focus during the tap so mobile browsers can open the keyboard.
-  const field = input.current;
-  field?.focus({preventScroll: true});
-  requestAnimationFrame(() => {
-   if (field && document.activeElement === field) {
-    field.setSelectionRange(field.value.length, field.value.length);
-    field.scrollIntoView({block: 'nearest'});
-   }
-  });
- }
- const submit=async()=>{
-  const message=text.trim();if((!message&&!activity)||sending.current||!uid)return;
-  sending.current=true;setBusy(true);const generation=version.current,selected=activity,selectedReply=reply,key=JSON.stringify([message,activity?.id,activity?.thumbnails[0],reply?.id]);
-  const attempt=pending.current?.key===key?pending.current:{key,id:crypto.randomUUID()};pending.current=attempt;
-  try{if(await onSend(message,activity?.id,reply?.id,attempt.id,activity?.thumbnails[0])){if(generation!==version.current)return;pending.current=null;setText(current=>current.trim()===message?'':current);setActivity(current=>current===selected?null:current);if(latestReply.current?.id===selectedReply?.id)onCancelReply();setPicker(false);}}
-  finally{sending.current=false;if(generation===version.current)setBusy(false);}
- };
- return <>
-  {reply&&<div className="chat-selected-reply"><div><small>Odpovídáš uživateli {reply.nickname}</small><p>{reply.text.slice(0,120)}</p></div><button type="button" aria-label="Zrušit odpověď" onClick={onCancelReply}><X size={18}/></button></div>}
-  {picker&&<section id="chat-activity-picker" className="chat-activity-picker" aria-label="Fotky z posledních tří mých záznamů"><header><strong>Vyber fotku ze záznamu</strong><button type="button" aria-label="Zavřít výběr fotek" onClick={()=>setPicker(false)}><X size={18}/></button></header>{loading?<p role="status">Načítám fotky…</p>:error?<p role="alert">{error}</p>:activities.length?activities.map(item=><ChatActivityPreview key={item.id} activity={item} select={thumbnail=>selectPhoto(item,thumbnail)}/>):<p>Zatím nemáš v záznamech žádné fotky ke sdílení.</p>}</section>}
-  {activity&&<div className="chat-selected-activity"><ChatActivityPreview activity={activity}/><button type="button" aria-label="Odebrat připojenou fotku" onClick={()=>setActivity(null)}><X size={18}/></button></div>}
-  {activity&&<label className="chat-activity-message-label" htmlFor="chat-text">Zpráva k fotce</label>}
-  <form className="chat-compose" onSubmit={e=>{e.preventDefault();void submit();}}>{!activity&&<label htmlFor="chat-text" className="sr-only">Zpráva do společného chatu</label>}<textarea ref={input} id="chat-text" value={text} maxLength={1000} rows={2} disabled={!uid} placeholder={activity?'Napiš něco k fotce…':'Napiš zprávu… @ připojí fotky'} onChange={e=>{setText(e.target.value);setPicker(/(^|\s)@$/.test(e.target.value));}} onKeyDown={e=>{if(e.key==='Escape'){setPicker(false);return;}if(e.key==='Enter'&&picker){e.preventDefault();return;}if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void submit();}}}/><button type="submit" className="run-primary-button" disabled={!uid||busy||(!text.trim()&&!activity)} aria-label="Odeslat zprávu"><Send size={20}/><span>{busy?'Odesílám…':'Odeslat'}</span></button></form>
-  <small className="chat-hint">@ připojí fotky · Enter odešle · {text.length}/1000</small>
- </>;
+import { useEffect, useRef, useState } from 'react';
+import { Send, X } from 'lucide-react';
+import { auth } from '../lib/firebase';
+import { groupChatPhotos, MAX_CHAT_PHOTOS, type ChatActivity, type ChatPhotoSelection, type ChatReply } from '../lib/chat';
+import ChatActivityPreview from './ChatActivityPreview';
+
+const attachmentTrigger = /(^|\s)@$/;
+const samePhoto = (photo: ChatPhotoSelection, activityId: string, thumbnail: string) =>
+  photo.activityId === activityId && photo.thumbnail === thumbnail;
+
+export default function ChatComposer({ uid, reply, onCancelReply, onSend }: {
+  uid: string;
+  reply: ChatReply | null;
+  onCancelReply: () => void;
+  onSend: (text: string, photos: ChatPhotoSelection[], replyId: string | undefined, clientId: string) => Promise<boolean>;
+}) {
+  const [text, setText] = useState('');
+  const [photos, setPhotos] = useState<ChatPhotoSelection[]>([]);
+  const [selection, setSelection] = useState<ChatPhotoSelection[]>([]);
+  const [picker, setPicker] = useState(false);
+  const [activities, setActivities] = useState<ChatActivity[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const input = useRef<HTMLTextAreaElement>(null);
+  const pickerPanel = useRef<HTMLElement>(null);
+  const pending = useRef<{ key: string; id: string } | null>(null);
+  const sending = useRef(false);
+  const latestReply = useRef(reply);
+  latestReply.current = reply;
+
+  useEffect(() => { if (reply) input.current?.focus(); }, [reply]);
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!picker || !user || user.uid !== uid) return;
+    const controller = new AbortController();
+    pickerPanel.current?.focus({ preventScroll: true });
+    setLoading(true);
+    setError('');
+    setActivities([]);
+    const frame = requestAnimationFrame(() => pickerPanel.current?.scrollIntoView({ block: 'nearest' }));
+    async function load() {
+      try {
+        const response = await fetch('/api/chat?picker=activities', {
+          cache: 'no-store',
+          signal: controller.signal,
+          headers: { Authorization: 'Bearer ' + await user!.getIdToken() },
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Fotky se nepodařilo načíst.');
+        if (!controller.signal.aborted) setActivities(data.activities || []);
+      } catch (error) {
+        if (!controller.signal.aborted) setError(error instanceof Error ? error.message : 'Fotky se nepodařilo načíst.');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+    void load();
+    return () => { controller.abort(); cancelAnimationFrame(frame); };
+  }, [picker, uid]);
+
+  function toggle(activityId: string, thumbnail: string) {
+    setSelection(current => {
+      if (current.some(photo => samePhoto(photo, activityId, thumbnail))) {
+        return current.filter(photo => !samePhoto(photo, activityId, thumbnail));
+      }
+      return current.length >= MAX_CHAT_PHOTOS ? current : [...current, { activityId, thumbnail }];
+    });
+  }
+
+  function closePicker(confirm: boolean) {
+    if (confirm) setPhotos(selection);
+    setPicker(false);
+    setText(current => current.replace(attachmentTrigger, '$1'));
+    const field = input.current;
+    field?.focus({ preventScroll: true });
+    requestAnimationFrame(() => {
+      if (field && document.activeElement === field) {
+        field.setSelectionRange(field.value.length, field.value.length);
+        field.scrollIntoView({ block: 'nearest' });
+      }
+    });
+  }
+
+  async function submit() {
+    const message = text.trim();
+    if (picker || (!message && !photos.length) || sending.current || !uid) return;
+    sending.current = true;
+    setBusy(true);
+    const key = JSON.stringify([message, photos, reply?.id]);
+    const attempt = pending.current?.key === key ? pending.current : { key, id: crypto.randomUUID() };
+    pending.current = attempt;
+    try {
+      if (await onSend(message, photos, reply?.id, attempt.id)) {
+        pending.current = null;
+        setText(current => current.trim() === message ? '' : current);
+        setPhotos(current => current === photos ? [] : current);
+        if (latestReply.current?.id === reply?.id) onCancelReply();
+      }
+    } finally {
+      sending.current = false;
+      setBusy(false);
+    }
+  }
+
+  return <>
+    {reply && <div className="chat-selected-reply"><div><small>Odpovídáš uživateli {reply.nickname}</small>
+      <p>{reply.text.slice(0, 120)}</p></div><button type="button" aria-label="Zrušit odpověď" onClick={onCancelReply}><X size={18}/></button>
+    </div>}
+    {picker && <section ref={pickerPanel} className="chat-activity-picker" tabIndex={-1}
+      aria-label="Fotky z posledních tří záznamů" onKeyDown={event => {
+        if (event.key === 'Escape') closePicker(false);
+      }}>
+      <header><strong>Vyber fotky ze záznamů</strong><button type="button" aria-label="Zrušit výběr fotek" onClick={() => closePicker(false)}><X size={18}/></button></header>
+      <div className="chat-photo-picker-list">
+      {loading ? <p role="status">Načítám fotky…</p> : error ? <p role="alert">{error}</p> : activities.length
+        ? activities.map(item => <ChatActivityPreview key={item.id} activities={[item]} select={toggle}
+            selected={(id, url) => selection.some(photo => samePhoto(photo, id, url))}
+            atLimit={selection.length >= MAX_CHAT_PHOTOS} />)
+        : <p>Zatím nemáš v záznamech žádné fotky ke sdílení.</p>}
+      </div>
+      <div className="chat-photo-picker-actions">
+        <span aria-live="polite">Vybráno {selection.length} / {MAX_CHAT_PHOTOS}</span>
+        <button type="button" className="tile-button" onClick={() => closePicker(true)}>Hotovo</button>
+      </div>
+    </section>}
+    {!picker && photos.length > 0 && <div className="chat-selected-activity">
+      <ChatActivityPreview activities={groupChatPhotos(photos)} />
+      <button type="button" aria-label="Odebrat všechny připojené fotky" onClick={() => setPhotos([])}><X size={18}/></button>
+    </div>}
+    {photos.length > 0 && <label className="chat-activity-message-label" htmlFor="chat-text">Zpráva k fotkám</label>}
+    <form className="chat-compose" onSubmit={e => { e.preventDefault(); void submit(); }}>
+      {!photos.length && <label htmlFor="chat-text" className="sr-only">Zpráva do společného chatu</label>}
+      <textarea ref={input} id="chat-text" value={text} maxLength={1000} rows={2} disabled={!uid}
+        placeholder={photos.length ? 'Napiš něco k fotkám…' : 'Napiš zprávu… @ připojí fotky'}
+        onChange={e => {
+          const value = e.target.value;
+          const open = attachmentTrigger.test(value);
+          if (open && !picker) setSelection(photos);
+          setText(value);
+          setPicker(open);
+        }}
+        onKeyDown={e => {
+          if (e.nativeEvent.isComposing) return;
+          if (e.key === 'Escape' && picker) closePicker(false);
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!picker) void submit();
+          }
+        }} />
+      <button type="submit" className="run-primary-button"
+        disabled={!uid || picker || busy || (!text.trim() && !photos.length)} aria-label="Odeslat zprávu">
+        <Send size={20}/><span>{busy ? 'Odesílám…' : 'Odeslat'}</span>
+      </button>
+    </form>
+    <small className="chat-hint">@ připojí fotky · Enter odešle · {text.length}/1000</small>
+  </>;
 }

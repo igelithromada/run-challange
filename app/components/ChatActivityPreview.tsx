@@ -1,14 +1,16 @@
 "use client";
 
-import Image from 'next/image';
+import { Check } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import PhotoViewer from './PhotoViewer';
 import { auth } from '../lib/firebase';
-import type { ChatActivity } from '../lib/chat';
+import { chatPreviewUrl, type ChatActivity } from '../lib/chat';
 
-export default function ChatActivityPreview({ activity, select, messageId }: {
-  activity: ChatActivity;
-  select?: (thumbnail: string) => void;
+export default function ChatActivityPreview({ activities, select, selected, atLimit = false, messageId }: {
+  activities: ChatActivity[];
+  select?: (activityId: string, thumbnail: string) => void;
+  selected?: (activityId: string, thumbnail: string) => boolean;
+  atLimit?: boolean;
   messageId?: string;
 }) {
   const [gallery, setGallery] = useState<{ images: string[]; index: number } | null>(null);
@@ -17,7 +19,7 @@ export default function ChatActivityPreview({ activity, select, messageId }: {
   const request = useRef<AbortController | null>(null);
   useEffect(() => () => request.current?.abort(), [messageId]);
 
-  async function open(thumbnail: string) {
+  async function open(activityId: string, thumbnail: string) {
     const user = auth.currentUser;
     if (!messageId || !user || request.current) return;
     const controller = new AbortController();
@@ -25,7 +27,7 @@ export default function ChatActivityPreview({ activity, select, messageId }: {
     setLoading(true);
     setError('');
     try {
-      const params = new URLSearchParams({ gallery: messageId, thumbnail });
+      const params = new URLSearchParams({ gallery: messageId, activityId, thumbnail });
       const response = await fetch('/api/chat?' + params, {
         cache: 'no-store',
         signal: controller.signal,
@@ -43,14 +45,22 @@ export default function ChatActivityPreview({ activity, select, messageId }: {
   }
 
   return <>
-    <div className="chat-photo-strip" aria-label="Fotky ze záznamu">
-      {activity.thumbnails.map((url, index) => {
-        const image = <Image src={url} width={96} height={96} unoptimized alt="" />;
-        if (!select && !messageId) return <span key={url}>{image}</span>;
-        return <button type="button" key={url} className="chat-photo-option"
-          disabled={loading} aria-label={select ? `Vybrat fotku ${index + 1}` : `Otevřít fotku ${index + 1} v galerii záznamu`}
-          onClick={() => select ? select(url) : void open(url)}>{image}</button>;
-      })}
+    <div className="chat-photo-strip" aria-label="Fotky ze záznamu" tabIndex={0}>
+      {activities.flatMap(activity => activity.thumbnails.map(url => ({ activityId: activity.id, url })))
+        .map(({ activityId, url }, index) => {
+          const checked = selected?.(activityId, url) ?? false;
+          const key = activityId + ':' + url;
+          const image = <img src={chatPreviewUrl(url)} alt="" loading="lazy" decoding="async" />;
+          if (!select && !messageId) return <span key={key} className="chat-photo-tile">{image}</span>;
+          return <button type="button" key={key} className="chat-photo-tile chat-photo-option"
+            disabled={loading || Boolean(select && atLimit && !checked)}
+            aria-pressed={select ? checked : undefined}
+            aria-label={select ? `Vybrat fotku ${index + 1}` : `Otevřít fotku ${index + 1} v galerii záznamu`}
+            onClick={() => select ? select(activityId, url) : void open(activityId, url)}>
+            {image}
+            {select && <span className="chat-photo-check" aria-hidden="true">{checked && <Check size={18} />}</span>}
+          </button>;
+        })}
     </div>
     {loading && <span role="status">Otevírám galerii…</span>}
     {error && <span role="alert">{error}</span>}

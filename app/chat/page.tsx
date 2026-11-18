@@ -9,9 +9,9 @@ import Sidebar from '../components/Sidebar';
 
 import ChatComposer from '../components/ChatComposer';
 import ChatActivityPreview from '../components/ChatActivityPreview';
-import {CHAT_CHANGED,type ChatActivity,type ChatReply} from '../lib/chat';
+import {CHAT_CHANGED,type ChatActivity,type ChatPhotoSelection,type ChatReply} from '../lib/chat';
 
-type Message={id:string;uid:string;nickname:string;text:string;deleted:boolean;createdAt:string|null;canDelete:boolean;activity?:ChatActivity|null;activityUnavailable?:boolean;reply?:ChatReply|null};
+type Message={id:string;uid:string;nickname:string;text:string;deleted:boolean;createdAt:string|null;canDelete:boolean;activity?:ChatActivity|null;activities?:ChatActivity[];activityUnavailable?:boolean;reply?:ChatReply|null};
 type Page={messages:Message[];hasMore:boolean;cursor:string|null;revision?:string;unchanged?:boolean};
 async function request(init?:RequestInit,before?:string,revision?:string):Promise<Page>{
  const user=auth.currentUser;if(!user)throw new Error('Nejsi přihlášen.');
@@ -65,9 +65,9 @@ export default function ChatPage(){
   const visible=()=>{if(document.visibilityState==='visible')void refresh();};document.addEventListener('visibilitychange',visible);window.addEventListener('online',visible);window.addEventListener(CHAT_CHANGED,visible);
   return()=>{active=false;clearTimeout(timer);document.removeEventListener('visibilitychange',visible);window.removeEventListener('online',visible);window.removeEventListener(CHAT_CHANGED,visible);};
  },[uid,refresh]);
- const send=async(text:string,activityId?:string,replyTo?:string,clientId?:string,thumbnail?:string)=>{
+ const send=async(text:string,photos:ChatPhotoSelection[],replyTo:string|undefined,clientId:string)=>{
   const version=generation.current;setError('');
-  try{await request({method:'POST',body:JSON.stringify({text,activityId,replyTo,clientId,thumbnail})});if(version!==generation.current)return false;await refresh();requestAnimationFrame(bottom);return true;}
+  try{await request({method:'POST',body:JSON.stringify({text,photos,replyTo,clientId})});if(version!==generation.current)return false;await refresh();requestAnimationFrame(bottom);return true;}
   catch(e){if(version===generation.current)setError(e instanceof Error?e.message:'Zprávu se nepodařilo odeslat.');return false;}
  };
  const older=async()=>{
@@ -82,7 +82,7 @@ export default function ChatPage(){
   <div ref={list} className="chat-messages" role="log" aria-label="Zprávy ve společném chatu" aria-live="polite" aria-relevant="additions text" tabIndex={0} onScroll={()=>{const el=list.current;if(el&&el.scrollHeight-el.scrollTop-el.clientHeight<100){setNewMessages(false);markRead();}}}>
    {more&&<button className="tile-button chat-older" disabled={olderBusy} onClick={()=>void older()}>{olderBusy?'Načítám…':'Starší zprávy'}</button>}
    {loading&&!messages.length?<p role="status">Načítám chat…</p>:!messages.length&&!error?<p className="chat-empty">Zatím tu není žádná zpráva. Napiš první.</p>:null}
-   {messages.map(message=><article key={message.id} className={`chat-message${message.uid===uid?' is-mine':''}`}><header><strong>{message.nickname}</strong><time dateTime={message.createdAt||undefined}>{message.createdAt?new Date(message.createdAt).toLocaleString('cs-CZ',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}):'Právě teď'}</time>{message.canDelete&&!message.deleted&&<button type="button" className="chat-delete" aria-label="Odstranit zprávu" title="Odstranit zprávu" onClick={()=>void remove(message.id)}><Trash2 size={16}/></button>}</header>{!message.deleted&&message.reply&&<blockquote className="chat-reply-preview"><strong>{message.reply.nickname}</strong><span>{message.reply.text}</span></blockquote>}{!message.deleted&&message.activity&&<ChatActivityPreview activity={message.activity} messageId={message.id}/>} {!message.deleted&&message.activityUnavailable&&<p className="chat-deleted">Fotky už nejsou dostupné.</p>}<p className={message.deleted?'chat-deleted':''}>{message.deleted?'Zpráva byla odstraněna.':message.text}</p>{!message.deleted&&<button type="button" className="chat-reply-button" onClick={()=>setReply({id:message.id,nickname:message.nickname,text:message.text||'Sdílené fotky'})}><Reply size={16}/> Odpovědět</button>}</article>)}
+   {messages.map(message=><article key={message.id} className={`chat-message${message.uid===uid?' is-mine':''}${!message.deleted&&(message.activity||message.activities?.length)?' has-photos':''}`}><header><strong>{message.nickname}</strong><time dateTime={message.createdAt||undefined}>{message.createdAt?new Date(message.createdAt).toLocaleString('cs-CZ',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}):'Právě teď'}</time>{message.canDelete&&!message.deleted&&<button type="button" className="chat-delete" aria-label="Odstranit zprávu" title="Odstranit zprávu" onClick={()=>void remove(message.id)}><Trash2 size={16}/></button>}</header>{!message.deleted&&message.reply&&<blockquote className="chat-reply-preview"><strong>{message.reply.nickname}</strong><span>{message.reply.text}</span></blockquote>}{!message.deleted&&(message.activity||Boolean(message.activities?.length))&&<ChatActivityPreview activities={message.activities?.length?message.activities:message.activity?[message.activity]:[]} messageId={message.id}/>} {!message.deleted&&message.activityUnavailable&&<p className="chat-deleted">Fotky už nejsou dostupné.</p>}<p className={message.deleted?'chat-deleted':''}>{message.deleted?'Zpráva byla odstraněna.':message.text}</p>{!message.deleted&&<button type="button" className="chat-reply-button" onClick={()=>setReply({id:message.id,nickname:message.nickname,text:message.text||'Sdílené fotky'})}><Reply size={16}/> Odpovědět</button>}</article>)}
   </div>
   {newMessages&&<button className="tile-button" onClick={bottom}>Nové zprávy ↓</button>}
   {error&&<p className="chat-error" role="alert">{error} <button type="button" onClick={()=>void refresh()}>Zkusit načíst znovu</button></p>}

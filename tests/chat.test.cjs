@@ -139,3 +139,34 @@ test('live chat sends revision changes over an authenticated stream and releases
  }
  assert.equal(detached,true);
 });
+
+test('a message shares multiple selected photos across owned records and opens the right gallery', async () => {
+ const s = setup();
+ const second = photo.replace('photo.jpg','second.jpg');
+ const third = photo.replace('photo.jpg','third.jpg');
+ s.docs.set('runs/one',{uid:'member',imageUrls:[photo,second]});
+ s.docs.set('runs/two',{uid:'member',imageUrls:[third]});
+ s.docs.set('runs/foreign',{uid:'other',imageUrls:[third]});
+ const firstRecord = projectionModule.exports.chatActivity('one',s.docs.get('runs/one'));
+ const secondRecord = projectionModule.exports.chatActivity('two',s.docs.get('runs/two'));
+ const photos = [
+  { activityId:'one', thumbnail:firstRecord.thumbnails[1] },
+  { activityId:'two', thumbnail:secondRecord.thumbnails[0] },
+ ];
+ assert.equal((await s.request('POST',{photos:[photos[0],{...photos[1],activityId:'foreign'}],clientId:'foreign'})).status,400);
+ assert.equal((await s.request('POST',{photos:Array(7).fill(photos[0]),clientId:'too-many'})).status,400);
+ assert.equal((await s.request('POST',{text:'Dvě fotky',photos,clientId:'one'})).status,200);
+ s.user('other');
+ const feed = await (await s.request('GET')).json();
+ assert.equal(feed.messages[0].text,'Dvě fotky');
+ assert.deepEqual(feed.messages[0].activities,photos.map(item=>({ id:item.activityId, thumbnails:[item.thumbnail] })));
+ assert.match(projectionModule.exports.chatPreviewUrl(photos[0].thumbnail),/w_960,h_960/);
+ const gallery = item => s.request('GET',null,'?'+new URLSearchParams({gallery:'member_one',...item}));
+ assert.deepEqual(await (await gallery(photos[0])).json(),{images:[photo,second],index:1});
+ assert.deepEqual(await (await gallery(photos[1])).json(),{images:[third],index:0});
+ assert.equal((await gallery({ activityId:'foreign', thumbnail:photos[1].thumbnail })).status,404);
+ s.docs.delete('runs/one');
+ const updated = await (await s.request('GET')).json();
+ assert.equal(updated.messages[0].activities.length,1);
+ assert.equal(updated.messages[0].activityUnavailable,true);
+});

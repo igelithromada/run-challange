@@ -1,4 +1,4 @@
-import {chatActivity,chatPhotos} from '../../lib/chat';
+import {chatActivity,chatPhotos,groupChatPhotos,MAX_CHAT_PHOTOS,type ChatPhotoSelection} from '../../lib/chat';
 import {after,NextResponse} from 'next/server';
 import {FieldValue, type QueryDocumentSnapshot, type Timestamp} from 'firebase-admin/firestore';
 import {requireUser,authErrorResponse} from '../../lib/apiAuth';
@@ -52,10 +52,15 @@ export async function GET(request:Request){
    const unavailable = () => NextResponse.json({ error: 'Fotky už nejsou dostupné.' }, { status: 404, headers });
    if (!validId(gallery, 230)) return unavailable();
    const message = (await adminDb.collection('communityChat').doc(gallery).get()).data();
-   if (!message || message.deleted || !validId(message.activityId, 230)) return unavailable();
+   if (!message || message.deleted) return unavailable();
    const requested = params.get('thumbnail');
-   if (!requested || (message.thumbnail && requested !== message.thumbnail)) return unavailable();
-   const run = await adminDb.collection('runs').doc(message.activityId).get();
+   const activityId = params.get('activityId') || message.activityId;
+   if (!requested || !validId(activityId, 230)) return unavailable();
+   const allowed = Array.isArray(message.photos)
+    ? message.photos.some((photo: ChatPhotoSelection) => photo.activityId === activityId && photo.thumbnail === requested)
+    : activityId === message.activityId && (!message.thumbnail || requested === message.thumbnail);
+   if (!allowed) return unavailable();
+   const run = await adminDb.collection('runs').doc(activityId).get();
    const photos = chatPhotos(run.data());
    const index = photos.findIndex(photo => photo.thumbnail === requested);
    if (index < 0) return unavailable();
@@ -106,8 +111,23 @@ export async function GET(request:Request){
   let query=adminDb.collection('communityChat').orderBy('createdAt','desc').limit(51);
   if(before){const cursor=await adminDb.collection('communityChat').doc(before).get();if(!cursor.exists)return NextResponse.json({error:'Starší zprávy se nepodařilo najít. Obnov chat.'},{status:400,headers});query=query.startAfter(cursor);}
   const snapshot=await query.get(),visible=snapshot.docs.slice(0,50);
-  const attachments=new Map<string,ReturnType<typeof chatActivity>>();
-  await Promise.all([...new Set(visible.filter(doc=>!doc.data().deleted).map(doc=>doc.data().activityId).filter((id):id is string=>validId(id,230)))].map(async id=>{const run=await adminDb.collection('runs').doc(id).get();attachments.set(id,run.exists?chatActivity(id,run.data()):null);}));
+  const activityIds = new Set<string>();
+  for (const doc of visible) {
+   const message = doc.data();
+   if (message.deleted) continue;
+   if (validId(message.activityId, 230)) activityIds.add(message.activityId);
+   if (Array.isArray(message.photos)) {
+    for (const photo of message.photos) if (validId(photo.activityId, 230)) activityIds.add(photo.activityId);
+   }
+  }
+  const attachments = new Map<string, ReturnType<typeof chatActivity>>();
+  const ids = [...activityIds];
+  for (let i = 0; i < ids.length; i += 50) {
+   await Promise.all(ids.slice(i, i + 50).map(async id => {
+    const run = await adminDb.collection('runs').doc(id).get();
+    attachments.set(id, chatActivity(id, run.data()));
+   }));
+  }
   const replies=new Map<string,{id:string;nickname:string;text:string}>();
   await Promise.all([...new Set(visible.filter(doc=>!doc.data().deleted).map(doc=>doc.data().reply?.id).filter((id):id is string=>validId(id,230)))].map(async id=>{const parent=await adminDb.collection('communityChat').doc(id).get();const data=parent.data();replies.set(id,{id,nickname:!data?.deleted?String(data?.nickname||'Uživatel'):'',text:!parent.exists||data?.deleted?'Původní zpráva byla odstraněna.':String(data?.text||'Sdílené fotky').slice(0,120)});}));
   const messages=visible.map(doc=>{
@@ -116,7 +136,11 @@ export async function GET(request:Request){
    const activity = source && d.thumbnail
     ? (source.thumbnails.includes(d.thumbnail) ? { id: source.id, thumbnails: [d.thumbnail] } : null)
     : source;
-   return{id:doc.id,uid:String(d.uid||''),nickname:String(d.nickname||'Uživatel'),text:d.deleted?'':String(d.text||''),deleted:d.deleted===true,createdAt:d.createdAt?.toDate?.().toISOString()||null,canDelete:admin||d.uid===decoded.uid,activity:d.deleted?null:activity||null,activityUnavailable:!d.deleted&&!!d.activityId&&!activity,reply:d.deleted?null:replies.get(d.reply?.id)||null};}).reverse();
+   const selections: ChatPhotoSelection[] = Array.isArray(d.photos) && !d.deleted ? d.photos : [];
+   const activities = groupChatPhotos(selections.filter(photo =>
+    attachments.get(photo.activityId)?.thumbnails.includes(photo.thumbnail)
+   ));
+   return{id:doc.id,uid:String(d.uid||''),nickname:String(d.nickname||'Uživatel'),text:d.deleted?'':String(d.text||''),deleted:d.deleted===true,createdAt:d.createdAt?.toDate?.().toISOString()||null,canDelete:admin||d.uid===decoded.uid,activity:d.deleted?null:activity||null,activities,activityUnavailable:!d.deleted&&((!!d.activityId&&!activity)||activities.reduce((count,item)=>count+item.thumbnails.length,0)<selections.length),reply:d.deleted?null:replies.get(d.reply?.id)||null};}).reverse();
   return NextResponse.json({messages,hasMore:snapshot.docs.length>50,cursor:visible.at(-1)?.id||null,revision},{headers});
  }catch(error){return failure(error);}
 }
@@ -125,7 +149,19 @@ export async function POST(request:Request){
   const {adminDb,decoded}=await requireUser(request);
   const body=await request.json().catch(()=>null);
   const text=typeof body?.text==='string'?body.text.replace(/\r\n?/g,'\n').trim():'';
-  if((!text&&!body?.activityId)||text.length>1000||!validId(body?.clientId)||(body?.activityId&&!validId(body.activityId,230))||(body?.replyTo&&!validId(body.replyTo,230)))return NextResponse.json({error:'Napiš zprávu o délce 1 až 1000 znaků.'},{status:400,headers});
+  const photos: unknown = body?.photos;
+  const validSelection = (value: unknown): value is ChatPhotoSelection => {
+   if (!value || typeof value !== 'object' || !('activityId' in value) || !('thumbnail' in value)) return false;
+   return validId(value.activityId, 230) && typeof value.thumbnail === 'string' && !!value.thumbnail && value.thumbnail.length <= 2048;
+  };
+  if (photos !== undefined && (!Array.isArray(photos) || photos.length > MAX_CHAT_PHOTOS ||
+      !photos.every(validSelection) || body.activityId !== undefined || body.thumbnail !== undefined)) {
+   return NextResponse.json({ error: 'Neplatný výběr fotek.' }, { status: 400, headers });
+  }
+  const selections: ChatPhotoSelection[] = Array.isArray(photos)
+   ? [...new Map<string, ChatPhotoSelection>(photos.map(photo => [JSON.stringify([photo.activityId, photo.thumbnail]), { activityId: photo.activityId, thumbnail: photo.thumbnail }])).values()]
+   : [];
+  if((!text&&!body?.activityId&&!selections.length)||text.length>1000||!validId(body?.clientId)||(body?.activityId&&!validId(body.activityId,230))||(body?.replyTo&&!validId(body.replyTo,230)))return NextResponse.json({error:'Napiš zprávu o délce 1 až 1000 znaků.'},{status:400,headers});
   const thumbnail = body?.thumbnail;
   if (thumbnail !== undefined && (!body?.activityId || typeof thumbnail !== 'string' || thumbnail.length > 2048)) {
    return NextResponse.json({ error: 'Neplatný výběr fotky.' }, { status: 400, headers });
@@ -146,11 +182,19 @@ export async function POST(request:Request){
     }
     activityId = activity.id;
    }
+   for (const group of groupChatPhotos(selections)) {
+    const record = await tx.get(adminDb.collection('runs').doc(group.id));
+    const available = chatActivity(group.id, record.data());
+    if (!available || record.data()?.uid !== decoded.uid ||
+        !group.thumbnails.every(thumbnail => available.thumbnails.includes(thumbnail))) {
+     return { invalidActivity: true };
+    }
+   }
    if(body.replyTo){const parent=await tx.get(adminDb.collection('communityChat').doc(body.replyTo));if(!parent.exists||parent.data()?.deleted)return {invalidReply:true};reply={id:parent.id};}
    const now=Date.now();
    if(now-Number(recent.data()?.lastSentAt||0)<3000)return {limited:true};
    const nickname=String(profile.data()?.nickname||'Uživatel').slice(0,40);
-   tx.set(message,{uid:decoded.uid,nickname,text,activityId,thumbnail:thumbnail ?? null,reply,createdAt:FieldValue.serverTimestamp(),deleted:false});
+   tx.set(message,{uid:decoded.uid,nickname,text,activityId,thumbnail:thumbnail ?? null,photos:selections.length ? selections : null,reply,createdAt:FieldValue.serverTimestamp(),deleted:false});
    tx.set(rate,{lastSentAt:now});
    tx.set(adminDb.collection('chatMeta').doc('community'),{revision:message.id});
    return {id:message.id};
@@ -176,7 +220,7 @@ export async function DELETE(request:Request){
    const message=await tx.get(ref),profile=await tx.get(adminDb.collection('users').doc(decoded.uid));
    if(!message.exists)return 404;
    if(message.data()?.uid!==decoded.uid&&profile.data()?.role!=='admin'&&decoded.admin!==true)return 403;
-   tx.update(ref,{text:'',activityId:null,thumbnail:null,reply:null,deleted:true,deletedAt:FieldValue.serverTimestamp()});
+   tx.update(ref,{text:'',activityId:null,thumbnail:null,photos:null,reply:null,deleted:true,deletedAt:FieldValue.serverTimestamp()});
    tx.set(adminDb.collection('chatMeta').doc('community'),{revision:ref.id+'_'+Date.now()});
    return 200;
   });

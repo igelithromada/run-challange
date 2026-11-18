@@ -9,8 +9,8 @@
 .floating-chat:focus-visible{outline:3px solid var(--hierarchy-accent);outline-offset:3px;}
 body:has(>.floating-chat) .app-content-layer{padding-bottom:calc(80px + env(safe-area-inset-bottom));}
 .chat-activity-picker{border:1px solid var(--hierarchy-accent);border-radius:12px;padding:.6rem;}.chat-activity-picker>header,.chat-selected-activity,.chat-selected-reply{display:flex;align-items:center;gap:.5rem;}.chat-activity-picker>header{justify-content:space-between;}
-.chat-activity-picker button:not(.chat-photo-option),.chat-selected-activity>button,.chat-selected-reply>button{min-width:40px;min-height:40px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--hierarchy-text);}.chat-selected-activity>.chat-photo-strip{flex:1;}
-.chat-attach-button,.chat-reply-button{display:flex;align-items:center;gap:.3rem;border:0;background:transparent;color:var(--hierarchy-muted);cursor:pointer;min-height:36px;font:inherit;font-size:.78rem;}
+.chat-activity-picker>header>button,.chat-selected-activity>button,.chat-selected-reply>button{min-width:40px;min-height:40px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--hierarchy-text);}.chat-selected-activity>.chat-photo-strip{flex:1;}
+.chat-reply-button{display:flex;align-items:center;gap:.3rem;border:0;background:transparent;color:var(--hierarchy-muted);cursor:pointer;min-height:36px;font:inherit;font-size:.78rem;}
 .chat-reply-preview,.chat-selected-reply{border-inline-start:3px solid var(--hierarchy-accent);padding:.4rem .65rem;margin:.4rem 0;background:var(--ui-bg-soft);border-radius:5px;}.chat-reply-preview{display:flex;flex-direction:column;gap:.2rem;font-size:.78rem;}.chat-selected-reply>div{flex:1;min-width:0;}.chat-selected-reply p{margin:.2rem 0;font-size:.8rem;overflow-wrap:anywhere;}
 
 .chat-activity-message-label {
@@ -24,30 +24,81 @@ body:has(>.floating-chat) .app-content-layer{padding-bottom:calc(80px + env(safe
   padding-top: 0;
 }
 
+.chat-message.has-photos {
+  width: min(100%, 520px);
+  box-sizing: border-box;
+}
 .chat-photo-strip {
   display: flex;
-  align-items: center;
-  gap: .35rem;
+  align-items: stretch;
+  gap: .45rem;
   min-width: 0;
   max-width: 100%;
   overflow-x: auto;
   margin-block: .35rem;
   scrollbar-width: thin;
+  scroll-snap-type: x mandatory;
 }
-.chat-photo-strip img {
-  flex: 0 0 auto;
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-.chat-photo-option {
-  width: 100%;
-  padding: .4rem;
+.chat-photo-tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 0 0 min(88%, 460px);
+  min-width: 0;
+  height: clamp(210px, 72vw, 360px);
+  overflow: hidden;
+  padding: 0;
   background: var(--ui-bg-soft);
   border: 1px solid var(--hierarchy-line);
   border-radius: 10px;
+  scroll-snap-align: start;
+}
+.chat-photo-tile:only-child {
+  flex-basis: min(100%, 520px);
+}
+.chat-photo-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+}
+.chat-photo-option {
   cursor: pointer;
+}
+.chat-photo-option[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 3px var(--hierarchy-accent);
+  border-color: var(--hierarchy-accent);
+}
+.chat-photo-check {
+  position: absolute;
+  inset: 8px 8px auto auto;
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #151515a8;
+  color: #fff;
+}
+.chat-photo-option[aria-pressed="true"] .chat-photo-check {
+  background: #176040;
+}
+.chat-photo-option:disabled {
+  cursor: default;
+}
+.chat-photo-picker-list {
+  max-height: min(49dvh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.chat-photo-picker-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
 }
 .floating-chat-badge {
   position: absolute;
@@ -60,13 +111,6 @@ body:has(>.floating-chat) .app-content-layer{padding-bottom:calc(80px + env(safe
   color: #fff;
   font: 700 12px/18px system-ui, sans-serif;
   text-align: center;
-}
-
-.chat-photo-strip > .chat-photo-option {
-  flex: 0 0 auto;
-  width: auto;
-  padding: 2px;
-  line-height: 0;
 }
 
 .chat-photo-strip > .chat-photo-option:focus-visible {
