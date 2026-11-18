@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, CloudSun } from "lucide-react";
+import { isStrengthActivity } from "../lib/activity";
 import type { ActivityType } from "./ActivityTypeSelector";
 import type { WeatherResponse } from "../lib/weather";
 import { auth } from "../lib/firebase";
@@ -59,16 +60,21 @@ export default function RunWeatherRecommendation({ linkToWeather = true, type }:
   }, []);
 
   const current = weather?.error ? undefined : weather?.current;
-  const advice = getActivityWeatherAdvice(current, type ?? resolvedType);
+  const selectedType = type ?? resolvedType;
+  const strength = isStrengthActivity(selectedType);
+  const advice = getActivityWeatherAdvice(current, selectedType);
+  const title = loading && !current ? "Načítám počasí" : strength && current ? "Počasí v Dolní Lhotě" : advice.title;
+  const text = loading && !current ? "Zjišťuji podmínky v Dolní Lhotě."
+    : strength ? (current ? "Zobrazit podrobnou předpověď" : "Aktuální podmínky se nepodařilo načíst.") : advice.advice;
   const validWeather = Boolean(current && advice.temperature !== null && current.weatherCondition?.type);
   const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Prague", hour: "2-digit", hourCycle: "h23" }).format(new Date()));
-  const content = <section className={`run-weather-recommendation run-weather-compact run-weather-${advice.tone}`} aria-live="polite">
+  const content = <section className={`run-weather-recommendation run-weather-compact run-weather-${strength ? "neutral" : advice.tone}${type ? " run-weather-home" : ""}`} aria-live="polite">
     <span className="run-weather-symbol" aria-hidden="true">
       {validWeather ? <WeatherVisual type={current?.weatherCondition?.type} size={48} night={hour < 6 || hour >= 20} /> : <CloudSun size={32} />}
     </span>
     <div className="run-weather-copy">
-      <div className="run-weather-heading"><strong>{loading && !current ? "Načítám počasí" : advice.title}</strong>{linkToWeather && <ChevronRight size={17} aria-hidden="true" />}</div>
-      <p>{loading && !current ? "Zjišťuji podmínky v Dolní Lhotě." : advice.advice}</p>
+      <div className="run-weather-heading"><strong>{title}</strong>{linkToWeather && <ChevronRight size={17} aria-hidden="true" />}</div>
+      <p>{text}</p>
       {validWeather && <div className="run-weather-meta">
         <span>{Math.round(advice.temperature!)} °C · {current?.weatherCondition?.description?.text || weatherDescription(current?.weatherCondition?.type)}</span>
         <span>Vítr {Math.round(advice.wind)} km/h</span>

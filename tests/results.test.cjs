@@ -29,8 +29,8 @@ test('pace ranking puts unknown pace last and duration rounding carries into hou
 function renderResults(overrides={}){let i=0;const initial=[false,'a','běh','jednotlivci','km','rank','2026-11-16','2026-11-16','',profiles,''];for(const [key,value]of Object.entries(overrides))initial[Number(key)]=value;const hooks={...React,useState:()=>[initial[i++],()=>{}]};const blank={__esModule:true,default:()=>null};const Page=load('app/statistics/page.tsx',{react:hooks,'next/navigation':{useRouter:()=>({push(){}})},'firebase/auth':{onAuthStateChanged(){return()=>{};}},'../lib/firebase':{auth:{}},'../lib/useSharedFirestoreQuery':{useSharedFirestoreQuery:()=>({data:runs,loading:false,error:null})},'../lib/services/runs':{filteredRunsQuery:()=>({})},'../lib/services/publicProfiles':{getPublicProfiles:async()=>profiles},'../components/Navbar':blank,'../components/Sidebar':blank,'../components/LoadingSkeleton':blank}).default;return renderToStaticMarkup(React.createElement(Page));}
 test('merged screen retains every existing filter and all five summary values',()=>{
  const html=renderResults();for(const text of ['Já','Jednotlivci','Kilometry','Tempo','Od data','Do data','Celkem km','Čas','Průměrné tempo','Aktivity','Účastníci','Hledat uživatele podle přezdívky','Podle abecedy'])assert.ok(html.includes(text),text);
- assert.match(html,/6\.00 km/);assert.match(html,/Stupně vítězů/);
- const mine=renderResults({3:'já'});assert.match(mine,/4\.00 km/);assert.doesNotMatch(mine,/Stupně vítězů/);
+ assert.match(html,/6 <small class="app-metric-unit">km<\/small>/);assert.match(html,/Stupně vítězů/);
+ const mine=renderResults({3:'já'});assert.match(mine,/4 <small class="app-metric-unit">km<\/small>/);assert.doesNotMatch(mine,/Stupně vítězů/);
 });
 test('search and alphabetical mode hide the podium without relabelling a found user as the winner',()=>{
  const searched=renderResults({8:'cenek'});assert.doesNotMatch(searched,/Stupně vítězů/);assert.match(searched,/Čeněk Novák/);assert.doesNotMatch(searched,/Radek Pešák/);
@@ -42,7 +42,7 @@ test('legacy participants slot opens the personal gallery and results remain uni
 });
 
 test('award results show community totals and individual counters while retaining distance and other metrics',()=>{
- const html=renderResults({4:'badges'});assert.match(html,/Celkové vyhodnocení odznaků/);assert.match(html,/Ranní ptáče/);assert.match(html,/Noční běh/);assert.match(html,/Počty jednotlivých odznaků/);assert.match(html,/6\.00 km/);assert.match(html,/Podle odznaků/);
+ const html=renderResults({4:'badges'});assert.match(html,/Celkové vyhodnocení odznaků/);assert.match(html,/Ranní ptáče/);assert.match(html,/Noční běh/);assert.match(html,/Počty jednotlivých odznaků/);assert.match(html,/6 <small class="app-metric-unit">km<\/small>/);assert.match(html,/Podle odznaků/);
 });
 
 test('redesigned results keep advanced filters and secondary calculations collapsed by default',()=>{

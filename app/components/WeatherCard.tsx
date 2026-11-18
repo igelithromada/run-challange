@@ -13,7 +13,11 @@ import WeatherVisual, { weatherDescription } from "./WeatherVisual";
 const REFRESH_MS = 15 * 60 * 1000;
 const GPS_CHECK_MS = 60 * 1000;
 const temperatureLabel = (value?: number) => typeof value === "number" && Number.isFinite(value) ? `${Math.round(value)}°` : "—";
-const probabilityLabel = (value?: number | null) => typeof value === "number" && Number.isFinite(value) ? `${Math.round(value)} %` : "—";
+const probabilityValue = (value?: number | null) => typeof value === "number" && Number.isFinite(value) ? Math.round(value) : "—";
+const probabilityLabel = (value?: number | null) => {
+  const percent = probabilityValue(value);
+  return typeof percent === "number" ? `${percent} %` : percent;
+};
 
 export default function WeatherCard() {
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
@@ -183,6 +187,8 @@ export default function WeatherCard() {
   }, [loadWeather]);
 
   const current = weather?.current;
+  const precipitationValue = formatPrecipitation(current?.precipitation?.amount, false);
+  const humidity = probabilityValue(current?.relativeHumidity);
   const precipitationExplanation = precipitationContext(current);
   const hourProbability = current?.precipitation?.probability?.percent;
   const hasHourProbability = typeof hourProbability === "number" && Number.isFinite(hourProbability);
@@ -218,9 +224,9 @@ export default function WeatherCard() {
           </div>
         </div>
         <div className="weather-stat-grid">
-          <Metric className="weather-stat-card" icon={<Wind size={24}/>} label="Vítr" value={typeof wind === "number" ? `${Math.round(wind)} ${windUnit}` : "—"}/>
-          <Metric className="weather-stat-card weather-precipitation-stat" title={`Aktuální odhad úhrnu srážek za ${observedPeriod}. Pravděpodobnost platí pro aktuální hodinu.`} icon={<Droplets className="weather-humidity-icon" size={24}/>} label="Srážky" value={formatPrecipitation(current.precipitation?.amount)} detail={hasHourProbability ? <>Pravděp. {probabilityLabel(hourProbability)}<br/>v této hodině</> : undefined}/>
-          <Metric className="weather-stat-card" icon={<Droplets className="weather-humidity-icon" size={24}/>} label="Vlhkost" value={probabilityLabel(current.relativeHumidity)}/>
+          <Metric className="weather-stat-card" icon={<Wind size={24}/>} label="Vítr" value={typeof wind === "number" ? Math.round(wind) : "—"} unit={typeof wind === "number" ? windUnit : undefined}/>
+          <Metric className="weather-stat-card weather-precipitation-stat" title={`Aktuální odhad úhrnu srážek za ${observedPeriod}. Pravděpodobnost platí pro aktuální hodinu.`} icon={<Droplets className="weather-humidity-icon" size={24}/>} label="Srážky" value={precipitationValue} unit={precipitationValue !== "—" ? "mm" : undefined} detail={hasHourProbability ? <>Pravděp. {probabilityLabel(hourProbability)}<br/>v této hodině</> : undefined}/>
+          <Metric className="weather-stat-card" icon={<Droplets className="weather-humidity-icon" size={24}/>} label="Vlhkost" value={humidity} unit={typeof humidity === "number" ? "%" : undefined}/>
 
         </div>
       </div>

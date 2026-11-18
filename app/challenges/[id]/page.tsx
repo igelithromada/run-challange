@@ -9,6 +9,8 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, LogOut, Trophy, Save, X } from "lucide-react";
 import { auth } from "../../lib/firebase";
+import Metric from "../../components/Metric";
+import { formatMetricNumber } from "../../lib/activityMetrics";
 import ChallengeSummaryCard from "../../components/ChallengeSummaryCard";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
@@ -33,8 +35,6 @@ async function uploadChallengeImage(file: File) {
   return { secureUrl: data.secureUrl, publicId: typeof data.publicId === "string" ? data.publicId : "" };
 }
 
-const formatResult = (value: number) => value.toLocaleString("cs-CZ", { maximumFractionDigits: 2 });
-
 function GoalProgress({ result, goal, kind, completed }: {
  result: number; goal: number; kind: ChallengeData["kind"]; completed: boolean;
 }) {
@@ -43,14 +43,12 @@ function GoalProgress({ result, goal, kind, completed }: {
  const reached = goal > 0 && result >= goal;
  const remaining = Math.max(0, goal - result);
  return <div className={`challenge-goal-progress${reached ? " is-reached" : ""}`}>
-  <div className="challenge-progress-values">
-   <span><strong>{formatResult(result)}</strong><small> / {formatResult(goal)} {unit}</small></span>
-   <b>{percent} %</b>
-  </div>
+  <Metric icon={reached ? <CheckCircle2/> : <Target/>} tone={reached ? "success" : "target"}
+    label="Plnění cíle" value={`${formatMetricNumber(result)} / ${formatMetricNumber(goal)}`} unit={unit} detail={`${percent} %`}/>
   <progress aria-label="Plnění cíle" aria-valuetext={`${percent} %`} max={100} value={Math.min(100, percent)} />
   <span className="challenge-progress-caption">
    {reached ? <><CheckCircle2 size={15} /> Cíl splněn</>
-    : <>{completed ? "Do cíle chybělo" : "Do cíle zbývá"} {formatResult(remaining)} {unit}</>}
+    : <>{completed ? "Do cíle chybělo" : "Do cíle zbývá"} {formatMetricNumber(remaining)} {unit}</>}
   </span>
  </div>;
 }

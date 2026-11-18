@@ -54,13 +54,12 @@ html[data-theme="white"] {
   border-radius:0 !important;
 }
 .activity-card-modern .activity-metrics {gap:0 !important;padding:.65rem 0;}
-.container .activity-card-modern .activity-metrics > div {min-height:70px !important;padding:.35rem .5rem !important;}
+.container .activity-card-modern .activity-metrics > div {min-height:0 !important;padding:.45rem .25rem !important;}
 .container .activity-card-modern .activity-metrics > div + div {border-inline-start:1px solid var(--hierarchy-line) !important;}
 .activity-card-modern .activity-metrics > div strong {color:var(--hierarchy-text);line-height:1.3;}
 .activity-card-modern .activity-metrics > div span,
 .activity-card-modern .activity-date,
 .activity-card-modern .activity-kind-label {color:var(--hierarchy-muted) !important;opacity:1 !important;}
-.container .activity-card-modern .activity-metrics > div:first-child strong {font-size:1.3rem !important;}
 /* The pace value is sufficient; an unlabelled red-to-green scale implies a score. */
 .activity-card-modern .activity-pace-bar {display:none !important;}
 .container .progress-records .progress-record-item + .progress-record-item {border-top:1px solid var(--hierarchy-line) !important;}
@@ -128,24 +127,24 @@ html[data-theme="white"] {
 }
 
 /* One shared measurement: icon + name, followed by a legible value. */
-.container .app-metric {
+:is(.container,.activity-awards-dialog) .app-metric {
   display:flex !important;flex-direction:column !important;align-items:flex-start !important;
   justify-content:flex-start !important;gap:.35rem !important;min-width:0;
   padding:.65rem .7rem !important;text-align:left !important;background:transparent !important;
   border-radius:0 !important;box-shadow:none !important;
 }
-.container .app-metric .app-metric-heading {
+:is(.container,.activity-awards-dialog) .app-metric .app-metric-heading {
   display:flex !important;align-items:center !important;gap:.35rem !important;
   font-size:.8rem !important;font-weight:500;line-height:1.3;color:var(--hierarchy-muted) !important;
   min-height:1.5rem;min-width:0;
 }
 .app-metric-icon {display:inline-flex;flex:0 0 auto;}
 .app-metric-icon svg {width:19px;height:19px;}
-.container .app-metric strong.app-metric-value {font-size:clamp(1.1rem,3.8vw,1.5rem) !important;line-height:1.25 !important;color:var(--hierarchy-text) !important;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;}
-.app-metric-value small {font-size:.72em;white-space:nowrap;}
+:is(.container,.activity-awards-dialog) .app-metric strong.app-metric-value {font-size:clamp(1.1rem,3.8vw,1.5rem) !important;line-height:1.25 !important;color:var(--hierarchy-text) !important;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;}
+.app-metric-unit, .app-metric-value > small {font-size:.72em;color:var(--hierarchy-muted);white-space:nowrap;}
 .app-metric-detail {color:var(--hierarchy-muted);font-size:.75rem;}
 .app-metric-grid,.container .team-card-stats-compact,.container .team-stats-rows,.container .trainer-plan-summary {display:grid !important;grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:0 !important;}
-.container .app-metric-grid > .app-metric:nth-child(even),.container .team-card-stats-compact > .app-metric:nth-child(even),.container .team-stats-rows > .app-metric:nth-child(even),.container .trainer-plan-summary > .app-metric:nth-child(even) {border-inline-start:1px solid var(--hierarchy-line) !important;}
+:is(.container,.activity-awards-dialog) .app-metric-grid > .app-metric:nth-child(even),.container .team-card-stats-compact > .app-metric:nth-child(even),.container .team-stats-rows > .app-metric:nth-child(even),.container .trainer-plan-summary > .app-metric:nth-child(even) {border-inline-start:1px solid var(--hierarchy-line) !important;}
 .container .activity-card-modern .activity-metrics {display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;margin:.25rem 0 !important;padding:.35rem 0 !important;}
 .container .activity-card-modern .strength-metrics {grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
 .container .activity-card-modern .activity-description {margin:.45rem 0 !important;padding:.4rem 0 !important;}
@@ -178,63 +177,81 @@ html[data-theme="white"] {
 .container .activity-recorder-metrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;}
 .container .activity-recorder-metrics > .app-metric + .app-metric {border-inline-start:1px solid var(--hierarchy-line);}
 .container .activity-card-modern {gap:.35rem !important;}
-.container .app-metric strong.app-metric-value {white-space:normal !important;}
+:is(.container,.activity-awards-dialog) .app-metric strong.app-metric-value {white-space:normal !important;}
 .container .results-person-details {margin-left:0 !important;}
 
 /* Shared separators: inset horizontal rules and shorter vertical dividers. */
-html body .container:is(.container) .app-metric {
+html body :is(.container.container,.activity-awards-dialog) .app-metric {
   align-items:center !important;justify-content:center !important;text-align:center !important;
 }
-html body .container:is(.container) .app-metric .app-metric-heading {
+html body :is(.container.container,.activity-awards-dialog) .app-metric .app-metric-heading {
   justify-content:center !important;text-align:center !important;width:100%;
 }
-html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) {
+html body :is(.container.container,.activity-awards-dialog) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) {
   position:relative;gap:0 !important;padding:.85rem .5rem !important;box-sizing:border-box;
   border:0 !important;
 }
-html body .container:is(.container) :is(.app-metric-grid,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid) {
+html body :is(.container.container,.activity-awards-dialog) :is(.app-metric-grid,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid) {
   display:grid !important;grid-template-columns:repeat(2,minmax(0,1fr)) !important;
 }
-html body .container:is(.container) :is(.activity-metrics,.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) {
+html body :is(.container.container,.activity-awards-dialog) :is(.activity-metrics,.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) {
   display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;
 }
-html body .container:is(.container) .activity-metrics.strength-metrics {grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+html body :is(.container.container,.activity-awards-dialog) .activity-metrics.strength-metrics {grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
 /* Draw horizontal rules only between populated sections or between metric rows.
    A standalone metric group has no rules facing empty space at the card edges. */
-html body .container:is(.container) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::before,
-html body .container:is(.container) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::after {
+html body :is(.container.container,.activity-awards-dialog) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::before,
+html body :is(.container.container,.activity-awards-dialog) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::after {
   content:"";position:absolute;inset-inline:.5rem;height:1px;background:var(--hierarchy-line);pointer-events:none;
 }
-html body .container:is(.container) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::before {top:.25rem;}
-html body .container:is(.container) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::after {bottom:.25rem;}
-html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) > .app-metric:nth-child(n) {
+html body :is(.container.container,.activity-awards-dialog) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::before {top:.25rem;}
+html body :is(.container.container,.activity-awards-dialog) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::after {bottom:.25rem;}
+html body :is(.container.container,.activity-awards-dialog) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) > .app-metric:nth-child(n) {
   position:relative;border:0 !important;margin:0 !important;min-width:0;box-sizing:border-box;
 }
-html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) > .app-metric::before {
+html body :is(.container.container,.activity-awards-dialog) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) > .app-metric::before {
   content:none;position:absolute;inset-inline-start:0;top:.6rem;bottom:.6rem;width:1px;background:var(--hierarchy-line);pointer-events:none;
 }
-html body .container:is(.container) :is(.app-metric-grid,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.strength-metrics) > .app-metric:nth-child(even)::before {content:"";}
-html body .container:is(.container) :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric::before {content:none;}
-html body .container:is(.container) :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric:not(:nth-child(3n+1))::before {content:"";}
+html body :is(.container.container,.activity-awards-dialog) :is(.app-metric-grid,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.strength-metrics) > .app-metric:nth-child(even)::before {content:"";}
+html body :is(.container.container,.activity-awards-dialog) :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric::before {content:none;}
+html body :is(.container.container,.activity-awards-dialog) :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric:not(:nth-child(3n+1))::before {content:"";}
 /* Each cell draws its part of the row rule with no gaps between columns. */
-html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) > .app-metric::after {
+html body :is(.container.container,.activity-awards-dialog) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) > .app-metric::after {
   content:none;position:absolute;inset-inline:0;top:0;height:1px;background:var(--hierarchy-line);pointer-events:none;
 }
-html body .container:is(.container) :is(.app-metric-grid,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.strength-metrics) > .app-metric:nth-child(n+3)::after {content:"";}
-html body .container:is(.container) :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric::after {content:none;}
-html body .container:is(.container) :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric:nth-child(n+4)::after {content:"";}
+html body :is(.container.container,.activity-awards-dialog) :is(.app-metric-grid,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.strength-metrics) > .app-metric:nth-child(n+3)::after {content:"";}
+html body :is(.container.container,.activity-awards-dialog) :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric::after {content:none;}
+html body :is(.container.container,.activity-awards-dialog) :is(.activity-metrics:not(.strength-metrics),.result-measurements,.results-summary-metrics,.activity-recorder-metrics,.weather-stat-grid) > .app-metric:nth-child(n+4)::after {content:"";}
 /* Keep the summary's card outline separate from its internal rules. */
 html body .myruns-page .activity-summary-grid {outline:1px solid var(--hierarchy-line);}
 /* The next group's top rule is the only separator after a record description. */
-html body .container:is(.container) .activity-card-modern > .activity-description {
+html body :is(.container.container,.activity-awards-dialog) .activity-card-modern > .activity-description {
   position:relative;border:0 !important;margin:0 !important;padding:.6rem .5rem .15rem !important;
 }
-html body .container:is(.container) .activity-card-modern > .activity-description::before {
+html body :is(.container.container,.activity-awards-dialog) .activity-card-modern > .activity-description::before {
   content:"";position:absolute;inset-inline:.5rem;top:0;height:1px;background:var(--hierarchy-line);
 }
-html body .container:is(.container) .activity-card-modern > .activity-metrics {margin:0 !important;}
-html body .container:is(.container) .activity-card-modern > .activity-metrics + .activity-card-actions,
-html body .container:is(.container) .app-metric-grid + .results-person-details {border-top:0 !important;}
+html body :is(.container.container,.activity-awards-dialog) .activity-card-modern > .activity-metrics {
+  margin:0 !important;padding:.27rem .5rem !important;
+}
+html body .container .activity-metrics.strength-metrics:has(> .app-metric:only-child) {
+  grid-template-columns:minmax(0,1fr) !important;
+}
+html body .container .activity-metrics.strength-metrics > .app-metric::before {
+  top:.3rem;bottom:.3rem;
+}
+html body .container .activity-card-modern > .activity-social-actions {
+  position:relative;padding-top:.35rem;border-top:0 !important;
+}
+html body .container .activity-gallery + .activity-social-actions {padding-top:.6rem;}
+html body .container .activity-gallery + .activity-social-actions::before {
+  content:"";position:absolute;inset-inline:.5rem;top:0;height:1px;background:var(--hierarchy-line);
+}
+html body :is(.container,.activity-awards-dialog) .app-metric-grid:not(.result-measurements,.results-summary-metrics) > .app-metric:nth-child(2n+3):last-child,
+html body .container .activity-summary-grid > .app-metric:nth-child(2n+3):last-child {grid-column:1 / -1;}
+
+html body :is(.container.container,.activity-awards-dialog) .activity-card-modern > .activity-metrics + .activity-card-actions,
+html body :is(.container.container,.activity-awards-dialog) .app-metric-grid + .results-person-details {border-top:0 !important;}
 
 .site-navbar-inner .site-navbar-button.notification-button {
   display: inline-flex !important;
@@ -260,50 +277,44 @@ html body .container:is(.container) .app-metric-grid + .results-person-details {
   font-variant-numeric: tabular-nums;
 }
 
-.activity-metrics .metric-accent .app-metric-icon svg { color: var(--metric-mark); }
-.metric-distance { --metric-mark: #62d8d1; }
-.metric-time { --metric-mark: #a0c5ff; }
-.metric-pace { --metric-mark: #ffd282; }
-.metric-repetitions { --metric-mark: #d4b8ff; }
-html[data-theme="white"] .metric-distance { --metric-mark: #067773; }
-html[data-theme="white"] .metric-time { --metric-mark: #365da7; }
-html[data-theme="white"] .metric-pace { --metric-mark: #945b03; }
-html[data-theme="white"] .metric-repetitions { --metric-mark: #7853ad; }
+[data-metric-tone] .app-metric-icon svg {color:var(--metric-mark, currentColor);}
+[data-metric-tone="distance"] {--metric-mark:#62d8d1;}
+[data-metric-tone="time"] {--metric-mark:#a0c5ff;}
+[data-metric-tone="pace"], [data-metric-tone="award"] {--metric-mark:var(--hierarchy-caution);}
+[data-metric-tone="repetitions"] {--metric-mark:#d4b8ff;}
+[data-metric-tone="count"], [data-metric-tone="target"] {--metric-mark:var(--hierarchy-accent);}
+[data-metric-tone="success"] {--metric-mark:var(--hierarchy-success);}
+html[data-theme="white"] [data-metric-tone="distance"] {--metric-mark:#067773;}
+html[data-theme="white"] [data-metric-tone="time"] {--metric-mark:#365da7;}
+html[data-theme="white"] [data-metric-tone="repetitions"] {--metric-mark:#7853ad;}
 
 .activity-type-selector { padding-bottom: .65rem; }
-.activity-record-byline { display: grid; justify-items: end; align-self: start; gap: .15rem; }
-.activity-awards-anchor { min-height: 1px; min-width: 1px; }
-.activity-record-byline .activity-awards-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: .22rem;
-  min-width: 36px;
-  min-height: 34px;
-  border: 0;
-  border-radius: 8px;
-  padding: 0;
-  background: transparent;
-  color: #ffd282;
-  font: inherit;
-  font-size: .78rem;
-  cursor: pointer;
+.activity-record-byline { display: grid; justify-items: end; align-self: start; }
+.activity-person-name {
+  display:flex;align-items:center;min-width:0;gap:.1rem;
+  color:var(--hierarchy-text);font-size:1.02rem;font-weight:700;line-height:1.25;
 }
-html[data-theme="white"] .activity-record-byline .activity-awards-button { color: #865300; }
-.activity-record-byline .activity-awards-button:hover { background: var(--ui-bg-soft); }
+.activity-person-name > span:first-child {overflow-wrap:anywhere;}
+.activity-person-name > [role="link"] {cursor:pointer;}
+.activity-awards-anchor {display:inline-flex;flex:none;min-height:1px;min-width:1px;}
+.activity-awards-button {
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:34px;min-height:32px;padding:0;border:0;border-radius:8px;
+  background:transparent;color:var(--hierarchy-caution);cursor:pointer;
+}
+.activity-awards-button:hover {background:var(--ui-bg-soft);}
+.award-heading {display:flex;align-items:center;flex-wrap:wrap;gap:.55rem;}
+.award-heading-total {
+  display:inline-flex;align-items:center;gap:.3rem;color:var(--hierarchy-caution);
+  font-size:.9rem;font-weight:700;font-variant-numeric:tabular-nums;
+}
 
 .activity-awards-dialog {
-  width: min(90vw, 360px);
-  max-height: 80dvh;
-  padding: 0;
-  overflow: auto;
-  border: 1px solid var(--ui-border);
-  border-radius: 18px;
-  background: #173344;
-  color: #f1f7fa;
+  width:min(90vw, 400px);max-height:80dvh;padding:0;overflow:auto;
+  border:1px solid var(--hierarchy-line);border-radius:18px;
+  background:linear-gradient(var(--hierarchy-card),var(--hierarchy-card)), var(--main-gradient, #263953);
+  color:var(--hierarchy-text);
 }
-html[data-theme="white"] .activity-awards-dialog { background: #fff; color: #192a36; }
-html[data-theme="dark"] .activity-awards-dialog { background: #191b20; }
 .activity-awards-dialog::backdrop { background: rgb(0 0 0 / 58%); }
 .activity-awards-dialog > section { padding: .9rem; }
 .activity-awards-dialog header, .challenge-results-header {
@@ -313,41 +324,32 @@ html[data-theme="dark"] .activity-awards-dialog { background: #191b20; }
   gap: .65rem;
 }
 .activity-awards-dialog h2, .challenge-results-header h2 { margin: 0; }
-.activity-awards-dialog small { color: var(--ui-muted); }
-.award-metrics {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: .45rem;
-  margin-top: .7rem;
-}
+.activity-awards-dialog header small {color:var(--hierarchy-muted);}
+.award-metrics {margin-top:.45rem;}
 .award-metrics-scroll {
-  display: flex;
-  overflow-x: auto;
-  padding-bottom: .6rem;
-  scroll-snap-type: x proximity;
+  display:flex;overflow-x:auto;padding-block:.25rem .5rem;scroll-snap-type:x proximity;
 }
-.award-metrics-scroll > .award-metric {
-  flex: 0 0 min(78%, 220px);
-  scroll-snap-align: start;
+.award-metrics-scroll > .app-metric {flex:0 0 min(72%, 200px);scroll-snap-align:start;}
+.award-metrics-scroll > .app-metric + .app-metric {position:relative;}
+.award-metrics-scroll > .app-metric + .app-metric::before {
+  content:"";position:absolute;inset-block:.6rem;inset-inline-start:0;
+  width:1px;background:var(--hierarchy-line);
 }
-.award-metrics > .award-metric.app-metric {
-  display: grid;
-  align-content: start;
-  justify-items: start;
-  text-align: start;
-  min-width: 0;
-  padding: .65rem !important;
-  border: 1px solid var(--hierarchy-line) !important;
-  border-radius: 12px !important;
-  background: var(--ui-bg-soft) !important;
+.award-metrics .is-locked .app-metric-value {opacity:.75;}
+.progress-experience > summary {cursor:pointer;font-weight:700;}
+.progress-experience .chart-hint {margin:.7rem 0;}
+
+.run-weather-home .run-weather-heading {min-block-size:1.4rem;}
+.run-weather-home .run-weather-copy p {min-block-size:2lh;}
+
+.progress-goal-bars > div {position:relative;padding:.2rem .55rem;}
+.progress-goal-bars > div + div::before {
+  content:"";position:absolute;inset-block:.4rem;inset-inline-start:0;
+  width:1px;background:var(--hierarchy-line);
 }
-.award-metric .app-metric-icon { color: var(--hierarchy-accent); }
-.award-metric .app-metric-heading { justify-content: flex-start !important; text-align: start !important; }
-.award-metric .app-metric-detail { text-align: start; overflow-wrap: anywhere; }
-.award-metric.is-locked .app-metric-value { opacity: .72; }
-@media (max-width: 350px) {
-  .award-metrics:not(.award-metrics-scroll) { grid-template-columns: 1fr; }
-}
+.progress-goal-bars .app-metric {padding-inline:0 !important;}
+.container .progress-goal-bars .progress-track {background:var(--ui-bg-soft) !important;}
+.progress-goal-bars .training-goal-remaining {text-align:center;}
 
 .challenge-results-section { display: grid; gap: .85rem; }
 .challenge-results-header { flex-wrap: wrap; }
@@ -378,9 +380,6 @@ html[data-theme="dark"] .activity-awards-dialog { background: #191b20; }
 .challenge-result-rank { font-variant-numeric: tabular-nums; color: var(--hierarchy-muted); }
 .challenge-result-winner svg { color: light-dark(#886016, #f4c36d); flex-shrink: 0; }
 .challenge-goal-progress { display: grid; gap: .35rem; }
-.challenge-progress-values { display: flex; align-items: baseline; justify-content: space-between; gap: .4rem; }
-.challenge-progress-values strong { font-size: 1.18rem; }
-.challenge-progress-values b, .challenge-progress-values small { color: var(--hierarchy-muted); font-size: .84rem; }
 .challenge-goal-progress progress { width: 100%; height: .55rem; accent-color: var(--hierarchy-accent); }
 .challenge-goal-progress.is-reached progress { accent-color: var(--ui-success, var(--hierarchy-accent)); }
 
@@ -418,3 +417,8 @@ html[data-theme="dark"] .activity-awards-dialog { background: #191b20; }
 .activity-month-calendar .trainer-calendar-day[aria-current="date"] > span { text-decoration: underline; text-underline-offset: 3px; }
 .activity-month-calendar .trainer-calendar-day:disabled { opacity: .48; }
 .activity-month-calendar + .activity-calendar-detail { margin-top: .7rem; }
+
+@media (max-width: 380px) {
+  .run-weather-home .run-weather-heading {min-block-size:2.4em;}
+  .run-weather-home .run-weather-copy p {min-block-size:3lh;}
+}

@@ -109,7 +109,7 @@ test('current conditions use current precipitation and the hourly strip starts i
   const Card = load('app/components/WeatherCard.tsx', { react: hooks, '../lib/weather': helpers, './WeatherVisual': visuals, '../lib/firebase': { auth: { currentUser: null } }, '../lib/location': load('app/lib/location.ts') }).default;
   const html = renderToStaticMarkup(React.createElement(Card));
   const top = html.slice(html.indexOf('weather-precipitation-stat'), html.indexOf('weather-hour-section'));
-  assert.match(top, /0,1 mm/); assert.match(top, /<span>Srážky<\/span>/);
+  assert.match(top, /0,1 <small class="app-metric-unit">mm<\/small>/); assert.match(top, /<span>Srážky<\/span>/);
   assert.doesNotMatch(top, /95 %/);
   assert.doesNotMatch(html, /Teď/); assert.match(html, /08:00/);
   assert.doesNotMatch(html, /Předpověď pro 07:00–08:00/);

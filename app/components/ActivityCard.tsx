@@ -1,4 +1,5 @@
 "use client";
+import { formatCompactActivityTime, formatMetricNumber, numberValue } from "../lib/activityMetrics";
 import { isStrengthActivity, activityLabel } from "../lib/activity";
 
 import { useEffect, useRef, useState } from "react";
@@ -24,11 +25,6 @@ type Props = {
   run: ActivityCardRun; nickname?: string; avatarUrl?: string; teamName?: string | null; teamAvatarUrl?: string;
   activityType: string; onUserClick?: () => void; onPhotosClick: (images: string[], fallback: string, startIndex?: number) => void;
   onEdit?: () => void; onDelete?: () => void;
-};
-
-const formatTime = (value: number | string) => {
-  const totalSeconds = Math.max(0, Math.round(Number(value) * 60));
-  return `${Math.floor(totalSeconds / 60)}′${(totalSeconds % 60).toString().padStart(2, "0")}″`;
 };
 
 async function socialRequest(runId: string, init?: RequestInit) {
@@ -274,23 +270,26 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
             {resolvedAvatarUrl ? <img src={cloudinaryImageUrl(resolvedAvatarUrl, 128)} alt="" loading="lazy" decoding="async" /> : resolvedNickname.charAt(0).toUpperCase()}
           </button>
           <div className="activity-person">
-            <span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{resolvedNickname}</span>
+            <div className="activity-person-name">
+              <span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{resolvedNickname}</span>
+              {run.uid && <ActivityAwardsButton key={run.uid} uid={run.uid} nickname={resolvedNickname} />}
+            </div>
             <small className="activity-kind-label">{activityLabel(activityType)}</small>
             {teamName && <small className="activity-team-line"><span className="activity-team-avatar">{teamAvatarUrl ? <img src={cloudinaryImageUrl(teamAvatarUrl, 48)} alt="" loading="lazy" decoding="async" /> : "T"}</span><b>Tým</b> · {teamName}</small>}
           </div>
           <div className="activity-record-byline">
             {date && <time className="activity-date" dateTime={date.toISOString()}>{date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}
-            {run.uid && <ActivityAwardsButton key={run.uid} uid={run.uid} nickname={resolvedNickname} />}
           </div>
         </header>
 
         {run.description?.trim() && <div className="activity-description">{run.description.trim()}</div>}
 
         <div className={strength ? "activity-metrics strength-metrics" : "activity-metrics"}>
-          {strength ? <Metric icon={<ActivityTypeIcon type={activityType} size={19}/>} label="Opakování" className="metric-accent metric-repetitions" value={Number(run.repetitions || 0).toLocaleString("cs-CZ")}/> : <Metric icon={<MapPin size={19}/>} label="Vzdálenost" className="metric-accent metric-distance" value={<>{run.km} <small>km</small></>}/>}
-          {(!strength || Number(run.minuty)>0) && <Metric icon={<Clock3 size={19}/>} label="Čas" className="metric-accent metric-time" value={formatTime(run.minuty)}/>}
-          {!strength && <Metric icon={<Gauge size={19}/>} label="Tempo" className="metric-accent metric-pace" value={<>{formatTime(run.tempo)} <small>/km</small></>}/>}
-
+          {strength
+            ? <Metric icon={<ActivityTypeIcon type={activityType}/>} label="Opakování" tone="repetitions" value={formatMetricNumber(numberValue(run.repetitions), 0)}/>
+            : <Metric icon={<MapPin/>} label="Vzdálenost" tone="distance" value={formatMetricNumber(numberValue(run.km))} unit="km"/>}
+          {(!strength || Number(run.minuty) > 0) && <Metric icon={<Clock3/>} label="Čas" tone="time" value={formatCompactActivityTime(Number(run.minuty))}/>}
+          {!strength && <Metric icon={<Gauge/>} label="Tempo" tone="pace" value={formatCompactActivityTime(Number(run.tempo))} unit="/km"/>}
         </div>
 
         {images.length > 0 && <ActivityGallery key={run.id} images={images} onOpen={index => onPhotosClick(images, run.imageUrl || "", index)} />}

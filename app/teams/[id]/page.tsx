@@ -205,10 +205,10 @@ export default function TeamDetailPage() {
         <section className="tile team-stats-card">
           <div className="progress-section-title"><Users /><div><h2>Statistiky týmu</h2><p>{team.memberCount || 0} {(team.memberCount || 0) === 1 ? "člen" : "členů"}</p></div></div>
           <div className="team-stats-rows">
-            <Metric icon={<ActivityTypeIcon type="běh" size={20}/>} label="Běh" value={<>{Number(stats.runningKm || 0).toFixed(1)} km · {Number(stats.runningActivities || 0)} aktivit</>}/>
-            <Metric icon={<ActivityTypeIcon type="chůze" size={20}/>} label="Chůze" value={<>{Number(stats.walkingKm || 0).toFixed(1)} km · {Number(stats.walkingActivities || 0)} aktivit</>}/>
-            <Metric icon={<ActivityTypeIcon type="dřepy" size={20}/>} label="Dřepy" value={<>{Number(stats.squatRepetitions || 0).toLocaleString("cs-CZ")} opakování · {Number(stats.squatActivities || 0)} aktivit</>}/>
-            <Metric icon={<ActivityTypeIcon type="kliky" size={20}/>} label="Kliky" value={<>{Number(stats.pushupRepetitions || 0).toLocaleString("cs-CZ")} opakování · {Number(stats.pushupActivities || 0)} aktivit</>}/>
+            <Metric icon={<ActivityTypeIcon type="běh" size={20}/>} label="Běh" tone="distance" value={Number(stats.runningKm || 0).toLocaleString("cs-CZ")} unit="km" detail={`${Number(stats.runningActivities || 0)} aktivit`}/>
+            <Metric icon={<ActivityTypeIcon type="chůze" size={20}/>} label="Chůze" tone="distance" value={Number(stats.walkingKm || 0).toLocaleString("cs-CZ")} unit="km" detail={`${Number(stats.walkingActivities || 0)} aktivit`}/>
+            <Metric icon={<ActivityTypeIcon type="dřepy" size={20}/>} label="Dřepy" tone="repetitions" value={Number(stats.squatRepetitions || 0).toLocaleString("cs-CZ")} unit="opakování" detail={`${Number(stats.squatActivities || 0)} aktivit`}/>
+            <Metric icon={<ActivityTypeIcon type="kliky" size={20}/>} label="Kliky" tone="repetitions" value={Number(stats.pushupRepetitions || 0).toLocaleString("cs-CZ")} unit="opakování" detail={`${Number(stats.pushupActivities || 0)} aktivit`}/>
           </div>
         </section>
 

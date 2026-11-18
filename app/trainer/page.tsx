@@ -1,5 +1,6 @@
 "use client";
 import Metric from "../components/Metric";
+import { formatMetricNumber } from "../lib/activityMetrics";
 import { CalendarDays as MetricCalendar, Target as MetricTarget, CheckCircle2 as MetricCheck, Percent as MetricPercent } from "lucide-react";
 import { activityAmount, activityUnit, isStrengthActivity, ACTIVITY_TYPES } from "../lib/activity";
 
@@ -300,10 +301,10 @@ export default function TrainerPage(){
     </div>}
 
     <div className="trainer-plan-summary" aria-label="Souhrn měsíčního plánu">
-      <Metric icon={<MetricTarget/>} label="Naplánováno" value={<>{plannedTotal.toFixed(strength ? 0 : 1)} {unit}</>}/>
-      <Metric icon={<MetricCheck/>} label="Splněno z plánu" value={<>{completed.toFixed(strength ? 0 : 1)} {unit}</>}/>
-      <Metric icon={<MetricPercent/>} label="Plnění plánu" value={<>{planPercent.toFixed(0)} %</>}/>
-      <Metric icon={<MetricCalendar/>} label="Tréninkové dny" value={<>{dates.length}</>}/>
+      <Metric icon={<MetricTarget/>} tone="target" label="Naplánováno" value={formatMetricNumber(plannedTotal, strength ? 0 : 2)} unit={unit}/>
+      <Metric icon={<MetricCheck/>} tone="success" label="Splněno z plánu" value={formatMetricNumber(completed, strength ? 0 : 2)} unit={unit}/>
+      <Metric icon={<MetricPercent/>} tone="pace" label="Plnění plánu" value={formatMetricNumber(planPercent, 0)} unit="%"/>
+      <Metric icon={<MetricCalendar/>} tone="time" label="Tréninkové dny" value={dates.length}/>
     </div>
     <p className="chart-hint">Tady se počítají pouze naplánované tréninky. V cílech nahoře se počítají všechny tvoje aktivity.</p>
 

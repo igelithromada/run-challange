@@ -267,7 +267,7 @@ export default function TeamsPage() {
                             {type:"chůze", amount:stats.walkingKm, unit:"km"},
                             {type:"dřepy", amount:stats.squatRepetitions, unit:"×"},
                             {type:"kliky", amount:stats.pushupRepetitions, unit:"×"},
-                          ] as const).filter(item=>Number(item.amount)>0).map(item=><Metric key={item.type} icon={<ActivityTypeIcon type={item.type} size={19}/>} label={item.type} value={<>{Number(item.amount).toLocaleString("cs-CZ",{maximumFractionDigits:item.unit==="km"?1:0})} {item.unit}</>}/>)}
+                          ] as const).filter(item=>Number(item.amount)>0).map(item=><Metric key={item.type} icon={<ActivityTypeIcon type={item.type} size={19}/>} label={item.type} tone={item.unit === "km" ? "distance" : "repetitions"} value={Number(item.amount).toLocaleString("cs-CZ", { maximumFractionDigits: item.unit === "km" ? 2 : 0 })} unit={item.unit}/>)}
                           {![stats.runningKm,stats.walkingKm,stats.squatRepetitions,stats.pushupRepetitions].some(value=>Number(value)>0)&&<small>Zatím bez aktivit</small>}
                         </div>
                       </div>

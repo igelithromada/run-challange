@@ -12,8 +12,10 @@ export const activityMetrics = (runs: Array<{ km?: unknown; repetitions?:unknown
   return { km, repetitions: runs.reduce((sum, run) => sum + (isStrengthActivity(recordActivityType(run)) ? numberValue(run.repetitions) : 0), 0), minutes, pace: km > 0 ? runs.filter(run => !isStrengthActivity(recordActivityType(run))).reduce((sum, run) => sum + numberValue(run.minuty), 0) / km : 0, count: runs.length };
 };
 
-export const formatPace = (pace: number) => {
-  if (!Number.isFinite(pace) || pace <= 0) return "—";
-  const seconds = Math.round(pace * 60);
-  return `${Math.floor(seconds / 60)}′${String(seconds % 60).padStart(2, "0")}″ /km`;
-};
+export const formatMetricNumber = (value: number, maximumFractionDigits = 2) =>
+  value.toLocaleString("cs-CZ", { maximumFractionDigits });
+
+export function formatCompactActivityTime(minutes: number) {
+  const seconds = Math.max(0, Math.round(numberValue(minutes) * 60));
+  return `${Math.floor(seconds / 60)}′${String(seconds % 60).padStart(2, "0")}″`;
+}

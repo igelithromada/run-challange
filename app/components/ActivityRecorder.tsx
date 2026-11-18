@@ -1,9 +1,9 @@
 "use client";
 import Metric from "./Metric";
-import formatTime from "../lib/formatTime";
+import { formatCompactActivityTime, formatMetricNumber } from "../lib/activityMetrics";
 
 import { useEffect, useRef, useState } from "react";
-import { Activity, Footprints, Gauge, MapPin, Pause, Play, Square, Smartphone } from "lucide-react";
+import { Activity, Clock3, Footprints, Gauge, MapPin, Pause, Play, Square, Smartphone } from "lucide-react";
 import { readRecorderDraft, saveRecorderDraft, clearRecovery } from "../lib/activityRecovery";
 import type { ActivityType } from "../types";
 import InstallPwaPrompt from "./InstallPwaPrompt";
@@ -17,12 +17,6 @@ const distanceBetween = (a:Point,b:Point) => {
   const h=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
   return 2*R*Math.asin(Math.sqrt(h));
 };
-const formatPace=(seconds:number,km:number)=>{
-  if(km<=0) return "—";
-  const pace=Math.round(seconds/km);
-  return `${Math.floor(pace/60)}:${String(pace%60).padStart(2,"0")} min/km`;
-};
-
 export default function ActivityRecorder({ type, onFinished, ownerUid }:{
   type:ActivityType; ownerUid?:string;
   onFinished?: (draft:{type:ActivityType; km:number; seconds:number}) => void;
@@ -492,9 +486,9 @@ export default function ActivityRecorder({ type, onFinished, ownerUid }:{
     ) : null}
 
     <div className="activity-recorder-metrics">
-      <Metric icon={<MapPin size={19}/>} label="Vzdálenost" value={distanceKm.toFixed(2)+" km"}/>
-      <Metric icon={<Gauge size={19}/>} label="Čas" value={formatTime(elapsed / 60)}/>
-      <Metric icon={<Activity size={19}/>} label="Tempo" value={formatPace(elapsed,distanceKm)}/>
+      <Metric icon={<MapPin/>} tone="distance" label="Vzdálenost" value={formatMetricNumber(distanceKm)} unit="km"/>
+      <Metric icon={<Clock3/>} tone="time" label="Čas" value={formatCompactActivityTime(elapsed / 60)}/>
+      <Metric icon={<Gauge/>} tone="pace" label="Tempo" value={distanceKm > 0 ? formatCompactActivityTime(elapsed / 60 / distanceKm) : "—"} unit={distanceKm > 0 ? "/km" : undefined}/>
     </div>
 
     {accuracy!==null && <div className="activity-recorder-gps">Přesnost GPS přibližně {accuracy} m{paused?" · měření pozastaveno":""}</div>}

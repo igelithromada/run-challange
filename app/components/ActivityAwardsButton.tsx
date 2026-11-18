@@ -4,7 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Award as AwardIcon, X } from "lucide-react";
 import { ACTIVITY_TYPES } from "../lib/activity";
 import { activityAwards, awardTotal, type Award } from "../lib/awards";
-import AwardMetrics from "./AwardMetrics";
+import AwardMetrics, { BadgeTotal } from "./AwardMetrics";
 import { personalHistoryQuery } from "../lib/services/runs";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import type { RunData } from "../types";
@@ -43,7 +43,7 @@ function AwardsDialog({ awards, nickname, onClose }: { awards: Award[]; nickname
     onCancel={event => { event.preventDefault(); onClose(); }}>
     <section>
       <header>
-        <div><h2 id={title}>Odznaky</h2><small>{nickname}</small></div>
+        <div><h2 id={title} className="award-heading">Odznaky <BadgeTotal count={awardTotal(awards)}/></h2><small>{nickname}</small></div>
         <button type="button" className="ui-icon-button" aria-label="Zavřít odznaky" onClick={onClose}><X size={18}/></button>
       </header>
       <AwardMetrics awards={awards} label="Získané odznaky" />
@@ -63,7 +63,7 @@ function LiveAwardsButton({ uid, nickname }: { uid: string; nickname: string }) 
   return <>
     <button ref={button} type="button" className="activity-awards-button" aria-haspopup="dialog"
       aria-label={`Odznaky uživatele ${nickname}, celkem ${count}`} title="Odznaky" onClick={() => setOpen(true)}>
-      <AwardIcon size={17} aria-hidden="true" /><b>{count.toLocaleString("cs-CZ")}</b>
+      <AwardIcon size={17} aria-hidden="true" />
     </button>
     {open && <AwardsDialog awards={awards} nickname={nickname} onClose={() => {
       setOpen(false);

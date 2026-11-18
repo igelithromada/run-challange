@@ -15,10 +15,10 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import ActivityCard from "../components/ActivityCard";
 import LoadingSkeleton from "../components/LoadingSkeleton";
-import ActivityTypeSelector from "../components/ActivityTypeSelector";
+import ActivityTypeSelector, { ActivityTypeIcon } from "../components/ActivityTypeSelector";
 import { MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
 import { formatResultDuration } from "../lib/results";
-import { activityMetrics } from "../lib/activityMetrics";
+import { activityMetrics, formatCompactActivityTime, formatMetricNumber } from "../lib/activityMetrics";
 import { showAppToast } from "../components/AppToast";
 import type { RunData as BaseRunData, ActivityType } from "../types";
 import { personalHistoryQuery, updateRun } from "../lib/services/runs";
@@ -50,11 +50,6 @@ const uploadToCloudinary = async (file: File) => {
 };
 const dateOf = (timestamp: RunData["timestamp"]) => parseActivityDate(timestamp) ?? new Date(0);
 const toLocalInput = (date: Date) => new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0,16);
-const formatTime = (minutes: number) => {
-  const seconds = Math.max(0, Math.round(minutes * 60));
-  return `${Math.floor(seconds / 60)}′${String(seconds % 60).padStart(2,"0")}″`;
-};
-
 export default function MyRunsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [uid, setUid] = useState("");
@@ -243,11 +238,12 @@ export default function MyRunsPage() {
         </div>
       </details>
       <div className="tile-group activity-summary-grid">
-        <Metric icon={<ListChecks/>} label="Počet aktivit" value={summaryUnavailable ?? filteredRuns.length}/>
-        <Metric icon={<MapPin/>} label={strength ? "Celkem opakování" : "Celkem km"} value={summaryUnavailable ?? (strength ? metrics.repetitions.toLocaleString("cs-CZ") : totalKm.toFixed(2)+" km")}/>
-        <Metric icon={<Clock3/>} label={strength ? "Zaznamenaný čas" : "Čas"} value={summaryUnavailable ?? (strength && totalMin === 0 ? "—" : formatResultDuration(totalMin))}/>
-        {!strength && <Metric icon={<Gauge/>} label="Prům. tempo" value={summaryUnavailable ?? formatTime(avgTempo)+" /km"}/>}
-
+        {strength
+          ? <Metric icon={<ActivityTypeIcon type={selectedType}/>} label="Celkem opakování" tone="repetitions" value={summaryUnavailable ?? formatMetricNumber(metrics.repetitions, 0)}/>
+          : <Metric icon={<MapPin/>} label="Celkem km" tone="distance" value={summaryUnavailable ?? formatMetricNumber(totalKm)} unit={summaryUnavailable ? undefined : "km"}/>}
+        <Metric icon={<Clock3/>} label="Čas" tone="time" value={summaryUnavailable ?? (strength && totalMin === 0 ? "—" : formatResultDuration(totalMin))}/>
+        {!strength && <Metric icon={<Gauge/>} label="Prům. tempo" tone="pace" value={summaryUnavailable ?? (avgTempo > 0 ? formatCompactActivityTime(avgTempo) : "—")} unit={!summaryUnavailable && avgTempo > 0 ? "/km" : undefined}/>}
+        <Metric icon={<ListChecks/>} label="Počet aktivit" tone="count" value={summaryUnavailable ?? formatMetricNumber(filteredRuns.length, 0)}/>
       </div>
       <h2 className="centered-title">Moje záznamy</h2>
 

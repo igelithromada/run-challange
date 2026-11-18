@@ -1,13 +1,14 @@
 "use client";
 import Metric from "../components/Metric";
-import AwardMetrics from "../components/AwardMetrics";
+import AwardMetrics, { BadgeTotal } from "../components/AwardMetrics";
+import { formatCompactActivityTime, formatMetricNumber } from "../lib/activityMetrics";
 import { activityAmount, activityUnit, isStrengthActivity, recordActivityType } from "../lib/activity";
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { Award, CalendarDays, Footprints, Medal, Trophy, Zap, Flame } from "lucide-react";
+import { CalendarDays, Gauge, MapPin, Trophy, Flame } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { parseActivityDate } from "../lib/runData";
 import { activityAwards, awardTotal, type Award as ProgressAward } from "../lib/awards";
@@ -16,7 +17,7 @@ import ProgressChart from "../components/ProgressChart";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
-import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
+import ActivityTypeSelector, { ActivityType, ActivityTypeIcon } from "../components/ActivityTypeSelector";
 import type { RunData } from "../types";
 import { personalHistoryQuery } from "../lib/services/runs";
 
@@ -27,17 +28,15 @@ const asNumber = (value: unknown) => {
 };
 const activityDate = (run: ProgressActivity) => parseActivityDate(run.timestamp) || new Date(0);
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
-const formatPace = (pace: number) => {
-  if (!Number.isFinite(pace) || pace <= 0) return "—";
-  const seconds = Math.round(pace * 60);
-  return `${Math.floor(seconds/60)}′${String(seconds%60).padStart(2,"0")}″ /km`;
-};
-function AwardSection({ title, awards, icon }: { title: string; awards: ProgressAward[]; icon: React.ReactNode }) {
+function AwardSection({ title, awards }: { title: string; awards: ProgressAward[] }) {
   const repeatable = awards.some(award => award.repeatable);
-  const summary = repeatable ? `Získáno ${awardTotal(awards)}×`
-    : `Splněno ${awards.filter(award => award.count > 0).length} z ${awards.length}`;
-  return <section className="progress-section">
-    <div className="progress-section-title">{icon}<div><h2>{title}</h2><p>{summary}</p></div></div>
+  return <section className="tile progress-section progress-records">
+    <div className="progress-section-title">
+      <div>
+        <h2 className="award-heading">{title}{repeatable && <BadgeTotal count={awardTotal(awards)}/>}</h2>
+        {!repeatable && <p>Splněno {awards.filter(award => award.count > 0).length} z {awards.length}</p>}
+      </div>
+    </div>
     <AwardMetrics awards={awards} label={title} scroll={!repeatable}/>
   </section>;
 }
@@ -64,7 +63,7 @@ export default function ProgressPage() {
   const selected = useMemo(() => mine.filter(run => recordActivityType(run) === goalType), [mine, goalType]);
   const now = new Date();
   const strength = isStrengthActivity(goalType), unit = activityUnit(goalType);
-  const allKm = selected.reduce((sum, run) => sum + activityAmount(run), 0);
+  const lifetimeAmount = selected.reduce((sum, run) => sum + activityAmount(run), 0);
 
   const sorted = [...selected].sort((a,b) => activityDate(a).getTime()-activityDate(b).getTime());
   const longest = sorted.reduce<ProgressActivity | null>((best, run) => !best || activityAmount(run)>activityAmount(best) ? run : best, null);
@@ -93,12 +92,12 @@ export default function ProgressPage() {
     { name:"Legenda 2.0", min:2000, next:5000, icon:"💎" }
   ];
   const levels = strength ? baseLevels.map((item, index) => ({...item, name:["Začátečník","Pravidelný trénink","Pokročilý","Zkušený sportovec","Silový matador","Legenda","Legenda 2.0"][index], min:item.min*10,next:item.next*10})) : baseLevels;
-  const level = [...levels].reverse().find(item => allKm >= item.min) || levels[0];
-  const levelProgress = Math.min(100, Math.max(0, (allKm - level.min) / (level.next - level.min) * 100));
+  const level = [...levels].reverse().find(item => lifetimeAmount >= item.min) || levels[0];
+  const levelProgress = Math.min(100, Math.max(0, (lifetimeAmount - level.min) / (level.next - level.min) * 100));
 
   const levelNumber = levels.indexOf(level) + 1;
   const nextLevel = levels[levelNumber];
-  const remaining = Math.max(0, level.next - allKm);
+  const remaining = Math.max(0, level.next - lifetimeAmount);
   const experienceAmount = (amount: number) => amount.toLocaleString("cs-CZ", { maximumFractionDigits: strength ? 0 : 2 }) + " " + unit;
   const awards = useMemo(() => activityAwards(selected, goalType), [selected, goalType]);
 
@@ -111,12 +110,35 @@ export default function ProgressPage() {
 
       <ProgressChart key={goalType} runs={selected} activityType={goalType} loading={personalState.loading} error={!!personalState.error} />
 
-      <section className="progress-level tile progress-experience">
-        <div className="progress-section-title"><Medal/><div><h2>Zkušenosti</h2></div></div>
+      <AwardSection title="Odznaky" awards={awards.filter(award => award.repeatable)} />
+      <AwardSection title="Úspěchy" awards={awards.filter(award => !award.repeatable)} />
+
+      <ActivityCalendar key={goalType} runs={selected} activityType={goalType} />
+
+      <section className="tile progress-records">
+        <div className="progress-section-title"><Trophy/><div><h2>Osobní rekordy</h2><p>Nejlepší výkony v kategorii {goalType}.</p></div></div>
+        <div className="app-metric-grid">
+          <Metric icon={strength ? <ActivityTypeIcon type={goalType}/> : <MapPin/>} tone={strength ? "repetitions" : "distance"}
+            label={strength ? "Nejvíce v jedné aktivitě" : "Nejdelší aktivita"}
+            value={longest ? formatMetricNumber(activityAmount(longest)) : "—"} unit={longest ? unit : undefined}
+            detail={longest ? activityDate(longest).toLocaleDateString("cs-CZ") : "Zatím bez aktivity"}/>
+          {!strength && <Metric icon={<Gauge/>} tone="pace" label="Nejrychlejší tempo"
+            value={fastest ? formatCompactActivityTime(asNumber(fastest.tempo)) : "—"} unit={fastest ? "/km" : undefined}
+            detail={fastest ? activityDate(fastest).toLocaleDateString("cs-CZ") : "Zatím bez aktivity"}/>}
+          <Metric icon={<CalendarDays/>} tone="count" label="Nejvíce za měsíc" value={formatMetricNumber(bestMonth)} unit={unit}
+            detail={bestMonthKey ? new Date(bestMonthKey + "-01T12:00:00").toLocaleDateString("cs-CZ", { month: "long", year: "numeric" }) : "Zatím bez aktivity"}/>
+          <Metric icon={<Flame/>} tone="award" label="Aktuální série" value={streak} unit={streak === 1 ? "den" : streak >= 2 && streak <= 4 ? "dny" : "dní"}
+            detail="Aktivní dny za sebou"/>
+        </div>
+      </section>
+
+      <details className="progress-level tile progress-experience">
+        <summary>Úrovně aktivity</summary>
+        <p className="chart-hint">Úroveň vychází z {strength ? "celkového počtu opakování" : "celkové vzdálenosti"} v této kategorii za celou dobu.</p>
         <div className="progress-experience-main">
           <span className="progress-level-emoji" aria-hidden="true">{level.icon}</span>
           <div><small>Úroveň {levelNumber} / {levels.length}</small><h3>{level.name}</h3></div>
-          <strong>{experienceAmount(allKm)}<small>Celkem</small></strong>
+          <strong>{experienceAmount(lifetimeAmount)}<small>Celkem</small></strong>
         </div>
         <div className="progress-experience-target">
           <span>{nextLevel ? `Další úroveň: ${nextLevel.name}` : "Milník nejvyšší úrovně"}</span>
@@ -127,22 +149,7 @@ export default function ProgressPage() {
           <span>{remaining ? `Zbývá ${experienceAmount(remaining)}` : "Milník splněn"}</span>
           <strong>{Math.round(levelProgress)} %</strong>
         </div>
-      </section>
-
-      <AwardSection title="Odznaky" awards={awards.filter(award => award.repeatable)} icon={<Award/>} />
-      <AwardSection title="Úspěchy" awards={awards.filter(award => !award.repeatable)} icon={<Trophy/>} />
-
-      <ActivityCalendar key={goalType} runs={selected} activityType={goalType} />
-
-      <section className="tile progress-records">
-        <div className="progress-section-title"><Trophy/><div><h2>Osobní rekordy</h2><p>Nejlepší výkony v kategorii {goalType}.</p></div></div>
-        <div className="progress-record-grid">
-          <Metric className="progress-record-item progress-record" icon={<Footprints size={20}/>} label={strength ? "Nejvíce v jedné aktivitě" : "Nejdelší aktivita"} value={<> {longest?activityAmount(longest).toLocaleString("cs-CZ")+" "+unit:"—"}</>} detail={<> {longest?activityDate(longest).toLocaleDateString("cs-CZ"):"Zatím bez aktivity"}</>}/>
-          {!strength && <Metric className="progress-record-item progress-record" icon={<Zap size={20}/>} label="Nejrychlejší tempo" value={<> {fastest?formatPace(asNumber(fastest.tempo)):"—"}</>} detail={<> {fastest?activityDate(fastest).toLocaleDateString("cs-CZ"):"Zatím bez aktivity"}</>}/>}
-          <Metric className="progress-record-item progress-record" icon={<CalendarDays size={20}/>} label="Nejvíce za měsíc" value={<> {bestMonth.toFixed(strength ? 0 : 1)} {unit}</>} detail={<> {bestMonthKey?new Date(bestMonthKey+"-01T12:00:00").toLocaleDateString("cs-CZ",{month:"long",year:"numeric"}):"Zatím bez aktivity"}</>}/>
-          <Metric className="progress-record-item progress-record" icon={<Flame size={20}/>} label="Aktuální série" value={<> {streak} {streak===1?"den":"dní"}</>} detail={<> Aktivní dny za sebou</>}/>
-        </div>
-      </section>
+      </details>
 
       {personalState.loading && <LoadingSkeleton count={2} />}
     </main>

@@ -48,10 +48,12 @@ export function upcomingWeatherHours(hours: WeatherHour[] = [], now = Date.now()
   }).sort((a, b) => Date.parse(a.interval!.startTime!) - Date.parse(b.interval!.startTime!)).slice(0, limit);
 }
 
-export function formatPrecipitation(value?: number | null) {
+export function formatPrecipitation(value?: number | null, includeUnit = true) {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0) return "—";
-  if (value > 0 && value < 0.1) return "< 0,1 mm";
-  return `${value.toLocaleString("cs-CZ", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} mm`;
+  const amount = value > 0 && value < 0.1
+    ? "< 0,1"
+    : value.toLocaleString("cs-CZ", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return includeUnit ? `${amount} mm` : amount;
 }
 
 export function weatherTime(value?: string, timeZone = "Europe/Prague") {

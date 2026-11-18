@@ -153,7 +153,7 @@ export default function Page() {
       <div className="container">
         <h1 className="sr-only">Dolní Lhota v pohybu</h1>
 
-        {(selectedType === "běh" || selectedType === "chůze") && <RunWeatherRecommendation type={selectedType} />}
+        <RunWeatherRecommendation type={selectedType} />
 
         <section className="home-quick-add" aria-labelledby="home-add-heading">
           <div className="home-section-heading">

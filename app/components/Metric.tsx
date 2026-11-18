@@ -1,12 +1,21 @@
 import type { ReactNode } from "react";
 
-/** Shared two-line measurement, used for records, summaries and results. */
-export default function Metric({ icon, label, value, detail, className = "", title }: {
-  icon: ReactNode; label: string; value: ReactNode; detail?: ReactNode; className?: string; title?: string;
+type MetricTone = "distance" | "time" | "pace" | "repetitions" | "count" | "target" | "success" | "award";
+
+/** Shared measurement: icon and label above a value and optional supporting detail. */
+export default function Metric({ icon, label, value, unit, detail, tone, className = "", title }: {
+  icon: ReactNode;
+  label: string;
+  value: ReactNode;
+  unit?: string;
+  detail?: ReactNode;
+  tone?: MetricTone;
+  className?: string;
+  title?: string;
 }) {
-  return <div className={`app-metric ${className}`} title={title}>
+  return <div className={`app-metric ${className}`} data-metric-tone={tone} title={title}>
     <div className="app-metric-heading"><span className="app-metric-icon" aria-hidden="true">{icon}</span><span>{label}</span></div>
-    <strong className="app-metric-value">{value}</strong>
+    <strong className="app-metric-value">{value}{unit && <> <small className="app-metric-unit">{unit}</small></>}</strong>
     {detail && <small className="app-metric-detail">{detail}</small>}
   </div>;
 }

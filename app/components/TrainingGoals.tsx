@@ -1,8 +1,9 @@
 "use client";
 import Metric from "./Metric";
+import { formatMetricNumber } from "../lib/activityMetrics";
 import { activityAmount, activityUnit, isStrengthActivity } from "../lib/activity";
 import { useEffect, useState } from "react";
-import { Save, Target } from "lucide-react";
+import { CalendarDays, Save, Target } from "lucide-react";
 import { getUserProfile, mergeUserProfile } from "../lib/services/users";
 import { parseActivityDate } from "../lib/runData";
 import type { ActivityType, RunData } from "../types";
@@ -150,13 +151,15 @@ export default function TrainingGoals({
           </button>
         </div>
       </details>
-      <div className="progress-goal-bars">
+      <div className="progress-goal-bars app-metric-grid">
         {[
           { name: "Tento týden", km: weekKm, goal: saved.weekly },
           { name: "Tento měsíc", km: monthKm, goal: saved.monthly },
         ].map((item) => (
           <div key={item.name}>
-            <Metric icon={<Target size={19}/>} label={item.name} value={<>{item.km.toFixed(strength ? 0 : 1)} / {item.goal} {unit}</>} detail={`${Math.round((item.km / item.goal) * 100)} %`}/>
+            <Metric icon={<CalendarDays/>} tone="target" label={item.name}
+              value={`${formatMetricNumber(item.km, strength ? 0 : 2)} / ${formatMetricNumber(item.goal)}`}
+              unit={unit} detail={`${Math.round((item.km / item.goal) * 100)} %`}/>
             <div className="progress-track">
               <i
                 style={{
@@ -167,7 +170,7 @@ export default function TrainingGoals({
             <small className="training-goal-remaining">
               {item.km >= item.goal
                 ? "Cíl splněn"
-                : `Zbývá ${(item.goal - item.km).toFixed(strength ? 0 : 1)} ${unit}`}
+                : `Zbývá ${formatMetricNumber(item.goal - item.km, strength ? 0 : 2)} ${unit}`}
             </small>
           </div>
         ))}

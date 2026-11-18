@@ -3,6 +3,7 @@ import { sharedChallenge, quantityChallenge, challengeUnit } from "../lib/challe
 import { activityLabel } from "../lib/activity";
 
 import Metric from "./Metric";
+import { formatMetricNumber } from "../lib/activityMetrics";
 import Link from "next/link";
 import { CalendarDays, ChevronRight, Target, Users } from "lucide-react";
 import { ActivityTypeIcon } from "./ActivityTypeSelector";
@@ -35,8 +36,8 @@ export default function ChallengeSummaryCard({ challenge, joined, authorName, de
     </header>
     {challenge.description && <div className={detail ? "activity-description" : "activity-description challenge-summary-description"}>{challenge.description}</div>}
     <div className="app-metric-grid challenge-summary-metrics">
-      <Metric icon={<Target size={19}/>} label="Cíl" value={<>{goal.toLocaleString("cs-CZ", { maximumFractionDigits: distance ? 1 : 0 })} <small>{unit}</small></>}/>
-      <Metric icon={<Users size={19}/>} label="Účastníci" value={Number(challenge.participantCount || 0)}/>
+      <Metric icon={<Target size={19}/>} label="Cíl" tone="target" value={formatMetricNumber(goal, distance ? 1 : 0)} unit={unit}/>
+      <Metric icon={<Users size={19}/>} label="Účastníci" tone="count" value={Number(challenge.participantCount || 0)}/>
     </div>
     <p className="challenge-period-line"><CalendarDays size={17} aria-hidden="true"/><span>{period}</span></p>
     {sharedChallenge(challenge.kind) && <div className="challenge-shared-progress">
