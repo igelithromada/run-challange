@@ -29,7 +29,7 @@ function setup(){
  const db={collection:query,runTransaction:async fn=>fn({get:async r=>snapshot(r.path),set:(r,d)=>{writes++;docs.set(r.path,d)},update:(r,d)=>{writes++;docs.set(r.path,{...docs.get(r.path),...d})}})};
 
  const module={exports:{}},file='app/api/chat/route.ts';const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
- vm.runInNewContext(code,{module,exports:module.exports,require:n=>n==='../../lib/chat'?projectionModule.exports:n==='next/server'?{NextResponse:{json:(data,options)=>Response.json(data,options)}}:n==='firebase-admin/firestore'?{FieldValue:{serverTimestamp:()=>{const date=new Date();return {toDate:()=>date,toMillis:()=>+date,valueOf:()=>+date,seconds:Math.floor(+date/1000),nanoseconds:(+date%1000)*1000000}}}}:n==='../../lib/apiAuth'?{requireUser:async()=>{if(unauthorized)throw new Error('auth');if(docs.get('users/'+uid)?.blocked)throw new Error('blocked');return{decoded:{uid},adminDb:db,profile:snapshot('users/'+uid)}},authErrorResponse:e=>e.message==='auth'?{message:'Nejsi přihlášen.',status:401}:e.message==='blocked'?{message:'Blokováno',status:403}:null}:require(n),Date,URL,console});
+ vm.runInNewContext(code,{module,exports:module.exports,require:n=>n==='../../lib/chatPush'?{chatPushReady:()=>false}:n==='../../lib/chat'?projectionModule.exports:n==='next/server'?{NextResponse:{json:(data,options)=>Response.json(data,options)}}:n==='firebase-admin/firestore'?{FieldValue:{serverTimestamp:()=>{const date=new Date();return {toDate:()=>date,toMillis:()=>+date,valueOf:()=>+date,seconds:Math.floor(+date/1000),nanoseconds:(+date%1000)*1000000}}}}:n==='../../lib/apiAuth'?{requireUser:async()=>{if(unauthorized)throw new Error('auth');if(docs.get('users/'+uid)?.blocked)throw new Error('blocked');return{decoded:{uid},adminDb:db,profile:snapshot('users/'+uid)}},authErrorResponse:e=>e.message==='auth'?{message:'Nejsi přihlášen.',status:401}:e.message==='blocked'?{message:'Blokováno',status:403}:null}:require(n),Date,URL,console});
  const api=module.exports,request=(method,body,query='')=>api[method](new Request('https://example.com/api/chat'+query,{method,...(method==='GET'?{}:{body:JSON.stringify(body)})}));return{docs,request,user:u=>uid=u,deny:()=>unauthorized=true,writes:()=>writes};
 }
 test('chat rejects unauthenticated access and blocked senders',async()=>{const s=setup();s.deny();for(const method of ['GET','POST','DELETE','PATCH'])assert.equal((await s.request(method,{})).status,401);const b=setup();b.docs.get('users/member').blocked=true;assert.equal((await b.request('POST',{text:'Zpráva',clientId:'one'})).status,403);});
@@ -83,4 +83,59 @@ test('unread chat status counts others, honors settings, and keeps the read mark
  assert.equal((await status()).unread,0);
  s.user('other');
  assert.equal((await status()).unread,1);
+});
+
+
+test('sharing one photo exposes one preview and opens the corresponding photo in the record gallery', async () => {
+ const s = setup();
+ const second = photo.replace('photo.jpg','second.jpg');
+ s.docs.set('runs/own',{uid:'member',imageUrls:[photo, second]});
+ const selection = projectionModule.exports.chatActivity('own',s.docs.get('runs/own')).thumbnails[1];
+ assert.equal((await s.request('POST',{activityId:'own',thumbnail:'https://example.org/photo.jpg',clientId:'bad'})).status,400);
+ assert.equal((await s.request('POST',{activityId:'own',thumbnail:selection,clientId:'one'})).status,200);
+ s.user('other');
+ const feed = await (await s.request('GET')).json();
+ assert.deepEqual(feed.messages[0].activity.thumbnails,[selection]);
+ const params = new URLSearchParams({gallery:'member_one',thumbnail:selection});
+ const gallery = await (await s.request('GET',null,'?'+params)).json();
+ assert.deepEqual(gallery,{images:[photo,second],index:1});
+ s.user('member');
+ await s.request('DELETE',{id:'member_one'});
+ assert.equal((await s.request('GET',null,'?'+params)).status,404);
+});
+
+test('live chat sends revision changes over an authenticated stream and releases its listener on cancellation', async () => {
+ let update, detached = false, deny = true;
+ const live = { exports: {} };
+ const code = ts.transpileModule(fs.readFileSync('app/api/chat/events/route.ts','utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+ }).outputText;
+ vm.runInNewContext(code, { module:live, exports:live.exports, Response, ReadableStream, TextEncoder,
+  setTimeout, clearTimeout, setInterval, clearInterval,
+  require: () => ({
+   authErrorResponse: () => ({status:401}),
+   requireUser: async () => {
+    if (deny) throw Error('auth');
+    return {adminDb:{collection:()=>({doc:()=>({
+     onSnapshot: callback => { update=callback; return ()=>{detached=true}; },
+    })})}};
+   },
+  }),
+ });
+ const request = new Request('https://example.com/api/chat/events');
+ assert.equal((await live.exports.GET(request)).status,401);
+ deny = false;
+ const response = await live.exports.GET(request);
+ assert.match(response.headers.get('content-type'), /text\/event-stream/);
+ const reader = response.body.getReader();
+ try {
+  const decoder = new TextDecoder();
+  for (const revision of ['initial', 'new-message']) {
+   update({ data:()=>({revision}) });
+   assert.equal(decoder.decode((await reader.read()).value), 'data: '+JSON.stringify(revision)+'\n\n');
+  }
+ } finally {
+  await reader.cancel();
+ }
+ assert.equal(detached,true);
 });

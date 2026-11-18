@@ -198,6 +198,12 @@ async function removeUserChatData(db: Firestore, uid: string) {
     await batch.commit();
   }
 
+  const devices = await db.collection("chatPushDevices").where("uid", "==", uid).get();
+  const writer = db.bulkWriter();
+  const deletes = devices.docs.map(device => writer.delete(device.ref, { lastUpdateTime: device.updateTime }));
+  const done = Promise.allSettled(deletes);
+  await writer.close();
+  await done;
   await db.collection("chatRateLimits").doc(uid).delete();
 }
 

@@ -1,7 +1,7 @@
 "use client";
 import { ReactNode, useEffect } from "react";
 import { auth } from "./lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { beforeAuthStateChanged, onAuthStateChanged } from "firebase/auth";
 import useThemeLoader from "./lib/useThemeLoader";
 import NetworkStatus from "./components/NetworkStatus";
 import { setHapticsEnabled, triggerHaptic } from "./lib/haptics";
@@ -9,9 +9,16 @@ import { mergePublicProfile } from "./lib/services/publicProfiles";
 import { getUserProfile, mergeUserProfile } from "./lib/services/users";
 import FloatingChat from "./components/FloatingChat";
 import AppToast from "./components/AppToast";
+import { removeChatPush } from "./lib/pushNotifications";
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   useThemeLoader();
+
+  useEffect(() => beforeAuthStateChanged(auth, async nextUser => {
+    if (auth.currentUser && nextUser?.uid !== auth.currentUser.uid) {
+      await removeChatPush().catch(() => {});
+    }
+  }), []);
 
 
   useEffect(() => {

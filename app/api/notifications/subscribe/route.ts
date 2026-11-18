@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { requireUser, authErrorResponse } from "../../../lib/apiAuth";
+import { chatPushReady } from "../../../lib/chatPush";
 import { isValidPushSubscription } from "../../../lib/validation";
 
 export const runtime = "nodejs";
@@ -10,12 +11,25 @@ export async function POST(request: Request) {
   try {
     const { decoded, adminDb } = await requireUser(request);
     const body = await request.json().catch(() => ({}));
+    if (body?.channel === "chat" && body?.action === "status") {
+      const endpoint = typeof body.endpoint === "string" ? body.endpoint : "";
+      const id = createHash("sha256").update(endpoint).digest("hex");
+      const device = endpoint ? await adminDb.collection("chatPushDevices").doc(id).get() : null;
+      return NextResponse.json({ enabled: device?.data()?.uid === decoded.uid, ready: chatPushReady() },
+        { headers: { "Cache-Control": "private, no-store" } });
+    }
     const subscription = body?.subscription;
     if (!isValidPushSubscription(subscription)) {
       return NextResponse.json({ error: "Neplatné předplatné notifikací." }, { status: 400 });
     }
 
     const id = createHash("sha256").update(String(subscription.endpoint)).digest("hex").slice(0, 64);
+    if (body?.channel === "chat") {
+      if (!chatPushReady()) return NextResponse.json({ error: "Systémová upozornění chatu zatím nejsou dostupná." }, { status: 503 });
+      const ref = adminDb.collection("chatPushDevices").doc(id);
+      await ref.set({ uid: decoded.uid, subscription, updatedAt: new Date() });
+      return NextResponse.json({ ok: true });
+    }
     await adminDb.collection("users").doc(decoded.uid).collection("pushSubscriptions").doc(id).set({
       ...subscription,
       updatedAt: new Date(),
@@ -39,6 +53,14 @@ export async function DELETE(request: Request) {
     if (!endpoint) return NextResponse.json({ error: "Chybí identifikátor notifikace." }, { status: 400 });
 
     const id = createHash("sha256").update(endpoint).digest("hex").slice(0, 64);
+    if (body?.channel === "chat") {
+      const ref = adminDb.collection("chatPushDevices").doc(id);
+      await adminDb.runTransaction(async tx => {
+        const device = await tx.get(ref);
+        if (device.data()?.uid === decoded.uid) tx.delete(ref);
+      });
+      return NextResponse.json({ ok: true });
+    }
     await adminDb.collection("users").doc(decoded.uid).collection("pushSubscriptions").doc(id).delete();
 
     return NextResponse.json({ ok: true });

@@ -6,8 +6,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { MessageCircle } from 'lucide-react';
 import { auth } from '../lib/firebase';
-import type { ChatUnread } from '../lib/chat';
+import { CHAT_CHANGED, type ChatUnread } from '../lib/chat';
 import { showAppToast } from './AppToast';
+import { useChatLive } from '../lib/chatLive';
 
 export default function FloatingChat() {
   const [uid, setUid] = useState('');
@@ -18,6 +19,7 @@ export default function FloatingChat() {
   const path = usePathname();
   const inChat = path === '/chat';
   const onLogin = path === '/login';
+  useChatLive(onLogin ? '' : uid);
 
   useEffect(() => {
     let currentUid = '';
@@ -37,11 +39,13 @@ export default function FloatingChat() {
 
     let active = true;
     let busy = false;
+    let pending = false;
     const controller = new AbortController();
 
     async function poll() {
       const user = auth.currentUser;
-      if (!active || busy || user?.uid !== uid || document.visibilityState !== 'visible') return;
+      if (!active || user?.uid !== uid || document.visibilityState !== 'visible') return;
+      if (busy) { pending = true; return; }
       busy = true;
       try {
         const params = new URLSearchParams({ view: 'unread', version: version.current });
@@ -67,18 +71,21 @@ export default function FloatingChat() {
         // Keep the last known count until the connection returns.
       } finally {
         busy = false;
+        if (pending) { pending = false; void poll(); }
       }
     }
     void poll();
     const timer = window.setInterval(poll, 30000);
     document.addEventListener('visibilitychange', poll);
     window.addEventListener('online', poll);
+    window.addEventListener(CHAT_CHANGED, poll);
     return () => {
       active = false;
       controller.abort();
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', poll);
       window.removeEventListener('online', poll);
+      window.removeEventListener(CHAT_CHANGED, poll);
     };
   }, [uid, inChat, onLogin]);
 
