@@ -1,3 +1,4 @@
+import {randomUUID} from 'node:crypto';
 import {chatActivity,chatPhotos,groupChatPhotos,MAX_CHAT_PHOTOS,type ChatPhotoSelection} from '../../lib/chat';
 import {after,NextResponse} from 'next/server';
 import {FieldValue, type QueryDocumentSnapshot, type Timestamp} from 'firebase-admin/firestore';
@@ -8,6 +9,31 @@ export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export const maxDuration=60;
 const headers={'Cache-Control':'private, no-store'};
+const PAGE_SIZE = 30;
+const REVISION_WINDOW = 32;
+type ChatChange = { previous: string; revision: string; id: string };
+
+function revisionOf(meta: FirebaseFirestore.DocumentData | undefined) {
+ return String(meta?.revision || 'empty');
+}
+
+function changesIn(journal: FirebaseFirestore.DocumentData | undefined, revision: string): ChatChange[] {
+ const changes: ChatChange[] = Array.isArray(journal?.changes) ? journal.changes : [];
+ return changes.at(-1)?.revision === revision ? changes : [];
+}
+
+async function recordChange(tx: FirebaseFirestore.Transaction, db: FirebaseFirestore.Firestore, id: string) {
+ const meta = db.collection('chatMeta').doc('community');
+ const journal = db.collection('chatMeta').doc('changes');
+ const [state, history] = await Promise.all([tx.get(meta), tx.get(journal)]);
+ const previous = revisionOf(state.data());
+ const revision = randomUUID();
+ const changes = [...changesIn(history.data(), previous), { previous, revision, id }].slice(-REVISION_WINDOW);
+
+ // Clients listen to the small revision document. Only the API reads the change history.
+ tx.set(meta, { revision });
+ tx.set(journal, { changes });
+}
 const validId=(value:unknown,max=100):value is string=>typeof value==='string'&&value.length<=max&&/^[a-zA-Z0-9_-]+$/.test(value);
 function failure(error:unknown){
  const auth=authErrorResponse(error);
@@ -104,16 +130,38 @@ export async function GET(request:Request){
   }
   const before=params.get('before');
   if(before&&!validId(before,230))return NextResponse.json({error:'Neplatná stránka chatu.'},{status:400,headers});
-  const meta=await adminDb.collection('chatMeta').doc('community').get();
-  const revision=String(meta.data()?.revision||'empty');
-  if(!before&&new URL(request.url).searchParams.get('revision')===revision)return NextResponse.json({messages:[],unchanged:true,revision},{headers});
-  const admin=decoded.admin===true||profile?.data()?.role==='admin';
-  let query=adminDb.collection('communityChat').orderBy('createdAt','desc').limit(51);
-  if(before){const cursor=await adminDb.collection('communityChat').doc(before).get();if(!cursor.exists)return NextResponse.json({error:'Starší zprávy se nepodařilo najít. Obnov chat.'},{status:400,headers});query=query.startAfter(cursor);}
-  const snapshot=await query.get(),visible=snapshot.docs.slice(0,50);
+  const meta = before ? undefined : (await adminDb.collection('chatMeta').doc('community').get()).data();
+  const revision = revisionOf(meta);
+  const since = params.get('revision');
+  if (!before && since === revision) return NextResponse.json({ messages: [], unchanged: true, revision }, { headers });
+
+  const admin = decoded.admin === true || profile?.data()?.role === 'admin';
+  const collection = adminDb.collection('communityChat');
+  let changes: string[] | null = null;
+  if (!before && since) {
+   const journal = await adminDb.collection('chatMeta').doc('changes').get();
+   const history = changesIn(journal.data(), revision);
+   const index = history.findIndex(change => change.previous === since);
+   if (index >= 0) changes = [...new Set(history.slice(index).map(change => change.id))];
+  }
+  let visible: FirebaseFirestore.DocumentSnapshot[];
+  let hasMore = false;
+  if (changes) {
+   visible = await Promise.all(changes.map(id => collection.doc(id).get()));
+  } else {
+   let query = collection.orderBy('createdAt', 'desc').limit(PAGE_SIZE + 1);
+   if (before) {
+    const cursor = await collection.doc(before).get();
+    if (!cursor.exists) return NextResponse.json({ error: 'Starší zprávy se nepodařilo najít. Obnov chat.' }, { status: 400, headers });
+    query = query.startAfter(cursor);
+   }
+   const snapshot = await query.get();
+   hasMore = snapshot.size > PAGE_SIZE;
+   visible = snapshot.docs.slice(0, PAGE_SIZE);
+  }
   const activityIds = new Set<string>();
   for (const doc of visible) {
-   const message = doc.data();
+   const message = doc.data() || { deleted: true };
    if (message.deleted) continue;
    if (validId(message.activityId, 230)) activityIds.add(message.activityId);
    if (Array.isArray(message.photos)) {
@@ -129,9 +177,9 @@ export async function GET(request:Request){
    }));
   }
   const replies=new Map<string,{id:string;nickname:string;text:string}>();
-  await Promise.all([...new Set(visible.filter(doc=>!doc.data().deleted).map(doc=>doc.data().reply?.id).filter((id):id is string=>validId(id,230)))].map(async id=>{const parent=await adminDb.collection('communityChat').doc(id).get();const data=parent.data();replies.set(id,{id,nickname:!data?.deleted?String(data?.nickname||'Uživatel'):'',text:!parent.exists||data?.deleted?'Původní zpráva byla odstraněna.':String(data?.text||'Sdílené fotky').slice(0,120)});}));
+  await Promise.all([...new Set(visible.filter(doc=>!doc.data()?.deleted).map(doc=>doc.data()?.reply?.id).filter((id):id is string=>validId(id,230)))].map(async id=>{const parent=await adminDb.collection('communityChat').doc(id).get();const data=parent.data();replies.set(id,{id,nickname:!data?.deleted?String(data?.nickname||'Uživatel'):'',text:!parent.exists||data?.deleted?'Původní zpráva byla odstraněna.':String(data?.text||'Sdílené fotky').slice(0,120)});}));
   const messages=visible.map(doc=>{
-   const d=doc.data();
+   const d=doc.data() || { deleted: true };
    const source = attachments.get(d.activityId);
    const activity = source && d.thumbnail
     ? (source.thumbnails.includes(d.thumbnail) ? { id: source.id, thumbnails: [d.thumbnail] } : null)
@@ -141,7 +189,10 @@ export async function GET(request:Request){
     attachments.get(photo.activityId)?.thumbnails.includes(photo.thumbnail)
    ));
    return{id:doc.id,uid:String(d.uid||''),nickname:String(d.nickname||'Uživatel'),text:d.deleted?'':String(d.text||''),deleted:d.deleted===true,createdAt:d.createdAt?.toDate?.().toISOString()||null,canDelete:admin||d.uid===decoded.uid,activity:d.deleted?null:activity||null,activities,activityUnavailable:!d.deleted&&((!!d.activityId&&!activity)||activities.reduce((count,item)=>count+item.thumbnails.length,0)<selections.length),reply:d.deleted?null:replies.get(d.reply?.id)||null};}).reverse();
-  return NextResponse.json({messages,hasMore:snapshot.docs.length>50,cursor:visible.at(-1)?.id||null,revision},{headers});
+  return NextResponse.json({
+   messages, hasMore, cursor: changes ? null : visible.at(-1)?.id || null,
+   ...(before ? {} : { revision, delta: changes !== null }),
+  }, { headers });
  }catch(error){return failure(error);}
 }
 export async function POST(request:Request){
@@ -193,10 +244,10 @@ export async function POST(request:Request){
    if(body.replyTo){const parent=await tx.get(adminDb.collection('communityChat').doc(body.replyTo));if(!parent.exists||parent.data()?.deleted)return {invalidReply:true};reply={id:parent.id};}
    const now=Date.now();
    if(now-Number(recent.data()?.lastSentAt||0)<3000)return {limited:true};
+   await recordChange(tx, adminDb, message.id);
    const nickname=String(profile.data()?.nickname||'Uživatel').slice(0,40);
    tx.set(message,{uid:decoded.uid,nickname,text,activityId,thumbnail:thumbnail ?? null,photos:selections.length ? selections : null,reply,createdAt:FieldValue.serverTimestamp(),deleted:false});
    tx.set(rate,{lastSentAt:now});
-   tx.set(adminDb.collection('chatMeta').doc('community'),{revision:message.id});
    return {id:message.id};
   });
   if('invalidActivity'in result)return NextResponse.json({error:'Sdílet můžeš jen fotky z vlastního záznamu.'},{status:400,headers});
@@ -220,8 +271,9 @@ export async function DELETE(request:Request){
    const message=await tx.get(ref),profile=await tx.get(adminDb.collection('users').doc(decoded.uid));
    if(!message.exists)return 404;
    if(message.data()?.uid!==decoded.uid&&profile.data()?.role!=='admin'&&decoded.admin!==true)return 403;
+   if (message.data()?.deleted) return 200;
+   await recordChange(tx, adminDb, ref.id);
    tx.update(ref,{text:'',activityId:null,thumbnail:null,photos:null,reply:null,deleted:true,deletedAt:FieldValue.serverTimestamp()});
-   tx.set(adminDb.collection('chatMeta').doc('community'),{revision:ref.id+'_'+Date.now()});
    return 200;
   });
   return NextResponse.json(result===200?{ok:true}:{error:result===403?'Můžeš odstranit jen vlastní zprávu.':'Zpráva neexistuje.'},{status:result,headers});

@@ -19,7 +19,7 @@ function fixture(preferences = {}) {
   } };
   const auth = { requireUser: async () => ({ adminDb: db, decoded: { uid } }), authErrorResponse: () => null };
   const social = load('app/api/runs/social/route.ts', auth), notifications = load('app/api/notifications/route.ts', auth);
-  return { records, setUid: value => uid = value, fail: () => failNotification = true, post: body => social.POST({ json: async () => ({ runId: 'run', ...body }) }), get: () => notifications.GET({}) };
+  return { records, setUid: value => uid = value, fail: () => failNotification = true, post: body => social.POST({ json: async () => ({ runId: 'run', ...body }) }), get: () => notifications.GET(new Request("https://example.test/api/notifications")) };
 }
 test('another account sees a like notification; removing the like removes the notification', async () => {
   const f = fixture();

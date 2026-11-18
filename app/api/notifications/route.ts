@@ -7,9 +7,22 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     const { adminDb, decoded } = await requireApiUser(request);
-    const snapshot = await adminDb.collection("notifications")
-      .where("recipientUid", "==", decoded.uid)
-      .get();
+    const inbox = adminDb.collection("notifications").where("recipientUid", "==", decoded.uid);
+    if (new URL(request.url).searchParams.get("view") === "count") {
+      // Legacy notifications without a read field are unread as well.
+      let unreadCount: number;
+      try {
+        const [total, read] = await Promise.all([inbox.count().get(), inbox.where("read", "==", true).count().get()]);
+        unreadCount = Math.max(0, total.data().count - read.data().count);
+      } catch (error) {
+        // Older Firestore deployments may still lack an index for the combined filters.
+        if (!error || typeof error !== "object" || !("code" in error) || error.code !== 9) throw error;
+        const snapshot = await inbox.select("read").get();
+        unreadCount = snapshot.docs.filter(doc => doc.get("read") !== true).length;
+      }
+      return NextResponse.json({ unreadCount }, { headers: { "Cache-Control": "private, no-store" } });
+    }
+    const snapshot = await inbox.get();
 
     const notifications = snapshot.docs.map(doc => {
       const data = doc.data();

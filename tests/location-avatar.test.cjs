@@ -35,32 +35,37 @@ test('place names are cached and a shared lease limits geocoding across users', 
 const text = node => typeof node === 'string' ? node : typeof node === 'number' ? String(node) : Array.isArray(node) ? node.map(text).join('') : node?.props ? text(node.props.children) : '';
 function find(node, predicate) { if (!node) return; if (Array.isArray(node)) { for (const child of node) { const result=find(child,predicate); if(result)return result; } return; } if(predicate(node))return node; return find(node.props?.children,predicate); }
 test('weather reports GPS failure, automatically recovers, names the place, and clears status for fixed location', async () => {
+  let clock=Date.now();
+  class Clock extends Date { static now() { return clock; } }
   let hook=0, enabled=false, timerId=0; let coords={latitude:49.84123,longitude:18.10456,accuracy:60}; const requests=[]; const slots=[], effects=[], timers=new Map();
   const same = (a,b) => a && b && a.length===b.length && a.every((v,i)=>v===b[i]);
   const hooks={ useState: initial => { const i=hook++; if(!(i in slots))slots[i]=typeof initial==='function'?initial():initial; return [slots[i],value=>slots[i]=typeof value==='function'?value(slots[i]):value]; }, useRef: initial=>{const i=hook++;return slots[i]||(slots[i]={current:initial});}, useCallback: (fn,deps)=>{const i=hook++;if(!same(slots[i]?.deps,deps))slots[i]={deps,fn};return slots[i].fn;}, useEffect: (fn,deps)=>{const i=hook++;if(!same(slots[i]?.deps,deps)){const old=slots[i]; effects.push(()=>{old?.cleanup?.();slots[i]={deps,cleanup:fn()};});}} };
   const helpers=load('app/lib/weather.ts'), location=load('app/lib/location.ts');
   const weather={current:{temperature:{degrees:7}},hourly:[],fetchedAt:new Date().toISOString()};
   const Card=load('app/components/WeatherCard.tsx',{react:hooks,'../lib/weather':helpers,'../lib/location':location,'./WeatherVisual':{default:()=>null,weatherDescription:()=>''},'../lib/firebase':{auth:{currentUser:{getIdToken:async()=>'token'}}}}, {
-    navigator:{permissions:{query:async()=>({state:'granted'})},geolocation:{getCurrentPosition:(yes,no,options)=>{ assert.equal(options.enableHighAccuracy,true); return enabled?yes({coords}):no({code:2}); }}},
+    Date:Clock,navigator:{permissions:{query:async()=>({state:'granted'})},geolocation:{getCurrentPosition:(yes,no,options)=>{ assert.equal(options.enableHighAccuracy,true); return enabled?yes({coords}):no({code:2}); }}},
     document:{visibilityState:'visible',addEventListener(){},removeEventListener(){}},window:{setTimeout:()=>1,clearTimeout(){},setInterval:(fn,ms)=>{const id=++timerId;timers.set(id,{fn,ms});return id;},clearInterval:id=>timers.delete(id),addEventListener(){},removeEventListener(){}},
     fetch:async url=>{requests.push(url);return Response.json(url.includes('/location?')?{name:'Dolní Lhota'}:weather);},
   }).default;
   const render=()=>{hook=0;const result=Card();effects.splice(0).forEach(fn=>fn());return result;};
   const flush=()=>new Promise(resolve=>setImmediate(resolve));
+  const tickGps=()=>{clock+=60000;[...timers.values()].find(t=>t.ms===60000).fn();};
   render(); await flush();
   find(render(), n=>n.type==='button'&&text(n)==='Moje poloha (GPS)').props.onClick(); await flush();
   assert.match(text(render()),/Zapni polohu/);
-  enabled=true; [...timers.values()].find(t=>t.ms===15000).fn(); await flush();
+  enabled=true; tickGps(); await flush();
   assert.match(text(render()),/Poloha dostupná/); assert.match(text(render()),/Dolní Lhota/);
   assert.ok(requests.some(url=>url.startsWith('/api/weather?')&&url.includes('lat=49.84123')&&url.includes('lon=18.10456')));
   assert.ok(requests.some(url=>url.includes('/location?v=2&lat=49.84123&lon=18.10456')));
   const stationaryRequests=requests.length;
-  coords={...coords,latitude:49.84124}; [...timers.values()].find(t=>t.ms===15000).fn(); await flush();
+  coords={...coords,latitude:49.84124}; tickGps(); await flush();
   assert.equal(requests.length,stationaryRequests,'GPS jitter does not refetch or geocode');
-  coords={...coords,latitude:49.84456}; [...timers.values()].find(t=>t.ms===15000).fn(); await flush();
-  assert.ok(requests.some(url=>url.startsWith('/api/weather?')&&url.includes('lat=49.84456')));
-  assert.ok(requests.some(url=>url.includes('/location?v=2&lat=49.84456')));
-  enabled=false; [...timers.values()].find(t=>t.ms===15000).fn(); await flush();
+  coords={...coords,latitude:49.84456}; tickGps(); await flush();
+  assert.equal(requests.length,stationaryRequests,'a short walk keeps the current forecast');
+  coords={...coords,latitude:49.84700}; tickGps(); await flush();
+  assert.ok(requests.some(url=>url.startsWith('/api/weather?')&&url.includes('lat=49.847')));
+  assert.ok(requests.some(url=>url.includes('/location?v=2&lat=49.847')));
+  enabled=false; tickGps(); await flush();
   assert.match(text(render()),/poslední zjištěnou polohu/);
   find(render(), n=>n.type==='button'&&text(n)==='Dolní Lhota').props.onClick(); await flush();
   assert.doesNotMatch(text(render()),/Zapni polohu|poslední zjištěnou polohu/);
@@ -94,11 +99,12 @@ test('weather place names prefer districts and local areas while retaining the m
 
 test('weather retains metre-scale coordinate precision and detects moves without reacting to jitter',()=>{
   const {weatherCoordinates:coords,weatherLocationMoved:moved}=load('app/lib/weatherLocation.ts');
-  const a=coords(49.841234567,18.10456789),b=coords(49.84456,18.10456);
+  const a=coords(49.841234567,18.10456789),b=coords(49.847,18.10456);
   assert.equal(a.lat,49.84123);assert.equal(a.lon,18.10457);
   assert.notEqual(a.lat,b.lat);assert.equal(moved(null,a),true);assert.equal(moved(a,a),false);
   assert.equal(moved(a,{...a,lat:a.lat+.00001}),false);assert.equal(moved(a,b),true);
-  assert.equal(moved({lat:0,lon:0},{lat:0,lon:.002}),true);
+  assert.equal(moved({lat:0,lon:0},{lat:0,lon:.002}),false);
+  assert.equal(moved({lat:0,lon:0},{lat:0,lon:.005}),true);
 });
 
 test('reverse geocoding receives precise coordinates and ignores old kilometre-scale cached names',async()=>{

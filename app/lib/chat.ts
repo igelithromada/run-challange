@@ -31,9 +31,9 @@ export function chatActivity(id: string, data: Record<string, unknown> | undefin
 }
 
 
-// Keep the stored thumbnail reference stable while requesting a larger display image.
+// Keep existing attachment IDs stable and use the same display variant as activity cards.
 export function chatPreviewUrl(thumbnail: string) {
-  return thumbnail.replace('/f_auto,q_auto:eco,c_limit,w_192,h_192/', '/f_auto,q_auto,c_limit,w_960,h_960/');
+  return thumbnail.replace('/f_auto,q_auto:eco,c_limit,w_192,h_192/', '/f_auto,q_auto:eco,c_limit,w_640,h_720/');
 }
 
 export function groupChatPhotos(photos: ChatPhotoSelection[]): ChatActivity[] {

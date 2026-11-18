@@ -23,5 +23,5 @@ export function weatherLocationMoved(previous: { lat: number; lon: number } | nu
   const north = (next.lat - previous.lat) * radians;
   const east = (next.lon - previous.lon) * radians;
   const a = Math.sin(north / 2) ** 2 + Math.cos(previous.lat * radians) * Math.cos(next.lat * radians) * Math.sin(east / 2) ** 2;
-  return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a))) >= 100;
+  return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a))) >= 500;
 }

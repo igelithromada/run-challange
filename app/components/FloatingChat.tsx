@@ -75,7 +75,7 @@ export default function FloatingChat() {
       }
     }
     void poll();
-    const timer = window.setInterval(poll, 30000);
+    const timer = window.setInterval(poll, 120000);
     document.addEventListener('visibilitychange', poll);
     window.addEventListener('online', poll);
     window.addEventListener(CHAT_CHANGED, poll);

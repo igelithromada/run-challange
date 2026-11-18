@@ -11,6 +11,7 @@ import { coordinatesLabel, locationErrorMessage } from "../lib/location";
 import WeatherVisual, { weatherDescription } from "./WeatherVisual";
 
 const REFRESH_MS = 15 * 60 * 1000;
+const GPS_CHECK_MS = 60 * 1000;
 const temperatureLabel = (value?: number) => typeof value === "number" && Number.isFinite(value) ? `${Math.round(value)}°` : "—";
 const probabilityLabel = (value?: number | null) => typeof value === "number" && Number.isFinite(value) ? `${Math.round(value)} %` : "—";
 
@@ -34,6 +35,7 @@ export default function WeatherCard() {
   const mounted = useRef(false);
   const request = useRef<AbortController | null>(null);
   const lastAttempt = useRef(0);
+  const lastGpsCheck = useRef(0);
 
   const loadWeather = useCallback(async (forceRefresh = false) => {
     if (request.current) return;
@@ -113,7 +115,10 @@ export default function WeatherCard() {
       setLocating(false); setLocationStatus(""); setLocationError(locationErrorMessage(cause.code));
     };
     if (knownPosition) acceptPosition(knownPosition);
-    else navigator.geolocation.getCurrentPosition(acceptPosition, rejectPosition, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+    else {
+      lastGpsCheck.current = Date.now();
+      navigator.geolocation.getCurrentPosition(acceptPosition, rejectPosition, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+    }
   };
   useEffect(() => { locateRef.current = position => chooseLocation(true, position); });
 
@@ -122,23 +127,26 @@ export default function WeatherCard() {
     let active = true, pending = false;
     let permission: PermissionStatus | undefined;
     const check = () => {
-      if (!active || pending || document.visibilityState === "hidden") return;
+      const now = Date.now();
+      if (!active || pending || document.visibilityState === "hidden" || now - lastGpsCheck.current < GPS_CHECK_MS) return;
+      lastGpsCheck.current = now;
+      const version = locationVersion.current;
       pending = true;
       navigator.geolocation.getCurrentPosition(position => {
-        pending = false; if (!active) return;
+        pending = false; if (!active || version !== locationVersion.current) return;
         setLocationError(""); setLocationStatus(`Poloha dostupná · přesnost přibližně ${Math.max(1, Math.round(position.coords.accuracy))} m`);
         const coords = weatherCoordinates(position.coords.latitude, position.coords.longitude);
         if (weatherLocationMoved(locationRef.current, coords)) locateRef.current(position);
       }, cause => {
-        pending = false; if (!active) return;
+        pending = false; if (!active || version !== locationVersion.current) return;
         setLocationStatus(""); setLocationError(locationErrorMessage(cause.code));
-      }, { enableHighAccuracy: true, maximumAge: 0, timeout: 6000 });
+      }, { enableHighAccuracy: true, maximumAge: 30000, timeout: 6000 });
     };
     void navigator.permissions?.query({ name: "geolocation" }).then(result => {
       if (!active) return; permission = result;
       permission.onchange = () => { if (permission?.state === "denied") { setLocationStatus(""); setLocationError(locationErrorMessage(1)); } else check(); };
     }).catch(() => {});
-    const timer = window.setInterval(check, 15000);
+    const timer = window.setInterval(check, GPS_CHECK_MS);
     window.addEventListener("focus", check); document.addEventListener("visibilitychange", check);
     return () => { active = false; window.clearInterval(timer); if (permission) permission.onchange = null; window.removeEventListener("focus", check); document.removeEventListener("visibilitychange", check); };
   }, [followLocation]);
@@ -148,7 +156,9 @@ export default function WeatherCard() {
     void loadWeather();
     // Advance the first visible hour even while the page remains open.
     const clock = window.setInterval(() => setNow(Date.now()), 30000);
-    const refresh = window.setInterval(() => void loadWeather(), REFRESH_MS);
+    const refresh = window.setInterval(() => {
+      if (document.visibilityState !== "hidden" && Date.now() - lastAttempt.current >= REFRESH_MS) void loadWeather();
+    }, REFRESH_MS);
     const resume = () => {
       if (document.visibilityState === "hidden") return;
       setNow(Date.now());
@@ -156,12 +166,15 @@ export default function WeatherCard() {
     };
     window.addEventListener("focus", resume);
     document.addEventListener("visibilitychange", resume);
-    return () => {
+    function abortRequests() {
       mounted.current = false;
       ++locationVersion.current;
       locationRequest.current?.abort();
       request.current?.abort();
       request.current = null;
+    }
+    return () => {
+      abortRequests();
       window.clearInterval(clock);
       window.clearInterval(refresh);
       window.removeEventListener("focus", resume);

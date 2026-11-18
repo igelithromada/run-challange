@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Bell, Flag, Heart, Home, Menu, MessageCircle, Settings, Users, X } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { cachedNotificationCount, clearNotificationCount, loadNotificationCount, NOTIFICATION_REFRESH_MS, rememberNotificationCount } from "../lib/notificationCount";
 import { notificationTarget } from "../lib/notifications/target";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 
@@ -89,7 +90,9 @@ function NotificationsBell() {
       const data = await response.json();
       if (version !== requestVersion.current || auth.currentUser?.uid !== user.uid) return;
       setNotifications(Array.isArray(data.notifications) ? data.notifications : []);
-      setUnreadCount(Number(data.unreadCount) || 0);
+      const count = Number(data.unreadCount) || 0;
+      rememberNotificationCount(user.uid, count);
+      setUnreadCount(count);
       setError("");
     } catch {
       if (version === requestVersion.current && auth.currentUser?.uid === user.uid) setError("Upozornění se nepodařilo načíst. Zkus to znovu.");
@@ -99,25 +102,57 @@ function NotificationsBell() {
   }, []);
 
   useEffect(() => {
-    const invalidate = () => { ++requestVersion.current; };
-    const unsubscribe = onAuthStateChanged(auth, () => {
+    let active = true;
+    let timer: ReturnType<typeof setTimeout>;
+    let checking = false;
+
+    async function refresh() {
+      clearTimeout(timer);
+      const user = auth.currentUser;
+      if (!active || !user || checking || document.visibilityState !== "visible") return;
+      if (mutationBusy.current) {
+        timer = setTimeout(refresh, 60_000);
+        return;
+      }
+      const version = requestVersion.current;
+      checking = true;
+      try {
+        const count = await loadNotificationCount(user);
+        if (active && auth.currentUser?.uid === user.uid && version === requestVersion.current && !mutationBusy.current) {
+          setUnreadCount(count);
+          if (!count) setNotifications(previous => previous.some(item => !item.read) ? [] : previous);
+        }
+      } catch {
+        // Leave the last successful value visible until the next check.
+      } finally {
+        checking = false;
+        if (active && auth.currentUser) {
+          const checkedAt = cachedNotificationCount(auth.currentUser.uid)?.checkedAt;
+          const remaining = checkedAt === undefined ? 60_000 : checkedAt + NOTIFICATION_REFRESH_MS - Date.now();
+          timer = setTimeout(refresh, Math.max(60_000, remaining));
+        }
+      }
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, user => {
       ++requestVersion.current;
-      setNotifications([]); setUnreadCount(0); setOpen(false); setError("");
-      void load();
+      clearTimeout(timer);
+      if (!user) clearNotificationCount();
+      setNotifications([]); setUnreadCount(user ? cachedNotificationCount(user.uid)?.count ?? 0 : 0);
+      setOpen(false); setError(""); setLoading(false);
+      void refresh();
     });
-    const refresh = () => { if (document.visibilityState === "visible") void load(); };
-    const timer = setInterval(refresh, 15000);
-    window.addEventListener("focus", refresh);
     window.addEventListener("online", refresh);
     document.addEventListener("visibilitychange", refresh);
+    function invalidate() { ++requestVersion.current; }
     return () => {
+      active = false;
       invalidate();
-      unsubscribe(); clearInterval(timer);
-      window.removeEventListener("focus", refresh);
+      unsubscribe(); clearTimeout(timer);
       window.removeEventListener("online", refresh);
       document.removeEventListener("visibilitychange", refresh);
     };
-  }, [load]);
+  }, []);
 
   const notificationRef = useRef<HTMLDivElement>(null);
   const close = () => { setOpen(false); bellRef.current?.focus(); };
@@ -153,7 +188,9 @@ function NotificationsBell() {
       if (!response.ok) throw new Error("Upozornění se nepodařilo označit. Zkus to znovu.");
       if (auth.currentUser?.uid !== user.uid) return false;
       setNotifications(previous => notification ? previous.filter(item => item.id !== notification.id) : []);
-      setUnreadCount(previous => notification ? Math.max(0, previous - (notification.read ? 0 : 1)) : 0);
+      const count = notification ? Math.max(0, unreadCount - (notification.read ? 0 : 1)) : 0;
+      rememberNotificationCount(user.uid, count);
+      setUnreadCount(count);
       return true;
     } catch {
       if (auth.currentUser?.uid === user.uid) setError("Upozornění se nepodařilo označit. Zkus to znovu.");
@@ -175,7 +212,7 @@ function NotificationsBell() {
   if (!open && unreadCount === 0 && notifications.length === 0) return null;
 
   return <div className="notification-wrap" ref={notificationRef}>
-    <button type="button" ref={bellRef} className="site-navbar-button notification-button" aria-expanded={open} aria-controls="notifications-panel" onClick={() => { setOpen(value => !value); void load(); }} aria-label={`Upozornění, ${unreadCount} nepřečtených`}>
+    <button type="button" ref={bellRef} className="site-navbar-button notification-button" aria-expanded={open} aria-controls="notifications-panel" onClick={() => { setOpen(!open); if (!open) void load(); }} aria-label={`Upozornění, ${unreadCount} nepřečtených`}>
       <Bell size={21} strokeWidth={2.2} aria-hidden="true" />
       {unreadCount > 0 && <span className="notification-badge" aria-hidden="true">{unreadCount > 99 ? "99+" : unreadCount}</span>}
     </button>

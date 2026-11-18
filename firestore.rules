@@ -89,6 +89,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /chatMeta/community {
+      function canReadChat() {
+        let account = get(/databases/$(database)/documents/users/$(request.auth.uid));
+        return account != null && !account.data.get("blocked", false)
+          && !account.data.get("deleting", false);
+      }
+
+      allow get: if signedIn() && canReadChat();
+    }
+
     match /teamNames/{nameKey} {
       allow read, write: if false;
     }

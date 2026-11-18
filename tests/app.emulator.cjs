@@ -94,6 +94,10 @@ test('notifications: newest fifty are returned and marking all clears more than 
  await db.doc('notifications/other').set({recipientUid:'other',read:false});
  const response=await call(notifications,{},'GET');assert.equal(response.status,200);
  assert.equal(response.body.unreadCount,520);assert.equal(response.body.notifications.length,50);assert.equal(response.body.notifications[0].id,'n519');
+ await db.doc('notifications/previously-read').set({recipientUid:'u',read:true});
+ await db.doc('notifications/legacy-unread').set({recipientUid:'u'});
+ const countOnly = await notifications.GET(new Request('https://example.test/api?view=count'));
+ assert.deepEqual(await countOnly.json(), {unreadCount:521});
  assert.equal((await call(notifications,{markAll:true})).status,200);
  assert.equal((await db.collection('notifications').where('recipientUid','==','u').get()).size,0);
  assert.equal((await db.doc('notifications/other').get()).exists,true);

@@ -160,7 +160,7 @@ test('a message shares multiple selected photos across owned records and opens t
  const feed = await (await s.request('GET')).json();
  assert.equal(feed.messages[0].text,'Dvě fotky');
  assert.deepEqual(feed.messages[0].activities,photos.map(item=>({ id:item.activityId, thumbnails:[item.thumbnail] })));
- assert.match(projectionModule.exports.chatPreviewUrl(photos[0].thumbnail),/w_960,h_960/);
+ assert.match(projectionModule.exports.chatPreviewUrl(photos[0].thumbnail),/w_640,h_720/);
  const gallery = item => s.request('GET',null,'?'+new URLSearchParams({gallery:'member_one',...item}));
  assert.deepEqual(await (await gallery(photos[0])).json(),{images:[photo,second],index:1});
  assert.deepEqual(await (await gallery(photos[1])).json(),{images:[third],index:0});
@@ -169,4 +169,37 @@ test('a message shares multiple selected photos across owned records and opens t
  const updated = await (await s.request('GET')).json();
  assert.equal(updated.messages[0].activities.length,1);
  assert.equal(updated.messages[0].activityUnavailable,true);
+});
+
+test('chat reads 30 messages per page and refreshes only the changed messages', async () => {
+ const s = setup();
+ for (let i = 1; i <= 65; i++) {
+  const date = new Date(2026, 0, 1, 0, 0, i);
+  s.docs.set('communityChat/history_' + i, {
+   uid: 'other', nickname: 'Verča', text: String(i), deleted: false,
+   createdAt: { toMillis: () => +date, toDate: () => date },
+  });
+ }
+ const get = async params => (await s.request('GET', null, '?' + new URLSearchParams(params))).json();
+ const recent = await get({});
+ assert.equal(recent.messages.length, 30);
+ assert.equal(recent.messages[0].text, '36');
+ assert.equal(recent.hasMore, true);
+ const older = await get({ before: recent.cursor });
+ assert.equal(older.messages.length, 30);
+ assert.equal(older.messages[0].text, '6');
+ const oldest = await get({ before: older.cursor });
+ assert.equal(oldest.messages.length, 5);
+ assert.equal(oldest.hasMore, false);
+
+ assert.equal((await s.request('POST', { text: 'Nová zpráva', clientId: 'delta' })).status, 200);
+ s.user('other');
+ assert.equal((await s.request('DELETE', { id: 'history_3' })).status, 200);
+ const changes = await get({ revision: recent.revision });
+ assert.equal(changes.delta, true);
+ assert.deepEqual(changes.messages.map(row => [row.id, row.deleted]), [['history_3', true], ['member_delta', false]]);
+ assert.equal((await get({ revision: 'unknown-old-cursor' })).messages.length, 30);
+
+ const stored = projectionModule.exports.chatPhotos({ imageUrl: photo })[0].thumbnail;
+ assert.equal(projectionModule.exports.chatPreviewUrl(stored), imageModule.exports.activityThumbnailUrl(photo));
 });
