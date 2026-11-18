@@ -67,3 +67,28 @@ test('gallery metadata is limited, uses a cursor and visits undated history only
  assert.equal(third.items[0].id,'legacy');
  assert.equal(third.next,null);
 });
+
+
+test('gallery remains usable while the ordering index is being built', async () => {
+ const own = {}, dated = {};
+ const fields = { uid: 'me', imageUrl: image('before-index') };
+ const service = load('app/lib/services/galleryRuns.ts', {
+  'firebase/firestore': {
+   limit: size => size,
+   query: source => source,
+   getDocs: async source => {
+    if (source === dated) throw Object.assign(new Error('Index is building'), { code: 'failed-precondition' });
+    assert.equal(source, own);
+    return { docs: [{ id: 'legacy', data: () => fields }] };
+   },
+  },
+  './runs': {
+   personalHistoryQuery: () => own,
+   userRunsQuery: () => dated,
+   mapRunSnapshot: row => ({ id: row.id, ...row.data() }),
+  },
+ });
+ const page = await service.fetchGalleryRunPage('me', { mode: 'dated' });
+ assert.equal(page.items[0].imageUrl, fields.imageUrl);
+ assert.equal(page.next, null);
+});

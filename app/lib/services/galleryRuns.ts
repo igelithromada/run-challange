@@ -9,7 +9,14 @@ export async function fetchGalleryRunPage(uid: string, cursor: GalleryCursor) {
   const dated = userRunsQuery(uid);
   const source = cursor.mode === "dated" ? dated : query(all, orderBy(documentId(), "desc"));
   const pageQuery = cursor.after ? query(source, startAfter(cursor.after), limit(PAGE_SIZE)) : query(source, limit(PAGE_SIZE));
-  const snapshot = await getDocs(pageQuery);
+  const snapshot = await getDocs(pageQuery).catch(error => {
+    // Keep the existing gallery usable while a new production index is building.
+    if (cursor.mode !== "dated" || error?.code !== "failed-precondition") throw error;
+    return null;
+  });
+  if (!snapshot) {
+    return { items: (await getDocs(all)).docs.map(mapRunSnapshot), next: null };
+  }
 
   const items = snapshot.docs
     .filter(record => cursor.mode === "dated" || !Object.hasOwn(record.data(), "timestamp"))
