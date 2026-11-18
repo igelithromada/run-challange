@@ -14,3 +14,14 @@ body:has(>.floating-chat) .app-content-layer{padding-bottom:calc(80px + env(safe
 .chat-activity-picker button:not(.chat-activity-preview),.chat-selected-activity>button,.chat-selected-reply>button{min-width:40px;min-height:40px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--hierarchy-text);}.chat-selected-activity>.chat-activity-preview{flex:1;}
 .chat-attach-button,.chat-reply-button{display:flex;align-items:center;gap:.3rem;border:0;background:transparent;color:var(--hierarchy-muted);cursor:pointer;min-height:36px;font:inherit;font-size:.78rem;}
 .chat-reply-preview,.chat-selected-reply{border-inline-start:3px solid var(--hierarchy-accent);padding:.4rem .65rem;margin:.4rem 0;background:var(--ui-bg-soft);border-radius:5px;}.chat-reply-preview{display:flex;flex-direction:column;gap:.2rem;font-size:.78rem;}.chat-selected-reply>div{flex:1;min-width:0;}.chat-selected-reply p{margin:.2rem 0;font-size:.8rem;overflow-wrap:anywhere;}
+
+.chat-activity-message-label {
+  color: var(--hierarchy-text);
+  font-size: .85rem;
+  font-weight: 600;
+}
+
+.chat-activity-message-label + .chat-compose {
+  border-top: 0;
+  padding-top: 0;
+}
