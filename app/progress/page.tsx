@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { Award, CalendarDays, Footprints, Medal, Trophy, CheckCircle2, Lock, Zap, Flame } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { parseActivityDate } from "../lib/runData";
-import { activityAwards, awardTotal } from "../lib/awards";
+import { activityAwards, awardTotal, type Award } from "../lib/awards";
 import ActivityCalendar from "../components/ActivityCalendar";
 import ProgressChart from "../components/ProgressChart";
 import Navbar from "../components/Navbar";
@@ -31,6 +31,22 @@ const formatPace = (pace: number) => {
   const seconds = Math.round(pace * 60);
   return `${Math.floor(seconds/60)}′${String(seconds%60).padStart(2,"0")}″ /km`;
 };
+function AwardSection({ title, awards, icon }: { title: string; awards: Award[]; icon: React.ReactNode }) {
+  const repeatable = awards.some(award => award.repeatable);
+  const summary = repeatable ? `Získáno ${awardTotal(awards)}×`
+    : `Splněno ${awards.filter(award => award.count > 0).length} z ${awards.length}`;
+  return <section className="progress-section">
+    <div className="progress-section-title">{icon}<div><h2>{title}</h2><p>{summary}</p></div></div>
+    <div className="progress-badges-scroll" role="group" tabIndex={0} aria-label={title}>
+      {awards.map(award => <article key={award.id} className={award.count > 0 ? "progress-badge earned" : "progress-badge locked"}>
+        <span aria-hidden="true">{award.icon}</span>
+        <div><strong>{award.title} {repeatable && <b className="award-count">{award.count}×</b>}</strong><p>{award.detail}</p></div>
+        {award.count > 0 ? <CheckCircle2 size={18} aria-label="Získáno"/> : <Lock size={17} aria-label="Zatím nezískáno"/>}
+      </article>)}
+    </div>
+  </section>;
+}
+
 export default function ProgressPage() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -85,7 +101,11 @@ export default function ProgressPage() {
   const level = [...levels].reverse().find(item => allKm >= item.min) || levels[0];
   const levelProgress = Math.min(100, Math.max(0, (allKm - level.min) / (level.next - level.min) * 100));
 
-  const badges = activityAwards(selected, goalType);
+  const levelNumber = levels.indexOf(level) + 1;
+  const nextLevel = levels[levelNumber];
+  const remaining = Math.max(0, level.next - allKm);
+  const experienceAmount = (amount: number) => amount.toLocaleString("cs-CZ", { maximumFractionDigits: strength ? 0 : 2 }) + " " + unit;
+  const awards = useMemo(() => activityAwards(selected, goalType), [selected, goalType]);
   const handleSelect = async (item: string) => {
     setMenuVisible(false);
     if (item==="logout") { await signOut(auth); router.push("/login"); }
@@ -104,17 +124,26 @@ export default function ProgressPage() {
 
       <ProgressChart key={goalType} runs={selected} activityType={goalType} loading={personalState.loading} error={!!personalState.error} />
 
-      <section className="progress-level tile">
-        <div className="progress-section-title"><Medal/><div><h2>Úrovně a zkušenosti</h2><p>Postupuješ podle {strength ? "počtu opakování" : "celkové vzdálenosti"} pro zvolenou kategorii.</p></div></div>
-        <div className="progress-level-main"><span className="progress-level-emoji">{level.icon}</span><div><span className="progress-level-caption">AKTUÁLNÍ ÚROVEŇ</span><h3>{level.name}</h3><p>{allKm.toFixed(strength ? 0 : 1)} {unit} celkem · další úroveň od {level.next} {unit}</p></div></div>
-        <div className="progress-track level-track"><i style={{width:`${levelProgress}%`}}/></div>
-        <div className="progress-level-foot"><span>{levelProgress.toFixed(0)} % k další úrovni</span><strong>Zbývá {Math.max(0,level.next-allKm).toFixed(strength ? 0 : 1)} {unit}</strong></div>
+      <section className="progress-level tile progress-experience">
+        <div className="progress-section-title"><Medal/><div><h2>Zkušenosti</h2></div></div>
+        <div className="progress-experience-main">
+          <span className="progress-level-emoji" aria-hidden="true">{level.icon}</span>
+          <div><small>Úroveň {levelNumber} / {levels.length}</small><h3>{level.name}</h3></div>
+          <strong>{experienceAmount(allKm)}<small>Celkem</small></strong>
+        </div>
+        <div className="progress-experience-target">
+          <span>{nextLevel ? `Další úroveň: ${nextLevel.name}` : "Milník nejvyšší úrovně"}</span>
+          <strong>{experienceAmount(level.next)}</strong>
+        </div>
+        <progress max={100} value={levelProgress} aria-label="Postup v aktuální úrovni" />
+        <div className="progress-level-foot">
+          <span>{remaining ? `Zbývá ${experienceAmount(remaining)}` : "Milník splněn"}</span>
+          <strong>{Math.round(levelProgress)} %</strong>
+        </div>
       </section>
 
-      <section className="progress-section">
-        <div className="progress-section-title"><Award/><div><h2>Odznaky a úspěchy</h2><p>Celkem {awardTotal(badges)} odznaků · {badges.filter(b=>b.count>0).length} z {badges.length} druhů</p></div></div>
-        <div className="progress-badges-scroll" role="group" tabIndex={0} aria-label="Odznaky a úspěchy, posouvej doleva nebo doprava">{badges.map(badge=><article key={badge.title} className={badge.count>0?"progress-badge earned":"progress-badge locked"}><span>{badge.count>0?badge.icon:"🔒"}</span><div><strong>{badge.title} <b className="award-count">{badge.count}×</b></strong><p>{badge.detail}</p></div>{badge.count>0?<CheckCircle2 size={18}/>:<Lock size={17}/>}</article>)}</div>
-      </section>
+      <AwardSection title="Odznaky" awards={awards.filter(award => award.repeatable)} icon={<Award/>} />
+      <AwardSection title="Úspěchy" awards={awards.filter(award => !award.repeatable)} icon={<Trophy/>} />
 
       <ActivityCalendar key={goalType} runs={selected} activityType={goalType} />
 

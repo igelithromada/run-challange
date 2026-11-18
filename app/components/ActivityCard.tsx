@@ -266,7 +266,10 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
             <small className="activity-kind-label">{activityLabel(activityType)}</small>
             {teamName && <small className="activity-team-line"><span className="activity-team-avatar">{teamAvatarUrl ? <img src={cloudinaryImageUrl(teamAvatarUrl, 48)} alt="" /> : "T"}</span><b>Tým</b> · {teamName}</small>}
           </div>
-          {date && <time className="activity-date" dateTime={date.toISOString()}>{date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}
+          <div className="activity-card-meta">
+            {date && <time className="activity-date" dateTime={date.toISOString()}>{date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}
+            {run.uid && <ActivityAwardsButton key={run.uid} uid={run.uid} nickname={resolvedNickname} />}
+          </div>
         </header>
 
         {run.description?.trim() && <div className="activity-description">{run.description.trim()}</div>}
@@ -298,7 +301,6 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
           <button type="button" className={`activity-social-button ${commentCount > 0 ? "has-comments" : ""}`} onClick={() => void loadSocial("comments")} aria-label={`Komentáře · ${commentCount}`}>
             <MessageCircle size={20} /><span>{commentCount}</span>
           </button>
-          {run.uid && <ActivityAwardsButton key={run.uid} uid={run.uid} nickname={resolvedNickname} />}
           <span className="activity-actions-spacer" />
           {onEdit && <button type="button" className="activity-manage-button" onClick={onEdit} aria-label="Upravit záznam" title="Upravit záznam"><Pencil size={18} aria-hidden="true" /></button>}
           {onDelete && <button type="button" className="activity-manage-button activity-delete-button" onClick={onDelete} aria-label="Smazat záznam" title="Smazat záznam"><Trash2 size={18} aria-hidden="true" /></button>}

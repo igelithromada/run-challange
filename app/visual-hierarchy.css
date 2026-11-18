@@ -199,12 +199,14 @@ html body .container:is(.container) :is(.activity-metrics,.result-measurements,.
   display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr)) !important;
 }
 html body .container:is(.container) .activity-metrics.strength-metrics {grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
-html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid)::before,
-html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid)::after {
+/* Draw horizontal rules only between populated sections or between metric rows.
+   A standalone metric group has no rules facing empty space at the card edges. */
+html body .container:is(.container) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::before,
+html body .container:is(.container) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::after {
   content:"";position:absolute;inset-inline:.5rem;height:1px;background:var(--hierarchy-line);pointer-events:none;
 }
-html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid)::before {top:.25rem;}
-html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid)::after {bottom:.25rem;}
+html body .container:is(.container) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::before {top:.25rem;}
+html body .container:is(.container) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::after {bottom:.25rem;}
 html body .container:is(.container) :is(.app-metric-grid,.activity-metrics,.activity-summary-grid,.team-card-stats-compact,.team-stats-rows,.trainer-plan-summary,.progress-record-grid,.activity-recorder-metrics,.weather-stat-grid) > .app-metric:nth-child(n) {
   position:relative;border:0 !important;margin:0 !important;min-width:0;box-sizing:border-box;
 }
@@ -258,25 +260,31 @@ html body .container:is(.container) .app-metric-grid + .results-person-details {
   font-variant-numeric: tabular-nums;
 }
 
-.activity-metrics .metric-accent .app-metric-icon {
-  position: relative;
-  isolation: isolate;
+.activity-metrics .metric-accent .app-metric-icon svg { color: var(--metric-mark); }
+.metric-distance { --metric-mark: #62d8d1; }
+.metric-time { --metric-mark: #a0c5ff; }
+.metric-pace { --metric-mark: #ffd282; }
+.metric-repetitions { --metric-mark: #d4b8ff; }
+html[data-theme="white"] .metric-distance { --metric-mark: #067773; }
+html[data-theme="white"] .metric-time { --metric-mark: #365da7; }
+html[data-theme="white"] .metric-pace { --metric-mark: #945b03; }
+html[data-theme="white"] .metric-repetitions { --metric-mark: #7853ad; }
+
+.activity-type-selector { padding-bottom: .65rem; }
+.activity-card-meta { display: grid; justify-items: end; align-self: start; gap: .15rem; }
+.activity-card-meta .activity-awards-button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  background: transparent;
+  color: var(--hierarchy-muted);
+  cursor: pointer;
 }
-.activity-metrics .metric-accent .app-metric-icon::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inline-size: .92rem;
-  block-size: .92rem;
-  inset-inline-start: -.21rem;
-  inset-block-start: -.07rem;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--metric-mark) 28%, transparent);
-}
-.metric-distance { --metric-mark: #38c8c6; }
-.metric-time { --metric-mark: #7aa7f4; }
-.metric-pace { --metric-mark: #f3b750; }
-.metric-repetitions { --metric-mark: #b297f3; }
+.activity-awards-button:hover { background: var(--ui-bg-soft); }
 
 .activity-awards-dialog {
   width: min(90vw, 360px);
@@ -285,9 +293,11 @@ html body .container:is(.container) .app-metric-grid + .results-person-details {
   overflow: auto;
   border: 1px solid var(--ui-border);
   border-radius: 18px;
-  background: var(--ui-bg);
-  color: var(--ui-text);
+  background: #173344;
+  color: #f1f7fa;
 }
+html[data-theme="white"] .activity-awards-dialog { background: #fff; color: #192a36; }
+html[data-theme="dark"] .activity-awards-dialog { background: #191b20; }
 .activity-awards-dialog::backdrop { background: rgb(0 0 0 / 58%); }
 .activity-awards-dialog > section { padding: .9rem; }
 .activity-awards-dialog header, .challenge-results-header {
@@ -301,22 +311,21 @@ html body .container:is(.container) .app-metric-grid + .results-person-details {
 .activity-awards-grid {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(62px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: .4rem;
   padding: 0;
   margin: .75rem 0 0;
 }
 .activity-awards-grid li {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: .25rem;
-  padding: .45rem .3rem;
+  gap: .48rem;
+  padding: .52rem .45rem;
   background: var(--ui-bg-soft);
   border: 1px solid var(--ui-border);
   border-radius: 10px;
 }
-.activity-awards-grid strong { font-size: .76rem; }
+.activity-awards-grid strong { display: block; font-size: .77rem; overflow-wrap: anywhere; }
 
 .challenge-results-section { display: grid; gap: .85rem; }
 .challenge-results-header { flex-wrap: wrap; }
@@ -362,3 +371,28 @@ html body .container:is(.container) .app-metric-grid + .results-person-details {
     grid-template-columns: 40px minmax(0,1fr) 49px 40px !important;
   }
 }
+
+.progress-experience-main {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  align-items: center;
+  gap: .65rem;
+  margin-block: .65rem 1rem;
+}
+.progress-experience-main h3 { margin: .14rem 0 0; font-size: 1.06rem; }
+.progress-experience-main small { display: block; color: var(--hierarchy-muted); font-size: .73rem; }
+.progress-experience-main > strong { text-align: end; font-variant-numeric: tabular-nums; }
+.progress-experience-target { display: flex; justify-content: space-between; gap: .65rem; font-size: .8rem; }
+.progress-experience progress { width: 100%; height: .6rem; accent-color: var(--hierarchy-accent); margin-block: .3rem; }
+.progress-experience .progress-level-foot { margin: 0; color: var(--hierarchy-muted); }
+
+.activity-month-nav strong { text-transform: capitalize; }
+.activity-month-calendar .trainer-calendar-day { min-width: 0; }
+.activity-month-calendar .trainer-calendar-day.has-activity {
+  background: color-mix(in srgb, var(--hierarchy-accent) 13%, transparent) !important;
+}
+.activity-month-calendar .trainer-calendar-day.has-activity small { color: var(--hierarchy-text); font-variant-numeric: tabular-nums; }
+.activity-month-calendar .trainer-calendar-day.selected { border-color: var(--hierarchy-accent) !important; }
+.activity-month-calendar .trainer-calendar-day[aria-current="date"] > span { text-decoration: underline; text-underline-offset: 3px; }
+.activity-month-calendar .trainer-calendar-day:disabled { opacity: .48; }
+.activity-month-calendar + .activity-calendar-detail { margin-top: .7rem; }

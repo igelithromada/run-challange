@@ -48,7 +48,8 @@ test('calendar shows day details for every activity on that day and can navigate
   const render=()=>{index=0;return Calendar({runs:[{id:'1',km:2,minuty:10,timestamp:now},{id:'2',km:3,minuty:20,timestamp:now}]});};
   let tree=render(),cell=find(tree,n=>n.type==='button'&&n.props['aria-label']?.endsWith(', 5 km'));
   assert.ok(cell);cell.props.onClick();tree=render();assert.match(text(find(tree,n=>n.type==='output')),/5 km · 2 aktivit/);
-  find(tree,n=>n.props?.['aria-label']==='Předchozích 12 týdnů').props.onClick();tree=render();
-  assert.equal(find(tree,n=>n.props?.['aria-label']==='Dalších 12 týdnů').props.disabled,false);
-  find(tree,n=>n.props?.['aria-label']==='Dalších 12 týdnů').props.onClick();tree=render();assert.equal(find(tree,n=>n.props?.['aria-label']==='Dalších 12 týdnů').props.disabled,true);
+  find(tree,n=>n.props?.['aria-label']==='Předchozí měsíc').props.onClick();tree=render();
+  assert.equal(find(tree,n=>n.props?.['aria-label']==='Další měsíc').props.disabled,false);
+  assert.doesNotMatch(text(find(tree,n=>n.type==='output')),/5 km/);
+  find(tree,n=>n.props?.['aria-label']==='Další měsíc').props.onClick();tree=render();assert.equal(find(tree,n=>n.props?.['aria-label']==='Další měsíc').props.disabled,true);
 });

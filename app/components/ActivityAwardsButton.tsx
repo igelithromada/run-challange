@@ -17,7 +17,7 @@ function loadAwards(uid: string) {
     const earned = new Map<string, Award>();
     for (const type of ACTIVITY_TYPES) {
       for (const badge of activityAwards(runs, type)) {
-        if (!badge.count) continue;
+        if (!badge.repeatable || !badge.count) continue;
         const id = badge.id + ':' + badge.title;
         const previous = earned.get(id);
         earned.set(id, { ...badge, id, count: (previous?.count ?? 0) + badge.count });
@@ -63,8 +63,8 @@ function AwardsDialog({ uid, nickname, onClose }: { uid: string; nickname: strin
       </header>
       {error ? <p role="alert">Odznaky se nepodařilo načíst.</p> : !awards ? <p role="status">Načítám odznaky…</p>
         : awards.length ? <ul className="activity-awards-grid">
-          {awards.map(badge => <li key={badge.id} title={badge.title} aria-label={`${badge.title}, ${badge.count}×`}>
-            <span aria-hidden="true">{badge.icon}</span><strong aria-hidden="true">{badge.count}×</strong>
+          {awards.map(badge => <li key={badge.id}>
+            <span aria-hidden="true">{badge.icon}</span><div><strong>{badge.title}</strong><small>{badge.count}×</small></div>
           </li>)}
         </ul> : <p>Zatím žádné získané odznaky.</p>}
     </section>
@@ -75,9 +75,9 @@ export default function ActivityAwardsButton({ uid, nickname }: { uid: string; n
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
   return <>
-    <button ref={button} type="button" className="activity-social-button activity-awards-button" aria-haspopup="dialog"
+    <button ref={button} type="button" className="activity-awards-button" aria-haspopup="dialog"
       aria-label={`Odznaky uživatele ${nickname}`} title="Odznaky" onClick={() => setOpen(true)}>
-      <AwardIcon size={20} aria-hidden="true" />
+      <AwardIcon size={17} aria-hidden="true" />
     </button>
     {open && <AwardsDialog uid={uid} nickname={nickname} onClose={() => {
       setOpen(false);

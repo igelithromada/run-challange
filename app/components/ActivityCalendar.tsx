@@ -1,168 +1,90 @@
 "use client";
-import { activityAmount, activityUnit, isStrengthActivity } from "../lib/activity";
+
 import { useMemo, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { activityAmount, activityUnit } from "../lib/activity";
 import { parseActivityDate } from "../lib/runData";
 import type { ChartRun } from "../lib/progressChart";
-const key = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-const monday = (d: Date) => {
-  const next = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  next.setDate(next.getDate() - ((next.getDay() + 6) % 7));
-  return next;
-};
-export default function ActivityCalendar({ runs, activityType = "běh" }: { runs: ChartRun[]; activityType?:string }) {
-  const unit = activityUnit(activityType), strength = isStrengthActivity(activityType);
-  const [offset, setOffset] = useState(0),
-    [selected, setSelected] = useState(() => key(new Date()));
-  const today = new Date(),
-    last = monday(today);
-  last.setDate(last.getDate() + offset * 7);
-  const start = new Date(last);
-  start.setDate(start.getDate() - 77);
-  const days = Array.from({ length: 84 }, (_, i) => {
-    const d = new Date(start);
-    d.setDate(d.getDate() + i);
-    return d;
-  });
+
+const key = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+const formatDay = (date: Date) => date.toLocaleDateString("cs-CZ", {
+  weekday: "long", day: "numeric", month: "long", year: "numeric",
+});
+const formatAmount = (amount: number) => amount.toLocaleString("cs-CZ", { maximumFractionDigits: 2 });
+
+export default function ActivityCalendar({ runs, activityType = "běh" }: { runs: ChartRun[]; activityType?: string }) {
+  const unit = activityUnit(activityType);
+  const [offset, setOffset] = useState(0);
+  const [selected, setSelected] = useState(() => key(new Date()));
+  const today = new Date();
+  const todayKey = key(today);
+  const month = new Date(today.getFullYear(), today.getMonth() + offset, 1, 12);
+  const monthLabel = month.toLocaleDateString("cs-CZ", { month: "long", year: "numeric" });
+  const firstWeekday = (month.getDay() + 6) % 7;
+  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const weeks = Array.from({ length: Math.ceil((firstWeekday + daysInMonth) / 7) }, (_, week) =>
+    Array.from({ length: 7 }, (_, day) => week * 7 + day - firstWeekday + 1)
+  );
   const totals = useMemo(() => {
-    const result = new Map<string, { km: number; count: number }>();
+    const result = new Map<string, { amount: number; count: number }>();
     for (const run of runs) {
-      const d = parseActivityDate(run.timestamp),
-        km = activityAmount(run);
-      if (!d || d > new Date() || !Number.isFinite(km) || km <= 0) continue;
-      const date = key(d),
-        value = result.get(date) || { km: 0, count: 0 };
-      result.set(date, { km: value.km + km, count: value.count + 1 });
+      const date = parseActivityDate(run.timestamp);
+      const amount = activityAmount(run);
+      if (!date || date > new Date() || amount <= 0) continue;
+      const dateKey = key(date);
+      const previous = result.get(dateKey);
+      result.set(dateKey, { amount: (previous?.amount ?? 0) + amount, count: (previous?.count ?? 0) + 1 });
     }
     return result;
   }, [runs]);
-  const months: { label: string; start: number; span: number }[] = [];
-  for (let i = 0; i < 12; i++) {
-    const date = days[i * 7],
-      label = date.toLocaleDateString("cs-CZ", { month: "short" });
-    const prev = months.at(-1);
-    if (prev?.label === label) prev.span++;
-    else months.push({ label, start: i + 1, span: 1 });
+  const value = totals.get(selected);
+  const prefix = key(month).slice(0, 7);
+  const monthDays = [...totals].filter(([date]) => date.startsWith(prefix));
+  const total = monthDays.reduce((sum, [, day]) => sum + day.amount, 0);
+
+  function selectMonth(delta: number) {
+    const nextOffset = offset + delta;
+    setOffset(nextOffset);
+    const next = new Date(today.getFullYear(), today.getMonth() + nextOffset, 1, 12);
+    const firstActive = [...totals.keys()].filter(date => date.startsWith(key(next).slice(0, 7))).sort()[0];
+    setSelected(nextOffset === 0 ? todayKey : firstActive ?? key(next));
   }
-  const value = totals.get(selected) || { km: 0, count: 0 };
-  const visible = days.filter((d) => d <= today),
-    activeDays = visible.filter((d) => totals.has(key(d))).length,
-    totalKm = visible.reduce((s, d) => s + (totals.get(key(d))?.km || 0), 0);
-  const selectPeriod = (delta: number) => {
-    setOffset((v) => v + delta);
-    const d = new Date(last);
-    d.setDate(d.getDate() + delta * 7);
-    setSelected(key(d));
-  };
-  return (
-    <section
-      className="tile activity-calendar-card"
-      aria-labelledby="activity-calendar-title"
-    >
-      <div className="progress-section-title">
-        <CalendarDays />
-        <div>
-          <h2 id="activity-calendar-title">Kalendář aktivit</h2>
-          <p>Klepni na den pro vzdálenost a počet aktivit.</p>
-        </div>
-      </div>
-      <div className="activity-calendar-nav">
-        <button
-          type="button"
-          className="ui-icon-button"
-          aria-label="Předchozích 12 týdnů"
-          onClick={() => selectPeriod(-12)}
-        >
-          <ChevronLeft size={18} />
-        </button>
-        <span>
-          {start.toLocaleDateString("cs-CZ", {
-            day: "numeric",
-            month: "numeric",
-          })}{" "}
-          –{" "}
-          {visible
-            .at(-1)
-            ?.toLocaleDateString("cs-CZ", {
-              day: "numeric",
-              month: "numeric",
-              year: "numeric",
-            })}
-        </span>
-        <button
-          type="button"
-          className="ui-icon-button"
-          aria-label="Dalších 12 týdnů"
-          disabled={offset === 0}
-          onClick={() => selectPeriod(12)}
-        >
-          <ChevronRight size={18} />
-        </button>
-      </div>
-      <div className="activity-calendar-months" aria-hidden="true">
-        {months.map((m) => (
-          <span
-            key={m.start}
-            style={{ gridColumn: `${m.start} / span ${m.span}` }}
-          >
-            {m.label}
-          </span>
-        ))}
-      </div>
-      <div className="activity-calendar-body">
-        <div className="activity-calendar-labels" aria-hidden="true">
-          {["Po", "Út", "St", "Čt", "Pá", "So", "Ne"].map((d) => (
-            <span key={d}>{d}</span>
-          ))}
-        </div>
-        <div
-          className="activity-calendar-cells"
-          role="group"
-          aria-label="Aktivity za 12 týdnů"
-        >
-          {days.map((d) => {
-            const date = key(d),
-              km = totals.get(date)?.km || 0;
-            return (
-              <button
-                type="button"
-                key={date}
-                disabled={date > key(today)}
-                className={`calendar-heat-cell heat-${km === 0 ? 0 : km < (strength ? 30 : 3) ? 1 : km < (strength ? 70 : 7) ? 2 : km < (strength ? 120 : 12) ? 3 : 4}${date === key(today) ? " is-today" : ""}`}
-                aria-pressed={date === selected}
-                aria-label={`${d.toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}, ${km.toLocaleString("cs-CZ")} ${unit}`}
-                onClick={() => setSelected(date)}
-              />
-            );
-          })}
-        </div>
-      </div>
-      <div className="activity-calendar-scale">
-        <span>0 {unit}</span>
-        {[0, 1, 2, 3, 4].map((i) => (
-          <i key={i} className={`heat-${i}`} />
-        ))}
-        <span>{strength ? "120+" : "12+"} {unit}</span>
-      </div>
-      <output className="activity-calendar-detail">
-        <strong>
-          {new Date(selected + "T12:00:00").toLocaleDateString("cs-CZ", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}
-        </strong>
-        <span>
-          {value.km.toLocaleString("cs-CZ", { maximumFractionDigits: 2 })} {unit} ·{" "}
-          {value.count} aktivit
-        </span>
-      </output>
-      <p className="chart-hint">
-        Za zobrazené období: {activeDays} aktivních dní ·{" "}
-        {totalKm.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} {unit}
-      </p>
-    </section>
-  );
+
+  return <section className="tile activity-calendar-card" aria-labelledby="activity-calendar-title">
+    <div className="progress-section-title">
+      <CalendarDays/><div><h2 id="activity-calendar-title">Kalendář aktivit</h2></div>
+    </div>
+    <div className="trainer-month-nav activity-month-nav">
+      <button type="button" className="ui-icon-button" aria-label="Předchozí měsíc" onClick={() => selectMonth(-1)}><ChevronLeft size={18}/></button>
+      <strong aria-live="polite">{monthLabel}</strong>
+      <button type="button" className="ui-icon-button" aria-label="Další měsíc" disabled={offset === 0} onClick={() => selectMonth(1)}><ChevronRight size={18}/></button>
+    </div>
+    <div className="trainer-calendar-weekdays" aria-hidden="true">
+      {["Po", "Út", "St", "Čt", "Pá", "So", "Ne"].map(day => <span key={day}>{day}</span>)}
+    </div>
+    <div className="trainer-calendar activity-month-calendar" role="group" aria-label={`Aktivity za ${monthLabel}`}>
+      {weeks.map((week, index) => <div className="trainer-calendar-week" key={index}>
+        {week.map(day => {
+          if (day < 1 || day > daysInMonth) return <span key={day} aria-hidden="true"/>;
+          const date = new Date(month.getFullYear(), month.getMonth(), day, 12);
+          const dateKey = key(date);
+          const activity = totals.get(dateKey);
+          return <button key={day} type="button" disabled={dateKey > todayKey}
+            className={`trainer-calendar-day${dateKey === selected ? " selected" : ""}${activity ? " has-activity" : ""}`}
+            aria-current={dateKey === todayKey ? "date" : undefined}
+            aria-pressed={dateKey === selected}
+            aria-label={`${formatDay(date)}, ${formatAmount(activity?.amount ?? 0)} ${unit}`}
+            onClick={() => setSelected(dateKey)}>
+            <span>{day}</span>{activity && <small>{formatAmount(activity.amount)}</small>}
+          </button>;
+        })}
+      </div>)}
+    </div>
+    <output className="activity-calendar-detail">
+      <strong>{formatDay(new Date(selected + "T12:00:00"))}</strong>
+      <span>{formatAmount(value?.amount ?? 0)} {unit} · {value?.count ?? 0} aktivit</span>
+    </output>
+    <p className="chart-hint">Za měsíc: {monthDays.length} aktivních dní · {formatAmount(total)} {unit}</p>
+  </section>;
 }
