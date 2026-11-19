@@ -84,7 +84,7 @@ export default function UserPage() {
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} />
       <main className="container user-page-modern">
         <header className="user-page-header">
-          <div className="user-page-avatar">
+          <div className="activity-avatar" aria-hidden="true">
             {userInfo.avatarUrl ? <img src={cloudinaryImageUrl(userInfo.avatarUrl, 128)} alt="" loading="lazy" decoding="async" /> : profileName.charAt(0).toUpperCase()}
           </div>
           <div><span className="user-page-eyebrow">AKTIVITY UŽIVATELE</span><h1>{profileName}</h1><p>{filteredRuns.length} {filteredRuns.length === 1 ? "aktivita" : filteredRuns.length < 5 ? "aktivity" : "aktivit"} · {filteredRuns.reduce((sum, run) => sum + activityAmount(run), 0).toLocaleString("cs-CZ",{maximumFractionDigits:isStrengthActivity(selectedType)?0:1})} {activityUnit(selectedType)}</p></div>

@@ -30,8 +30,11 @@ export default function WeatherVisual({ type, size, className = "", night = fals
   const moon = <path className="wx-moon" d="M20.5 13.5A8.5 8.5 0 0 1 10.5 3a8.5 8.5 0 1 0 10 10.5Z" />;
   return <span className={`weather-symbol weather-symbol-${kind} ${className}`} style={{ width: size, height: size }} role="img" aria-label={label} title={label}>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-      {kind === "sun" ? (night ? moon : sun) : kind === "partly" ? <>
-        <g transform="translate(-.3,-.3) scale(.7)">{night ? moon : sun}</g>
+      {kind === "sun" ? (night ? moon : sun) : kind === "partly" && night ? <>
+        <path className="wx-moon" d="M7 2C3.7 2.2 1.7 4.7 2 7.5C2.4 11.9 7.6 13.6 10.7 10C6.4 10.1 4.4 5.6 7 2Z"/>
+        <path className="wx-cloud" d="M9 21C4.7 21 4.4 15 8.9 14.6C10 14.5 10.7 14.6 11.1 14.6C12.2 9.1 18.6 9 19.5 14.4C23.7 14.9 23.5 21 19.1 21Z"/>
+      </> : kind === "partly" ? <>
+        <g transform="translate(-.3,-.3) scale(.7)">{sun}</g>
         <path className="wx-cloud" d="M9 21C6.8 21 5 19.2 5 17C5 15 6.4 13.4 8.4 13.1C9.1 10.5 11.2 9 13.7 9C16.4 9 18.5 10.8 19 13.1C21.2 13.5 22.5 15.2 22.5 17.1C22.5 19.3 20.7 21 18.5 21Z" />
       </> : <>
         <path className="wx-cloud" d={cloud} />

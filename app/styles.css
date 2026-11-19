@@ -1542,11 +1542,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   padding:1rem; border:1px solid var(--ui-border); border-radius:20px;
   background:rgba(10,21,31,.34); box-shadow:var(--ui-shadow);
 }
-.user-page-avatar {
-  width:58px; height:58px; flex:0 0 58px; display:grid; place-items:center;
-  overflow:hidden; border-radius:17px; background:rgba(255,255,255,.12); font-size:1.35rem; font-weight:800;
-}
-.user-page-avatar img { width:100%; height:100%; object-fit:cover; }
+.user-page-header > .activity-avatar { flex:none; display:grid; place-items:center; }
+.user-page-header > div:last-child { min-width:0; overflow-wrap:anywhere; }
 .user-page-header h1 { margin:.1rem 0; font-size:clamp(1.35rem,6vw,1.8rem); }
 .user-page-header p { margin:.2rem 0 0; color:var(--ui-muted); font-size:.8rem; }
 .user-page-eyebrow { font-size:.62rem; letter-spacing:.12em; font-weight:800; color:var(--ui-muted); }
