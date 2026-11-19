@@ -4,6 +4,7 @@ import { activityLabel, isStrengthActivity } from "../lib/activity";
 import { formatCompactActivityTime, formatMetricNumber, numberValue } from "../lib/activityMetrics";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { ActivityTypeIcon } from "./ActivityTypeSelector";
+import { RecordMetrics } from "./RecordCard";
 import Metric from "./Metric";
 
 export function ActivityCardHeading({ nickname, avatarUrl, activityType, date, badge, teamName, teamAvatarUrl, onUserClick }: {
@@ -62,12 +63,12 @@ export function ActivityCardStats({ activityType, run }: {
   return <>
     {run.description?.trim() && <div className="activity-description">{run.description.trim()}</div>}
 
-    <div data-metric-layout="row" className={strength ? "activity-metrics strength-metrics" : "activity-metrics"}>
+    <RecordMetrics>
       {strength
         ? <Metric icon={<ActivityTypeIcon type={activityType}/>} label="Opakování" tone="repetitions" value={formatMetricNumber(numberValue(run.repetitions), 0)}/>
         : <Metric label="Vzdálenost" tone="distance" value={formatMetricNumber(numberValue(run.km))} unit="km"/>}
       {(!strength || Number(run.minuty) > 0) && <Metric label="Čas" tone="time" value={formatCompactActivityTime(Number(run.minuty))}/>}
       {!strength && <Metric label="Tempo" tone="pace" value={formatCompactActivityTime(Number(run.tempo))} unit="/km"/>}
-    </div>
+    </RecordMetrics>
   </>;
 }

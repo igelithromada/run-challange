@@ -2,6 +2,7 @@
 import { sharedChallenge, quantityChallenge, challengeUnit } from "../lib/challengeMeasurement";
 import { activityLabel } from "../lib/activity";
 
+import RecordCard, { RecordMetrics } from "./RecordCard";
 import Metric from "./Metric";
 import { RecordCardHeading } from "./ActivityCardContent";
 import { formatMetricNumber } from "../lib/activityMetrics";
@@ -24,7 +25,7 @@ export default function ChallengeSummaryCard({ challenge, joined, authorName, de
   const total = Number(challenge.sharedProgress || 0);
   const state = challenge.state === "active" ? "Probíhá" : challenge.state === "planned" ? "Plánovaná" : "Dokončená";
   const period = `${dateLabel(challenge.startDate, true)} – ${dateLabel(challenge.endDate, true)}`;
-  const content = <>
+  return <RecordCard className="record-summary-card">
     <RecordCardHeading title={<Heading>{challenge.name}</Heading>}
       avatar={<span className="activity-avatar" aria-hidden="true">
         {challenge.avatarUrl ? <img src={cloudinaryImageUrl(challenge.avatarUrl, 96)} alt="" loading="lazy" decoding="async"/> : <Target size={22}/>}
@@ -34,10 +35,10 @@ export default function ChallengeSummaryCard({ challenge, joined, authorName, de
       <small className="challenge-activity-label activity-kind-label"><ActivityTypeIcon type={challenge.activityType} size={16}/>{activityLabel(challenge.activityType)}</small>
     </RecordCardHeading>
     {challenge.description && <div className={detail ? "activity-description" : "activity-description challenge-summary-description"}>{challenge.description}</div>}
-    {detail && <div data-metric-layout="summary" className="app-metric-grid challenge-summary-metrics">
+    {detail && <RecordMetrics>
       <Metric icon={<Target size={19}/>} label="Cíl" tone="target" value={formatMetricNumber(goal, distance ? 1 : 0)} unit={unit}/>
       <Metric icon={<Users size={19}/>} label="Účastníci" tone="count" value={Number(challenge.participantCount || 0)}/>
-    </div>}
+    </RecordMetrics>}
     <p className="challenge-period-line"><CalendarDays size={17} aria-hidden="true"/><span>{period}</span></p>
     {detail && sharedChallenge(challenge.kind) && <div className="challenge-shared-progress">
       <span>Společně {total.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} z {goal.toLocaleString("cs-CZ")} {unit}</span>
@@ -45,10 +46,7 @@ export default function ChallengeSummaryCard({ challenge, joined, authorName, de
     </div>}
     <footer className="activity-card-actions record-summary-footer">
       <span>{joined ? "Účastníš se · " : ""}{kindLabel(challenge.kind)}</span>
-      {detail ? (authorName && <span>Autor: {authorName}</span>) : <span className="record-detail-link">Detail výzvy <ChevronRight size={16} aria-hidden="true" /></span>}
+      {detail ? (authorName && <span>Autor: {authorName}</span>) : <Link href={`/challenges/${encodeURIComponent(challenge.id)}`} className="record-detail-link" aria-label={`Detail výzvy ${challenge.name}`}>Detail výzvy <ChevronRight size={16} aria-hidden="true" /></Link>}
     </footer>
-  </>;
-  return <article className={`tile activity-card activity-card-modern record-summary-card challenge-summary-card${detail ? " challenge-summary-detail" : ""}`}>
-    {detail ? content : <Link href={`/challenges/${encodeURIComponent(challenge.id)}`} className="record-summary-link">{content}</Link>}
-  </article>;
+  </RecordCard>;
 }

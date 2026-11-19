@@ -143,7 +143,6 @@ html[data-theme="white"] {
 .container .activity-card-modern .activity-description {margin:.45rem 0 !important;padding:.4rem 0 !important;}
 .container .activity-card-modern .activity-gallery {margin-top:.35rem !important;}
 .container .myruns-page .activity-summary-grid {grid-template-columns:repeat(2,minmax(0,1fr)) !important;width:100%;box-sizing:border-box;padding:.45rem 0 !important;gap:0 !important;}
-.container .results-person,.container .results-overview {background:var(--hierarchy-card) !important;border:1px solid var(--hierarchy-line) !important;border-radius:18px !important;padding:.8rem !important;box-shadow:none !important;}
 .container .results-person-open {display:flex !important;align-items:center;gap:.65rem;padding:0 !important;background:transparent !important;width:100%;}
 .container .results-person-name {flex:1;text-align:left;min-width:0;}
 .container .results-person.is-mine {border-color:var(--hierarchy-accent) !important;}
@@ -210,7 +209,7 @@ html body :is(.container,.activity-awards-dialog) .activity-card-modern > .activ
 html body :is(.container,.activity-awards-dialog) .activity-card-modern > .activity-metrics {
   margin:0 !important;padding:.27rem .5rem !important;
 }
-html body .container .activity-metrics.strength-metrics > .app-metric::before {
+html body .container .activity-metrics > .app-metric::before {
   top:.3rem;bottom:.3rem;
 }
 html body .container .activity-card-modern > .activity-social-actions {
@@ -352,14 +351,11 @@ html body .container .record-card-heading {grid-template-columns:auto minmax(0,1
 .record-summary-card .activity-person-name :is(h1,h3) {
   min-width:0;margin:0;font:inherit;overflow-wrap:anywhere;
 }
-.record-summary-link {display:grid;gap:.35rem;min-width:0;color:inherit;text-decoration:none;}
-html body .container .record-summary-link > .activity-description {
-  margin:0 !important;padding:.55rem .5rem 0 !important;
-  border:0 !important;border-top:1px solid var(--hierarchy-line) !important;
-}
-.record-summary-link > .activity-description {
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-}
+.record-summary-card { position:relative; }
+.record-summary-card .record-detail-link { color:inherit; text-decoration:none; }
+.record-summary-card .record-detail-link::after { content:""; position:absolute; inset:0; }
+.record-summary-card .team-action-button { position:relative; z-index:1; }
+.record-summary-card .challenge-summary-description { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .container .record-summary-card .record-summary-footer {
   justify-content:space-between;padding:.45rem .5rem 0;
   color:var(--hierarchy-muted);font-size:.75rem;
@@ -445,3 +441,7 @@ html body .container .record-summary-link > .activity-description {
   .run-weather-home .run-weather-heading {min-block-size:2.4em;}
   .run-weather-home .run-weather-copy p {min-block-size:3lh;}
 }
+
+.results-person > details, .results-overview > details { align-self:stretch; min-width:0; }
+
+.record-summary-card > [data-metric-layout="summary"] { align-self:stretch; border-block-start:1px solid var(--hierarchy-line) !important; }

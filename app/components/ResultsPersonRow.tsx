@@ -1,10 +1,11 @@
 "use client";
 import { isStrengthActivity } from "../lib/activity";
+import RecordCard, { RecordMetrics } from "./RecordCard";
 import Metric from "./Metric";
 import { ActivityTypeIcon } from "./ActivityTypeSelector";
 import { MapPin, Gauge, ListChecks, Award, Trophy } from "lucide-react";
 import { formatCompactActivityTime, formatMetricNumber } from "../lib/activityMetrics";
-import { formatResultDuration, type ResultPerson } from "../lib/results";
+import { type ResultPerson } from "../lib/results";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 export default function ResultsPersonRow({
   person,
@@ -29,8 +30,8 @@ export default function ResultsPersonRow({
   const unit = metric === "badges" ? "×" : metric === "tempo" ? person.pace > 0 ? "/km" : undefined
     : strength ? "opakování" : "km";
   return (
-    <article
-      className={`tile activity-card-modern results-person${winner ? ` is-winner rank-${person.rank}` : ""}${mine ? " is-mine" : ""}`}
+    <RecordCard
+      className={`results-person${winner ? ` is-winner rank-${person.rank}` : ""}${mine ? " is-mine" : ""}`}
     >
       <button
         type="button"
@@ -66,27 +67,21 @@ export default function ResultsPersonRow({
           </small>
         </span>
       </button>
-      <div data-metric-layout="row" className="app-metric-grid result-measurements">
+      <RecordMetrics>
         <Metric icon={metric === "badges" ? <Award/> : metric === "tempo" ? <Gauge/> : strength ? <ActivityTypeIcon type={type} size={19}/> : <MapPin/>} label={metric === "badges" ? "Odznaky" : metric === "tempo" ? "Tempo" : strength ? "Opakování" : "Vzdálenost"} tone={metric === "badges" ? "award" : metric === "tempo" ? "pace" : strength ? "repetitions" : "distance"} value={value} unit={unit}/>
         <Metric icon={<ListChecks/>} label="Aktivity" tone="count" value={person.count}/>
-        <Metric label="Čas" tone="time" value={strength && person.minutes === 0 ? "—" : formatResultDuration(person.minutes)}/>
-      </div>
+        <Metric label="Čas" tone="time" value={strength && person.minutes === 0 ? "—" : formatCompactActivityTime(person.minutes)}/>
+      </RecordMetrics>
       <details className="results-person-details">
         <summary>{metric === "badges" ? "Odznaky" : "Podrobnosti"}</summary>
-        <div data-metric-layout="summary" className="app-metric-grid">
+        <RecordMetrics layout="summary">
           <Metric icon={strength ? <ActivityTypeIcon type={type} size={19}/> : <MapPin/>} label={strength ? "Celkem opakování" : "Celkem km"} tone={strength ? "repetitions" : "distance"} value={strength ? formatMetricNumber(person.repetitions, 0) : formatMetricNumber(person.km)} unit={strength ? undefined : "km"}/>
           {!strength && <Metric label="Průměrné tempo" tone="pace" value={person.pace > 0 ? formatCompactActivityTime(person.pace) : "—"} unit={person.pace > 0 ? "/km" : undefined}/>}
-        </div>
-        <dl>
-          {metric === "badges" &&
-            person.awards.map((award) => (
-              <div key={award.id}>
-                <dt>{award.title}</dt>
-                <dd>{award.count}×</dd>
-              </div>
-            ))}
-        </dl>
+        </RecordMetrics>
+        {metric === "badges" && <RecordMetrics layout="summary">
+          {person.awards.map(award => <Metric key={award.id} icon={<Award/>} tone="award" label={award.title} value={award.count} unit="×"/>)}
+        </RecordMetrics>}
       </details>
-    </article>
+    </RecordCard>
   );
 }

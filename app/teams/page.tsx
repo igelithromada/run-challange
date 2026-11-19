@@ -1,4 +1,5 @@
 "use client";
+import RecordCard from "../components/RecordCard";
 import TeamCardContent from "../components/TeamCardContent";
 import Link from "next/link";
 import CoverField, { useCoverDraft } from "../components/CoverField";
@@ -196,19 +197,17 @@ export default function TeamsPage() {
               {pageTeams.map(team => {
                 const joined = myTeamIds.includes(team.id);
                 return (
-                  <article key={team.id} className="tile activity-card activity-card-modern record-summary-card">
-                    <Link href={`/teams/${encodeURIComponent(team.id)}`} className="record-summary-link">
+                  <RecordCard key={team.id} className="record-summary-card">
                       <TeamCardContent team={team} joined={joined}/>
                       <footer className="activity-card-actions record-summary-footer">
-                        <span className="record-detail-link">Detail týmu <ChevronRight size={16} aria-hidden="true"/></span>
+                        <Link href={`/teams/${encodeURIComponent(team.id)}`} className="record-detail-link" aria-label={`Detail týmu ${team.name}`}>Detail týmu <ChevronRight size={16} aria-hidden="true"/></Link>
                       </footer>
-                    </Link>
                     {!joined && (
                       <button className="team-action-button" disabled={joiningId !== null} onClick={() => void joinTeam(team.id)}>
                         {joiningId === team.id ? "Přihlašuji…" : "Přidat se k týmu"}
                       </button>
                     )}
-                  </article>
+                  </RecordCard>
                 );
               })}
 

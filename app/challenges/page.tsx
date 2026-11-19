@@ -6,7 +6,7 @@ import CoverField, { useCoverDraft } from "../components/CoverField";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Plus, Trophy, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Target, X } from "lucide-react";
 import { auth } from "../lib/firebase";
 import ChallengeSummaryCard from "../components/ChallengeSummaryCard";
 import Navbar from "../components/Navbar";
@@ -189,7 +189,7 @@ export default function ChallengesPage() {
           </div>
         ) : (
           <div className="tile teams-empty">
-            <Trophy size={30} />
+            <Target size={30} />
             <strong>{selectedTab.empty}</strong>
             <p>Zkus jiný měsíc nebo typ aktivity.</p>
           </div>

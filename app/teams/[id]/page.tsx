@@ -1,6 +1,7 @@
 "use client";
 import FormField from "../../components/FormField";
 import Metric from "../../components/Metric";
+import RecordCard, { RecordMetrics } from "../../components/RecordCard";
 import TeamCardContent from "../../components/TeamCardContent";
 import CoverField, { useCoverDraft } from "../../components/CoverField";
 
@@ -171,19 +172,15 @@ export default function TeamDetailPage() {
       <main className="container team-detail-page">
         <button className="ui-icon-button team-back-button" type="button" onClick={() => router.push("/teams")} aria-label="Zpět na týmy" title="Zpět na týmy"><ArrowLeft size={19} /></button>
 
-        <section className="tile activity-card activity-card-modern record-summary-card">
+        <RecordCard className="record-summary-card">
           <TeamCardContent team={team} detail/>
-        </section>
-
-        <section className="tile team-stats-card">
-          <div className="progress-section-title"><Users /><div><h2>Statistiky týmu</h2><p>{team.memberCount || 0} {(team.memberCount || 0) === 1 ? "člen" : "členů"}</p></div></div>
-          <div data-metric-layout="summary" className="team-stats-rows">
+          <RecordMetrics layout="summary">
             <Metric icon={<ActivityTypeIcon type="běh" size={20}/>} label="Běh" tone="distance" value={Number(stats.runningKm || 0).toLocaleString("cs-CZ")} unit="km" detail={`${Number(stats.runningActivities || 0)} aktivit`}/>
             <Metric icon={<ActivityTypeIcon type="chůze" size={20}/>} label="Chůze" tone="distance" value={Number(stats.walkingKm || 0).toLocaleString("cs-CZ")} unit="km" detail={`${Number(stats.walkingActivities || 0)} aktivit`}/>
             <Metric icon={<ActivityTypeIcon type="dřepy" size={20}/>} label="Dřepy" tone="repetitions" value={Number(stats.squatRepetitions || 0).toLocaleString("cs-CZ")} unit="opakování" detail={`${Number(stats.squatActivities || 0)} aktivit`}/>
             <Metric icon={<ActivityTypeIcon type="kliky" size={20}/>} label="Kliky" tone="repetitions" value={Number(stats.pushupRepetitions || 0).toLocaleString("cs-CZ")} unit="opakování" detail={`${Number(stats.pushupActivities || 0)} aktivit`}/>
-          </div>
-        </section>
+          </RecordMetrics>
+        </RecordCard>
 
         {isManager && (
           <section className="tile team-settings-card">

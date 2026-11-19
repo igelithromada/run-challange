@@ -1,5 +1,6 @@
 "use client";
 
+import RecordCard from "./RecordCard";
 import OverlayDialog from "./OverlayDialog";
 import { useEffect, useRef, useState } from "react";
 import { ActivityCardHeading, ActivityCardStats } from "./ActivityCardContent";
@@ -249,7 +250,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
 
   return (
     <>
-      <article ref={cardRef} id={`run-${run.id}`} className="tile list-tile activity-card activity-card-modern">
+      <RecordCard ref={cardRef} id={`run-${run.id}`}>
         <ActivityCardHeading nickname={resolvedNickname} avatarUrl={resolvedAvatarUrl} activityType={activityType} date={date}
           onUserClick={onUserClick} teamName={teamName} teamAvatarUrl={teamAvatarUrl}
           badge={run.uid && <ActivityAwardsButton key={run.uid} uid={run.uid} nickname={resolvedNickname} />}/>
@@ -279,7 +280,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
           {onEdit && <button type="button" className="activity-manage-button" onClick={onEdit} aria-label="Upravit záznam" title="Upravit záznam"><Pencil size={18} aria-hidden="true" /></button>}
           {onDelete && <button type="button" className="activity-manage-button activity-delete-button" onClick={onDelete} aria-label="Smazat záznam" title="Smazat záznam"><Trash2 size={18} aria-hidden="true" /></button>}
         </footer>
-      </article>
+      </RecordCard>
 
       {socialOpen && (
         <OverlayDialog className="social-modal-backdrop" label={socialOpen === "likes" ? "To se mi líbí" : "Komentáře"} onDismiss={() => setSocialOpen(null)}>

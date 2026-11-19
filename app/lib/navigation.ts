@@ -6,6 +6,7 @@ import {
   Map,
   ShieldCheck,
   SlidersHorizontal,
+  Target,
   Trophy,
   TrendingUp,
   Users,
@@ -27,7 +28,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   { id: "trainer", label: "Tréninkový plán", route: "/trainer", group: "activity", Icon: Dumbbell },
 
   { id: "teams", label: "Týmy", route: "/teams", group: "community", Icon: Users },
-  { id: "challenges", label: "Výzvy", route: "/challenges", group: "community", Icon: Trophy },
+  { id: "challenges", label: "Výzvy", route: "/challenges", group: "community", Icon: Target },
 
   { id: "statistics", label: "Výsledky", route: "/statistics", group: "community", Icon: Trophy },
   { id: "weather", label: "Počasí pro běh", route: "/weather", group: "tools", Icon: CloudSun },
