@@ -109,7 +109,7 @@ export default function TrainingGoals({
       aria-labelledby="training-goals-title"
     >
       <div className="progress-section-title">
-        <Target />
+        <Target className="training-goals-icon" aria-hidden="true"/>
         <div>
           <h2 id="training-goals-title">Cíle a plnění</h2>
           <p>
@@ -151,7 +151,7 @@ export default function TrainingGoals({
           </button>
         </div>
       </details>
-      <div className="progress-goal-bars app-metric-grid">
+      <div className="progress-goal-bars app-metric-grid metric-group-ruled">
         {[
           { name: "Tento týden", km: weekKm, goal: saved.weekly },
           { name: "Tento měsíc", km: monthKm, goal: saved.monthly },

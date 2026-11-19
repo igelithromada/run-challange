@@ -667,21 +667,13 @@ html[data-theme="light"] .notification-item.is-unread { background: #edf7fa; }
 .team-activity-stat .activity-type-icon, .challenge-activity-label .activity-type-icon { width: 18px; height: 18px; flex: 0 0 18px; }
 .team-stats-rows .activity-type-icon { width: 20px; height: 20px; flex: 0 0 20px; vertical-align: middle; }
 .challenge-summary-card { display: block !important; min-width: 0; }
-.challenge-summary-link { display: grid; gap: .6rem; width: 100%; color: inherit; text-decoration: none; min-width: 0; }
 .challenge-summary-card.challenge-summary-detail { display: grid !important; gap: .6rem !important; }
-.challenge-summary-card .activity-card-top { grid-template-columns: 42px minmax(0, 1fr) auto; gap: .5rem; }
-.challenge-summary-card .activity-avatar { width: 42px; height: 42px; min-width: 42px; display: grid; place-items: center; }
-.challenge-summary-card .activity-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .challenge-summary-card .activity-person h1, .challenge-summary-card .activity-person h3 { margin: 0; font-size: 1rem; line-height: 1.3; overflow-wrap: anywhere; }
-.challenge-summary-card .challenge-state-label { grid-column: auto; grid-row: auto; justify-self: end; font-size: .65rem; white-space: nowrap; }
 .challenge-summary-card .challenge-summary-description { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .challenge-summary-card .activity-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; }
 .challenge-summary-card .activity-metrics > div { min-height: 76px !important; padding: .45rem .3rem; align-items: center; text-align: center; }
 .challenge-summary-card .activity-metrics strong { max-width: 100%; overflow-wrap: anywhere; white-space: normal; }
 .challenge-summary-card .activity-metrics .challenge-period { font-size: .76rem; line-height: 1.25; }
-.challenge-summary-footer { justify-content: space-between; color: var(--ui-muted); font-size: .72rem; line-height: 1.35; }
-.challenge-summary-footer > span { min-width: 0; overflow-wrap: anywhere; }
-.challenge-open-hint { display: inline-flex; align-items: center; gap: .15rem; white-space: nowrap; }
 .challenge-shared-progress { display: grid; gap: .35rem; font-size: .74rem; color: var(--ui-muted); }
 .challenge-shared-progress progress { width: 100%; height: 6px; accent-color: var(--theme-accent, #36D1DC); }
 .challenge-summary-card:focus-within { outline: 2px solid var(--theme-accent, #36D1DC); outline-offset: 3px; }
@@ -694,7 +686,9 @@ html[data-theme="light"] .notification-item.is-unread { background: #edf7fa; }
   gap: .65rem !important;
   padding: .75rem !important;
 }
-.run-weather-symbol { display: grid; place-items: center; width: 48px; height: 48px; }
+.run-weather-symbol { display: grid; justify-items: center; align-self: start; gap: .15rem; width: 48px; }
+.run-weather-icon { display: grid; place-items: center; width: 48px; height: 48px; }
+.run-weather-temperature { color: var(--hierarchy-text); font-size: .92rem; white-space: nowrap; }
 .run-weather-copy { min-width: 0; }
 .run-weather-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: .4rem; }
 .run-weather-heading strong { font-size: .88rem; line-height: 1.35; }
@@ -702,11 +696,6 @@ html[data-theme="light"] .notification-item.is-unread { background: #edf7fa; }
 .run-weather-copy p { margin: .2rem 0 .35rem !important; font-size: .8rem; line-height: 1.45; }
 .run-weather-meta { display: flex; flex-wrap: wrap; gap: .15rem .65rem; color: var(--ui-muted); font-size: .72rem; line-height: 1.4; }
 .run-weather-compact .weather-visual-wrap { flex-shrink: 0; }
-@media (max-width: 360px) {
-  .challenge-summary-card .activity-card-top { grid-template-columns: 38px minmax(0, 1fr); }
-  .challenge-summary-card .activity-avatar { grid-column: 1; grid-row: 1 / span 2; width: 38px; height: 38px; min-width: 38px; }
-  .challenge-summary-card .challenge-state-label { grid-column: 2; justify-self: start; }
-}
 
 
 /* Navigace: všechny položky mají stejný rozměr napříč skupinami. */

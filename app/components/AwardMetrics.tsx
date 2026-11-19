@@ -26,14 +26,16 @@ export default function AwardMetrics({ awards, label, scroll = false }: {
   label: string;
   scroll?: boolean;
 }) {
-  return <div className={scroll ? "award-metrics award-metrics-scroll" : "award-metrics app-metric-grid"}
-    role="group" aria-label={label} tabIndex={scroll ? 0 : undefined}>
-    {awards.map(award => {
-      const Icon = awardIcons[award.id as keyof typeof awardIcons] ?? Trophy;
-      return <Metric key={award.id} className={award.count ? "" : "is-locked"}
-        icon={<Icon/>} tone={award.id === "night" ? "time" : "award"} label={award.title}
-        value={award.repeatable ? formatMetricNumber(award.count, 0) : award.count ? "Splněno" : "Nesplněno"}
-        unit={award.repeatable ? "×" : undefined} detail={award.detail}/>;
-    })}
+  return <div className="metric-group-ruled">
+    <div className={scroll ? "award-metrics award-metrics-scroll" : "award-metrics app-metric-grid"}
+      role="group" aria-label={label} tabIndex={scroll ? 0 : undefined}>
+      {awards.map(award => {
+        const Icon = awardIcons[award.id as keyof typeof awardIcons] ?? Trophy;
+        return <Metric key={award.id} className={award.count ? "" : "is-locked"}
+          icon={<Icon/>} tone={award.id === "night" ? "time" : "award"} label={award.title}
+          value={award.repeatable ? formatMetricNumber(award.count, 0) : award.count ? "Splněno" : "Nesplněno"}
+          unit={award.repeatable ? "×" : undefined} detail={award.detail}/>;
+      })}
+    </div>
   </div>;
 }

@@ -134,7 +134,7 @@ export function activityAwards(
     {
       id: "morning",
       title: "Ranní ptáče",
-      detail: "Každá aktivita od 5:00 do 7:59 · český čas",
+      detail: "5:00–7:59",
       icon: "🐦",
       count: morning,
       repeatable: true,
@@ -142,7 +142,7 @@ export function activityAwards(
     {
       id: "night",
       title: strength ? "Noční trénink" : type === "běh" ? "Noční běh" : "Noční chůze",
-      detail: "Každá aktivita od 21:00 do 4:59 · český čas",
+      detail: "21:00–4:59",
       icon: "🌙",
       count: night,
       repeatable: true,

@@ -258,7 +258,7 @@ export default function TrainerPage(){
    <TrainingGoals key={uid+type} uid={uid} type={type} runs={runs} />
 
    <section className="tile trainer-plan-card">
-    <div className="progress-section-title"><TrendingUp/><div><h2>Plán na měsíc</h2><p>{monthTitle(month)} · {type}</p></div></div>
+    <div className="progress-section-title"><TrendingUp className="training-plan-icon" aria-hidden="true"/><div><h2>Plán na měsíc</h2><p>{monthTitle(month)} · {type}</p></div></div>
 
     <div className="trainer-month-nav">
       <button className="ui-icon-button" type="button" disabled={saving} onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()-1,1))} aria-label="Předchozí měsíc"><ChevronLeft size={19}/></button>

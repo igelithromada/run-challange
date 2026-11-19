@@ -1,5 +1,6 @@
 "use client";
-import Metric from "../components/Metric";
+import TeamCardContent from "../components/TeamCardContent";
+import Link from "next/link";
 import { preparePhoto } from "../lib/preparePhoto";
 
 import { useEffect, useState } from "react";
@@ -7,11 +8,9 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Plus, Users, X } from "lucide-react";
 import { auth } from "../lib/firebase";
-import { ActivityTypeIcon } from "../components/ActivityTypeSelector";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
-import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { showAppToast } from "../components/AppToast";
 import FormField from "../components/FormField";
 import type { TeamData } from "../types";
@@ -247,34 +246,16 @@ export default function TeamsPage() {
             <section className="teams-grid">
               {pageTeams.map(team => {
                 const joined = myTeamIds.includes(team.id);
-                const stats = team.stats || { runningKm: 0, runningActivities: 0, walkingKm: 0, walkingActivities: 0 };
                 return (
-                  <article key={team.id} className={`tile team-card ${joined ? "team-card-joined" : ""}`} onClick={() => router.push("/teams/" + team.id)}>
-                    <div className="team-card-main">
-                      <div className="team-avatar">
-                        {team.avatarUrl ? <img src={cloudinaryImageUrl(team.avatarUrl, 96)} alt="" loading="lazy" decoding="async" /> : <Users size={22} />}
-                      </div>
-                      <div className="team-card-info">
-                        <div className="team-card-title-row">
-                          <h3>{team.name}</h3>
-                          {joined && <span className="team-member-label">Jsi členem</span>}
-                        </div>
-                        {team.description && <p className="team-card-description">{team.description}</p>}
-                        <p className="team-card-meta">{team.memberCount || 0} {(team.memberCount || 0) === 1 ? "člen" : "členů"}</p>
-                        <div className="team-card-stats team-card-stats-compact">
-                          {([
-                            {type:"běh", amount:stats.runningKm, unit:"km"},
-                            {type:"chůze", amount:stats.walkingKm, unit:"km"},
-                            {type:"dřepy", amount:stats.squatRepetitions, unit:"×"},
-                            {type:"kliky", amount:stats.pushupRepetitions, unit:"×"},
-                          ] as const).filter(item=>Number(item.amount)>0).map(item=><Metric key={item.type} icon={<ActivityTypeIcon type={item.type} size={19}/>} label={item.type} tone={item.unit === "km" ? "distance" : "repetitions"} value={Number(item.amount).toLocaleString("cs-CZ", { maximumFractionDigits: item.unit === "km" ? 2 : 0 })} unit={item.unit}/>)}
-                          {![stats.runningKm,stats.walkingKm,stats.squatRepetitions,stats.pushupRepetitions].some(value=>Number(value)>0)&&<small>Zatím bez aktivit</small>}
-                        </div>
-                      </div>
-                      <ChevronRight className="team-card-chevron" size={20} />
-                    </div>
+                  <article key={team.id} className="tile activity-card activity-card-modern record-summary-card">
+                    <Link href={`/teams/${encodeURIComponent(team.id)}`} className="record-summary-link">
+                      <TeamCardContent team={team} joined={joined}/>
+                      <footer className="activity-card-actions record-summary-footer">
+                        <span className="record-detail-link">Detail týmu <ChevronRight size={16} aria-hidden="true"/></span>
+                      </footer>
+                    </Link>
                     {!joined && (
-                      <button className="team-action-button" onClick={event => { event.stopPropagation(); void joinTeam(team.id); }}>
+                      <button className="team-action-button" onClick={() => void joinTeam(team.id)}>
                         Přidat se k týmu
                       </button>
                     )}

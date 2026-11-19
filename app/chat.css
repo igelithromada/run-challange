@@ -26,7 +26,7 @@ body:has(>.floating-chat) .app-content-layer{padding-bottom:calc(80px + env(safe
   padding: .65rem !important;
 }
 .chat-record .activity-card-top {
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: 34px minmax(0, 1fr);
   gap: .4rem;
 }
 .chat-record .activity-card-top .activity-avatar {
@@ -87,8 +87,6 @@ html body .container .chat-record > .activity-metrics:last-child::after { conten
   outline-offset: -2px;
 }
 @media (max-width: 380px) {
-  .chat-record .activity-card-top { grid-template-columns: 34px minmax(0, 1fr); }
-  .chat-record .activity-record-byline { grid-column: 2; justify-items: start; }
   html body .container .chat-record .app-metric-heading { flex-wrap: wrap; }
 }
 

@@ -69,14 +69,17 @@ export default function RunWeatherRecommendation({ linkToWeather = true, type }:
   const validWeather = Boolean(current && advice.temperature !== null && current.weatherCondition?.type);
   const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Prague", hour: "2-digit", hourCycle: "h23" }).format(new Date()));
   const content = <section className={`run-weather-recommendation run-weather-compact run-weather-${strength ? "neutral" : advice.tone}${type ? " run-weather-home" : ""}`} aria-live="polite">
-    <span className="run-weather-symbol" aria-hidden="true">
-      {validWeather ? <WeatherVisual type={current?.weatherCondition?.type} size={48} night={hour < 6 || hour >= 20} /> : <CloudSun size={32} />}
+    <span className="run-weather-symbol">
+      <span className="run-weather-icon" aria-hidden="true">
+        {validWeather ? <WeatherVisual type={current?.weatherCondition?.type} size={48} night={hour < 6 || hour >= 20} /> : <CloudSun size={32} />}
+      </span>
+      {validWeather && <strong className="run-weather-temperature">{Math.round(advice.temperature!)} °C</strong>}
     </span>
     <div className="run-weather-copy">
       <div className="run-weather-heading"><strong>{title}</strong>{linkToWeather && <ChevronRight size={17} aria-hidden="true" />}</div>
       <p>{text}</p>
       {validWeather && <div className="run-weather-meta">
-        <span>{Math.round(advice.temperature!)} °C · {current?.weatherCondition?.description?.text || weatherDescription(current?.weatherCondition?.type)}</span>
+        <span>{current?.weatherCondition?.description?.text || weatherDescription(current?.weatherCondition?.type)}</span>
         <span>Vítr {Math.round(advice.wind)} km/h</span>
         {advice.rainChance > 0 && <span>Riziko srážek {Math.round(advice.rainChance)} %</span>}
       </div>}

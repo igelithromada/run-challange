@@ -1,5 +1,6 @@
 "use client";
 import Metric from "../../components/Metric";
+import TeamCardContent from "../../components/TeamCardContent";
 import { preparePhoto } from "../../lib/preparePhoto";
 
 import React, { useEffect, useState } from "react";
@@ -191,16 +192,9 @@ export default function TeamDetailPage() {
       <main className="container team-detail-page">
         <button className="ui-icon-button team-back-button" type="button" onClick={() => router.push("/teams")} aria-label="Zpět na týmy" title="Zpět na týmy"><ArrowLeft size={19} /></button>
 
-        <header className="team-detail-header">
-          <div className="team-detail-avatar">
-            {team.avatarUrl ? <img src={cloudinaryImageUrl(team.avatarUrl, 160)} alt="" loading="lazy" decoding="async" /> : <Users size={30} />}
-          </div>
-          <div>
-            <span className="progress-eyebrow">TÝM</span>
-            <h1>{team.name}</h1>
-            {team.description && <p>{team.description}</p>}
-          </div>
-        </header>
+        <section className="tile activity-card activity-card-modern record-summary-card">
+          <TeamCardContent team={team} detail/>
+        </section>
 
         <section className="tile team-stats-card">
           <div className="progress-section-title"><Users /><div><h2>Statistiky týmu</h2><p>{team.memberCount || 0} {(team.memberCount || 0) === 1 ? "člen" : "členů"}</p></div></div>

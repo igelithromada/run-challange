@@ -163,8 +163,6 @@ html[data-theme="white"] {
 .container .results-person-details {border-top:1px solid var(--hierarchy-line);margin-top:.4rem;}
 .challenge-period-line {display:flex;gap:.45rem;align-items:center;font-size:.82rem;color:var(--hierarchy-muted);margin:.5rem 0;}
 .challenge-period-line svg {flex-shrink:0;}
-.container .challenge-summary-footer {margin-top:.5rem;padding-top:.6rem;}
-.container .challenge-summary-card .activity-avatar {width:48px;height:48px;}
 .container .challenge-summary-card .activity-person h3 {font-size:1.15rem;margin:0;}
 .container .weather-card-improved .weather-hour-scroll > .weather-hour-card {border-top:1px solid var(--hierarchy-line) !important;}
 .container .progress-record-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;}
@@ -289,7 +287,19 @@ html[data-theme="white"] [data-metric-tone="time"] {--metric-mark:#365da7;}
 html[data-theme="white"] [data-metric-tone="repetitions"] {--metric-mark:#7853ad;}
 
 .activity-type-selector { padding-bottom: .65rem; }
-.activity-record-byline { display: grid; justify-items: end; align-self: start; }
+/* Cards share one title row so the byline aligns with the name, not the avatar. */
+html body .container .record-card-heading {grid-template-columns:auto minmax(0,1fr);}
+.record-card-title-row {
+  display:flex;align-items:baseline;justify-content:space-between;gap:.35rem;min-width:0;
+}
+.activity-record-byline {
+  display:block;flex:0 0 auto;color:var(--hierarchy-muted);font-size:.72rem;line-height:1.3;
+}
+.record-card-heading .activity-record-byline .activity-date {
+  display:block;max-width:none;padding:0;text-align:end;white-space:nowrap;
+}
+.record-card-heading .activity-person-name {align-items:baseline;}
+.record-card-heading .activity-awards-button {vertical-align:middle;}
 .activity-person-name {
   display:flex;align-items:center;min-width:0;gap:.1rem;
   color:var(--hierarchy-text);font-size:1.02rem;font-weight:700;line-height:1.25;
@@ -325,9 +335,20 @@ html[data-theme="white"] [data-metric-tone="repetitions"] {--metric-mark:#7853ad
 }
 .activity-awards-dialog h2, .challenge-results-header h2 { margin: 0; }
 .activity-awards-dialog header small {color:var(--hierarchy-muted);}
-.award-metrics {margin-top:.45rem;}
+/* Continuous rules mark the limits of the values, independent of scroll. */
+.metric-group-ruled {
+  position:relative;
+  margin-top:.65rem;
+}
+.metric-group-ruled::before, .metric-group-ruled::after {
+  content:"";position:absolute;inset-inline:.5rem;height:1px;
+  background:var(--hierarchy-line);pointer-events:none;
+}
+.metric-group-ruled::before {top:0;}
+.metric-group-ruled::after {bottom:0;}
+.award-metrics {margin:0;}
 .award-metrics-scroll {
-  display:flex;overflow-x:auto;padding-block:.25rem .5rem;scroll-snap-type:x proximity;
+  display:flex;overflow-x:auto;padding-block:.45rem;scroll-snap-type:x proximity;
 }
 .award-metrics-scroll > .app-metric {flex:0 0 min(72%, 200px);scroll-snap-align:start;}
 .award-metrics-scroll > .app-metric + .app-metric {position:relative;}
@@ -350,6 +371,34 @@ html[data-theme="white"] [data-metric-tone="repetitions"] {--metric-mark:#7853ad
 .progress-goal-bars .app-metric {padding-inline:0 !important;}
 .container .progress-goal-bars .progress-track {background:var(--ui-bg-soft) !important;}
 .progress-goal-bars .training-goal-remaining {text-align:center;}
+
+.progress-section-title > .training-goals-icon {color:var(--hierarchy-accent);}
+.progress-section-title > .training-plan-icon {color:var(--hierarchy-success);}
+
+.record-summary-card .activity-person-name :is(h1,h3) {
+  min-width:0;margin:0;font:inherit;overflow-wrap:anywhere;
+}
+.record-summary-link {display:grid;gap:.35rem;min-width:0;color:inherit;text-decoration:none;}
+html body .container .record-summary-link > .activity-description {
+  margin:0 !important;padding:.55rem .5rem 0 !important;
+  border:0 !important;border-top:1px solid var(--hierarchy-line) !important;
+}
+.record-summary-link > .activity-description {
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.container .record-summary-card .record-summary-footer {
+  justify-content:space-between;padding:.45rem .5rem 0;
+  color:var(--hierarchy-muted);font-size:.75rem;
+}
+.record-detail-link {display:inline-flex;align-items:center;gap:.25rem;margin-inline-start:auto;}
+.record-summary-card > .team-action-button {margin-block-start:.45rem;}
+.record-summary-card .challenge-period-line {margin:.15rem .5rem .3rem;}
+.record-summary-card .activity-record-byline .team-member-label {white-space:nowrap;}
+@media(max-width:380px) {
+  .record-card-title-row .activity-person-name {font-size:.92rem;overflow-wrap:anywhere;}
+  .record-card-heading .activity-record-byline .activity-date {font-size:.59rem;}
+}
+
 
 .challenge-results-section { display: grid; gap: .85rem; }
 .challenge-results-header { flex-wrap: wrap; }

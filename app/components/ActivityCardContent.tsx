@@ -20,20 +20,36 @@ export function ActivityCardHeading({ nickname, avatarUrl, activityType, date, b
     ? <img src={cloudinaryImageUrl(avatarUrl, 128)} alt="" loading="lazy" decoding="async" />
     : nickname.charAt(0).toUpperCase();
 
-  return <header className="activity-card-top">
-    {onUserClick
+  return <RecordCardHeading
+    avatar={onUserClick
       ? <button type="button" className="activity-avatar" onClick={onUserClick} aria-label={`Profil uživatele ${nickname}`}>{avatar}</button>
       : <span className="activity-avatar" aria-hidden="true">{avatar}</span>}
+    title={<span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{nickname}</span>}
+    badge={badge}
+    meta={date && <time className="activity-date" dateTime={date.toISOString()}>
+      {date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+    </time>}
+  >
+    <small className="activity-kind-label">{activityLabel(activityType)}</small>
+    {teamName && <small className="activity-team-line"><span className="activity-team-avatar">{teamAvatarUrl ? <img src={cloudinaryImageUrl(teamAvatarUrl, 48)} alt="" loading="lazy" decoding="async" /> : "T"}</span><b>Tým</b> · {teamName}</small>}
+  </RecordCardHeading>;
+}
+
+export function RecordCardHeading({ avatar, title, badge, meta, children }: {
+  avatar: ReactNode;
+  title: ReactNode;
+  badge?: ReactNode;
+  meta?: ReactNode;
+  children?: ReactNode;
+}) {
+  return <header className="activity-card-top record-card-heading">
+    {avatar}
     <div className="activity-person">
-      <div className="activity-person-name">
-        <span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{nickname}</span>
-        {badge}
+      <div className="record-card-title-row">
+        <div className="activity-person-name">{title}{badge}</div>
+        {meta && <div className="activity-record-byline">{meta}</div>}
       </div>
-      <small className="activity-kind-label">{activityLabel(activityType)}</small>
-      {teamName && <small className="activity-team-line"><span className="activity-team-avatar">{teamAvatarUrl ? <img src={cloudinaryImageUrl(teamAvatarUrl, 48)} alt="" loading="lazy" decoding="async" /> : "T"}</span><b>Tým</b> · {teamName}</small>}
-    </div>
-    <div className="activity-record-byline">
-      {date && <time className="activity-date" dateTime={date.toISOString()}>{date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time>}
+      {children}
     </div>
   </header>;
 }
