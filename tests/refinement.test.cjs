@@ -99,3 +99,50 @@ test('chat keeps a draft and sends its text with the selected record', async () 
  assert.deepEqual(sent, [['Pěkný výkon! Příště se přidám.', 'shared', undefined, 'request-id']]);
  assert.equal(textarea(render()).props.value, '');
 });
+
+test('trainer keeps daily edits as a draft and sends removal only when requested',async()=>{
+ const h = hooks();
+ const today = new Date();
+ const date = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+ const plan = {type:'běh',monthKey:date.slice(0,7),dates:[date],dayKm:{[date]:5},monthlyKm:5};
+ const user = {uid:'owner',getIdToken:async()=> 'token'};
+ const sent=[];
+ const Page = load('app/trainer/page.tsx',{
+  react:h.api,
+  'next/navigation':{useRouter:()=>router},
+  'firebase/auth':{onAuthStateChanged:(_,callback)=>{callback(user);return()=>{};}},
+  '../lib/firebase':{auth:{currentUser:user}},
+  '../lib/services/runs':{personalHistoryQuery:()=>({})},
+  '../lib/services/users':{getUserProfile:async()=>({personalTrainerPlan:plan}),invalidateUserProfileCache(){}},
+  '../lib/useSharedFirestoreQuery':{useSharedFirestoreQuery:()=>({data:[{id:'old',type:'běh',km:2,timestamp:date+'T00:00:00'}],loading:false})},
+  '../components/Navbar':blank,'../components/Sidebar':blank,'../components/TrainingGoals':blank,
+ },{
+  window:{},document:{addEventListener(){},removeEventListener(){}},
+  fetch:async (_url, request)=>{const {plan}=JSON.parse(request.body);sent.push(plan);return{ok:true,json:async()=>({plan})};},
+ }).default;
+ const router={push(){}}, render=()=>h.render(()=>Page());
+ const summary=tree=>find(tree,node=>node.props?.className==='trainer-plan-summary');
+ const modalInput=tree=>find(tree,node=>node.type==='input');
+ const todayLabel=today.toLocaleDateString('cs-CZ',{day:'numeric',month:'long',year:'numeric'});
+ const open=tree=>find(tree,node=>node.type==='button' && node.props['aria-label']?.startsWith(todayLabel)).props.onClick();
+ render();await new Promise(resolve=>setImmediate(resolve));render();let tree=render();
+ assert.match(text(summary(tree)),/Naplánováno5 kmSplněno z plánu2 km/);
+ open(tree);tree=render();
+ modalInput(tree).props.onChange({target:{value:'12'}});
+ tree=render();assert.match(text(summary(tree)),/Naplánováno5 km/);
+ find(tree,node=>node.type==='button' && node.props['aria-label']==='Zavřít').props.onClick();
+ tree=render();open(tree);tree=render();assert.equal(modalInput(tree).props.value,'5');
+ find(tree,node=>node.type==='button' && text(node)==='Odebrat trénink').props.onClick();
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.deepEqual(sent[0].dates,[]);assert.deepEqual(sent[0].dayKm,{});
+});
+
+test('activity duration accepts a single field and rejects impossible values',()=>{
+ const {parseActivityDuration}=load('app/lib/activity.ts');
+ assert.equal(parseActivityDuration('30',''),1800);
+ assert.equal(parseActivityDuration('','45'),45);
+ assert.equal(parseActivityDuration('',''),0);
+ assert.equal(parseActivityDuration('5','60'),null);
+ assert.equal(parseActivityDuration('5.1','1'),null);
+ assert.equal(parseActivityDuration('1440','1'),null);
+});

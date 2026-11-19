@@ -3,7 +3,7 @@ import TeamCardContent from "../components/TeamCardContent";
 import Link from "next/link";
 import { preparePhoto } from "../lib/preparePhoto";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Plus, Users, X } from "lucide-react";
@@ -14,10 +14,10 @@ import LoadingSkeleton from "../components/LoadingSkeleton";
 import { showAppToast } from "../components/AppToast";
 import FormField from "../components/FormField";
 import type { TeamData } from "../types";
-import { fetchTeamsPage, getActiveTeamIdsForUser } from "../lib/services/teams";
-import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
+import { fetchTeamDirectory } from "../lib/services/teams";
 
 type Tab = "mine" | "all";
+const PAGE_SIZE = 10;
 
 export default function TeamsPage() {
   const router = useRouter();
@@ -36,37 +36,45 @@ export default function TeamsPage() {
   const [teams, setTeams] = useState<TeamData[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(true);
   const [teamsError, setTeamsError] = useState<Error | null>(null);
-  const [hasMoreTeams, setHasMoreTeams] = useState(false);
-  const [pageCursors, setPageCursors] = useState<Array<QueryDocumentSnapshot<DocumentData, DocumentData> | null>>([null]);
+  const [reload, setReload] = useState(0);
+  const [joiningId, setJoiningId] = useState<string | null>(null);
+  const loadedFor = useRef<string | null>(null);
+  const [directoryUid, setDirectoryUid] = useState<string>();
 
-  const refreshMemberships = async (uid: string) => {
-    const ids = await getActiveTeamIdsForUser(uid);
-    setMyTeamIds(ids);
-    setTab(ids.length ? "mine" : "all");
-  };
+  useEffect(() => onAuthStateChanged(auth, currentUser => {
+    setUser(currentUser);
+    if (!currentUser) router.push("/login");
+  }), [router]);
 
+  const uid = user?.uid;
   useEffect(() => {
-    let active = true;
-    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
-      if (!currentUser) {
-        router.push("/login");
-        return;
+    if (!uid) return;
+    const controller = new AbortController();
+    setTeamsLoading(true);
+    setTeamsError(null);
+    void fetchTeamDirectory(controller.signal).then(({ teams, joinedIds }) => {
+      if (controller.signal.aborted || auth.currentUser?.uid !== uid) return;
+      setDirectoryUid(uid);
+      setTeams(teams);
+      setMyTeamIds(joinedIds);
+      if (loadedFor.current !== uid) {
+        loadedFor.current = uid;
+        setTab(joinedIds.length ? "mine" : "all");
+        setPage(1);
       }
-      setUser(currentUser);
-      try {
-        const ids = await getActiveTeamIdsForUser(currentUser.uid);
-        if (!active) return;
-        setMyTeamIds(ids);
-        setTab(ids.length ? "mine" : "all");
-      } catch (error) {
-        console.error("Nepodařilo se načíst členství v týmech", error);
-      }
+      setTeamsLoading(false);
+    }).catch(error => {
+      if (controller.signal.aborted || auth.currentUser?.uid !== uid) return;
+      setTeamsError(error instanceof Error ? error : new Error("Týmy se nepodařilo načíst."));
+      setTeamsLoading(false);
     });
-    return () => {
-      active = false;
-      unsubscribe();
-    };
-  }, [router]);
+    return () => controller.abort();
+  }, [uid, reload]);
+
+  const chooseTab = (value: Tab) => {
+    setTab(value);
+    setPage(1);
+  };
 
   const teamRequest = async (action: string, payload: Record<string, unknown> = {}) => {
     if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
@@ -105,7 +113,9 @@ export default function TeamsPage() {
       });
       setName("");
       setDescription(""); setAvatarUrl(""); setAvatarPublicId("");
-      await refreshMemberships(user.uid);
+      if (auth.currentUser?.uid !== user.uid) return;
+      chooseTab("mine");
+      setReload(current => current + 1);
       setShowCreate(false);
       setPage(1);
       showAppToast("Tým byl vytvořen.", "success");
@@ -117,69 +127,26 @@ export default function TeamsPage() {
   };
 
   const joinTeam = async (teamId: string) => {
+    if (!uid || joiningId) return;
+    setJoiningId(teamId);
     try {
       await teamRequest("join", { teamId });
-      if (user) await refreshMemberships(user.uid);
+      if (auth.currentUser?.uid !== uid) return;
+      setMyTeamIds(current => current.includes(teamId) ? current : [...current, teamId]);
+      setReload(current => current + 1);
       showAppToast("Přidal ses do týmu.", "success");
     } catch (error) {
       showAppToast(error instanceof Error ? error.message : "Do týmu se nepodařilo přidat.", "error");
-    }
-  };
-
-  const pageTeams = tab === "mine" ? teams.filter(team => myTeamIds.includes(team.id)) : teams;
-  const currentPage = page;
-
-  const loadTeamsPage = async (targetPage: number) => {
-    if (tab !== "all") return;
-    setTeamsLoading(true);
-    setTeamsError(null);
-    try {
-      const cursor = pageCursors[targetPage - 1] ?? null;
-      const result = await fetchTeamsPage(10, cursor ?? undefined);
-      setTeams(result.items);
-      setHasMoreTeams(result.hasMore);
-      if (result.lastDocument) {
-        setPageCursors(current => {
-          const next = [...current];
-          next[targetPage] = result.lastDocument;
-          return next;
-        });
-      }
-    } catch (error) {
-      setTeamsError(error instanceof Error ? error : new Error("Týmy se nepodařilo načíst."));
     } finally {
-      setTeamsLoading(false);
+      setJoiningId(null);
     }
   };
 
-  useEffect(() => {
-    if (user && tab === "all") void loadTeamsPage(page);
-  }, [tab, page, user, myTeamIds]);
-
-  useEffect(() => {
-    if (tab !== "mine" || !auth.currentUser) return;
-    setTeamsLoading(true);
-    setTeamsError(null);
-    const loadMine = async () => {
-      const token = await auth.currentUser!.getIdToken(true);
-      const response = await fetch("/api/teams/manage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "listMine", page, pageSize: 10 }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "Týmy se nepodařilo načíst.");
-      setTeams(Array.isArray(result.items) ? result.items : []);
-      setHasMoreTeams(Boolean(result.hasMore));
-    };
-    loadMine()
-      .catch(error => setTeamsError(error instanceof Error ? error : new Error("Týmy se nepodařilo načíst.")))
-      .finally(() => setTeamsLoading(false));
-  }, [tab, page, user, myTeamIds]);
-
-  useEffect(() => {
-    if (teamsError) showAppToast("Týmy se nepodařilo načíst. Zkus stránku obnovit.", "error");
-  }, [teamsError]);
+  const scopedTeams = tab === "mine" ? teams.filter(team => myTeamIds.includes(team.id)) : teams;
+  const currentPage = Math.min(page, Math.max(1, Math.ceil(scopedTeams.length / PAGE_SIZE)));
+  const pageTeams = scopedTeams.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const hasMoreTeams = currentPage * PAGE_SIZE < scopedTeams.length;
+  const waitingForAccount = directoryUid !== uid && !teamsError;
 
   return (
     <>
@@ -229,18 +196,18 @@ export default function TeamsPage() {
         )}
 
         <div className="teams-tabs" role="tablist" aria-label="Týmy">
-          <button className={tab === "mine" ? "active" : ""} onClick={() => setTab("mine")} role="tab" aria-selected={tab === "mine"}>
+          <button className={tab === "mine" ? "active" : ""} onClick={() => chooseTab("mine")} role="tab" disabled={waitingForAccount} aria-selected={tab === "mine"}>
             Moje týmy
           </button>
-          <button className={tab === "all" ? "active" : ""} onClick={() => setTab("all")} role="tab" aria-selected={tab === "all"}>
+          <button className={tab === "all" ? "active" : ""} onClick={() => chooseTab("all")} role="tab" disabled={waitingForAccount} aria-selected={tab === "all"}>
             Všechny týmy
           </button>
         </div>
 
-        {teamsLoading ? (
+        {teamsLoading || waitingForAccount ? (
           <LoadingSkeleton count={3} />
         ) : teamsError ? (
-          <div className="tile teams-empty"><strong>Týmy se nepodařilo načíst</strong><p>Zkus stránku obnovit.</p></div>
+          <div className="tile teams-empty"><strong>Týmy se nepodařilo načíst</strong><button type="button" className="tile-button" onClick={() => setReload(current => current + 1)}>Zkusit znovu</button></div>
         ) : (
           <>
             <section className="teams-grid">
@@ -255,8 +222,8 @@ export default function TeamsPage() {
                       </footer>
                     </Link>
                     {!joined && (
-                      <button className="team-action-button" onClick={() => void joinTeam(team.id)}>
-                        Přidat se k týmu
+                      <button className="team-action-button" disabled={joiningId !== null} onClick={() => void joinTeam(team.id)}>
+                        {joiningId === team.id ? "Přihlašuji…" : "Přidat se k týmu"}
                       </button>
                     )}
                   </article>
@@ -268,16 +235,16 @@ export default function TeamsPage() {
                   <Users size={30} />
                   <strong>{tab === "mine" ? "Zatím nejsi členem žádného týmu" : "Zatím nebyl vytvořen žádný tým"}</strong>
                   <p>{tab === "mine" ? "Přidej se k existujícímu týmu nebo vytvoř vlastní." : "Vytvoř první tým a začni budovat komunitu."}</p>
-                  {tab === "mine" && <button className="run-primary-button" onClick={() => setTab("all")}>Prohlédnout všechny týmy</button>}
+                  {tab === "mine" && <button className="run-primary-button" onClick={() => chooseTab("all")}>Prohlédnout všechny týmy</button>}
                 </div>
               )}
             </section>
 
             {(currentPage > 1 || hasMoreTeams) && (
               <div className="teams-pagination">
-                {currentPage > 1 && <button onClick={() => setPage(value => Math.max(1, value - 1))}>Předchozí</button>}
+                {currentPage > 1 && <button onClick={() => setPage(currentPage - 1)}>Předchozí</button>}
                 <span>Strana {currentPage}</span>
-                {hasMoreTeams && <button onClick={() => setPage(value => value + 1)}>Další</button>}
+                {hasMoreTeams && <button onClick={() => setPage(currentPage + 1)}>Další</button>}
               </div>
             )}
           </>

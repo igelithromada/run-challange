@@ -1,6 +1,6 @@
 import { auth } from "../firebase";
 
-export async function readCommunity<T>(resource: string, id?: string, options?: { filters: Record<string, string>; signal: AbortSignal }): Promise<T> {
+export async function readCommunity<T>(resource: string, id?: string, options?: { filters?: Record<string, string>; signal: AbortSignal }): Promise<T> {
   if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
   const token = await auth.currentUser.getIdToken();
   const response = await fetch("/api/community/read", {

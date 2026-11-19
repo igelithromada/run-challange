@@ -211,6 +211,13 @@ test('community reads authenticate, hide deleting records and bind membership to
     'challenges/c':challenge(),'challenges/hidden':{...challenge(),deleting:true},
     'challenges/c/participants/u':{userId:'u',active:true},'challenges/c/participants/other':{userId:'other',active:false} });
   assert.deepEqual((await call(read,{resource:'teamMemberships'})).body.data,['t']);
+  db.store.set('teams/removed',{ name:'Smazaný tým', deleting:true });
+  db.store.set('teams/elsewhere',{ name:'Jiný tým' });
+  db.store.set('teams/elsewhere/members/other',{ userId:'other', active:true });
+  const directory = await call(read,{ resource:'teamDirectory', userId:'other' });
+  assert.deepEqual(directory.body.data.teams.map(team => team.id),['t','elsewhere']);
+  assert.deepEqual(directory.body.data.joinedIds,['t']);
+
   const list=await call(read,{resource:'challenges'});
   assert.equal(list.body.data.length,1);
   assert.equal((await call(read,{resource:'challenge',id:'hidden'})).body.data,null);

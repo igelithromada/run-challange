@@ -50,7 +50,7 @@ export interface ChallengeData {
 
 export interface ChallengeParticipant {
   id:string; nickname?:string; avatarUrl?:string; joinedAt?:FirestoreTimestamp; leftAt?:FirestoreTimestamp;
-  result?:number; targetReachedAt?:FirestoreTimestamp;
+  userId?:string; active?:boolean; result?:number; finalResult?:number; finalRank?:number; targetReachedAt?:FirestoreTimestamp;
 }
 
 export interface TeamMember { id:string; nickname:string; email:string; avatarUrl:string; }

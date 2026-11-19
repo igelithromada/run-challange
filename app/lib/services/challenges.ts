@@ -1,14 +1,8 @@
-import { sharedChallenge } from "../challengeMeasurement";
-import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
-import type { ChallengeData, ChallengeList } from "../../types";
+import type { ChallengeData, ChallengeList, ChallengeParticipant } from "../../types";
 import { readCommunity } from "./community";
 
-type Page<T> = { items: T[]; lastDocument: QueryDocumentSnapshot<DocumentData, DocumentData> | null; hasMore: boolean };
-export async function getChallenge(id: string): Promise<ChallengeData | null> {
-  return readCommunity("challenge", id);
-}
-export async function getChallengeParticipants(id: string): Promise<any[]> {
-  return (await readCommunity<any[] | null>("challengeParticipants", id)) || [];
+export function getChallenge(id: string, signal?: AbortSignal): Promise<ChallengeData | null> {
+  return readCommunity("challenge", id, signal ? { signal } : undefined);
 }
 export function fetchChallengeList(
   activityType: ChallengeData["activityType"],
@@ -23,19 +17,26 @@ export function fetchChallengeList(
   });
 }
 
-function numericValue(value: any) {
-  if (value && typeof value === "object") return Number(value.seconds ?? value._seconds ?? 0) * 1000 + Number(value.nanoseconds ?? value._nanoseconds ?? 0) / 1e6;
-  return Number(value ?? 0);
+function reachedAt(value: unknown): number {
+  if (!value || typeof value !== "object") return Infinity;
+  const time = value as { seconds?: number; _seconds?: number; nanoseconds?: number; _nanoseconds?: number };
+  const seconds = time.seconds ?? time._seconds;
+  return seconds === undefined ? Infinity : seconds * 1000 + (time.nanoseconds ?? time._nanoseconds ?? 0) / 1e6;
 }
-export async function fetchChallengeParticipantsPage(id: string, challenge: Pick<ChallengeData, "state" | "kind">, pageSize = 10, cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>): Promise<Page<any>> {
-  void pageSize; void cursor;
-  const items = await getChallengeParticipants(id);
-  const field = challenge.state === "completed" ? "finalRank" : sharedChallenge(challenge.kind) ? "joinedAt" : "result";
-  const direction = field === "result" ? -1 : 1;
-  items.sort((a, b) => direction * (numericValue(a[field]) - numericValue(b[field])) || (field === "result" ? (numericValue(a.targetReachedAt) || Number.MAX_SAFE_INTEGER) - (numericValue(b.targetReachedAt) || Number.MAX_SAFE_INTEGER) : 0) || a.id.localeCompare(b.id));
-  return { items, lastDocument: null, hasMore: false };
+
+export async function getRankedChallengeParticipants(id: string, completed: boolean, signal: AbortSignal) {
+  const items = await readCommunity<ChallengeParticipant[] | null>("challengeParticipants", id, { signal }) ?? [];
+  return items.sort((a, b) => {
+    if (completed) {
+      const rankDifference = (a.finalRank || Infinity) - (b.finalRank || Infinity);
+      if (rankDifference) return rankDifference;
+    }
+    const aResult = (completed ? a.finalResult ?? a.result : a.result) ?? 0;
+    const bResult = (completed ? b.finalResult ?? b.result : b.result) ?? 0;
+    return bResult - aResult || reachedAt(a.targetReachedAt) - reachedAt(b.targetReachedAt) || a.id.localeCompare(b.id);
+  });
 }
-export async function getChallengeParticipant(id: string, userId: string): Promise<any> {
-  void userId;
-  return readCommunity("challengeMembership", id);
+
+export function getChallengeParticipant(id: string, signal: AbortSignal): Promise<ChallengeParticipant | null> {
+  return readCommunity("challengeMembership", id, { signal });
 }

@@ -1,7 +1,7 @@
 "use client";
 import Metric from "../components/Metric";
 import PhotoViewer from "../components/PhotoViewer";
-import { isStrengthActivity, activityAmount, recordActivityType } from "../lib/activity";
+import { isStrengthActivity, activityAmount, parseActivityDuration, recordActivityType, validateActivityValues } from "../lib/activity";
 import { parseActivityDate } from "../lib/runData";
 import { preparePhoto } from "../lib/preparePhoto";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -114,7 +114,8 @@ export default function MyRunsPage() {
   useEffect(() => { if (error) showAppToast(error, "error"); }, [error]);
   useEffect(() => { if (actionError) showAppToast(actionError, "error"); }, [actionError]);
 
-  const filteredRuns = runs.filter(run => {
+  const invalidDates = !!dateFrom && !!dateTo && dateFrom > dateTo;
+  const filteredRuns = invalidDates ? [] : runs.filter(run => {
     if (recordActivityType(run) !== selectedType) return false;
     const date = dateOf(run.timestamp);
     if (dateFrom && date < new Date(dateFrom + "T00:00:00")) return false;
@@ -124,7 +125,7 @@ export default function MyRunsPage() {
   const strength = isStrengthActivity(selectedType);
   useEffect(() => { setEditingId(null); }, [selectedType]);
   const metrics = activityMetrics(filteredRuns);
-  const summaryUnavailable = loading && runs.length === 0 ? "…" : runsState.error && runs.length === 0 ? "—" : null;
+  const summaryUnavailable = invalidDates ? "—" : loading && runs.length === 0 ? "…" : runsState.error && runs.length === 0 ? "—" : null;
   const totalKm = metrics.km;
   const totalMin = metrics.minutes;
   const avgTempo = metrics.pace;
@@ -137,12 +138,15 @@ export default function MyRunsPage() {
   };
   const handleUpdate = async (id: string) => {
     if (busy) return;
-    const parsedKm = Number(km);
-    const minutesValue = Number(durationMinutes);
-    const secondsValue = Number(durationSeconds);
-    const seconds = Number.isFinite(minutesValue) && Number.isFinite(secondsValue) && secondsValue >= 0 && secondsValue < 60 ? minutesValue * 60 + secondsValue : 0;
-    if (!Number.isFinite(parsedKm) || parsedKm <= 0 || !Number.isFinite(minutesValue) || minutesValue < 0 || (!strength && seconds <= 0) || (strength && (!Number.isInteger(parsedKm) || parsedKm > 100000)) || !activityDate) {
-      setActionError("Zkontroluj počet nebo vzdálenost, čas a datum."); return;
+    const amount = Number(km.replace(",", "."));
+    const seconds = parseActivityDuration(durationMinutes, durationSeconds);
+    const date = new Date(activityDate);
+    const values = seconds === null ? null : validateActivityValues(selectedType, {
+      km: amount, repetitions: amount, minuty: seconds / 60,
+    });
+    if (!values || !Number.isFinite(date.getTime())) {
+      setActionError("Zkontroluj vzdálenost nebo počet opakování, datum a čas. Sekundy musí být v rozsahu 0–59.");
+      return;
     }
     if (file && (!file.type.startsWith("image/"))) {
       setActionError("Vyber fotografii."); return;
@@ -151,8 +155,8 @@ export default function MyRunsPage() {
     setBusy(true); setActionError("");
     try {
       const updates: Partial<RunData> = {
-        km: strength ? 0 : parsedKm, repetitions: strength ? parsedKm : 0, minuty: seconds / 60, tempo: strength ? "0" : (seconds / 60 / parsedKm).toFixed(2),
-        timestamp: Timestamp.fromDate(new Date(activityDate)),
+        ...values,
+        timestamp: Timestamp.fromDate(date),
         description: description.trim().slice(0, 500)
       };
       if (file) {
@@ -237,6 +241,7 @@ export default function MyRunsPage() {
           {(dateFrom || dateTo) && <button className="date-clear" onClick={() => { setDateFrom(""); setDateTo(""); }}>Zrušit filtr</button>}
         </div>
       </details>
+      {invalidDates && <p role="alert">Datum od nesmí být později než datum do.</p>}
       <div className="tile-group activity-summary-grid">
         {strength
           ? <Metric icon={<ActivityTypeIcon type={selectedType}/>} label="Celkem opakování" tone="repetitions" value={summaryUnavailable ?? formatMetricNumber(metrics.repetitions, 0)}/>
@@ -262,7 +267,7 @@ export default function MyRunsPage() {
       {loading && runs.length === 0 && <LoadingSkeleton count={3} />}
       {visibleCount < filteredRuns.length && <button className="activity-load-more" onClick={() => setVisibleCount(count => count + 30)}>Zobrazit další záznamy</button>}
 
-      {!loading && !runsState.error && filteredRuns.length === 0 && <div className="tile activity-empty-state"><strong>Zatím tu nic není.</strong><p>Pro zvolené období nemáš žádné záznamy. Zkus jiný filtr nebo přidej novou aktivitu.</p></div>}
+      {!invalidDates && !loading && !runsState.error && filteredRuns.length === 0 && <div className="tile activity-empty-state"><strong>Zatím tu nic není.</strong><p>Pro zvolené období nemáš žádné záznamy. Zkus jiný filtr nebo přidej novou aktivitu.</p></div>}
     </div>
   </>;
 }

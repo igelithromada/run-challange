@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { ExternalLink, Map, Download, MapPinned, FileUp, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
@@ -17,6 +17,9 @@ export default function RoutesPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [allGroups, setAllGroups] = useState<RouteGroup[]>([]);
   const [routesLoading, setRoutesLoading] = useState(true);
+  const [routesError, setRoutesError] = useState(false);
+  const [reloadRoutes, setReloadRoutes] = useState(0);
+  const routeDialog = useRef<HTMLDialogElement>(null);
   const [selectedRoute, setSelectedRoute] = useState<{ route: RouteItem; groupTitle: string } | null>(null);
   const [routeFile, setRouteFile] = useState<File | null>(null);
   const [routeName, setRouteName] = useState("");
@@ -29,14 +32,28 @@ export default function RoutesPage() {
   const adminAccess = useAdminGuard(false);
 
   React.useEffect(() => {
-    let active = true;
-    void getRecommendedRouteGroups().then(groups => {
-      if (!active) return;
-      setAllGroups(groups);
-      setRoutesLoading(false);
-    }).catch(error => { if (active) { setRoutesLoading(false); showAppToast(error instanceof Error ? error.message : "Trasy se nepodařilo načíst.","error"); } });
-    return () => { active = false; };
-  }, []);
+    const controller = new AbortController();
+    setRoutesLoading(true);
+    setRoutesError(false);
+    void getRecommendedRouteGroups(controller.signal).then(groups => {
+      if (!controller.signal.aborted) setAllGroups(groups);
+    }).catch(() => {
+      if (!controller.signal.aborted) setRoutesError(true);
+    }).finally(() => {
+      if (!controller.signal.aborted) setRoutesLoading(false);
+    });
+    return () => controller.abort();
+  }, [reloadRoutes]);
+
+  React.useEffect(() => {
+    if (!selectedRoute) return;
+    routeDialog.current?.showModal();
+  }, [selectedRoute]);
+
+  const closeRouteDetail = () => {
+    routeDialog.current?.close();
+    setSelectedRoute(null);
+  };
 
   const loadAdminRoutes = async () => {
     try {
@@ -98,8 +115,7 @@ export default function RoutesPage() {
       if (!response.ok) throw new Error(result.error || "Trasu se nepodařilo uložit.");
       resetRouteForm();
       await loadAdminRoutes();
-      const refreshedGroups = await getRecommendedRouteGroups();
-      if (refreshedGroups.length) setAllGroups(refreshedGroups);
+      setReloadRoutes(value => value + 1);
       showAppToast(wasEditing ? "Trasa byla upravena." : "Trasa byla přidána.", "success");
     } catch (e) {
       showAppToast(e instanceof Error ? e.message : "Trasu se nepodařilo uložit.", "error");
@@ -134,8 +150,7 @@ export default function RoutesPage() {
         setAdminRoutes(prev => prev.map(item => item.id === id ? { ...item, disabled: action === "deactivate" } : item));
       }
 
-      const refreshedGroups = await getRecommendedRouteGroups();
-      setAllGroups(refreshedGroups);
+      setReloadRoutes(value => value + 1);
       showAppToast(
         action === "delete" ? "Trasa byla trvale smazána." :
         action === "deactivate" ? "Trasa byla deaktivována." : "Trasa byla znovu aktivována.",
@@ -152,12 +167,15 @@ export default function RoutesPage() {
       const parseDistanceKm = (value: string) => {
         const normalized = value.replace(",", ".").replace("~", "").trim().toLowerCase();
         const match = normalized.match(/([0-9]+(?:\\.[0-9]+)?)\\s*(km|m)?/);
-        if (!match) return Number.POSITIVE_INFINITY;
+        if (!match) return null;
         const amount = Number(match[1]);
         return match[2] === "m" ? amount / 1000 : amount;
       };
-      const diff = parseDistanceKm(a.route.distance) - parseDistanceKm(b.route.distance);
-      if (diff !== 0) return routeSort === "shortest" ? diff : -diff;
+      const left = parseDistanceKm(a.route.distance);
+      const right = parseDistanceKm(b.route.distance);
+      if (left === null || right === null) {
+        if (left !== right) return left === null ? 1 : -1;
+      } else if (left !== right) return routeSort === "shortest" ? left - right : right - left;
       return a.route.name.localeCompare(b.route.name, "cs");
     });
 
@@ -214,8 +232,9 @@ export default function RoutesPage() {
           .route-card-main-button{display:flex;width:100%;box-sizing:border-box;cursor:pointer;border:0;background:transparent;color:inherit;padding:0;text-align:left;font:inherit}
           .route-card-main-button:hover{background:rgba(255,255,255,.04)}
           .route-map-preview-button:focus-visible{outline:2px solid rgba(255,255,255,.9);outline-offset:3px}
-          .route-detail-backdrop{position:fixed;inset:0;z-index:5000;display:flex;align-items:stretch;justify-content:center;padding:0;background:rgba(8,16,22,.72);backdrop-filter:blur(10px)}
-          .route-detail-modal{width:min(900px,100%);height:100dvh;max-height:100dvh;overflow:hidden;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;box-sizing:border-box;padding:1rem;background:linear-gradient(180deg,rgba(40,62,73,.98),rgba(28,44,54,.99));color:white}
+          .route-detail-modal::backdrop{background:rgba(8,16,22,.72);backdrop-filter:blur(10px)}
+          .route-detail-modal{width:min(900px,100%);height:100dvh;max-width:100%;max-height:100dvh;margin:auto;border:0;overflow:auto;grid-template-rows:auto auto minmax(0,1fr) auto;box-sizing:border-box;padding:1rem;background:linear-gradient(180deg,rgba(40,62,73,.98),rgba(28,44,54,.99));color:white}
+          .route-detail-modal[open]{display:grid}
           .route-detail-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.35rem}
           .route-detail-header span{font-size:.72rem;opacity:.7}
           .route-detail-header h2{margin:.15rem 0;font-size:1.45rem}
@@ -238,8 +257,8 @@ export default function RoutesPage() {
 
         <div className="routes-toolbar">
           <div className="routes-sort-toolbar" aria-label="Řazení tras">
-            <button type="button" className={routeSort === "shortest" ? "active" : ""} onClick={() => setRouteSort("shortest")}>Nejkratší</button>
-            <button type="button" className={routeSort === "longest" ? "active" : ""} onClick={() => setRouteSort("longest")}>Nejdelší</button>
+            <button type="button" className={routeSort === "shortest" ? "active" : ""} aria-pressed={routeSort === "shortest"} onClick={() => setRouteSort("shortest")}>Nejkratší</button>
+            <button type="button" className={routeSort === "longest" ? "active" : ""} aria-pressed={routeSort === "longest"} onClick={() => setRouteSort("longest")}>Nejdelší</button>
           </div>
         </div>
 
@@ -270,11 +289,15 @@ export default function RoutesPage() {
         )}
 
         {routesLoading ? <div className="tile routes-loading">Načítám doporučené trasy…</div> : null}
-        {!routesLoading && !visibleRoutes.length ? <div className="tile routes-loading">Zatím nemáš nahranou žádnou doporučenou trasu.</div> : null}
+        {routesError && <div className="tile routes-loading" role="alert">
+          <p>Trasy se nepodařilo načíst.</p>
+          <button type="button" className="tile-button" onClick={() => setReloadRoutes(value => value + 1)}>Zkusit znovu</button>
+        </div>}
+        {!routesLoading && !routesError && !visibleRoutes.length ? <div className="tile routes-loading">Zatím nemáš nahranou žádnou doporučenou trasu.</div> : null}
 
         <div className="routes-groups">
           {visibleRoutes.map(({ route, groupTitle }) => (
-            <article className="route-card tile" key={route.name + groupTitle}>
+            <article className="route-card tile" key={route.id ?? `${groupTitle}:${route.gpxUrl ?? route.mapUrl}`}>
               <button
                 type="button"
                 className="route-card-main route-card-main-button"
@@ -322,13 +345,17 @@ export default function RoutesPage() {
         </div>
 
         {selectedRoute && (
-          <div className="route-detail-backdrop" role="presentation" onClick={() => setSelectedRoute(null)}>
-            <section className="route-detail-modal" role="dialog" aria-modal="true" aria-label={selectedRoute.route.name} onClick={e => e.stopPropagation()}>
+          <dialog ref={routeDialog} className="route-detail-modal" aria-label={selectedRoute.route.name}
+            onCancel={event => { event.preventDefault(); closeRouteDetail(); }}
+            onClick={event => { if (event.target === event.currentTarget) {
+              const box = event.currentTarget.getBoundingClientRect();
+              if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) closeRouteDetail();
+            } }}>
               <div className="route-detail-header">
                 <div>
                   <h2>{selectedRoute.route.name}</h2>
                 </div>
-                <button type="button" onClick={() => setSelectedRoute(null)} aria-label="Zavřít podrobnosti">×</button>
+                <button type="button" autoFocus onClick={() => closeRouteDetail()} aria-label="Zavřít podrobnosti">×</button>
               </div>
               <p className="route-detail-description">{selectedRoute.route.description}</p>
               {selectedRoute.route.gpxUrl && (
@@ -346,8 +373,7 @@ export default function RoutesPage() {
                   </a>
                 )}
               </div>
-            </section>
-          </div>
+          </dialog>
         )}
       </main>
     </>

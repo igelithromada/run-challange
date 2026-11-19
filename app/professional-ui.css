@@ -926,3 +926,14 @@ html[data-theme="white"] .progress-chart-period input { color-scheme:light; }
 .results-summary-details summary,.results-person-details summary { cursor:pointer; color:var(--ui-muted); font-size:.75rem; min-height:36px; padding:.65rem 0 .25rem; }.results-summary-details dl,.results-person-details dl { display:grid; gap:.55rem; margin:.65rem 0; font-size:.8rem; }.results-summary-details dl > div,.results-person-details dl > div { display:flex; justify-content:space-between; gap:1rem; }.results-summary-details dt,.results-person-details dt { color:var(--ui-muted); }.results-summary-details dd,.results-person-details dd { margin:0; text-align:right; font-weight:650; }
 .results-person { border-bottom:1px solid var(--ui-border); padding:.2rem 0; }.results-person.is-mine { background:var(--ui-bg-soft); }.results-person-open { display:grid; grid-template-columns:22px 36px minmax(0,1fr) auto; align-items:center; gap:.5rem; padding:.6rem .1rem; width:100%; background:transparent; color:var(--ui-text); border:0; text-align:left; font:inherit; cursor:pointer; }.results-person-open .activity-avatar { width:36px; height:36px; }.results-person-rank { font-size:.75rem; text-align:center; }.results-person-name,.results-person-score { min-width:0; display:flex; flex-direction:column; gap:.2rem; }.results-person-name strong { overflow-wrap:anywhere; font-size:.88rem; }.results-person-name small,.results-person-score small { font-size:.7rem; color:var(--ui-muted); }.results-person-score { text-align:right; max-width:100px; }.results-person-score strong { font-size:.85rem; }.results-person-details { margin-left:calc(58px + 1rem); padding-bottom:.25rem; }.results-person-details summary { padding-top:.1rem; min-height:28px; }.results-person.is-winner.rank-1 .results-person-rank { color:#dcb349; }.results-person.is-winner.rank-2 .results-person-rank { color:#9ba6b3; }.results-person.is-winner.rank-3 .results-person-rank { color:#ba885b; }
 .results-leaders h2 { font-size:.9rem; margin:.75rem 0 .25rem; }.results-compact-list { margin:.25rem 0; }.results-overview .community-awards { margin-top:.3rem; }
+
+.auth-feedback {
+  margin: 0 0 .85rem;
+  padding: .6rem .75rem;
+  border-inline-start: 3px solid var(--hierarchy-success);
+  background: var(--ui-bg-soft);
+  color: var(--hierarchy-text);
+  font-size: .86rem;
+  text-align: start;
+}
+.auth-feedback-error { border-inline-start-color: var(--hierarchy-danger); }

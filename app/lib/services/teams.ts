@@ -12,23 +12,16 @@ export function allTeamsQuery(pageSize = 10, cursor?: QueryDocumentSnapshot<Docu
   return query(teamsCollection(), ...constraints);
 }
 
-export async function fetchTeamsPage(
-  pageSize = 10,
-  cursor?: QueryDocumentSnapshot<DocumentData, DocumentData>
-): Promise<{ items: TeamData[]; lastDocument: QueryDocumentSnapshot<DocumentData, DocumentData> | null; hasMore: boolean }> {
-  const teams = (await readCommunity<TeamData[]>("teams")).sort((a, b) => a.name.localeCompare(b.name, "cs") || a.id.localeCompare(b.id));
-  const offset = cursor ? Math.max(0, teams.findIndex(team => team.id === cursor.id) + 1) : 0;
-  const items = teams.slice(offset, offset + pageSize);
-  return { items, lastDocument: items.length ? { id: items[items.length - 1].id } as QueryDocumentSnapshot<DocumentData, DocumentData> : null, hasMore: offset + pageSize < teams.length };
+export async function fetchTeamDirectory(signal: AbortSignal) {
+  const { teams, joinedIds } = await readCommunity<{ teams: TeamData[]; joinedIds: string[] }>(
+    "teamDirectory", undefined, { signal },
+  );
+  teams.sort((a, b) => a.name.localeCompare(b.name, "cs") || a.id.localeCompare(b.id));
+  return { teams, joinedIds };
 }
 
 export async function getTeam(teamId: string): Promise<TeamData | null> {
   return readCommunity("team", teamId);
-}
-
-export async function getActiveTeamIdsForUser(userId: string): Promise<string[]> {
-  void userId;
-  return readCommunity("teamMemberships");
 }
 
 export async function getTeamMemberIds(teamId: string): Promise<string[]> {

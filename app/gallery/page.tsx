@@ -89,7 +89,7 @@ function GalleryContents({ uid }: { uid: string }) {
       if (generation.current !== version || auth.currentUser?.uid !== uid) return;
       setRuns(previous => [...new Map([...previous, ...page.items].map(run => [run.id, run])).values()]);
       setCursor(page.next);
-      return page.items;
+      return page;
     } catch {
       if (generation.current === version) setError("Galerii se nepodařilo načíst. Zkus to znovu.");
     } finally {
@@ -123,9 +123,20 @@ function GalleryContents({ uid }: { uid: string }) {
     const target = index + direction;
     if (photos[target]) setActive(photos[target].key);
     else if (direction > 0 && cursor) {
-      const items = await loadPage(cursor);
-      const next = items && myGalleryPhotos(items, uid).find(item => !photos.some(loaded => loaded.key === item.key));
-      if (next) setActive(current => current === active ? next.key : current);
+      let from: GalleryCursor | null = cursor;
+      const version = generation.current;
+      const existing = new Set(photos.map(photo => photo.key));
+      while (from && generation.current === version) {
+        const page = await loadPage(from);
+        if (!page || generation.current !== version) return;
+        const next = myGalleryPhotos(page.items, uid).find(photo => !existing.has(photo.key));
+        if (next) {
+          setActive(current => current === active ? next.key : current);
+          return;
+        }
+        from = page.next;
+      }
+      setActive(current => current === active ? photos[0]?.key ?? null : current);
     }
     else if (!cursor && photos.length) setActive(photos[(target + photos.length) % photos.length].key);
   }

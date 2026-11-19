@@ -2,7 +2,7 @@
 import Metric from "../components/Metric";
 import { formatMetricNumber } from "../lib/activityMetrics";
 import { CalendarDays as MetricCalendar, Target as MetricTarget, CheckCircle2 as MetricCheck, Percent as MetricPercent } from "lucide-react";
-import { activityAmount, activityUnit, isStrengthActivity, ACTIVITY_TYPES } from "../lib/activity";
+import { activityAmount, activityUnit, isStrengthActivity, recordActivityType, ACTIVITY_TYPES } from "../lib/activity";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -17,16 +17,16 @@ import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSe
 import { getUserProfile, invalidateUserProfileCache } from "../lib/services/users";
 import type { RunData, LegacyTrainerPlan } from "../types";
 import { personalHistoryQuery } from "../lib/services/runs";
+import { parseActivityDate } from "../lib/runData";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 
-type Activity = Pick<RunData, "id" | "uid" | "km" | "type" | "timestamp" | "repetitions">;
+type Activity = Pick<RunData, "id" | "uid" | "km" | "type" | "timestamp" | "repetitions" | "activityType">;
 type Plan = { monthKey:string; type:ActivityType; dates:string[]; dayKm:Record<string, number | string>; monthlyKm:number; createdAt?:string };
 type OldPlan = LegacyTrainerPlan;
 
 const monthKeyOf=(d:Date)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
 const dateKey=(d:Date)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const num=(v:unknown)=>{const n=Number(v);return Number.isFinite(n)?n:0;};
-const activityDate=(r:Activity)=>{const v=r.timestamp; if(!v)return new Date(0); if(v instanceof Date)return v; if("toDate" in v&&typeof v.toDate==="function")return v.toDate(); if("seconds" in v&&typeof v.seconds==="number")return new Date(v.seconds*1000); return new Date(0);};
 const monthTitle=(d:Date)=>d.toLocaleDateString("cs-CZ",{month:"long",year:"numeric"});
 const monday=(d:Date)=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x;};
 
@@ -48,6 +48,9 @@ export default function TrainerPage(){
    } catch {}
  }, []);
  const [profileLoading,setProfileLoading]=useState(true);
+ const [profileError,setProfileError]=useState(false);
+ const [reloadProfile,setReloadProfile]=useState(0);
+ const [dayDraft,setDayDraft]=useState("");
  const [modalOpen,setModalOpen]=useState(false);
  const [bulkMode,setBulkMode]=useState(false);
  const [bulkDates,setBulkDates]=useState<string[]>([]);
@@ -82,10 +85,12 @@ export default function TrainerPage(){
      if(!active)return;
      if(!user){router.push("/login");return;}
      setUid(user.uid);
+     setProfileLoading(true);
+     setProfileError(false);
      try{
        const data=await getUserProfile(user.uid);
-       if(!active)return;
-       if (!data) { setProfileLoading(false); return; }
+       if(!active || auth.currentUser?.uid !== user.uid)return;
+       if (!data) { setPlansByKey({}); return; }
        const storedLegacy=(data?.personalTrainerPlan as Plan|OldPlan|undefined);
        const storedPlans=data?.personalTrainerPlans&&typeof data.personalTrainerPlans==="object"?data.personalTrainerPlans:{};
        const normalized:Record<string,Plan>={};
@@ -101,13 +106,16 @@ export default function TrainerPage(){
        }
        setPlansByKey(normalized);
      }catch(e){
-       if(active)console.error("Nepodařilo se načíst tréninkového plánu",e);
+       if(active && auth.currentUser?.uid === user.uid) {
+         setProfileError(true);
+         console.error("Nepodařilo se načíst tréninkový plán",e);
+       }
      }finally{
-       if(active)setProfileLoading(false);
+       if(active && auth.currentUser?.uid === user.uid)setProfileLoading(false);
      }
    });
    return()=>{active=false;unsubscribe();};
- },[router]);
+ },[router,reloadProfile]);
 
  const runsQuery = useMemo(() => personalHistoryQuery(uid || "__no_user__"), [uid]);
  const runsState = useSharedFirestoreQuery<Activity>(`personal-history:v2:${uid || "none"}`, runsQuery);
@@ -130,7 +138,16 @@ export default function TrainerPage(){
  useEffect(()=>{ if(!selectedDate||!selectedDate.startsWith(currentMonth)) setSelectedDate(dateKey(month)); },[currentMonth,selectedDate,month]);
 
  const strength = isStrengthActivity(type), unit = activityUnit(type);
- const actualFor=(key:string)=>runs.filter(r=>(r.type||"běh")===type&&dateKey(activityDate(r))===key).reduce((s,r)=>s+activityAmount(r),0);
+ const actualByDate = new Map<string, number>();
+ const now = new Date();
+ for (const run of runs) {
+   if (recordActivityType(run) !== type) continue;
+   const date = parseActivityDate(run.timestamp);
+   if (!date || date > now) continue;
+   const key = dateKey(date);
+   actualByDate.set(key, (actualByDate.get(key) ?? 0) + activityAmount(run));
+ }
+ const actualFor = (key: string) => actualByDate.get(key) ?? 0;
  const daysInMonth=new Date(month.getFullYear(),month.getMonth()+1,0).getDate();
  const calendarStart=monday(new Date(month.getFullYear(),month.getMonth(),1));
  const calendarEnd=new Date(month.getFullYear(),month.getMonth(),daysInMonth);
@@ -153,7 +170,7 @@ export default function TrainerPage(){
 
  const todayKey=dateKey(new Date());
  const selectedIsPast=!!selectedDate && selectedDate<todayKey;
- const selectedKmValue=dayKm[selectedDate]??"";
+ const selectedKmValue=dayDraft;
  const modalStatus=selectedInfo.selected?selectedInfo.status:(num(selectedKmValue)>0?"draft":"off");
  const statusLabel=(status:string)=>{
    if(status==="done")return "Splněno";
@@ -165,6 +182,19 @@ export default function TrainerPage(){
  };
  const [saving,setSaving]=useState(false);
  const [saveError,setSaveError]=useState("");
+ const validTarget = (value: number) => strength
+   ? Number.isInteger(value) && value >= 1 && value <= 100000
+   : value >= 0.5 && value <= 200;
+ const targetError = strength ? "Zadej celý počet od 1 do 100 000 opakování." : "Zadej vzdálenost od 0,5 do 200 km.";
+
+ useEffect(() => {
+   if (!modalOpen) return;
+   const dismiss = (event: KeyboardEvent) => {
+     if (event.key === "Escape" && !saving) setModalOpen(false);
+   };
+   document.addEventListener("keydown", dismiss);
+   return () => document.removeEventListener("keydown", dismiss);
+ }, [modalOpen, saving]);
  const planKey=(t:ActivityType,m:string)=>t+"|"+m;
  const persistPlan=async(next:Plan)=>{
    const user=auth.currentUser;
@@ -176,13 +206,14 @@ export default function TrainerPage(){
    invalidateUserProfileCache(user.uid);
    return (result?.plan||next) as Plan;
  };
- const saveSelected=async()=>{
-   if(!uid||!selectedDate||selectedIsPast)return false;
-   const value=Math.max(0,num(selectedKmValue));
-   if(value<=0)return false;
+ const saveSelected=async(remove = false)=>{
+   if(!uid||!selectedDate||selectedIsPast||saving)return false;
+   const value=num(selectedKmValue);
+   if(!remove && !validTarget(value)){setSaveError(targetError);return false;}
    setSaving(true);setSaveError("");
    try{
-     const nextDates=dates.includes(selectedDate)?dates:[...dates,selectedDate].sort();
+     const nextDates = remove ? dates.filter(date => date !== selectedDate)
+       : dates.includes(selectedDate) ? dates : [...dates, selectedDate].sort();
      const nextDayKm={...dayKm,[selectedDate]:String(value)};
      const normalizedDayKm=Object.fromEntries(nextDates.map(d=>[d,Math.max(strength ? 1 : .5,num(nextDayKm[d]))]));
      const next:Plan={monthKey:currentMonth,type,dates:nextDates,dayKm:normalizedDayKm,monthlyKm:nextDates.reduce((s,d)=>s+num(normalizedDayKm[d]),0),createdAt:plan?.createdAt||new Date().toISOString()};
@@ -194,9 +225,10 @@ export default function TrainerPage(){
    finally{setSaving(false);}
  };
  const saveBulk=async()=>{
-   const value=Math.max(strength ? 1 : .5,num(bulkKm));
+   const value=num(bulkKm);
    const selected=bulkDates.filter(d=>d>=todayKey);
-   if(!uid||!selected.length||value<=0)return;
+   if(!uid||!selected.length||saving)return;
+   if(!validTarget(value)){setSaveError(targetError);return;}
    setSaving(true);setSaveError("");
    try{
      const nextDates=Array.from(new Set([...dates,...selected])).sort();
@@ -212,12 +244,12 @@ export default function TrainerPage(){
    finally{setSaving(false);}
  };
 
- const updateSelectedKm=(value:string)=>{if(!selectedIsPast){setDayKm(cur=>({...cur,[selectedDate]:value}));}};
-
  const openDayEditor=(key:string)=>{
    const d=new Date(key+"T00:00:00");
    if(d.getMonth()!==month.getMonth()||d.getFullYear()!==month.getFullYear())return;
    setSelectedDate(key);
+   setDayDraft(dayKm[key] ?? "");
+   setSaveError("");
    setModalOpen(true);
 
  };
@@ -255,9 +287,13 @@ export default function TrainerPage(){
    <header className="progress-header"><h1>Tréninkový plán</h1></header>
 
    <ActivityTypeSelector value={type} onChange={v=>{if(saving)return;setType(v);setModalOpen(false);setBulkMode(false);setBulkDates([]);}} ariaLabel="Typ tréninku"/>
+   {runsState.error && <p role="status">Aktivity se nepodařilo načíst. Souhrny mohou být neúplné.</p>}
    <TrainingGoals key={uid+type} uid={uid} type={type} runs={runs} />
 
-   <section className="tile trainer-plan-card">
+   {profileError ? <section className="tile trainer-plan-card" role="alert">
+     <p>Tréninkový plán se nepodařilo načíst.</p>
+     <button type="button" className="tile-button" onClick={() => setReloadProfile(current => current + 1)}>Zkusit znovu</button>
+   </section> : <section className="tile trainer-plan-card">
     <div className="progress-section-title"><TrendingUp className="training-plan-icon" aria-hidden="true"/><div><h2>Plán na měsíc</h2><p>{monthTitle(month)} · {type}</p></div></div>
 
     <div className="trainer-month-nav">
@@ -267,7 +303,7 @@ export default function TrainerPage(){
     </div>
     <div className="trainer-calendar-weekdays">{["Po","Út","St","Čt","Pá","So","Ne"].map(d=><span key={d}>{d}</span>)}</div>
     <div className="trainer-calendar-toolbar">
-      <button type="button" className={`trainer-bulk-toggle ${bulkMode?"active":""}`} onClick={()=>{setBulkMode(v=>!v);setBulkDates([]);setModalOpen(false);}}>
+      <button type="button" className={`trainer-bulk-toggle ${bulkMode?"active":""}`} disabled={saving} onClick={()=>{setBulkMode(v=>!v);setBulkDates([]);setSaveError("");setModalOpen(false);}}>
         {bulkMode?"Zrušit výběr":"Hromadný výběr"}
       </button>
       {bulkMode&&<span>Vyber dny, které chceš naplánovat</span>}
@@ -275,7 +311,7 @@ export default function TrainerPage(){
     <div className={`trainer-calendar ${bulkMode?"bulk-mode":""}`}>
       {weeks.map((week,i)=><div className="trainer-calendar-week" key={i}>{week.map(d=>{
         const s=cellInfo(d), bulkSelected=bulkDates.includes(s.key);
-        return <button type="button" key={s.key} className={`trainer-calendar-day ${s.inMonth?"":"outside"} ${s.selected?"selected":""} ${s.status} ${s.key<todayKey?"past":""} ${bulkSelected?"bulk-selected":""}`}
+        return <button type="button" key={s.key} disabled={!s.inMonth || saving} aria-label={`${d.toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" })} – ${statusLabel(s.status)}`} aria-pressed={bulkMode && s.inMonth ? bulkSelected : undefined} className={`trainer-calendar-day ${s.inMonth?"":"outside"} ${s.selected?"selected":""} ${s.status} ${s.key<todayKey?"past":""} ${bulkSelected?"bulk-selected":""}`}
           onPointerDown={e=>beginLongPress(s.key,e)} onPointerUp={cancelLongPress} onPointerLeave={cancelLongPress} onPointerCancel={cancelLongPress}
           onContextMenu={e=>e.preventDefault()} onClick={()=>handleDayClick(s)}>
           <span>{d.getDate()}</span>{s.selected&&<small>{s.target.toFixed(strength ? 0 : 1)} {strength ? "×" : unit}</small>}{s.selected&&s.status==="done"&&<Check size={13}/>}
@@ -300,6 +336,7 @@ export default function TrainerPage(){
       <button type="button" className="progress-save" disabled={!bulkDates.length||saving} onClick={()=>void saveBulk()}><Save size={17}/> {saving?"Ukládám…":"Naplánovat"}</button>
     </div>}
 
+    {bulkMode && saveError && <p className="trainer-save-error" role="alert">{saveError}</p>}
     <div className="trainer-plan-summary" aria-label="Souhrn měsíčního plánu">
       <Metric icon={<MetricTarget/>} tone="target" label="Naplánováno" value={formatMetricNumber(plannedTotal, strength ? 0 : 2)} unit={unit}/>
       <Metric icon={<MetricCheck/>} tone="success" label="Splněno z plánu" value={formatMetricNumber(completed, strength ? 0 : 2)} unit={unit}/>
@@ -308,21 +345,19 @@ export default function TrainerPage(){
     </div>
     <p className="chart-hint">Tady se počítají pouze naplánované tréninky. V cílech nahoře se počítají všechny tvoje aktivity.</p>
 
-   </section>
-
-
+   </section>}
   </main>
   {modalOpen && <div className="trainer-day-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="trainer-day-modal-title">
     <div className={`trainer-day-modal ${modalStatus}`}>
       <div className="trainer-day-modal-header">
         <div><span>Vybraný den</span><h3 id="trainer-day-modal-title">{selectedDate?new Date(selectedDate+"T00:00:00").toLocaleDateString("cs-CZ",{weekday:"long",day:"numeric",month:"long"}):"—"}</h3></div>
-        <button type="button" className="ui-icon-button" onClick={()=>setModalOpen(false)} aria-label="Zavřít">×</button>
+        <button type="button" className="ui-icon-button" disabled={saving} onClick={()=>setModalOpen(false)} aria-label="Zavřít">×</button>
       </div>
       <div className={`trainer-modal-status ${modalStatus}`}><i/>{statusLabel(modalStatus)}{selectedInfo.selected&&modalStatus!=="draft"&&<span> · {selectedInfo.actual.toFixed(strength ? 0 : 1)} / {selectedInfo.target.toFixed(strength ? 0 : 1)} {unit}</span>}</div>
       {selectedIsPast ? <div className="trainer-day-readonly"><strong>{selectedInfo.selected ? statusLabel(selectedInfo.status) : "Volný den"}</strong><span>{selectedInfo.selected ? selectedInfo.actual.toFixed(strength ? 0 : 1)+" / "+selectedInfo.target.toFixed(strength ? 0 : 1)+" "+unit : "Tento den nebyl naplánovaný."}</span></div> : <div className="trainer-day-modal-form">
-        <label><span>Cíl dne</span><div className={`trainer-km-field ${selectedInfo.status}`}><input className={selectedInfo.status} autoFocus type="number" min={strength ? "1" : ".5"} step={strength ? "1" : ".5"} inputMode="decimal" placeholder="5" value={selectedKmValue} onChange={e=>updateSelectedKm(e.target.value)}/><b>{unit}</b></div></label>
-        {saveError&&<p className="trainer-save-error">{saveError}</p>}
-        <div className="trainer-day-modal-actions"><button type="button" className={`progress-save trainer-status-action ${modalStatus}`} disabled={!selectedKmValue||num(selectedKmValue)<=0||saving} onClick={()=>void saveSelected()}><Save size={17}/> {saving?"Ukládám…":selectedInfo.selected?"Uložit":"Naplánovat"}</button></div>
+        <label><span>Cíl dne</span><div className={`trainer-km-field ${selectedInfo.status}`}><input className={selectedInfo.status} autoFocus type="number" min={strength ? "1" : ".5"} step={strength ? "1" : ".5"} inputMode="decimal" placeholder="5" value={selectedKmValue} onChange={e=>setDayDraft(e.target.value)}/><b>{unit}</b></div></label>
+        {saveError&&<p className="trainer-save-error" role="alert">{saveError}</p>}
+        <div className="trainer-day-modal-actions">{selectedInfo.selected && <button type="button" className="tile-button" disabled={saving} onClick={() => void saveSelected(true)}>Odebrat trénink</button>}<button type="button" className={`progress-save trainer-status-action ${modalStatus}`} disabled={!selectedKmValue||num(selectedKmValue)<=0||saving} onClick={()=>void saveSelected()}><Save size={17}/> {saving?"Ukládám…":selectedInfo.selected?"Uložit":"Naplánovat"}</button></div>
       </div>}
     </div>
   </div>}

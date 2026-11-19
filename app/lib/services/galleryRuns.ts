@@ -28,8 +28,9 @@ export async function fetchGalleryRunPage(uid: string, cursor: GalleryCursor) {
   } else if (cursor.mode === "dated") {
     // Firestore orderBy skips documents whose ordering field is missing.
     // Only scan the undated archive if it actually contains legacy records.
-    const [total, ordered] = await Promise.all([getCountFromServer(all), getCountFromServer(dated)]);
-    if (total.data().count > ordered.data().count) next = { mode: "undated" };
+    const counts = await Promise.all([getCountFromServer(all), getCountFromServer(dated)]).catch(() => null);
+    // The photo page can still be available offline or while a count request fails.
+    if (!counts || counts[0].data().count > counts[1].data().count) next = { mode: "undated" };
   }
   return { items, next };
 }

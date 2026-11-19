@@ -76,7 +76,7 @@ test('a slow weather theme cannot overwrite a subsequent manual selection',async
 test('non-admin users can view routes while admin pages retain their guard',async()=>{
   for(const redirect of [false,true]){
     const effects=[],paths=[];
-    const guard=loadIsolated('app/lib/useAdminGuard.ts',{react:{useState:()=>['loading',()=>{}],useEffect:fn=>effects.push(fn)},'firebase/auth':{onAuthStateChanged:(_,fn)=>{queueMicrotask(()=>fn({uid:'u',getIdTokenResult:async()=>({claims:{}})}));return()=>{};}},'next/navigation':{useRouter:()=>({replace:p=>paths.push(p)})},'./firebase':{auth:{}},'./services/users':{getUserProfile:async()=>({role:'user'})}},{queueMicrotask});
+    const guard=loadIsolated('app/lib/useAdminGuard.ts',{react:{useState:()=>['loading',()=>{}],useEffect:fn=>effects.push(fn)},'firebase/auth':{onAuthStateChanged:(_,fn)=>{queueMicrotask(()=>fn({uid:'u',getIdTokenResult:async()=>({claims:{}})}));return()=>{};}},'next/navigation':{useRouter:()=>({replace:p=>paths.push(p)})},'./firebase':{auth:{currentUser:{uid:'u'}}},'./services/users':{getUserProfile:async()=>({role:'user'})}},{queueMicrotask});
     guard.default(redirect);effects.forEach(fn=>fn());await new Promise(resolve=>setImmediate(resolve));
     assert.deepEqual(paths,redirect?['/']:[]);
   }

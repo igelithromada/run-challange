@@ -1,13 +1,13 @@
 "use client";
 import Metric from "./Metric";
 import { formatMetricNumber } from "../lib/activityMetrics";
-import { activityAmount, activityUnit, isStrengthActivity } from "../lib/activity";
+import { activityAmount, activityUnit, isStrengthActivity, recordActivityType } from "../lib/activity";
 import { useEffect, useState } from "react";
 import { CalendarDays, Save, Target } from "lucide-react";
 import { getUserProfile, mergeUserProfile } from "../lib/services/users";
 import { parseActivityDate } from "../lib/runData";
 import type { ActivityType, RunData } from "../types";
-type GoalRun = Pick<RunData, "km" | "type" | "timestamp" | "repetitions">;
+type GoalRun = Pick<RunData, "km" | "type" | "activityType" | "timestamp" | "repetitions">;
 export default function TrainingGoals({
   uid,
   type,
@@ -73,7 +73,7 @@ export default function TrainingGoals({
   let weekKm = 0,
     monthKm = 0;
   for (const run of runs) {
-    if ((run.type || "běh") !== type) continue;
+    if (recordActivityType(run) !== type) continue;
     const date = parseActivityDate(run.timestamp),
       km = activityAmount(run);
     if (!date || date > now || !Number.isFinite(km) || km <= 0) continue;

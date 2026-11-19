@@ -16,6 +16,7 @@ export default function useAdminGuard(redirectOnDenied = true): AdminAccess {
     let active = true;
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!active) return;
       if (!user) {
         if (active) setAccess("denied");
         router.replace("/login");
@@ -30,11 +31,12 @@ export default function useAdminGuard(redirectOnDenied = true): AdminAccess {
 
         const isAdmin = tokenResult.claims.admin === true || profile?.role === "admin";
 
-        if (!active) return;
+        if (!active || auth.currentUser?.uid !== user.uid) return;
         setAccess(isAdmin ? "allowed" : "denied");
 
         if (!isAdmin && redirectOnDenied) router.replace("/");
       } catch (error) {
+        if (!active || auth.currentUser?.uid !== user.uid) return;
         console.error("Nepodařilo se ověřit oprávnění administrátora:", error);
         if (active) setAccess("denied");
         if (redirectOnDenied) router.replace("/");

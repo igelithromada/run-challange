@@ -1,8 +1,8 @@
 import type { RouteGroup, RouteItem } from "./routes";
 
-export async function getRecommendedRouteGroups(): Promise<RouteGroup[]> {
+export async function getRecommendedRouteGroups(signal?: AbortSignal): Promise<RouteGroup[]> {
   try {
-    const response = await fetch("/api/routes/recommended", { cache: "no-store" });
+    const response = await fetch("/api/routes/recommended", { cache: "no-store", signal });
     if (!response.ok) throw new Error("Trasy se nepodařilo načíst.");
     const data = await response.json();
     const items = Array.isArray(data.routes) ? data.routes : [];

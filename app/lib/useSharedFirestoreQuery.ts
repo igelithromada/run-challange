@@ -48,7 +48,8 @@ function trimCache() {
 /** Sdílí jeden Firestore listener a poslední snapshot mezi obrazovkami. */
 export function useSharedFirestoreQuery<T = Record<string, unknown>>(
   queryKey: string,
-  source: Query
+  source: Query,
+  enabled = true,
 ): SharedQueryState<T> {
   const signedOutState = useMemo(() => emptyState<T>(), []);
   const [authUid, setAuthUid] = useState<string | null>(auth.currentUser?.uid || null);
@@ -65,7 +66,7 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
       : (cache.get(cacheKey)?.state as SharedQueryState<T>) || emptyState<T>();
 
   useEffect(() => {
-    if (!authUid) return;
+    if (!authUid || !enabled) return;
     let entry = cache.get(cacheKey);
 
     if (!entry) {
@@ -128,7 +129,7 @@ export function useSharedFirestoreQuery<T = Record<string, unknown>>(
 
       trimCache();
     };
-  }, [cacheKey, source, authUid]);
+  }, [cacheKey, source, authUid, enabled]);
 
-  return authUid ? state : signedOutState;
+  return authUid && enabled ? state : signedOutState;
 }

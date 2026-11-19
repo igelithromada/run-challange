@@ -1,11 +1,10 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { ArrowLeft, KeyRound, LogIn, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { sendPasswordResetEmail, signInWithCustomToken, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../lib/firebase";
-import { showAppToast } from "../components/AppToast";
 
 type View = "login" | "reset" | "code" | "register";
 
@@ -20,15 +19,8 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    if (error) showAppToast(error, "error");
-  }, [error]);
-
-  useEffect(() => {
-    if (message) showAppToast(message, "success");
-  }, [message]);
-
   const switchView = (next: View) => {
+    if (busy) return;
     setError("");
     setMessage("");
     setView(next);
@@ -36,13 +28,19 @@ export default function LoginPage() {
 
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError("");
     try {
       await signInWithEmailAndPassword(auth, email.trim(), heslo);
       router.push("/");
-    } catch {
-      setError("Špatný email nebo heslo.");
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error ? error.code : null;
+      setError(code === "auth/network-request-failed"
+        ? "Přihlášení se nepodařilo. Zkontroluj připojení a zkus to znovu."
+        : code === "auth/too-many-requests"
+          ? "Příliš mnoho pokusů o přihlášení. Zkus to později."
+          : "Špatný e-mail nebo heslo.");
     } finally {
       setBusy(false);
     }
@@ -50,6 +48,7 @@ export default function LoginPage() {
 
   const handleForgotPassword = async (event: FormEvent) => {
     event.preventDefault();
+    if (busy) return;
     setError("");
     setMessage("");
     if (!email.trim()) { setError("Zadej email, na který chceš poslat odkaz."); return; }
@@ -66,6 +65,7 @@ export default function LoginPage() {
 
   const handleCheckCode = async (event: FormEvent) => {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError("");
     try {
@@ -76,6 +76,8 @@ export default function LoginPage() {
       });
       if (response.ok) {
         setView("register");
+      } else if (response.status === 429) {
+        setError("Příliš mnoho pokusů. Zkus to později.");
       } else if (response.status === 503) {
         setError("Registrace zatím není na serveru nastavena. Kontaktuj správce.");
       } else if (response.status === 403 || response.status === 400) {
@@ -92,6 +94,7 @@ export default function LoginPage() {
 
   const handleRegister = async (event: FormEvent) => {
     event.preventDefault();
+    if (busy) return;
     if (heslo.length < 6) {
       setError("Heslo musí mít alespoň 6 znaků.");
       return;
@@ -146,13 +149,16 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {error && <p className="auth-feedback auth-feedback-error" role="alert">{error}</p>}
+        {message && <p className="auth-feedback" role="status">{message}</p>}
+
         {view === "login" && (
           <form className="auth-form" onSubmit={handleLogin}>
             <label><span>Email</span><input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required /></label>
             <label><span>Heslo</span><input type="password" autoComplete="current-password" value={heslo} onChange={e => setHeslo(e.target.value)} required /></label>
             <button type="submit" className="auth-primary" disabled={busy}><LogIn size={18} /> {busy ? "Přihlašuji…" : "Přihlásit"}</button>
             <button type="button" className="auth-secondary" onClick={() => switchView("reset")} disabled={busy}>Zapomněl jsem heslo</button>
-            <button type="button" className="auth-link-button" onClick={() => switchView("code")}>Nemáš účet? <strong>Registrovat</strong></button>
+            <button type="button" className="auth-link-button" disabled={busy} onClick={() => switchView("code")}>Nemáš účet? <strong>Registrovat</strong></button>
           </form>
         )}
 
@@ -160,7 +166,7 @@ export default function LoginPage() {
           <form className="auth-form" onSubmit={handleForgotPassword}>
             <label><span>Email</span><input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required /></label>
             <button type="submit" className="auth-primary" disabled={busy}><KeyRound size={18} /> {busy ? "Odesílám…" : "Poslat odkaz pro obnovení"}</button>
-            <button type="button" className="auth-link-button" onClick={() => switchView("login")}><ArrowLeft size={16} /> Zpět na přihlášení</button>
+            <button type="button" className="auth-link-button" disabled={busy} onClick={() => switchView("login")}><ArrowLeft size={16} /> Zpět na přihlášení</button>
           </form>
         )}
 
@@ -168,7 +174,7 @@ export default function LoginPage() {
           <form className="auth-form" onSubmit={handleCheckCode}>
             <label><span>Registrační kód</span><input type="text" autoComplete="one-time-code" value={kod} onChange={e => setKod(e.target.value)} required /></label>
             <button type="submit" className="auth-primary" disabled={busy}><KeyRound size={18} /> {busy ? "Ověřuji…" : "Ověřit kód"}</button>
-            <button type="button" className="auth-link-button" onClick={() => switchView("login")}><ArrowLeft size={16} /> Zpět na přihlášení</button>
+            <button type="button" className="auth-link-button" disabled={busy} onClick={() => switchView("login")}><ArrowLeft size={16} /> Zpět na přihlášení</button>
           </form>
         )}
 
@@ -178,7 +184,7 @@ export default function LoginPage() {
             <label><span>Heslo</span><input type="password" autoComplete="new-password" minLength={6} value={heslo} onChange={e => setHeslo(e.target.value)} required /></label>
             <label><span>Potvrzení hesla</span><input type="password" autoComplete="new-password" minLength={6} value={potvrzeniHesla} onChange={e => setPotvrzeniHesla(e.target.value)} required /></label>
             <button type="submit" className="auth-primary" disabled={busy}><UserPlus size={18} /> {busy ? "Vytvářím účet…" : "Vytvořit účet"}</button>
-            <button type="button" className="auth-link-button" onClick={() => switchView("login")}><ArrowLeft size={16} /> Zpět na přihlášení</button>
+            <button type="button" className="auth-link-button" disabled={busy} onClick={() => switchView("login")}><ArrowLeft size={16} /> Zpět na přihlášení</button>
           </form>
         )}
 

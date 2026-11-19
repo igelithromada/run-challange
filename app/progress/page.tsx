@@ -26,7 +26,7 @@ const asNumber = (value: unknown) => {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
 };
-const activityDate = (run: ProgressActivity) => parseActivityDate(run.timestamp) || new Date(0);
+
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
 function AwardSection({ title, awards }: { title: string; awards: ProgressAward[] }) {
   const repeatable = awards.some(award => award.repeatable);
@@ -59,25 +59,33 @@ export default function ProgressPage() {
 
   const personalQuery = useMemo(() => personalHistoryQuery(uid || "__no_user__"), [uid]);
   const personalState = useSharedFirestoreQuery<ProgressActivity>("personal-history:v2:" + (uid || "none"), personalQuery);
-  const mine = useMemo(() => personalState.data, [personalState.data]);
-  const selected = useMemo(() => mine.filter(run => recordActivityType(run) === goalType), [mine, goalType]);
   const now = new Date();
   const strength = isStrengthActivity(goalType), unit = activityUnit(goalType);
-  const lifetimeAmount = selected.reduce((sum, run) => sum + activityAmount(run), 0);
-
-  const sorted = [...selected].sort((a,b) => activityDate(a).getTime()-activityDate(b).getTime());
-  const longest = sorted.reduce<ProgressActivity | null>((best, run) => !best || activityAmount(run)>activityAmount(best) ? run : best, null);
-  const fastest = sorted.filter(run => asNumber(run.tempo)>0).reduce<ProgressActivity | null>((best, run) => !best || asNumber(run.tempo)<asNumber(best.tempo) ? run : best, null);
-  const dailyTotals = new Map<string, number>();
-  selected.forEach(run => { const d=activityDate(run); if (!Number.isNaN(d.getTime())) dailyTotals.set(dateKey(d),(dailyTotals.get(dateKey(d))||0)+activityAmount(run)); });
+  const eligible = personalState.data.flatMap(run => {
+    if (recordActivityType(run) !== goalType) return [];
+    const date = parseActivityDate(run.timestamp);
+    const amount = activityAmount(run);
+    return date && date <= now && amount > 0 ? [{ run, date, amount }] : [];
+  });
+  const selected = eligible.map(entry => entry.run);
+  const lifetimeAmount = eligible.reduce((sum, entry) => sum + entry.amount, 0);
+  const sorted = eligible.sort((a, b) => +a.date - +b.date);
+  type Entry = (typeof sorted)[number];
+  const longest = sorted.reduce<Entry | null>((best, entry) => !best || entry.amount > best.amount ? entry : best, null);
+  const fastest = sorted.filter(({ run }) => asNumber(run.tempo) > 0)
+    .reduce<Entry | null>((best, entry) => !best || asNumber(entry.run.tempo) < asNumber(best.run.tempo) ? entry : best, null);
+  const activeDays = new Set<string>();
   const monthlyTotals = new Map<string, number>();
-  selected.forEach(run => { const d=activityDate(run); if (!Number.isNaN(d.getTime())) { const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; monthlyTotals.set(key,(monthlyTotals.get(key)||0)+activityAmount(run)); } });
-  const bestMonth = Math.max(0, ...Array.from(monthlyTotals.values()));
-  const bestMonthKey = Array.from(monthlyTotals.entries()).sort((a,b)=>b[1]-a[1])[0]?.[0];
+  for (const { date, amount } of sorted) {
+    const day = dateKey(date), month = day.slice(0, 7);
+    activeDays.add(day);
+    monthlyTotals.set(month, (monthlyTotals.get(month) ?? 0) + amount);
+  }
+  const [bestMonthKey, bestMonth] = [...monthlyTotals.entries()].sort((a, b) => b[1] - a[1])[0] ?? ["", 0];
   const streak = (() => {
     let count=0; const cursor=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-    if (!dailyTotals.has(dateKey(cursor))) cursor.setDate(cursor.getDate()-1);
-    while (dailyTotals.has(dateKey(cursor))) { count++; cursor.setDate(cursor.getDate()-1); }
+    if (!activeDays.has(dateKey(cursor))) cursor.setDate(cursor.getDate()-1);
+    while (activeDays.has(dateKey(cursor))) { count++; cursor.setDate(cursor.getDate()-1); }
     return count;
   })();
 
@@ -99,7 +107,7 @@ export default function ProgressPage() {
   const nextLevel = levels[levelNumber];
   const remaining = Math.max(0, level.next - lifetimeAmount);
   const experienceAmount = (amount: number) => amount.toLocaleString("cs-CZ", { maximumFractionDigits: strength ? 0 : 2 }) + " " + unit;
-  const awards = useMemo(() => activityAwards(selected, goalType), [selected, goalType]);
+  const awards = activityAwards(selected, goalType);
 
   return <>
     <Navbar title="Můj pokrok" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
@@ -110,6 +118,7 @@ export default function ProgressPage() {
 
       <ProgressChart key={goalType} runs={selected} activityType={goalType} loading={personalState.loading} error={!!personalState.error} />
 
+      {(!personalState.loading || personalState.data.length > 0) && (!personalState.error || personalState.data.length > 0) && <>
       <AwardSection title="Odznaky" awards={awards.filter(award => award.repeatable)} />
       <AwardSection title="Úspěchy" awards={awards.filter(award => !award.repeatable)} />
 
@@ -120,11 +129,11 @@ export default function ProgressPage() {
         <div className="app-metric-grid">
           <Metric icon={strength ? <ActivityTypeIcon type={goalType}/> : <MapPin/>} tone={strength ? "repetitions" : "distance"}
             label={strength ? "Nejvíce v jedné aktivitě" : "Nejdelší aktivita"}
-            value={longest ? formatMetricNumber(activityAmount(longest)) : "—"} unit={longest ? unit : undefined}
-            detail={longest ? activityDate(longest).toLocaleDateString("cs-CZ") : "Zatím bez aktivity"}/>
+            value={longest ? formatMetricNumber(longest.amount) : "—"} unit={longest ? unit : undefined}
+            detail={longest ? longest.date.toLocaleDateString("cs-CZ") : "Zatím bez aktivity"}/>
           {!strength && <Metric icon={<Gauge/>} tone="pace" label="Nejrychlejší tempo"
-            value={fastest ? formatCompactActivityTime(asNumber(fastest.tempo)) : "—"} unit={fastest ? "/km" : undefined}
-            detail={fastest ? activityDate(fastest).toLocaleDateString("cs-CZ") : "Zatím bez aktivity"}/>}
+            value={fastest ? formatCompactActivityTime(asNumber(fastest.run.tempo)) : "—"} unit={fastest ? "/km" : undefined}
+            detail={fastest ? fastest.date.toLocaleDateString("cs-CZ") : "Zatím bez aktivity"}/>}
           <Metric icon={<CalendarDays/>} tone="count" label="Nejvíce za měsíc" value={formatMetricNumber(bestMonth)} unit={unit}
             detail={bestMonthKey ? new Date(bestMonthKey + "-01T12:00:00").toLocaleDateString("cs-CZ", { month: "long", year: "numeric" }) : "Zatím bez aktivity"}/>
           <Metric icon={<Flame/>} tone="award" label="Aktuální série" value={streak} unit={streak === 1 ? "den" : streak >= 2 && streak <= 4 ? "dny" : "dní"}
@@ -151,6 +160,7 @@ export default function ProgressPage() {
         </div>
       </details>
 
+      </>}
       {personalState.loading && <LoadingSkeleton count={2} />}
     </main>
   </>;

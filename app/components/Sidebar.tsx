@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { UserRound, X } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
@@ -17,6 +17,7 @@ export default function Sidebar({ visible, onClose }: SidebarProps) {
   const [email, setEmail] = useState("");
   const router = useRouter();
   const pathname = usePathname();
+  const panel = useRef<HTMLElement>(null);
 
   const handleNavigation = (id: string) => {
     const item = NAVIGATION_ITEMS.find(entry => entry.id === id);
@@ -53,6 +54,15 @@ export default function Sidebar({ visible, onClose }: SidebarProps) {
     document.body.style.overflow = "hidden";
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
+      if (event.key !== "Tab" || !panel.current) return;
+      const buttons = [...panel.current.querySelectorAll<HTMLElement>("button:not(:disabled), a[href]")];
+      const first = buttons[0], last = buttons.at(-1);
+      if (!first || !last) return;
+      const focused = document.activeElement;
+      if (!panel.current.contains(focused) || (event.shiftKey ? focused === first : focused === last)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
@@ -63,15 +73,18 @@ export default function Sidebar({ visible, onClose }: SidebarProps) {
 
   useEffect(() => {
     if (!visible) return;
-    const closeButton = document.querySelector<HTMLButtonElement>(".site-sidebar-header .site-sidebar-icon-button");
-    closeButton?.focus();
+    const previous = document.activeElement;
+    panel.current?.querySelector<HTMLButtonElement>(".site-sidebar-icon-button")?.focus();
+    return () => {
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus({ preventScroll: true });
+    };
   }, [visible]);
 
   if (!visible) return null;
 
   return createPortal(
     <div className="site-sidebar-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Navigační nabídka">
-      <nav className="site-sidebar-panel" onClick={event => event.stopPropagation()} aria-label="Hlavní navigace">
+      <nav ref={panel} className="site-sidebar-panel" onClick={event => event.stopPropagation()} aria-label="Hlavní navigace">
         <div className="site-sidebar-header">
           <div>
             <span>Navigace</span>

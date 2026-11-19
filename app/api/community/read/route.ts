@@ -17,6 +17,12 @@ export async function POST(request: Request) {
     const snapshotData = (snap: { id: string; data(): unknown }) => ({ ...(snap.data() as Record<string, unknown>), id: snap.id });
     const reply = (data: unknown) => NextResponse.json({ data }, { headers: { "Cache-Control": "private, no-store" } });
     if (resource === "teamMemberships") return reply(await getActiveTeamMemberships(adminDb, decoded.uid));
+    if (resource === "teamDirectory") {
+      const snapshot = await adminDb.collection("teams").get();
+      const teams = snapshot.docs.filter(doc => !doc.data().deleting);
+      const joinedIds = await getActiveTeamMemberships(adminDb, decoded.uid, teams);
+      return reply({ teams: teams.map(snapshotData), joinedIds });
+    }
     if (resource === "challengeList") {
       const { state, activityType, monthStart, monthEnd } = body.filters ?? {};
       if (

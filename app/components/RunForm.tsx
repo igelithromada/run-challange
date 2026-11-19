@@ -1,5 +1,5 @@
 "use client";
-import { isStrengthActivity, activityLabel as labelFor } from "../lib/activity";
+import { parseActivityDuration, isStrengthActivity, activityLabel as labelFor } from "../lib/activity";
 import { readFormDraft, saveFormDraft, readRecorderDraft, clearRecovery, draftPhotos } from "../lib/activityRecovery";
 import { preparePhoto } from "../lib/preparePhoto";
 
@@ -87,14 +87,7 @@ export default function RunForm({ type }: {
   const previews = useMemo(() => files.map(file => ({ file, url: URL.createObjectURL(file) })), [files]);
   useEffect(() => () => previews.forEach(item => URL.revokeObjectURL(item.url)), [previews]);
 
-  const minutesValue = durationMinutes.trim() === "" ? (strength ? 0 : null) : Number(durationMinutes);
-  const secondsValue = durationSeconds.trim() === "" ? (strength ? 0 : null) : Number(durationSeconds);
-  const parsedDuration =
-    minutesValue !== null && secondsValue !== null &&
-    Number.isInteger(minutesValue) && minutesValue >= 0 && minutesValue <= 9999 &&
-    Number.isInteger(secondsValue) && secondsValue >= 0 && secondsValue <= 59
-      ? minutesValue * 60 + secondsValue
-      : null;
+  const parsedDuration = parseActivityDuration(durationMinutes, durationSeconds);
   const distanceValue = Number(km.replace(",", "."));
   const pace = distanceValue > 0 && parsedDuration !== null ? parsedDuration / distanceValue : null;
 
@@ -194,7 +187,7 @@ export default function RunForm({ type }: {
     if (saving) return;
 
     const kmVal = Number(km.replace(",", "."));
-    if (!km.trim() || !Number.isFinite(kmVal) || kmVal <= 0 || parsedDuration === null || (!strength && parsedDuration <= 0) || (strength && (!Number.isInteger(kmVal) || kmVal > 100000))) {
+    if (!km.trim() || !Number.isFinite(kmVal) || kmVal <= 0 || parsedDuration === null || (!strength && (parsedDuration <= 0 || kmVal > 1000)) || (strength && (!Number.isInteger(kmVal) || kmVal > 100000))) {
       setError(strength ? "Zadej celý počet opakování od 1 do 100 000. Čas je volitelný." : "Zadej platnou vzdálenost a celkový čas. Sekundy musí být v rozsahu 0–59.");
       return;
     }

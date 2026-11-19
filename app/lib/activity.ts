@@ -10,6 +10,15 @@ export const activityAmount = (run: {type?:string; activityType?:string; km?:unk
  const n = Number(isStrengthActivity(recordActivityType(run)) ? run.repetitions : run.km);
  return Number.isFinite(n) && n > 0 ? n : 0;
 };
+export function parseActivityDuration(minutes: string, seconds: string): number | null {
+ const wholeMinutes = Number(minutes);
+ const wholeSeconds = Number(seconds);
+ if (!Number.isInteger(wholeMinutes) || wholeMinutes < 0 ||
+     !Number.isInteger(wholeSeconds) || wholeSeconds < 0 || wholeSeconds > 59) return null;
+ const duration = wholeMinutes * 60 + wholeSeconds;
+ return duration <= 24 * 60 * 60 ? duration : null;
+}
+
 /** Strength counts never occupy the distance field. Zero time means not recorded. */
 export function validateActivityValues(type: unknown, data: {km?:unknown;minuty?:unknown;repetitions?:unknown}) {
  const strength = isStrengthActivity(type), km = strength ? 0 : Number(data.km), repetitions = strength ? Number(data.repetitions) : 0;

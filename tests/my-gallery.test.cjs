@@ -29,7 +29,7 @@ test('gallery metadata is limited, uses a cursor and visits undated history only
  const last = { id: 'last', data: () => ({ uid: 'me', timestamp: new Date(2026,9,1) }) };
  const legacy = { id: 'legacy', data: () => ({ uid: 'me', imageUrl: image('legacy') }) };
  const requests = [];
- let counts = 0;
+ let counts = 0, countUnavailable = false;
  const service = load('app/lib/services/galleryRuns.ts', {
   'firebase/firestore': {
    documentId: () => 'id',
@@ -44,6 +44,7 @@ test('gallery metadata is limited, uses a cursor and visits undated history only
    },
    getCountFromServer: async source => {
     counts++;
+    if (countUnavailable) throw new Error("Offline");
     return { data: () => ({ count: source === own ? 26 : 25 }) };
    },
   },
@@ -66,6 +67,11 @@ test('gallery metadata is limited, uses a cursor and visits undated history only
  assert.equal(third.items.length,1);
  assert.equal(third.items[0].id,'legacy');
  assert.equal(third.next,null);
+ countUnavailable = true;
+ const offline = await service.fetchGalleryRunPage('me', first.next);
+ assert.equal(offline.items[0].id, 'last');
+ assert.equal(offline.next.mode, 'undated');
+
 });
 
 

@@ -64,6 +64,7 @@ export default function StatisticsPage() {
   const state = useSharedFirestoreQuery<RunData>(
     `runs:statistics:${invalidDates ? "invalid" : startDate || "all"}:${endDate || "all"}`,
     query,
+    !invalidDates,
   );
   const filtered = useMemo(
     () => resultRuns(state.data, selectedType, startDate, endDate),
@@ -286,7 +287,7 @@ export default function StatisticsPage() {
               : " Zkus stránku obnovit."}
           </p>
         )}
-        {state.loading && !state.data.length ? (
+        {!invalidDates && (state.loading && !state.data.length ? (
           <LoadingSkeleton count={3} />
         ) : (
           <>
@@ -339,8 +340,8 @@ export default function StatisticsPage() {
               )}
             </section>
           </>
-        )}
-        {sort === "alpha" && view === "jednotlivci" && visible.length > 0 && (
+        ))}
+        {!invalidDates && sort === "alpha" && view === "jednotlivci" && visible.length > 0 && (
           <nav
             ref={alphabetRef}
             className="results-alphabet"

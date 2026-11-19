@@ -1,4 +1,4 @@
-import { validateActivityValues } from "../../../lib/activity";
+import { recordActivityType, validateActivityValues } from "../../../lib/activity";
 import { parseActivityDate } from "../../../lib/runData";
 import { syncRunTeamContributions } from "../../../lib/teams/contributions";
 import { cloudinaryPublicIdFromUrl, isUserCloudinaryPublicId } from "../../../lib/cloudinaryAdmin";
@@ -25,7 +25,7 @@ export async function PATCH(request:Request){
     const current=snap.data()||{};
     if(current.uid!==decoded.uid)return NextResponse.json({error:"Tento záznam nemůžeš upravit."},{status:403});
 
-    const nextType = normalizeActivityType(updates.type === undefined ? current.type : updates.type);
+    const nextType = normalizeActivityType(updates.type === undefined ? recordActivityType(current) : updates.type);
     const values = validateActivityValues(nextType, updates);
     const date=parseActivityDate(updates.timestamp);
     const timestamp=date ? Timestamp.fromDate(date) : null;
