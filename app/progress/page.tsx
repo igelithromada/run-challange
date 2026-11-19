@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Gauge, MapPin, Trophy, Flame } from "lucide-react";
+import { CalendarDays, MapPin, Trophy, Flame } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { parseActivityDate } from "../lib/runData";
 import { activityAwards, awardTotal, type Award as ProgressAward } from "../lib/awards";
@@ -126,12 +126,12 @@ export default function ProgressPage() {
 
       <section className="tile progress-records">
         <div className="progress-section-title"><Trophy/><div><h2>Osobní rekordy</h2><p>Nejlepší výkony v kategorii {goalType}.</p></div></div>
-        <div className="app-metric-grid">
+        <div data-metric-layout="summary" className="app-metric-grid">
           <Metric icon={strength ? <ActivityTypeIcon type={goalType}/> : <MapPin/>} tone={strength ? "repetitions" : "distance"}
             label={strength ? "Nejvíce v jedné aktivitě" : "Nejdelší aktivita"}
             value={longest ? formatMetricNumber(longest.amount) : "—"} unit={longest ? unit : undefined}
             detail={longest ? longest.date.toLocaleDateString("cs-CZ") : "Zatím bez aktivity"}/>
-          {!strength && <Metric icon={<Gauge/>} tone="pace" label="Nejrychlejší tempo"
+          {!strength && <Metric tone="pace" label="Nejrychlejší tempo"
             value={fastest ? formatCompactActivityTime(asNumber(fastest.run.tempo)) : "—"} unit={fastest ? "/km" : undefined}
             detail={fastest ? fastest.date.toLocaleDateString("cs-CZ") : "Zatím bez aktivity"}/>}
           <Metric icon={<CalendarDays/>} tone="count" label="Nejvíce za měsíc" value={formatMetricNumber(bestMonth)} unit={unit}

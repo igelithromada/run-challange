@@ -1,6 +1,6 @@
 "use client";
 import Metric from "./Metric";
-import { Award, Clock3, Gauge, ListChecks, MapPin, Users } from "lucide-react";
+import { Award, Gauge, ListChecks, MapPin, Users } from "lucide-react";
 import { isStrengthActivity } from "../lib/activity";
 import { activityMetrics, formatCompactActivityTime, formatMetricNumber } from "../lib/activityMetrics";
 import { formatResultDuration, type ResultPerson } from "../lib/results";
@@ -43,16 +43,16 @@ export default function ResultsSummary({
       className="results-overview"
       aria-label={mine ? "Souhrn mých výsledků" : "Souhrn všech výsledků"}
     >
-      <div className="app-metric-grid results-summary-metrics">
+      <div data-metric-layout="row" className="app-metric-grid results-summary-metrics">
         {metric === "badges" ? <Metric icon={<Award/>} label="Odznaky celkem" tone="award" value={badges}/>
           : <Metric {...(metric === "tempo" ? pace : distance)} />}
         <Metric icon={<ListChecks/>} label="Aktivity" tone="count" value={totals.count}/>
         <Metric icon={<Users/>} label="Účastníci" tone="count" value={count}/>
       </div>
       <details className="results-summary-details"><summary>Podrobný souhrn</summary>
-        <div className="app-metric-grid">
+        <div data-metric-layout="summary" className="app-metric-grid">
           <Metric {...distance}/>
-          <Metric icon={<Clock3/>} label="Čas" tone="time" value={strength && totals.minutes === 0 ? "—" : formatResultDuration(totals.minutes)}/>
+          <Metric label="Čas" tone="time" value={strength && totals.minutes === 0 ? "—" : formatResultDuration(totals.minutes)}/>
           {!strength && <Metric {...pace}/>}
           <Metric icon={<Award/>} label="Odznaky" tone="award" value={badges}/>
         </div>

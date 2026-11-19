@@ -1,5 +1,6 @@
 "use client";
 
+import OverlayDialog from "./OverlayDialog";
 import { useEffect, useRef, useState } from "react";
 import { ActivityCardHeading, ActivityCardStats } from "./ActivityCardContent";
 import ActivityGallery from "./ActivityGallery";
@@ -135,19 +136,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
     } finally { setSocialLoading(false); }
   };
 
-  useEffect(() => {
-    if (!socialOpen) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSocialOpen(null);
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [socialOpen]);
+
 
   const toggleLike = async () => {
     if (socialBusy) return;
@@ -293,7 +282,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
       </article>
 
       {socialOpen && (
-        <div className="social-modal-backdrop" role="dialog" aria-modal="true" aria-label={socialOpen === "likes" ? "To se mi líbí" : "Komentáře"} onClick={() => setSocialOpen(null)}>
+        <OverlayDialog className="social-modal-backdrop" label={socialOpen === "likes" ? "To se mi líbí" : "Komentáře"} onDismiss={() => setSocialOpen(null)}>
           <section className="social-modal" onClick={event => event.stopPropagation()}>
             <header className="social-modal-header">
               <div><span className="social-modal-eyebrow">{socialOpen === "likes" ? "REAKCE" : "DISKUZE"}</span><h2>{socialOpen === "likes" ? `To se mi líbí · ${likeCount}` : `Komentáře · ${commentCount}`}</h2></div>
@@ -341,7 +330,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
               </>
             )}
           </section>
-        </div>
+        </OverlayDialog>
       )}
     </>
   );

@@ -2033,7 +2033,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* Trenér – zadání kilometrů v modálním okně po výběru dne */
 .trainer-day-modal-overlay{
   position:fixed!important;left:0!important;right:0!important;bottom:auto!important;
-  top:var(--trainer-vv-top,0px)!important;width:100vw!important;height:var(--trainer-vv-height,100dvh)!important;min-height:0!important;
+  top:var(--overlay-top,0px)!important;width:100vw!important;height:var(--overlay-height,100dvh)!important;min-height:0!important;
   z-index:2147483647!important;display:flex!important;align-items:center!important;justify-content:center!important;
   box-sizing:border-box!important;padding:16px!important;margin:0!important;
   background:rgba(3,10,16,.78);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
@@ -2086,7 +2086,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .trainer-status-action.missed{border-color:rgba(235,87,87,.6)!important;background:rgba(235,87,87,.16)!important}
 @media(max-width:520px){
   .trainer-day-modal-overlay{align-items:center;padding:10px}
-  .trainer-day-modal{max-height:calc(var(--trainer-vv-height,100dvh) - 20px);overflow-y:auto}
+  .trainer-day-modal{max-height:calc(var(--overlay-height,100dvh) - 20px);overflow-y:auto}
 }
 
 .trainer-modal-status.draft{color:#6d99bd}
@@ -3084,7 +3084,7 @@ button { touch-action:manipulation; }
   object-fit:contain;
   display:block;
 }
-.activity-type-icon-run { object-fit:contain; }
+.activity-type-icon-run { display:inline-block; flex:none; background:currentColor; mask:url("/run-icon-white.png") center / contain no-repeat; }
 
 .run-form-shell { margin:1rem 0 1.35rem !important; }
 .run-form-actions {
@@ -5849,7 +5849,6 @@ html[data-theme="white"] .home-activity-badge {
 
 
 /* Audit UI: ikony aktivit musí zůstat čitelné i ve světlém režimu. */
-html[data-theme="white"] .activity-type-icon-run,
 html[data-theme="white"] .tile-button .run-profile-icon { filter: brightness(0); }
 
 
@@ -6285,3 +6284,11 @@ html[data-theme="white"] .challenges-create input[type="file"]::file-selector-bu
 .admin-usage-actions, .admin-usage-meter > div { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .4rem 1rem; }
 .admin-usage-meter { margin-block: .65rem; }
 .admin-usage-meter progress { width: 100%; accent-color: var(--ui-accent, #69bfdb); }
+
+dialog:is(.trainer-day-modal-overlay,.social-modal-backdrop) {
+  color:inherit; border:0; max-width:none; max-height:none; box-sizing:border-box;
+}
+dialog.social-modal-backdrop {
+  width:100%; height:var(--overlay-height,100dvh); top:var(--overlay-top,0px); bottom:auto; margin:0;
+}
+dialog.social-modal-backdrop .social-modal { max-height:calc(var(--overlay-height,100dvh) - 40px); }

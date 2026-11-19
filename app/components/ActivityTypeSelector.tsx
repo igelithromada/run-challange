@@ -10,14 +10,7 @@ export type { ActivityType } from "../types";
 export function ActivityTypeIcon({ type, size = 25 }: { type: ActivityType; size?: number }) {
   if (type === "běh") {
     return (
-      <img
-        className="activity-type-icon activity-type-icon-run"
-        src="/run-icon-white.png"
-        width={size}
-        height={size}
-        alt=""
-        aria-hidden="true"
-      />
+      <span className="activity-type-icon activity-type-icon-run" style={{ width: size, height: size }} aria-hidden="true" />
     );
   }
   // Workout Squats: Hugeicons (MIT). Push Up: Icon Pantry (free app use).

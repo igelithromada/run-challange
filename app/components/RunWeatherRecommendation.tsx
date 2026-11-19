@@ -37,8 +37,11 @@ export default function RunWeatherRecommendation({ linkToWeather = true, type }:
   useEffect(() => {
     let active = true;
     let controller: AbortController | null = null;
+    const interval = 15 * 60 * 1000;
+    let lastAttempt = -Infinity;
     const loadWeather = async () => {
-      controller?.abort();
+      if (document.hidden || controller || Date.now() - lastAttempt < interval) return;
+      lastAttempt = Date.now();
       const requestController = new AbortController();
       controller = requestController;
       const timeout = window.setTimeout(() => requestController.abort(), 10000);
@@ -50,13 +53,15 @@ export default function RunWeatherRecommendation({ linkToWeather = true, type }:
       } catch {
         if (active) setWeather({ configured: false, error: "Počasí se nepodařilo načíst." });
       } finally {
+        controller = null;
         window.clearTimeout(timeout);
         if (active) setLoading(false);
       }
     };
     void loadWeather();
-    const timer = window.setInterval(loadWeather, 15 * 60 * 1000);
-    return () => { active = false; controller?.abort(); window.clearInterval(timer); };
+    const timer = window.setInterval(loadWeather, interval);
+    document.addEventListener("visibilitychange", loadWeather);
+    return () => { document.removeEventListener("visibilitychange", loadWeather); active = false; controller?.abort(); window.clearInterval(timer); };
   }, []);
 
   const current = weather?.error ? undefined : weather?.current;

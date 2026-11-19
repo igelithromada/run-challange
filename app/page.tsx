@@ -23,6 +23,8 @@ import { getUserProfile } from "./lib/services/users";
 
 export default function Page() {
   const [menuVisible, setMenuVisible] = useState(false);
+  const [targetFailed, setTargetFailed] = useState(false);
+  const [targetAttempt, setTargetAttempt] = useState(0);
   const [notificationRunId, setNotificationRunId] = useState<string | null>(null);
   const [olderRuns, setOlderRuns] = useState<RunData[]>([]);
   const [olderCursor, setOlderCursor] = useState<import("firebase/firestore").QueryDocumentSnapshot | null>(null);
@@ -75,6 +77,7 @@ export default function Page() {
     const openTarget = async () => {
       const user = auth.currentUser;
       const request = ++version;
+      setTargetFailed(false);
       if (!user || !window.location.hash.startsWith("#run-")) return;
       try {
         const id = decodeURIComponent(window.location.hash.slice(5));
@@ -85,13 +88,13 @@ export default function Page() {
         setSelectedType(normalizeActivityType(recordActivityType(run)));
         setNotificationRunId(run.id);
       } catch {
-        if (active && request === version) showAppToast("Aktivitu z upozornění se nepodařilo načíst.", "error");
+        if (active && request === version) setTargetFailed(true);
       }
     };
     const unsubscribe = onAuthStateChanged(auth, () => { void openTarget(); });
     window.addEventListener("hashchange", openTarget);
     return () => { active = false; ++version; unsubscribe(); window.removeEventListener("hashchange", openTarget); };
-  }, []);
+  }, [targetAttempt]);
 
   useEffect(() => {
     if (!notificationRunId) return;
@@ -174,6 +177,7 @@ export default function Page() {
               <h2 id="home-feed-heading">Poslední záznamy</h2>
             </div>
           </div>
+        {targetFailed && <div role="alert"><p>Záznam se nepodařilo načíst.</p><button className="run-secondary-button" onClick={() => setTargetAttempt(value => value + 1)}>Zkusit znovu</button></div>}
         <div className="list-container">
           {runsState.loading ? <LoadingSkeleton count={3} /> : allRuns.map(run => {
             return (

@@ -1,4 +1,5 @@
 "use client";
+import OverlayDialog from "../components/OverlayDialog";
 import Metric from "../components/Metric";
 import { formatMetricNumber } from "../lib/activityMetrics";
 import { CalendarDays as MetricCalendar, Target as MetricTarget, CheckCircle2 as MetricCheck, Percent as MetricPercent } from "lucide-react";
@@ -60,24 +61,7 @@ export default function TrainerPage(){
  const longPressTriggered=useRef(false);
  const currentMonth=monthKeyOf(month);
 
- useEffect(()=>{
-   if(!modalOpen)return;
-   const viewport=window.visualViewport;
-   if(!viewport)return;
-   const updateViewport=()=>{
-     document.documentElement.style.setProperty("--trainer-vv-top",`${viewport.offsetTop}px`);
-     document.documentElement.style.setProperty("--trainer-vv-height",`${viewport.height}px`);
-   };
-   updateViewport();
-   viewport.addEventListener("resize",updateViewport);
-   viewport.addEventListener("scroll",updateViewport);
-   return()=>{
-     viewport.removeEventListener("resize",updateViewport);
-     viewport.removeEventListener("scroll",updateViewport);
-     document.documentElement.style.removeProperty("--trainer-vv-top");
-     document.documentElement.style.removeProperty("--trainer-vv-height");
-   };
- },[modalOpen]);
+
 
  useEffect(()=>{
    let active=true;
@@ -187,14 +171,7 @@ export default function TrainerPage(){
    : value >= 0.5 && value <= 200;
  const targetError = strength ? "Zadej celý počet od 1 do 100 000 opakování." : "Zadej vzdálenost od 0,5 do 200 km.";
 
- useEffect(() => {
-   if (!modalOpen) return;
-   const dismiss = (event: KeyboardEvent) => {
-     if (event.key === "Escape" && !saving) setModalOpen(false);
-   };
-   document.addEventListener("keydown", dismiss);
-   return () => document.removeEventListener("keydown", dismiss);
- }, [modalOpen, saving]);
+
  const planKey=(t:ActivityType,m:string)=>t+"|"+m;
  const persistPlan=async(next:Plan)=>{
    const user=auth.currentUser;
@@ -337,7 +314,7 @@ export default function TrainerPage(){
     </div>}
 
     {bulkMode && saveError && <p className="trainer-save-error" role="alert">{saveError}</p>}
-    <div className="trainer-plan-summary" aria-label="Souhrn měsíčního plánu">
+    <div data-metric-layout="summary" className="trainer-plan-summary" aria-label="Souhrn měsíčního plánu">
       <Metric icon={<MetricTarget/>} tone="target" label="Naplánováno" value={formatMetricNumber(plannedTotal, strength ? 0 : 2)} unit={unit}/>
       <Metric icon={<MetricCheck/>} tone="success" label="Splněno z plánu" value={formatMetricNumber(completed, strength ? 0 : 2)} unit={unit}/>
       <Metric icon={<MetricPercent/>} tone="pace" label="Plnění plánu" value={formatMetricNumber(planPercent, 0)} unit="%"/>
@@ -347,7 +324,7 @@ export default function TrainerPage(){
 
    </section>}
   </main>
-  {modalOpen && <div className="trainer-day-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="trainer-day-modal-title">
+  {modalOpen && <OverlayDialog className="trainer-day-modal-overlay" label="Trénink vybraného dne" onDismiss={() => { if (!saving) setModalOpen(false); }}>
     <div className={`trainer-day-modal ${modalStatus}`}>
       <div className="trainer-day-modal-header">
         <div><span>Vybraný den</span><h3 id="trainer-day-modal-title">{selectedDate?new Date(selectedDate+"T00:00:00").toLocaleDateString("cs-CZ",{weekday:"long",day:"numeric",month:"long"}):"—"}</h3></div>
@@ -360,6 +337,6 @@ export default function TrainerPage(){
         <div className="trainer-day-modal-actions">{selectedInfo.selected && <button type="button" className="tile-button" disabled={saving} onClick={() => void saveSelected(true)}>Odebrat trénink</button>}<button type="button" className={`progress-save trainer-status-action ${modalStatus}`} disabled={!selectedKmValue||num(selectedKmValue)<=0||saving} onClick={()=>void saveSelected()}><Save size={17}/> {saving?"Ukládám…":selectedInfo.selected?"Uložit":"Naplánovat"}</button></div>
       </div>}
     </div>
-  </div>}
+  </OverlayDialog>}
  </>
 }

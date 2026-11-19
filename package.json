@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.cjs",
-    "test:emulator": "npx --yes firebase-tools emulators:exec --project demo-run-challenge --only firestore \"node --test tests/firestore-rules.test.cjs tests/*.emulator.cjs\""
+    "test:emulator": "npx --yes firebase-tools emulators:exec --project demo-run-challenge --only firestore \"node --test tests/firestore-rules.test.cjs tests/*.emulator.cjs\"",
+    "test:visual": "node --test tests/visual-layout.cjs"
   },
   "engines": {
     "node": "24.x"
@@ -46,6 +47,7 @@
   "devDependencies": {
     "@firebase/rules-unit-testing": "^6.0.0",
     "@types/web-push": "^3.6.4",
-    "fake-indexeddb": "^6.2.8"
+    "fake-indexeddb": "^6.2.8",
+    "playwright-core": "1.65.1"
   }
 }

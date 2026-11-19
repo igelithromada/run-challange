@@ -12,7 +12,7 @@ const run=(id,type='běh',amount=1,date='2026-11-16')=>({id,uid:'owner',type,km:
 test('personal totals and date filters use full history while only 30 activity cards render initially',()=>{
  const h=hooks(),runs=Array.from({length:45},(_,i)=>run(String(i),'běh',1,i<30?'2026-11-16':'2026-10-01'));
  const Card=()=>null;
- const Page=load('app/myruns/page.tsx',{react:h.api,'next/navigation':{useRouter:()=>({push(){}})},'firebase/auth':{onAuthStateChanged:(auth,fn)=>{fn({uid:'owner'});return()=>{};}},'../lib/firebase':{auth:{currentUser:{uid:'owner'}}},'../lib/services/users':{getUserProfile:async()=>({})},'../lib/services/runs':{personalHistoryQuery:uid=>{assert.equal(uid==='owner'||uid==='__no_user__',true);return{};}},'../lib/useSharedFirestoreQuery':{useSharedFirestoreQuery:(key)=>{assert.ok(key.startsWith('personal-history:v2:'));return{data:runs,loading:false,error:null};}},'../components/ActivityCard':{__esModule:true,default:Card},'../components/Navbar':blank,'../components/Sidebar':blank,'../components/AppToast':{showAppToast(){}}},{localStorage:memory()}).default;
+ const Page=load('app/myruns/page.tsx',{react:h.api,'../lib/uploadPhoto':{},'next/navigation':{useRouter:()=>({push(){}})},'firebase/auth':{onAuthStateChanged:(auth,fn)=>{fn({uid:'owner'});return()=>{};}},'../lib/firebase':{auth:{currentUser:{uid:'owner'}}},'../lib/services/users':{getUserProfile:async()=>({})},'../lib/services/runs':{personalHistoryQuery:uid=>{assert.equal(uid==='owner'||uid==='__no_user__',true);return{};}},'../lib/useSharedFirestoreQuery':{useSharedFirestoreQuery:(key)=>{assert.ok(key.startsWith('personal-history:v2:'));return{data:runs,loading:false,error:null};}},'../components/ActivityCard':{__esModule:true,default:Card},'../components/Navbar':blank,'../components/Sidebar':blank,'../components/AppToast':{showAppToast(){}}},{localStorage:memory()}).default;
  const render=()=>h.render(()=>Page());render();let tree=render();const summary=find(tree,n=>n.props?.className==='tile-group activity-summary-grid');assert.deepEqual(Array.from(summary.props.children).filter(Boolean).map(item=>item.props.label ?? (item.props.children?.props?.label)),["Celkem km","Čas","Prům. tempo","Počet aktivit"]);assert.match(renderToStaticMarkup(summary),/45/);assert.match(renderToStaticMarkup(summary),/45 <small class="app-metric-unit">km<\/small>/);assert.equal(all(tree,n=>n.type===Card).length,30);
  find(tree,n=>n.type==='button'&&text(n)==='Zobrazit další záznamy').props.onClick();tree=render();assert.equal(all(tree,n=>n.type===Card).length,45);assert.match(renderToStaticMarkup(find(tree,n=>n.props?.className==='tile-group activity-summary-grid')),/45 <small class="app-metric-unit">km<\/small>/);
  const dates=all(tree,n=>n.type==='input'&&n.props.type==='date');dates[0].props.onChange({target:{value:'2026-10-01'}});dates[1].props.onChange({target:{value:'2026-10-01'}});tree=render();assert.equal(all(tree,n=>n.type===Card).length,15);assert.match(renderToStaticMarkup(find(tree,n=>n.props?.className==='tile-group activity-summary-grid')),/15 <small class="app-metric-unit">km<\/small>/);
@@ -145,4 +145,25 @@ test('activity duration accepts a single field and rejects impossible values',()
  assert.equal(parseActivityDuration('5','60'),null);
  assert.equal(parseActivityDuration('5.1','1'),null);
  assert.equal(parseActivityDuration('1440','1'),null);
+});
+
+test('selecting or removing a cover is local and retry reuses the uploaded photo for the same draft', async () => {
+ const h = hooks(), uploads = [];
+ const { useCoverDraft } = load('app/components/CoverField.tsx', {
+   react: h.api, '../lib/uploadPhoto': { uploadPhoto: async (file, kind) => {
+     uploads.push([file.name, kind]); return { secureUrl:'https://example.invalid/image', publicId:'photo-id' };
+   } },
+ });
+ const render = scope => h.render(() => useCoverDraft(scope));
+ render('owner/team').select(new File(['image'], 'cover.jpg'));
+ let draft = render('owner/team');
+ assert.equal(uploads.length, 0);
+ const image = await draft.resolve();
+ assert.equal(image.avatarPublicId, 'photo-id');
+ assert.equal((await draft.resolve()).avatarUrl, image.avatarUrl);
+ assert.deepEqual(uploads, [['cover.jpg','cover']]);
+ assert.equal((await render('other/team').resolve()).avatarUrl, '');
+ draft = render('owner/team'); draft.select(null);
+ assert.equal((await render('owner/team').resolve(image)).avatarUrl, '');
+ assert.equal(uploads.length, 1);
 });

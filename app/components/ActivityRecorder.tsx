@@ -3,7 +3,7 @@ import Metric from "./Metric";
 import { formatCompactActivityTime, formatMetricNumber } from "../lib/activityMetrics";
 
 import { useEffect, useRef, useState } from "react";
-import { Activity, Clock3, Footprints, Gauge, MapPin, Pause, Play, Square, Smartphone } from "lucide-react";
+import { Activity, Footprints, MapPin, Pause, Play, Square, Smartphone } from "lucide-react";
 import { readRecorderDraft, saveRecorderDraft, clearRecovery } from "../lib/activityRecovery";
 import type { ActivityType } from "../types";
 import InstallPwaPrompt from "./InstallPwaPrompt";
@@ -485,10 +485,10 @@ export default function ActivityRecorder({ type, onFinished, ownerUid }:{
       </p>
     ) : null}
 
-    <div className="activity-recorder-metrics">
-      <Metric icon={<MapPin/>} tone="distance" label="Vzdálenost" value={formatMetricNumber(distanceKm)} unit="km"/>
-      <Metric icon={<Clock3/>} tone="time" label="Čas" value={formatCompactActivityTime(elapsed / 60)}/>
-      <Metric icon={<Gauge/>} tone="pace" label="Tempo" value={distanceKm > 0 ? formatCompactActivityTime(elapsed / 60 / distanceKm) : "—"} unit={distanceKm > 0 ? "/km" : undefined}/>
+    <div data-metric-layout="row" className="activity-recorder-metrics">
+      <Metric tone="distance" label="Vzdálenost" value={formatMetricNumber(distanceKm)} unit="km"/>
+      <Metric tone="time" label="Čas" value={formatCompactActivityTime(elapsed / 60)}/>
+      <Metric tone="pace" label="Tempo" value={distanceKm > 0 ? formatCompactActivityTime(elapsed / 60 / distanceKm) : "—"} unit={distanceKm > 0 ? "/km" : undefined}/>
     </div>
 
     {accuracy!==null && <div className="activity-recorder-gps">Přesnost GPS přibližně {accuracy} m{paused?" · měření pozastaveno":""}</div>}

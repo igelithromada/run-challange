@@ -151,7 +151,7 @@ export default function TrainingGoals({
           </button>
         </div>
       </details>
-      <div className="progress-goal-bars app-metric-grid metric-group-ruled">
+      <div data-metric-layout="summary" className="progress-goal-bars app-metric-grid metric-group-ruled">
         {[
           { name: "Tento týden", km: weekKm, goal: saved.weekly },
           { name: "Tento měsíc", km: monthKm, goal: saved.monthly },

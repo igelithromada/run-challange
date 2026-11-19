@@ -34,7 +34,7 @@ export default function ChallengeSummaryCard({ challenge, joined, authorName, de
       <small className="challenge-activity-label activity-kind-label"><ActivityTypeIcon type={challenge.activityType} size={16}/>{activityLabel(challenge.activityType)}</small>
     </RecordCardHeading>
     {challenge.description && <div className={detail ? "activity-description" : "activity-description challenge-summary-description"}>{challenge.description}</div>}
-    {detail && <div className="app-metric-grid challenge-summary-metrics">
+    {detail && <div data-metric-layout="summary" className="app-metric-grid challenge-summary-metrics">
       <Metric icon={<Target size={19}/>} label="Cíl" tone="target" value={formatMetricNumber(goal, distance ? 1 : 0)} unit={unit}/>
       <Metric icon={<Users size={19}/>} label="Účastníci" tone="count" value={Number(challenge.participantCount || 0)}/>
     </div>}

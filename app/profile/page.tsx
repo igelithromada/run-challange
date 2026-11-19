@@ -1,6 +1,6 @@
 "use client";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
-import { preparePhoto } from "../lib/preparePhoto";
+import { uploadPhoto } from "../lib/uploadPhoto";
 
 import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, signOut, updatePassword } from "firebase/auth";
@@ -109,19 +109,9 @@ export default function ProfilePage() {
 
     setAvatarBusy(true);
     try {
-      const token = await user.getIdToken(true);
-      const form = new FormData();
-      form.append("file", await preparePhoto(file));
-      const uploadResponse = await fetch("/api/media/upload", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
-      });
-      const uploadResult = await uploadResponse.json().catch(() => ({}));
-      if (!uploadResponse.ok || typeof uploadResult.secureUrl !== "string") {
-        throw new Error(uploadResult.error || "Avatar se nepodařilo nahrát.");
-      }
-
+      const uploadResult = await uploadPhoto(file, "avatar");
+      if (auth.currentUser?.uid !== user.uid) throw new Error("Přihlášení se změnilo.");
+      const token = await user.getIdToken();
       const profileResponse = await fetch("/api/settings/profile", {
         method: "POST",
         headers: {
@@ -138,8 +128,6 @@ export default function ProfilePage() {
       invalidatePublicProfileCache(user.uid);
       invalidateUserProfileCache(user.uid);
       flash("Profilová fotografie byla uložena.");
-    } catch (error) {
-      flash(error instanceof Error ? error.message : "Avatar se nepodařilo uložit.", "error");
     } finally {
       setAvatarBusy(false);
       if (avatarInputRef.current) avatarInputRef.current.value = "";

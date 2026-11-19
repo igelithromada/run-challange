@@ -2,7 +2,7 @@
 import { isStrengthActivity } from "../lib/activity";
 import Metric from "./Metric";
 import { ActivityTypeIcon } from "./ActivityTypeSelector";
-import { MapPin, Clock3, Gauge, ListChecks, Award, Trophy } from "lucide-react";
+import { MapPin, Gauge, ListChecks, Award, Trophy } from "lucide-react";
 import { formatCompactActivityTime, formatMetricNumber } from "../lib/activityMetrics";
 import { formatResultDuration, type ResultPerson } from "../lib/results";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
@@ -66,16 +66,16 @@ export default function ResultsPersonRow({
           </small>
         </span>
       </button>
-      <div className="app-metric-grid result-measurements">
+      <div data-metric-layout="row" className="app-metric-grid result-measurements">
         <Metric icon={metric === "badges" ? <Award/> : metric === "tempo" ? <Gauge/> : strength ? <ActivityTypeIcon type={type} size={19}/> : <MapPin/>} label={metric === "badges" ? "Odznaky" : metric === "tempo" ? "Tempo" : strength ? "Opakování" : "Vzdálenost"} tone={metric === "badges" ? "award" : metric === "tempo" ? "pace" : strength ? "repetitions" : "distance"} value={value} unit={unit}/>
         <Metric icon={<ListChecks/>} label="Aktivity" tone="count" value={person.count}/>
-        <Metric icon={<Clock3/>} label="Čas" tone="time" value={strength && person.minutes === 0 ? "—" : formatResultDuration(person.minutes)}/>
+        <Metric label="Čas" tone="time" value={strength && person.minutes === 0 ? "—" : formatResultDuration(person.minutes)}/>
       </div>
       <details className="results-person-details">
         <summary>{metric === "badges" ? "Odznaky" : "Podrobnosti"}</summary>
-        <div className="app-metric-grid">
+        <div data-metric-layout="summary" className="app-metric-grid">
           <Metric icon={strength ? <ActivityTypeIcon type={type} size={19}/> : <MapPin/>} label={strength ? "Celkem opakování" : "Celkem km"} tone={strength ? "repetitions" : "distance"} value={strength ? formatMetricNumber(person.repetitions, 0) : formatMetricNumber(person.km)} unit={strength ? undefined : "km"}/>
-          {!strength && <Metric icon={<Gauge/>} label="Průměrné tempo" tone="pace" value={person.pace > 0 ? formatCompactActivityTime(person.pace) : "—"} unit={person.pace > 0 ? "/km" : undefined}/>}
+          {!strength && <Metric label="Průměrné tempo" tone="pace" value={person.pace > 0 ? formatCompactActivityTime(person.pace) : "—"} unit={person.pace > 0 ? "/km" : undefined}/>}
         </div>
         <dl>
           {metric === "badges" &&

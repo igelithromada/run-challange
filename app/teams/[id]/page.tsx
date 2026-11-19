@@ -1,12 +1,13 @@
 "use client";
+import FormField from "../../components/FormField";
 import Metric from "../../components/Metric";
 import TeamCardContent from "../../components/TeamCardContent";
-import { preparePhoto } from "../../lib/preparePhoto";
+import CoverField, { useCoverDraft } from "../../components/CoverField";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Camera, Save, Users, Crown, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, Users, Crown, Trash2 } from "lucide-react";
 import { auth } from "../../lib/firebase";
 import { ActivityTypeIcon } from "../../components/ActivityTypeSelector";
 import Navbar from "../../components/Navbar";
@@ -26,8 +27,7 @@ export default function TeamDetailPage() {
   const [user, setUser] = useState<User | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [avatarPublicId, setAvatarPublicId] = useState("");
+  const cover = useCoverDraft(`${user?.uid || ""}/${id}`);
   const [selectedManager, setSelectedManager] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -69,8 +69,6 @@ export default function TeamDetailPage() {
     setMembers(sorted);
     setName(data.name || "");
     setDescription(data.description || "");
-    setAvatarUrl(data.avatarUrl || "");
-    setAvatarPublicId(data.avatarPublicId || "");
     setSelectedManager("");
     setLoading(false);
   };
@@ -107,8 +105,9 @@ export default function TeamDetailPage() {
     if (!isManager || !team) return;
     setSaving(true);
     try {
-      await request("edit", { name, description, avatarUrl, avatarPublicId });
+      await request("edit", { name, description, ...await cover.resolve(team) });
       await load();
+      cover.reset();
       showAppToast("Nastavení týmu bylo uloženo.", "success");
     } catch (error) {
       showAppToast(error instanceof Error ? error.message : "Nastavení se nepodařilo uložit.", "error");
@@ -117,26 +116,6 @@ export default function TeamDetailPage() {
     }
   };
 
-  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !isManager) return;
-    try {
-      if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
-      if (!file.type.startsWith("image/")) throw new Error("Vyber fotografii.");
-      const token = await auth.currentUser.getIdToken();
-      const form = new FormData();
-      form.append("file", await preparePhoto(file));
-      const response = await fetch("/api/media/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || typeof result.secureUrl !== "string") throw new Error(result.error || "Nahrání selhalo.");
-      setAvatarUrl(result.secureUrl);
-      setAvatarPublicId(typeof result.publicId === "string" ? result.publicId : "");
-    } catch (error) {
-      showAppToast(error instanceof Error ? error.message : "Avatar se nepodařilo nahrát.", "error");
-    } finally {
-      event.target.value = "";
-    }
-  };
 
   const leave = async () => {
     if (!isMember || isManager) return;
@@ -198,7 +177,7 @@ export default function TeamDetailPage() {
 
         <section className="tile team-stats-card">
           <div className="progress-section-title"><Users /><div><h2>Statistiky týmu</h2><p>{team.memberCount || 0} {(team.memberCount || 0) === 1 ? "člen" : "členů"}</p></div></div>
-          <div className="team-stats-rows">
+          <div data-metric-layout="summary" className="team-stats-rows">
             <Metric icon={<ActivityTypeIcon type="běh" size={20}/>} label="Běh" tone="distance" value={Number(stats.runningKm || 0).toLocaleString("cs-CZ")} unit="km" detail={`${Number(stats.runningActivities || 0)} aktivit`}/>
             <Metric icon={<ActivityTypeIcon type="chůze" size={20}/>} label="Chůze" tone="distance" value={Number(stats.walkingKm || 0).toLocaleString("cs-CZ")} unit="km" detail={`${Number(stats.walkingActivities || 0)} aktivit`}/>
             <Metric icon={<ActivityTypeIcon type="dřepy" size={20}/>} label="Dřepy" tone="repetitions" value={Number(stats.squatRepetitions || 0).toLocaleString("cs-CZ")} unit="opakování" detail={`${Number(stats.squatActivities || 0)} aktivit`}/>
@@ -209,9 +188,9 @@ export default function TeamDetailPage() {
         {isManager && (
           <section className="tile team-settings-card">
             <div className="progress-section-title"><Save /><div><h2>Správa týmu</h2><p>Můžeš kdykoli upravit název, popis a obrázek týmu.</p></div></div>
-            <label className="team-detail-field">Název týmu<input value={name} maxLength={40} onChange={e => setName(e.target.value)} /></label>
-            <label className="team-detail-field">Popis<input value={description} maxLength={200} onChange={e => setDescription(e.target.value)} /></label>
-            <label className="team-avatar-upload"><Camera size={18} /><span>{avatarUrl ? "Změnit obrázek týmu" : "Přidat obrázek týmu"}</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadAvatar} /></label>
+            <FormField className="team-detail-field" label="Název týmu"><input value={name} maxLength={40} onChange={e => setName(e.target.value)} /></FormField>
+            <FormField className="team-detail-field" label="Popis"><input value={description} maxLength={200} onChange={e => setDescription(e.target.value)} /></FormField>
+            <CoverField draft={cover} existing={team.avatarUrl} busy={saving}/>
             <button className="run-primary-button team-save-button" onClick={() => void save()} disabled={saving}><Save size={18} />{saving ? "Ukládám…" : "Uložit změny"}</button>
           </section>
         )}

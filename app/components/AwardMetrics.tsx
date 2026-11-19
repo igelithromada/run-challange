@@ -27,7 +27,7 @@ export default function AwardMetrics({ awards, label, scroll = false }: {
   scroll?: boolean;
 }) {
   return <div className="metric-group-ruled">
-    <div className={scroll ? "award-metrics award-metrics-scroll" : "award-metrics app-metric-grid"}
+    <div data-metric-layout={scroll ? undefined : "summary"} className={scroll ? "award-metrics award-metrics-scroll" : "award-metrics app-metric-grid"}
       role="group" aria-label={label} tabIndex={scroll ? 0 : undefined}>
       {awards.map(award => {
         const Icon = awardIcons[award.id as keyof typeof awardIcons] ?? Trophy;

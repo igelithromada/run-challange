@@ -1,7 +1,7 @@
 "use client";
 import TeamCardContent from "../components/TeamCardContent";
 import Link from "next/link";
-import { preparePhoto } from "../lib/preparePhoto";
+import CoverField, { useCoverDraft } from "../components/CoverField";
 
 import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
@@ -27,9 +27,7 @@ export default function TeamsPage() {
   const [tab, setTab] = useState<Tab>("all");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [avatarPublicId, setAvatarPublicId] = useState("");
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const cover = useCoverDraft(user?.uid || "");
   const [creating, setCreating] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [page, setPage] = useState(1);
@@ -89,17 +87,6 @@ export default function TeamsPage() {
     return result;
   };
 
-  const uploadTeamImage = async (file: File) => {
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Povolené jsou pouze JPG, PNG a WebP.");
-    if (file.size <= 0) throw new Error("Vybraná fotografie je prázdná.");
-    if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
-    const token = await auth.currentUser.getIdToken();
-    const form = new FormData(); form.append("file", await preparePhoto(file));
-    const response = await fetch("/api/media/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || typeof result.secureUrl !== "string") throw new Error(result.error || "Nahrání obrázku selhalo.");
-    setAvatarUrl(result.secureUrl); setAvatarPublicId(typeof result.publicId === "string" ? result.publicId : "");
-  };
 
   const createTeam = async () => {
     const trimmedName = name.trim();
@@ -109,10 +96,10 @@ export default function TeamsPage() {
       await teamRequest("create", {
         name: trimmedName,
         description: description.trim(),
-        avatarUrl, avatarPublicId,
+        ...await cover.resolve(),
       });
       setName("");
-      setDescription(""); setAvatarUrl(""); setAvatarPublicId("");
+      setDescription(""); cover.reset();
       if (auth.currentUser?.uid !== user.uid) return;
       chooseTab("mine");
       setReload(current => current + 1);
@@ -180,14 +167,9 @@ export default function TeamsPage() {
               <FormField label="Popis" hint="volitelné">
                 <textarea maxLength={200} placeholder="Krátce popiš, pro koho je tým určený." value={description} onChange={event => setDescription(event.target.value)} />
               </FormField>
-              <label className="professional-form-file">
-                <Users size={19} aria-hidden="true" />
-                <span>{avatarUrl ? "Obrázek vybrán" : "Přidat obrázek"}</span>
-                <span className="professional-file-hint">volitelné</span>
-                <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingImage || creating} onChange={async event => { const file=event.target.files?.[0]; event.target.value=""; if(!file)return; setUploadingImage(true); try { await uploadTeamImage(file); showAppToast("Obrázek byl nahrán.","success"); } catch(error) { showAppToast(error instanceof Error ? error.message : "Obrázek se nepodařilo nahrát.","error"); } finally { setUploadingImage(false); } }} />
-              </label>
+              <CoverField draft={cover} busy={creating}/>
               <div className="professional-form-actions">
-                <button className="run-primary-button" onClick={() => void createTeam()} disabled={!name.trim() || creating || uploadingImage}>
+                <button className="run-primary-button" onClick={() => void createTeam()} disabled={!name.trim() || creating}>
                   <Plus size={18} /> {creating ? "Vytvářím…" : "Vytvořit tým"}
                 </button>
               </div>

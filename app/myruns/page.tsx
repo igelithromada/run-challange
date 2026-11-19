@@ -3,7 +3,8 @@ import Metric from "../components/Metric";
 import PhotoViewer from "../components/PhotoViewer";
 import { isStrengthActivity, activityAmount, parseActivityDuration, recordActivityType, validateActivityValues } from "../lib/activity";
 import { parseActivityDate } from "../lib/runData";
-import { preparePhoto } from "../lib/preparePhoto";
+import FormField from "../components/FormField";
+import { uploadPhoto } from "../lib/uploadPhoto";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Timestamp } from "firebase/firestore";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
@@ -16,7 +17,7 @@ import Sidebar from "../components/Sidebar";
 import ActivityCard from "../components/ActivityCard";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import ActivityTypeSelector, { ActivityTypeIcon } from "../components/ActivityTypeSelector";
-import { MapPin, Clock3, Gauge, ListChecks } from "lucide-react";
+import { ListChecks } from "lucide-react";
 import { formatResultDuration } from "../lib/results";
 import { activityMetrics, formatCompactActivityTime, formatMetricNumber } from "../lib/activityMetrics";
 import { showAppToast } from "../components/AppToast";
@@ -24,30 +25,6 @@ import type { RunData as BaseRunData, ActivityType } from "../types";
 import { personalHistoryQuery, updateRun } from "../lib/services/runs";
 
 type RunData = BaseRunData;
-const uploadToCloudinary = async (file: File) => {
-  const user = auth.currentUser;
-  if (!user) throw new Error("Nejsi přihlášen.");
-
-  const token = await user.getIdToken();
-  const data = new FormData();
-  data.append("file", await preparePhoto(file));
-
-  const response = await fetch("/api/media/upload", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: data,
-  });
-  const result = await response.json().catch(() => ({}));
-
-  if (!response.ok || typeof result.secureUrl !== "string") {
-    throw new Error(result.error || "Fotografii se nepodařilo nahrát.");
-  }
-
-  return {
-    secureUrl: result.secureUrl,
-    publicId: typeof result.publicId === "string" ? result.publicId : "",
-  };
-};
 const dateOf = (timestamp: RunData["timestamp"]) => parseActivityDate(timestamp) ?? new Date(0);
 const toLocalInput = (date: Date) => new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0,16);
 export default function MyRunsPage() {
@@ -160,7 +137,7 @@ export default function MyRunsPage() {
         description: description.trim().slice(0, 500)
       };
       if (file) {
-        const uploaded = await uploadToCloudinary(file);
+        const uploaded = await uploadPhoto(file);
         const current = runs.find(run => run.id === id);
         const images = current?.imageUrls?.length ? current.imageUrls : current?.imageUrl ? [current.imageUrl] : [];
         updates.imageUrls = [...images, uploaded.secureUrl];
@@ -242,12 +219,12 @@ export default function MyRunsPage() {
         </div>
       </details>
       {invalidDates && <p role="alert">Datum od nesmí být později než datum do.</p>}
-      <div className="tile-group activity-summary-grid">
+      <div data-metric-layout="summary" className="tile-group activity-summary-grid">
         {strength
           ? <Metric icon={<ActivityTypeIcon type={selectedType}/>} label="Celkem opakování" tone="repetitions" value={summaryUnavailable ?? formatMetricNumber(metrics.repetitions, 0)}/>
-          : <Metric icon={<MapPin/>} label="Celkem km" tone="distance" value={summaryUnavailable ?? formatMetricNumber(totalKm)} unit={summaryUnavailable ? undefined : "km"}/>}
-        <Metric icon={<Clock3/>} label="Čas" tone="time" value={summaryUnavailable ?? (strength && totalMin === 0 ? "—" : formatResultDuration(totalMin))}/>
-        {!strength && <Metric icon={<Gauge/>} label="Prům. tempo" tone="pace" value={summaryUnavailable ?? (avgTempo > 0 ? formatCompactActivityTime(avgTempo) : "—")} unit={!summaryUnavailable && avgTempo > 0 ? "/km" : undefined}/>}
+          : <Metric label="Celkem km" tone="distance" value={summaryUnavailable ?? formatMetricNumber(totalKm)} unit={summaryUnavailable ? undefined : "km"}/>}
+        <Metric label="Čas" tone="time" value={summaryUnavailable ?? (strength && totalMin === 0 ? "—" : formatResultDuration(totalMin))}/>
+        {!strength && <Metric label="Prům. tempo" tone="pace" value={summaryUnavailable ?? (avgTempo > 0 ? formatCompactActivityTime(avgTempo) : "—")} unit={!summaryUnavailable && avgTempo > 0 ? "/km" : undefined}/>}
         <Metric icon={<ListChecks/>} label="Počet aktivit" tone="count" value={summaryUnavailable ?? formatMetricNumber(filteredRuns.length, 0)}/>
       </div>
       <h2 className="centered-title">Moje záznamy</h2>
@@ -255,10 +232,10 @@ export default function MyRunsPage() {
       <div className="list-container myruns-list">
         {filteredRuns.slice(0, visibleCount).map(run => editingId === run.id ? <section key={run.id} className="run-form-panel activity-edit-form" aria-label="Upravit aktivitu">
           <div className="run-form-heading"><div><span className="run-form-eyebrow">ÚPRAVA AKTIVITY</span><h3>Upravit aktivitu</h3></div><button type="button" className="run-form-close" onClick={() => { setEditingId(null); setFile(null); setActionError(""); }} disabled={busy} aria-label="Zavřít formulář">×</button></div>
-          <label className="run-form-field"><span>{strength ? "Počet opakování" : "Vzdálenost (km)"}</span><input type="number" min={strength ? "1" : "0.1"} step={strength ? "1" : "0.01"} value={km} onChange={e => setKm(e.target.value)} /></label>
+          <FormField className="run-form-field" label={strength ? "Počet opakování" : "Vzdálenost"} hint={strength ? undefined : "km"}><input type="number" min={strength ? "1" : "0.1"} step={strength ? "1" : "0.01"} value={km} onChange={e => setKm(e.target.value)} /></FormField>
           <div className="run-form-field"><span>Celkový čas <small>{strength ? "volitelné" : "minuty a sekundy"}</small></span><div className="run-form-time-fields"><label className="run-form-unit-field"><input aria-label="Minuty" type="number" min="0" value={durationMinutes} onChange={e=>setDurationMinutes(e.target.value.replace(/[^0-9]/g,"").slice(0,4))}/></label><label className="run-form-unit-field"><input aria-label="Sekundy" type="number" min="0" max="59" value={durationSeconds} onChange={e=>setDurationSeconds(e.target.value.replace(/[^0-9]/g,"").slice(0,2))}/></label></div></div>
-          <label className="run-form-field"><span>Popis <small>volitelné</small></span><textarea className="run-form-description" maxLength={500} placeholder="Jaká byla dnešní aktivita?" value={description} onChange={e => setDescription(e.target.value)} /></label>
-          <label className="run-form-field"><span>Datum a čas aktivity</span><input type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} /></label>
+          <FormField className="run-form-field" label="Popis" hint="volitelné"><textarea className="run-form-description" maxLength={500} placeholder="Jaká byla dnešní aktivita?" value={description} onChange={e => setDescription(e.target.value)} /></FormField>
+          <FormField className="run-form-field" label="Datum a čas aktivity"><input type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} /></FormField>
           <label className="run-form-upload"><span>{file ? `Vybraná fotografie: ${file.name}` : "Přidat fotografii (volitelné)"}</span><input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} /></label>
           <div className="run-form-actions run-form-actions-single"><button type="button" className="run-primary-button" disabled={busy} onClick={() => handleUpdate(run.id)}>{busy ? "Ukládám…" : "Uložit změny"}</button></div>
         </section> : <ActivityCard key={run.id} run={run} activityType={selectedType} onEdit={() => handleEdit(run)} onDelete={() => handleDelete(run.id)} onPhotosClick={(images, _fallback, startIndex = 0) => { setCurrentImageIndex(startIndex); setShowImageUrls(images); setShowImageRunId(run.id); }} />)}

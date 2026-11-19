@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Clock3, Gauge, MapPin } from "lucide-react";
+
 import { activityLabel, isStrengthActivity } from "../lib/activity";
 import { formatCompactActivityTime, formatMetricNumber, numberValue } from "../lib/activityMetrics";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
@@ -62,12 +62,12 @@ export function ActivityCardStats({ activityType, run }: {
   return <>
     {run.description?.trim() && <div className="activity-description">{run.description.trim()}</div>}
 
-    <div className={strength ? "activity-metrics strength-metrics" : "activity-metrics"}>
+    <div data-metric-layout="row" className={strength ? "activity-metrics strength-metrics" : "activity-metrics"}>
       {strength
         ? <Metric icon={<ActivityTypeIcon type={activityType}/>} label="Opakování" tone="repetitions" value={formatMetricNumber(numberValue(run.repetitions), 0)}/>
-        : <Metric icon={<MapPin/>} label="Vzdálenost" tone="distance" value={formatMetricNumber(numberValue(run.km))} unit="km"/>}
-      {(!strength || Number(run.minuty) > 0) && <Metric icon={<Clock3/>} label="Čas" tone="time" value={formatCompactActivityTime(Number(run.minuty))}/>}
-      {!strength && <Metric icon={<Gauge/>} label="Tempo" tone="pace" value={formatCompactActivityTime(Number(run.tempo))} unit="/km"/>}
+        : <Metric label="Vzdálenost" tone="distance" value={formatMetricNumber(numberValue(run.km))} unit="km"/>}
+      {(!strength || Number(run.minuty) > 0) && <Metric label="Čas" tone="time" value={formatCompactActivityTime(Number(run.minuty))}/>}
+      {!strength && <Metric label="Tempo" tone="pace" value={formatCompactActivityTime(Number(run.tempo))} unit="/km"/>}
     </div>
   </>;
 }

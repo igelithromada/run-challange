@@ -64,3 +64,15 @@ test('the header hides the notification bell when there are no notifications', (
   assert.match(html, /aria-label="Otevřít navigaci"/);
   assert.doesNotMatch(html, /notification-wrap/, 'removes the fourth header track when there are no notifications');
 });
+
+test('team and challenge covers use a smaller bounding box and byte budget than activity photos', async () => {
+  let canvas, encodings = 0;
+  const api = load('app/lib/preparePhoto.ts', {}, {
+    HTMLImageElement: class {}, createImageBitmap: async () => ({ width: 1200, height: 1600, close() {} }),
+    document: { createElement: () => canvas = { getContext: () => ({ fillRect() {}, drawImage() {} }),
+      toBlob: fn => fn(new Blob([new Uint8Array(++encodings === 1 ? 400000 : 220000)], { type: 'image/jpeg' })) } },
+  });
+  const file = await api.preparePhoto(new File([new Uint8Array(500000)], 'cover.png', { type: 'image/png' }), 'cover');
+  assert.equal(canvas.width, 720); assert.equal(canvas.height, 960);
+  assert.equal(file.size, 220000); assert.equal(encodings, 2);
+});

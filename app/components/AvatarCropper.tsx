@@ -70,11 +70,12 @@ export default function AvatarCropper({ file, busy, onCancel, onSave }: Props) {
     setError("");
     try {
       const canvas = document.createElement("canvas");
-      canvas.width = canvas.height = 768;
+      const edge = Math.max(1, Math.min(512, Math.round(crop.size)));
+      canvas.width = canvas.height = edge;
       const context = canvas.getContext("2d");
       if (!context) throw new Error("Fotografii se nepodařilo připravit.");
       context.fillStyle = "#fff";
-      context.fillRect(0, 0, 768, 768);
+      context.fillRect(0, 0, edge, edge);
       context.drawImage(
         image.current,
         crop.sx,
@@ -83,8 +84,8 @@ export default function AvatarCropper({ file, busy, onCancel, onSave }: Props) {
         crop.size,
         0,
         0,
-        768,
-        768,
+        edge,
+        edge,
       );
       const blob = await new Promise<Blob>((resolve, reject) =>
         canvas.toBlob(

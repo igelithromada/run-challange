@@ -1,7 +1,7 @@
 "use client";
 import { challengeKindFor } from "../lib/challengeMeasurement";
 import { isStrengthActivity } from "../lib/activity";
-import { preparePhoto } from "../lib/preparePhoto";
+import CoverField, { useCoverDraft } from "../components/CoverField";
 
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
@@ -13,24 +13,12 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import { fetchChallengeList } from "../lib/services/challenges";
-import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector from "../components/ActivityTypeSelector";
 import FormField from "../components/FormField";
 import type { ActivityType, ChallengeData, ChallengeKind, ChallengeList, ChallengeState } from "../types";
 import styles from "./page.module.css";
 
-async function uploadChallengeImage(file: File) {
-  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Povolené jsou pouze JPG, PNG a WebP.");
-  if (file.size <= 0) throw new Error("Vybraná fotografie je prázdná.");
-  if (!auth.currentUser) throw new Error("Nejsi přihlášen.");
-  const token = await auth.currentUser.getIdToken();
-  const form = new FormData(); form.append("file", await preparePhoto(file));
-  const response = await fetch("/api/media/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok || typeof data.secureUrl !== "string") throw new Error(data.error || "Obrázek se nepodařilo nahrát.");
-  return { secureUrl: data.secureUrl, publicId: typeof data.publicId === "string" ? data.publicId : "" };
-}
 
 const MONTHS = ["Leden","Únor","Březen","Duben","Květen","Červen","Červenec","Srpen","Září","Říjen","Listopad","Prosinec"];
 
@@ -56,9 +44,7 @@ export default function ChallengesPage() {
   const [goal,setGoal]=useState("");
   const [startDate,setStartDate]=useState("");
   const [endDate,setEndDate]=useState("");
-  const [avatarUrl,setAvatarUrl]=useState("");
-  const [avatarPublicId,setAvatarPublicId]=useState("");
-  const [uploadingImage,setUploadingImage]=useState(false);
+  const cover = useCoverDraft(user?.uid || "");
   const [selectedState, setSelectedState] = useState<ChallengeState>("active");
   const [lists, setLists] = useState<Record<string, ChallengeList>>({});
   const [failedKey, setFailedKey] = useState<string | null>(null);
@@ -77,9 +63,9 @@ export default function ChallengesPage() {
     if(!user||creating||!name.trim()||!goal||!startDate||!endDate)return;
     setCreating(true);
     try{
-      const data=await request("create",{name,description,kind:challengeKindFor(activityType,kind),activityType,goal:Number(goal),startDate,endDate,avatarUrl,avatarPublicId});
+      const data=await request("create",{name,description,kind:challengeKindFor(activityType,kind),activityType,goal:Number(goal),startDate,endDate,...await cover.resolve()});
       const createdChallenge = data.challenge as ChallengeData | undefined;
-      setName("");setDescription("");setGoal("");setStartDate("");setEndDate("");setAvatarUrl("");setAvatarPublicId("");
+      setName("");setDescription("");setGoal("");setStartDate("");setEndDate("");cover.reset();
       setLists({});
       setFailedKey(null);
       setLoadAttempt(current => current + 1);
@@ -142,7 +128,7 @@ export default function ChallengesPage() {
             <FormField label="Popis" hint="volitelné">
               <textarea className="professional-input" maxLength={200} placeholder="Krátce popiš cíl a motivaci výzvy." value={description} onChange={e=>setDescription(e.target.value)}/>
             </FormField>
-            <FormField label="Typ aktivity">
+            <FormField label="Typ aktivity" group>
               <ActivityTypeSelector value={activityType} onChange={setActivityType} ariaLabel="Typ aktivity výzvy"/>
             </FormField>
             <FormField label="Typ cíle">
@@ -160,15 +146,9 @@ export default function ChallengesPage() {
               <FormField label="Od"><input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}/></FormField>
               <FormField label="Do"><input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/></FormField>
             </div>
-            <label className="professional-form-file">
-              <Plus size={19} aria-hidden="true" />
-              <span>{avatarUrl ? "Obrázek vybrán" : "Přidat obrázek"}</span>
-              <span className="professional-file-hint">volitelné</span>
-              <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingImage||creating} onChange={async e=>{const file=e.target.files?.[0];e.target.value="";if(!file)return;setUploadingImage(true);try{const uploaded=await uploadChallengeImage(file);setAvatarUrl(uploaded.secureUrl);setAvatarPublicId(uploaded.publicId);showAppToast("Obrázek byl nahrán.","success");}catch(err){showAppToast(err instanceof Error?err.message:"Obrázek se nepodařilo nahrát.","error");}finally{setUploadingImage(false);}}}/>
-            </label>
-            {avatarUrl&&<div className="challenge-image-preview"><img src={cloudinaryImageUrl(avatarUrl,160)} alt="Náhled obrázku výzvy"/><button type="button" className="run-secondary-button" onClick={()=>{setAvatarUrl("");setAvatarPublicId("");}}>Odebrat obrázek</button></div>}
-            <div className="professional-form-actions">
-              <button className="run-primary-button" onClick={()=>void create()} disabled={creating||uploadingImage||!name.trim()||!goal||!startDate||!endDate}><Plus size={18}/>{creating?"Vytvářím…":"Vytvořit výzvu"}</button>
+            <CoverField draft={cover} busy={creating}/>
+              <div className="professional-form-actions">
+              <button className="run-primary-button" onClick={()=>void create()} disabled={creating||!name.trim()||!goal||!startDate||!endDate}><Plus size={18}/>{creating?"Vytvářím…":"Vytvořit výzvu"}</button>
             </div>
           </div>
         </section>

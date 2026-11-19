@@ -1,7 +1,8 @@
 "use client";
 import { parseActivityDuration, isStrengthActivity, activityLabel as labelFor } from "../lib/activity";
 import { readFormDraft, saveFormDraft, readRecorderDraft, clearRecovery, draftPhotos } from "../lib/activityRecovery";
-import { preparePhoto } from "../lib/preparePhoto";
+import FormField from "./FormField";
+import { uploadPhoto, type UploadedPhoto } from "../lib/uploadPhoto";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { auth } from "../lib/firebase";
@@ -11,30 +12,6 @@ import { createRun } from "../lib/services/runs";
 import { getUserProfile } from "../lib/services/users";
 import ActivityRecorder from "./ActivityRecorder";
 
-const uploadToCloudinary = async (file: File) => {
-  const user = auth.currentUser;
-  if (!user) throw new Error("Nejsi přihlášen.");
-
-  const token = await user.getIdToken();
-  const formData = new FormData();
-  formData.append("file", await preparePhoto(file));
-
-  const response = await fetch("/api/media/upload", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: formData,
-  });
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok || typeof data.secureUrl !== "string") {
-    throw new Error(data.error || "Fotografii se nepodařilo nahrát.");
-  }
-
-  return {
-    secureUrl: data.secureUrl,
-    publicId: typeof data.publicId === "string" ? data.publicId : "",
-  };
-};
 
 const localDateTime = () => {
   const now = new Date();
@@ -67,6 +44,7 @@ export default function RunForm({ type }: {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
+  const uploadedFiles = useRef(new WeakMap<File, UploadedPhoto>());
   const submissionIdRef = useRef<string | null>(null);
   const formPanelRef = useRef<HTMLElement | null>(null);
   const persistEnabled = useRef(false);
@@ -78,6 +56,7 @@ export default function RunForm({ type }: {
   useEffect(() => {
     if (draftOwner.current !== ownerUid) {
       draftOwner.current = ownerUid;
+      uploadedFiles.current = new WeakMap();
       persistEnabled.current = false;
     }
   }, [ownerUid]);
@@ -108,6 +87,7 @@ export default function RunForm({ type }: {
     if(ownerUid)void draftPhotos(ownerUid,type,null).catch(()=>{});
     setRecoverable(null);setDraftMessage("");setPhotoDraftError("");
     submissionIdRef.current = null;
+    uploadedFiles.current = new WeakMap();
     setKm("");
     setDurationMinutes("");
     setDurationSeconds("");
@@ -218,7 +198,10 @@ export default function RunForm({ type }: {
       const imagePublicIds: string[] = [];
       for (let i = 0; i < files.length; i++) {
         setUploadStatus(`Zmenšuji a nahrávám fotografii ${i + 1}/${files.length}…`);
-        const uploaded = await uploadToCloudinary(files[i]);
+        const file = files[i];
+        const uploaded = uploadedFiles.current.get(file) ?? await uploadPhoto(file);
+        if (auth.currentUser?.uid !== user.uid) throw new Error("Přihlášení se změnilo.");
+        uploadedFiles.current.set(file, uploaded);
         imageUrls.push(uploaded.secureUrl);
         if (uploaded.publicId) imagePublicIds.push(uploaded.publicId);
       }
@@ -307,10 +290,9 @@ export default function RunForm({ type }: {
             </div>
           ) : (
             <>
-              <label className="run-form-field">
-                <span>{strength ? "Počet opakování" : "Vzdálenost"} <small>{strength ? "" : "km"}</small></span>
+              <FormField className="run-form-field" label={strength ? "Počet opakování" : "Vzdálenost"} hint={strength ? undefined : "km"}>
                 <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label={strength ? "Počet opakování" : "Vzdálenost v kilometrech"} type="number" min={strength ? "1" : "0.1"} step={strength ? "1" : "0.01"} inputMode={strength ? "numeric" : "decimal"} placeholder={strength ? "Např. 30" : "Např. 5,2"} value={km} onChange={e => setKm(e.target.value)} />
-              </label>
+              </FormField>
 
               <div className="run-form-field">
                 <span>Celkový čas <small>{strength ? "volitelné" : "minuty a sekundy"}</small></span>
@@ -331,20 +313,26 @@ export default function RunForm({ type }: {
                 </div>
               )}
 
-              <label className="run-form-field">
-                <span>Popis <small>volitelné</small></span>
+              <FormField className="run-form-field" label="Popis" hint="volitelné">
                 <textarea onFocus={e => scrollFieldIntoView(e.currentTarget)} className="run-form-description" maxLength={500} placeholder="Jaká byla dnešní aktivita?" value={description} onChange={e => setDescription(e.target.value)} />
-              </label>
+              </FormField>
 
-              <label className="run-form-field">
-                <span>Datum a čas aktivity</span>
+              <FormField className="run-form-field" label="Datum a čas aktivity">
                 <input onFocus={e => scrollFieldIntoView(e.currentTarget)} type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} />
-              </label>
+              </FormField>
 
               <label className="run-form-upload">
                 <ImagePlus size={19} aria-hidden="true" />
                 <span>{files.length ? `Vybráno fotografií: ${files.length}` : "Přidat fotografie (max. 6)"}</span>
-                <input type="file" accept="image/*" multiple onChange={e => setFiles(Array.from(e.target.files || []).slice(0, 6))} />
+                <input type="file" accept="image/*" multiple disabled={saving} onChange={event => {
+                  const next = [...files];
+                  for (const file of Array.from(event.target.files || [])) {
+                    if (!next.some(photo => photo.name === file.name && photo.size === file.size && photo.lastModified === file.lastModified)) next.push(file);
+                  }
+                  if (next.length > 6) showAppToast("K aktivitě můžeš přidat nejvýše šest fotografií.", "error");
+                  setFiles(next.slice(0, 6));
+                  event.target.value = "";
+                }} />
               </label>
 
               {previews.length > 0 && (
@@ -352,7 +340,7 @@ export default function RunForm({ type }: {
                   {previews.map((item, index) => (
                     <div key={item.url}>
                       <img src={item.url} alt={`Náhled fotografie ${index + 1}`} />
-                      <button type="button" onClick={() => setFiles(current => current.filter(file => file !== item.file))} aria-label={`Odebrat fotografii ${index + 1}`}>
+                      <button type="button" disabled={saving} onClick={() => setFiles(current => current.filter(file => file !== item.file))} aria-label={`Odebrat fotografii ${index + 1}`}>
                         ×
                       </button>
                     </div>
