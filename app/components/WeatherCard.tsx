@@ -19,6 +19,34 @@ const probabilityLabel = (value?: number | null) => {
   return typeof percent === "number" ? `${percent} %` : percent;
 };
 
+
+function TemperatureTrend({ hours, timeZone }: { hours: import("../lib/weather").WeatherHour[]; timeZone: string }) {
+  const entries = hours.slice(0, 8).filter(hour => typeof hour.temperature?.degrees === "number" && Number.isFinite(hour.temperature.degrees));
+  if (entries.length < 2) return null;
+  const temperatures = entries.map(hour => hour.temperature!.degrees!);
+  const minimum = Math.min(...temperatures);
+  const maximum = Math.max(...temperatures);
+  const spread = Math.max(maximum - minimum, 2);
+  const x = (index: number) => 34 + index * (572 / (entries.length - 1));
+  const y = (temperature: number) => 82 - (temperature - minimum) / spread * 52;
+  const points = temperatures.map((temperature, index) => ({ x: x(index), y: y(temperature) }));
+  const path = points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
+  return <div className="weather-temperature-trend" role="group" aria-label="Graf hodinového vývoje teploty">
+    <div className="weather-temperature-trend-inner">
+      <div className="weather-temperature-trend-hours">
+        {entries.map((hour, index) => <span key={hour.interval?.startTime || index}>{weatherTime(hour.interval?.startTime, timeZone)}</span>)}
+      </div>
+      <div className="weather-temperature-trend-values">
+        {temperatures.map((temperature, index) => <strong key={entries[index].interval?.startTime || index}>{Math.round(temperature)}°</strong>)}
+      </div>
+      <svg viewBox="0 0 640 110" preserveAspectRatio="none" role="img" aria-label={`Teplota od ${Math.round(temperatures[0])} do ${Math.round(temperatures[temperatures.length - 1])} stupňů Celsia`}>
+        <path d={path} fill="none" stroke="#f5cc68" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        {points.map((point, index) => <circle key={index} cx={point.x} cy={point.y} r="5" fill="var(--ui-bg, #243447)" stroke="#f5cc68" strokeWidth="2" vectorEffect="non-scaling-stroke" />)}
+      </svg>
+    </div>
+  </div>;
+}
+
 export default function WeatherCard() {
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -233,6 +261,7 @@ export default function WeatherCard() {
       {precipitationExplanation&&<details className="weather-model-note"><summary>{precipitationExplanation.summary}</summary><p>{precipitationExplanation.text}</p></details>}
       {hours.length > 0 ? <section className="weather-hour-section" aria-labelledby="weather-hour-heading">
         <h3 id="weather-hour-heading">Předpověď po hodinách</h3>
+        <TemperatureTrend hours={hours} timeZone={timeZone} />
         <div className="weather-hour-grid weather-hour-scroll" tabIndex={0} role="group" aria-label="Předpověď na 12 hodin, posouvej doleva nebo doprava">
           {hours.map(item => {
             const period = `${weatherTime(item.interval?.startTime, timeZone)}–${weatherTime(item.interval?.endTime, timeZone)}`;
