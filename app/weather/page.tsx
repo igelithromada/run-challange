@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { WeatherHour, WeatherResponse } from "../lib/weather";
-import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudSnow, Moon, Sun, Wind, Droplets, RefreshCw } from "lucide-react";
+import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudSnow, Sun, Wind, Droplets, RefreshCw } from "lucide-react";
 import RunWeatherRecommendation from "../components/RunWeatherRecommendation";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -19,18 +19,16 @@ function weatherKind(type = "") {
   if (value.includes("RAIN")) return "rain";
   if (value.includes("DRIZZLE")) return "drizzle";
   if (value.includes("FOG") || value.includes("HAZE")) return "fog";
-  if (value.includes("PARTLY") && value.includes("NIGHT")) return "partly-night";
   if (value.includes("PARTLY") || value.includes("MOSTLY")) return "partly";
   if (value.includes("CLOUD")) return "cloud";
-  if (value.includes("NIGHT")) return "moon";
   if (value.includes("CLEAR") || value.includes("SUN")) return "sun";
   return "partly";
 }
 function WeatherVisual({ type, size, className = "" }: { type?: string; size: number; className?: string }) {
   const kind = weatherKind(type);
-  const Icon = kind === "moon" ? Moon : kind === "storm" ? CloudLightning : kind === "snow" ? CloudSnow : kind === "rain" ? CloudRain : kind === "drizzle" ? CloudDrizzle : kind === "fog" ? CloudFog : kind === "cloud" ? Cloud : Sun;
+  const Icon = kind === "storm" ? CloudLightning : kind === "snow" ? CloudSnow : kind === "rain" ? CloudRain : kind === "drizzle" ? CloudDrizzle : kind === "fog" ? CloudFog : kind === "cloud" ? Cloud : Sun;
   return <span className={`weather-visual-wrap weather-visual-${kind} ${className}`} style={{ width: size, height: size }}>
-    {kind === "partly-night" ? <><Moon className="weather-moon" size={Math.round(size * .58)} strokeWidth={1.7} /><Cloud className="weather-cloud" size={Math.round(size * .68)} strokeWidth={1.8} /></> : kind === "partly" ? <><Sun className="weather-sun" size={Math.round(size * .58)} strokeWidth={1.7} /><Cloud className="weather-cloud" size={Math.round(size * .68)} strokeWidth={1.8} /></> : <Icon className="weather-visual-icon" size={Math.round(size * .72)} strokeWidth={1.7} />}
+    {kind === "partly" ? <><Sun className="weather-sun" size={Math.round(size * .58)} strokeWidth={1.7} /><Cloud className="weather-cloud" size={Math.round(size * .68)} strokeWidth={1.8} /></> : <Icon className="weather-visual-icon" size={Math.round(size * .72)} strokeWidth={1.7} />}
   </span>;
 }
 function RainIcon({ size = 22, className = "" }: { size?: number; className?: string }) {
@@ -43,30 +41,6 @@ function hourLabel(item: WeatherHour) {
   return date ? date.toLocaleTimeString("cs-CZ", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Prague" }) : "—";
 }
 function formatMm(value?: number | null) { return value !== undefined && value !== null ? `${value.toFixed(value >= 10 ? 0 : 1)} mm` : "—"; }
-
-function TemperatureTrend({ hours }: { hours: WeatherHour[] }) {
-  const points = hours.slice(0, 8).filter(hour => Number.isFinite(hour.temperature?.degrees));
-  if (points.length < 2) return null;
-  const values = points.map(hour => hour.temperature!.degrees!);
-  const low = Math.min(...values);
-  const high = Math.max(...values);
-  const range = Math.max(high - low, 2);
-  const x = (index: number) => 26 + index * (548 / (points.length - 1));
-  const y = (value: number) => 86 - ((value - low) / range) * 49;
-  const coordinates = values.map((value, index) => [x(index), y(value)] as const);
-  const path = coordinates.map(([px, py], index) => `${index === 0 ? "M" : "L"} ${px.toFixed(1)} ${py.toFixed(1)}`).join(" ");
-  return (
-    <div className="weather-temperature-trend" aria-label="Vývoj teplot po hodinách">
-      <svg viewBox="0 0 600 112" role="img" aria-label={`Vývoj teplot od ${hourLabel(points[0])} do ${hourLabel(points[points.length - 1])}, od ${low} do ${high} stupňů Celsia`} preserveAspectRatio="none">
-        <path className="weather-temperature-line" d={path} fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-        {coordinates.map(([px, py], index) => <circle key={index} className="weather-temperature-dot" cx={px} cy={py} r="5" />)}
-      </svg>
-      <div className="weather-temperature-trend-labels">
-        {points.map((hour, index) => <div key={hour.interval?.startTime || index} className="weather-temperature-trend-point"><span>{hourLabel(hour)}</span><strong>{Math.round(values[index])}°</strong></div>)}
-      </div>
-    </div>
-  );
-}
 
 export default function WeatherCard() {
   const router = useRouter();
@@ -129,7 +103,7 @@ export default function WeatherCard() {
               <div className="weather-stat-card"><Droplets className="weather-humidity-icon" size={19} /><strong>{humidity !== undefined ? `${humidity}%` : "—"}</strong><small>Vlhkost</small></div>
             </div>
           </div>
-          {hours.length > 0 && <section className="weather-hour-section"><h3>Předpověď po hodinách</h3><TemperatureTrend hours={hours} /><div className="weather-hour-grid">{hours.map((item,index) => { return <div key={item?.interval?.startTime || index} className="weather-hour-card"><small>{hourLabel(item)}</small>{isRainType(item?.weatherCondition?.type) ? <RainIcon size={27} className="weather-hour-icon" /> : <WeatherVisual type={item?.weatherCondition?.type} size={27} className="weather-hour-icon" />}<strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong><span>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}% déšť` : "—"}</span>{item?.precipitation?.amount !== undefined && item?.precipitation?.amount !== null && <small>{formatMm(item.precipitation.amount)}</small>}</div>; })}</div></section>}
+          {hours.length > 0 && <section className="weather-hour-section"><h3>Předpověď po hodinách</h3><div className="weather-hour-grid">{hours.map((item,index) => { return <div key={item?.interval?.startTime || index} className="weather-hour-card"><small>{hourLabel(item)}</small>{isRainType(item?.weatherCondition?.type) ? <RainIcon size={27} className="weather-hour-icon" /> : <WeatherVisual type={item?.weatherCondition?.type} size={27} className="weather-hour-icon" />}<strong>{Math.round(item?.temperature?.degrees ?? 0)}°</strong><span>{item?.precipitation?.probability?.percent !== undefined && item?.precipitation?.probability?.percent !== null ? `${item.precipitation.probability.percent}% déšť` : "—"}</span>{item?.precipitation?.amount !== undefined && item?.precipitation?.amount !== null && <small>{formatMm(item.precipitation.amount)}</small>}</div>; })}</div></section>}
           <p className="weather-source">Zdroj: {weather.source || "Google Weather"} · obnoveno {lastUpdated}</p>
         </>
       )}
