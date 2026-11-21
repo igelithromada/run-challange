@@ -6299,3 +6299,20 @@ dialog.social-modal-backdrop .social-modal { max-height:calc(var(--overlay-heigh
 .weather-temperature-trend-values strong { font-size: .95rem; padding-top: .25rem; }
 .weather-temperature-trend svg { display: block; width: 100%; height: 100px; margin-top: -.1rem; overflow: visible; }
 html[data-theme="white"] .weather-temperature-trend svg circle { fill: #fff; }
+
+/* Jednotná vodorovná hodinová předpověď: graf, ikony a srážky v jedné tabulce. */
+.weather-hour-unified-scroll { overflow-x:auto; overflow-y:hidden; max-width:100%; scrollbar-width:thin; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; padding: .25rem 0 .6rem; }
+.weather-hour-unified { position:relative; }
+.weather-hour-unified-columns { display:flex; align-items:stretch; }
+.weather-hour-unified-column { box-sizing:border-box; flex:0 0 112px; width:112px; min-width:0; display:flex; flex-direction:column; align-items:center; text-align:center; justify-content:flex-start; gap:.3rem; padding:.3rem .3rem .45rem; border-right:1px solid rgba(200,210,225,.27); }
+.weather-hour-unified-column:last-child { border-right:0; }
+.weather-hour-unified-time { font-size:.8rem; opacity:.82; }
+.weather-hour-unified-temp { font-size:1.15rem; line-height:1.3; }
+.weather-hour-unified-graph { display:block; height:74px; width:100%; }
+.weather-hour-unified-details { border-top:1px solid rgba(200,210,225,.27); border-bottom:1px solid rgba(200,210,225,.27); }
+.weather-hour-unified-details .weather-hour-unified-column { gap:.55rem; padding:.7rem .25rem .75rem; }
+.weather-hour-unified-details strong { font-size:.85rem; }
+.weather-hour-unified-details small { font-size:.73rem; opacity:.8; white-space:nowrap; }
+html[data-theme="white"] .weather-hour-unified-column { border-right-color:rgba(30,60,80,.18); }
+html[data-theme="white"] .weather-hour-unified-details { border-color:rgba(30,60,80,.18); }
+html[data-theme="white"] .weather-hour-unified-graph circle { fill:#fff; }
