@@ -32,14 +32,14 @@ function description(code: number, precipitationMm?: number | null) {
   return labels[code] || "Proměnlivé počasí";
 }
 
-function conditionType(code: number) {
+function conditionType(code: number, isDay = true) {
   if (code >= 95) return "THUNDERSTORM";
   if (code >= 71 && code <= 86) return "SNOW";
   if (code >= 51 && code <= 67) return "RAIN";
   if (code >= 45 && code <= 48) return "FOG";
-  if (code >= 1 && code <= 2) return "PARTLY_CLOUDY";
+  if (code >= 1 && code <= 2) return isDay ? "PARTLY_CLOUDY" : "PARTLY_CLOUDY_NIGHT";
   if (code === 3) return "CLOUDY";
-  return "CLEAR";
+  return isDay ? "CLEAR" : "CLEAR_NIGHT";
 }
 
 async function openMeteo() {
@@ -54,7 +54,7 @@ async function openMeteo() {
   );
   url.searchParams.set(
     "hourly",
-    "temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m"
+    "temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m,is_day"
   );
   url.searchParams.set("wind_speed_unit", "kmh");
 
@@ -73,7 +73,7 @@ async function openMeteo() {
       temperature: { degrees: c.temperature_2m },
       feelsLikeTemperature: { degrees: c.apparent_temperature },
       weatherCondition: {
-        type: conditionType(c.weather_code),
+        type: conditionType(c.weather_code, c.is_day === 1),
         description: { text: description(c.weather_code, c.precipitation) }
       },
       wind: { speed: { value: c.wind_speed_10m, unit: "KILOMETERS_PER_HOUR" } },
@@ -86,10 +86,11 @@ async function openMeteo() {
     hourly: h.time.slice(start, start + 12).map((time: string, offset: number) => {
       const i = start + offset;
       return {
-        interval: { startTime: new Date(time).toISOString() },
+        interval: { startTime: time },
+        displayDateTime: { hours: Number(time.slice(11, 13)) },
         temperature: { degrees: h.temperature_2m[i] },
         weatherCondition: {
-          type: conditionType(h.weather_code[i]),
+          type: conditionType(h.weather_code[i], h.is_day[i] === 1),
           description: { text: description(h.weather_code[i], h.precipitation[i]) }
         },
         precipitation: {
