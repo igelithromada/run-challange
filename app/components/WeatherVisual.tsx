@@ -28,7 +28,7 @@ export default function WeatherVisual({ type, size, className = "", night = fals
   const label = weatherDescription(type);
   const sun = <g className="wx-sun"><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4m0-14.2-1.4 1.4M6.3 17.7l-1.4 1.4" /></g>;
   const moon = <path className="wx-moon" d="M20.5 13.5A8.5 8.5 0 0 1 10.5 3a8.5 8.5 0 1 0 10 10.5Z" />;
-  return <span className={`weather-symbol weather-symbol-${kind} ${night ? "weather-symbol-night" : ""} ${className}`} style={{ width: size, height: size }} role="img" aria-label={label} title={label}>
+  return <span className={`weather-symbol weather-symbol-${kind} ${className}`} style={{ width: size, height: size }} role="img" aria-label={label} title={label}>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
       {kind === "sun" ? (night ? moon : sun) : kind === "partly" && night ? <>
         <path className="wx-moon" d="M7 2C3.7 2.2 1.7 4.7 2 7.5C2.4 11.9 7.6 13.6 10.7 10C6.4 10.1 4.4 5.6 7 2Z"/>
