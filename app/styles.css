@@ -5192,3 +5192,18 @@ html[data-theme="white"] :focus-visible {
   outline-offset:2px;
 }
 
+
+/* Hodinový teplotní trend – stejný datový zdroj, bez další knihovny. */
+.weather-temperature-trend { margin: .65rem 0 .9rem; overflow: hidden; }
+.weather-temperature-trend > svg { display: block; width: 100%; height: 90px; overflow: visible; }
+.weather-temperature-line { stroke: #f6ca66; vector-effect: non-scaling-stroke; }
+.weather-temperature-dot { fill: #fff; stroke: #f6ca66; stroke-width: 2px; vector-effect: non-scaling-stroke; }
+.weather-temperature-trend-labels { display: grid; grid-template-columns: repeat(8,minmax(0,1fr)); gap: 0; margin-top: -.15rem; }
+.weather-temperature-trend-point { text-align: center; display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.weather-temperature-trend-point span { font-size: .64rem; opacity: .75; }
+.weather-temperature-trend-point strong { font-size: .78rem; }
+.weather-visual-moon .weather-visual-icon, .weather-visual-partly-night .weather-moon { color: #79baff !important; stroke: #79baff !important; }
+.weather-visual-partly-night .weather-moon { position: absolute; left: 7%; top: 5%; }
+.weather-visual-partly-night .weather-cloud { position: absolute; right: 2%; bottom: 3%; color: var(--ui-text, #fff); stroke: var(--ui-text, #fff); }
+html[data-theme="white"] .weather-temperature-dot { fill: #fff; }
+@media(max-width: 410px) { .weather-temperature-trend-point span { font-size: .56rem; } .weather-temperature-trend-point strong { font-size: .7rem; } }
