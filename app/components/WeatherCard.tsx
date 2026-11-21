@@ -19,48 +19,6 @@ const probabilityLabel = (value?: number | null) => {
   return typeof percent === "number" ? `${percent} %` : percent;
 };
 
-
-function HourlyForecast({ hours, timeZone, now }: { hours: import("../lib/weather").WeatherHour[]; timeZone: string; now: number }) {
-  const columnWidth = 112;
-  const values = hours.map(hour => hour.temperature?.degrees);
-  const valid = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
-  const min = valid.length ? Math.min(...valid) : 0;
-  const max = valid.length ? Math.max(...valid) : 0;
-  const range = Math.max(2, max - min);
-  const graphHeight = 74;
-  const graphY = (value: number) => 62 - ((value - min) / range) * 48;
-  const points = values.map((value, index) => typeof value === "number" && Number.isFinite(value)
-    ? { x: columnWidth * (index + .5), y: graphY(value) } : null);
-  const segments: string[] = [];
-  let path = "";
-  points.forEach(point => {
-    if (!point) { if (path) segments.push(path); path = ""; return; }
-    path += `${path ? " L" : "M"} ${point.x} ${point.y}`;
-  });
-  if (path) segments.push(path);
-  return <div className="weather-hour-unified-scroll" tabIndex={0} role="group" aria-label="Hodinová předpověď s grafem teploty, posouvej vodorovně">
-    <div className="weather-hour-unified" style={{ width: hours.length * columnWidth }}>
-      <div className="weather-hour-unified-columns">
-        {hours.map((hour, index) => <div className="weather-hour-unified-column" key={hour.interval?.startTime || index}>
-          <span className="weather-hour-unified-time">{weatherTime(hour.interval?.startTime, timeZone)}</span>
-          <strong className="weather-hour-unified-temp">{temperatureLabel(hour.temperature?.degrees)}</strong>
-        </div>)}
-      </div>
-      <svg className="weather-hour-unified-graph" viewBox={`0 0 ${hours.length * columnWidth} ${graphHeight}`} preserveAspectRatio="none" aria-hidden="true">
-        {segments.map((segment, index) => <path key={index} d={segment} fill="none" stroke="#f5cc68" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />)}
-        {points.map((point, index) => point && <circle key={index} cx={point.x} cy={point.y} r="5" fill="#354252" stroke="#f5cc68" strokeWidth="2.5" />)}
-      </svg>
-      <div className="weather-hour-unified-columns weather-hour-unified-details">
-        {hours.map((hour, index) => <div className="weather-hour-unified-column" key={hour.interval?.startTime || index} title={`Předpověď ${weatherTime(hour.interval?.startTime, timeZone)}`}>
-          <WeatherVisual type={hour.weatherCondition?.type} size={43} className="weather-hour-icon" night={weatherIsNight(hour, hour.interval?.startTime || now, timeZone)} />
-          <strong>{formatPrecipitation(hour.precipitation?.amount)}</strong>
-          <small>Pravděp. {probabilityLabel(hour.precipitation?.probability?.percent)}</small>
-        </div>)}
-      </div>
-    </div>
-  </div>;
-}
-
 export default function WeatherCard() {
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -275,7 +233,17 @@ export default function WeatherCard() {
       {precipitationExplanation&&<details className="weather-model-note"><summary>{precipitationExplanation.summary}</summary><p>{precipitationExplanation.text}</p></details>}
       {hours.length > 0 ? <section className="weather-hour-section" aria-labelledby="weather-hour-heading">
         <h3 id="weather-hour-heading">Předpověď po hodinách</h3>
-        <HourlyForecast hours={hours} timeZone={timeZone} now={now} />
+        <div className="weather-hour-grid weather-hour-scroll" tabIndex={0} role="group" aria-label="Předpověď na 12 hodin, posouvej doleva nebo doprava">
+          {hours.map(item => {
+            const period = `${weatherTime(item.interval?.startTime, timeZone)}–${weatherTime(item.interval?.endTime, timeZone)}`;
+            return <div key={item.interval?.startTime} className="weather-hour-card" title={`Předpověď pro ${period}`}>
+              <small className="weather-hour-time">{weatherTime(item.interval?.startTime, timeZone)}</small>
+              <div className="weather-hour-main"><WeatherVisual type={item.weatherCondition?.type} size={48} className="weather-hour-icon" night={weatherIsNight(item, item.interval?.startTime || now, timeZone)} /><strong>{temperatureLabel(item.temperature?.degrees)}</strong></div>
+              <strong className="weather-hour-amount">{formatPrecipitation(item.precipitation?.amount)}</strong>
+              <span>Pravděp. {probabilityLabel(item.precipitation?.probability?.percent)}</span>
+            </div>;
+          })}
+        </div>
         <p className="weather-precipitation-note">mm = očekávané množství srážek za hodinu · % = pravděpodobnost srážek</p>
       </section> : <p className="weather-message">Aktuální hodinová předpověď není dostupná. Obnov počasí.</p>}
       <p className="weather-source">Zdroj: {weather?.source || "Open-Meteo"} · data načtena {weatherTime(weather?.fetchedAt, timeZone)}{usingGps && <> · názvy míst © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a></>}</p>
