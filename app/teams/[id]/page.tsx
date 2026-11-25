@@ -9,12 +9,12 @@ import CoverField, { useCoverDraft } from "../../components/CoverField";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Pencil, Save, Users, Crown, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Save, Trash2 } from "lucide-react";
 import { auth } from "../../lib/firebase";
 import { ActivityTypeIcon } from "../../components/ActivityTypeSelector";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
-import UserAvatar from "../../components/UserAvatar";
+import PeopleList from "../../components/PeopleList";
 import type { TeamData, PublicProfileData } from "../../types";
 import { getPublicProfiles } from "../../lib/services/publicProfiles";
 import { getTeam, getTeamMemberIds } from "../../lib/services/teams";
@@ -228,18 +228,8 @@ export default function TeamDetailPage() {
           </div>
         )}
 
-        <section className="tile team-members-card">
-          <div className="progress-section-title"><Users /><div><h2>Členové</h2><p>Každý člen má vlastní profil.</p></div></div>
-          <div className="team-members-list">
-            {members.map(member => (
-              <button key={member.id} type="button" className="team-member-row" onClick={() => router.push("/user/" + member.id)}>
-                <UserAvatar name={member.nickname || "Uživatel"} url={member.avatarUrl} className="team-member-avatar"/>
-                <span><strong>{member.nickname || "Uživatel"}</strong></span>
-                {member.id === team.managerId && <Crown size={16} aria-label="Správce týmu" />}
-              </button>
-            ))}
-          </div>
-        </section>
+        <PeopleList id="clenove" title="Členové" people={members} managerId={team.managerId}
+          description="Každý člen má vlastní profil."/>
 
         {isMember && (
           <section className={isManager ? "tile team-management-actions" : "team-management-actions"}>

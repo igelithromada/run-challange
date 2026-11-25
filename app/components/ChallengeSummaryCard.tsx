@@ -12,12 +12,12 @@ import { ActivityTypeIcon } from "./ActivityTypeSelector";
 import { cloudinaryImageUrl } from "../lib/imageUrl";
 import type { ChallengeData } from "../types";
 
-type Props = { challenge: ChallengeData; joined: boolean; authorName?: string; detail?: boolean };
+type Props = { challenge: ChallengeData; joined: boolean; authorName?: string; detail?: boolean; participantsHref?: string };
 
 const kindLabel = (kind: ChallengeData["kind"]) => kind === "repetitions" ? "Počet opakování" : kind === "distance" ? "Vzdálenost" : kind === "activities" ? "Počet aktivit" : kind === "activeDays" ? "Aktivní dny" : "Společný cíl";
 const dateLabel = (value: string, year = false) => new Date(value + "T12:00:00").toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric", ...(year ? { year: "numeric" as const } : {}) });
 
-export default function ChallengeSummaryCard({ challenge, joined, authorName, detail = false }: Props) {
+export default function ChallengeSummaryCard({ challenge, joined, authorName, detail = false, participantsHref }: Props) {
   const Heading = detail ? "h1" : "h3";
   const distance = quantityChallenge(challenge.kind);
   const unit = challengeUnit(challenge.kind);
@@ -37,7 +37,7 @@ export default function ChallengeSummaryCard({ challenge, joined, authorName, de
     {challenge.description && <div className={detail ? "activity-description" : "activity-description challenge-summary-description"}>{challenge.description}</div>}
     {detail && <RecordMetrics>
       <Metric icon={<Target size={19}/>} label="Cíl" tone="target" value={formatMetricNumber(goal, distance ? 1 : 0)} unit={unit}/>
-      <Metric icon={<Users size={19}/>} label="Účastníci" tone="count" value={Number(challenge.participantCount || 0)}/>
+      <Metric icon={<Users size={19}/>} label="Účastníci" tone="count" href={participantsHref} value={Number(challenge.participantCount || 0)}/>
     </RecordMetrics>}
     <p className="challenge-period-line"><CalendarDays size={17} aria-hidden="true"/><span>{period}</span></p>
     {detail && sharedChallenge(challenge.kind) && <div className="challenge-shared-progress">

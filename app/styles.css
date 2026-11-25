@@ -1945,8 +1945,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   gap: .5rem;
 }
 html[data-theme="white"] .team-detail-delete { color: var(--hierarchy-danger); }
-.team-members-list{display:grid;gap:.5rem}
-.team-member-row{width:100%;display:flex;align-items:center;gap:.7rem;text-align:left;padding:.65rem;border:1px solid var(--ui-border);border-radius:14px;background:rgba(255,255,255,.055);color:inherit;cursor:pointer}
+.team-members-card{scroll-margin-top:5.5rem}
+.team-members-list{display:grid;gap:.5rem;margin:0;padding:0;list-style:none}
+.people-list-action{margin-top:.65rem}
+.team-member-row{width:100%;display:flex;align-items:center;gap:.7rem;text-align:left;text-decoration:none;box-sizing:border-box;padding:.65rem;border:1px solid var(--ui-border);border-radius:14px;background:rgba(255,255,255,.055);color:inherit;cursor:pointer}
 .team-member-row:hover{background:rgba(255,255,255,.1)}
 .team-member-avatar{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;overflow:hidden;background:rgba(255,255,255,.1);font-weight:800;flex:0 0 44px}
 .team-member-avatar img{width:100%;height:100%;object-fit:cover}

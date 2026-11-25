@@ -135,6 +135,10 @@ html[data-theme="white"] {
   font-size:.8rem !important;font-weight:500;line-height:1.3;color:var(--hierarchy-muted) !important;
   min-height:1.5rem;min-width:0;
 }
+.app-metric-link { color:inherit; text-decoration:none; }
+.app-metric-link .app-metric-heading > span:not(.app-metric-icon) { text-decoration:underline; text-underline-offset:.18em; }
+.app-metric-link-arrow { flex-shrink:0; }
+.app-metric-link:focus-visible { outline:2px solid var(--hierarchy-accent); outline-offset:-2px; }
 .app-metric-icon {display:inline-flex;flex:0 0 auto;}
 .app-metric-icon svg {width:19px;height:19px;}
 :is(.container,.activity-awards-dialog) .app-metric strong.app-metric-value {font-size:clamp(1.1rem,3.8vw,1.5rem) !important;line-height:1.25 !important;color:var(--hierarchy-text) !important;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;}

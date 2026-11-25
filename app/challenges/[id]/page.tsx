@@ -16,6 +16,7 @@ import { formatMetricNumber } from "../../lib/activityMetrics";
 import ChallengeSummaryCard from "../../components/ChallengeSummaryCard";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
+import PeopleList from "../../components/PeopleList";
 import LoadingSkeleton from "../../components/LoadingSkeleton";
 import { getRankedChallengeParticipants, getChallenge, getChallengeParticipant } from "../../lib/services/challenges";
 import { showAppToast } from "../../components/AppToast";
@@ -49,10 +50,14 @@ export default function ChallengeDetailPage(){
  const cover = useCoverDraft(`${user?.uid || ""}/${id}`);
  const [loadError, setLoadError] = useState(false);
  const [reload, setReload] = useState(0);
+ const [rosterError, setRosterError] = useState(false);
+ const [rosterLimit, setRosterLimit] = useState(10);
  const uid = user?.uid;
  const pageSize = 10;
  const currentPage = Math.min(page, Math.max(1, Math.ceil(participants.length / pageSize)));
  const visibleParticipants = participants.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+ const rosterIds = [...new Set(participants.map(participant => participant.userId || participant.id))];
+ const roster = rosterIds.slice(0, rosterLimit).map(id => ({ ...profiles[id], id }));
 
  useEffect(() => onAuthStateChanged(auth, current => {
    setUser(current);
@@ -66,6 +71,7 @@ export default function ChallengeDetailPage(){
    const isCurrent = () => !signal.aborted && auth.currentUser?.uid === uid;
    setLoading(true);
    setLoadError(false);
+   setRosterError(false);
    void (async () => {
      try {
        const c = await getChallenge(id, signal);
@@ -73,11 +79,12 @@ export default function ChallengeDetailPage(){
        setChallenge(c);
        if (!c) return;
        const [rows, member] = await Promise.all([
-         sharedChallenge(c.kind) ? [] : getRankedChallengeParticipants(id, c.state === "completed", signal),
+         getRankedChallengeParticipants(id, c.state === "completed", signal).catch(() => null),
          getChallengeParticipant(id, signal),
        ]);
        if (!isCurrent()) return;
-       setParticipants(rows);
+       setParticipants(rows ?? []);
+       setRosterError(rows === null);
        setMembership(member);
        setEditName(c.name);
        setEditDescription(c.description || "");
@@ -102,16 +109,19 @@ export default function ChallengeDetailPage(){
    return () => controller.abort();
  }, [id, uid, reload]);
 
- useEffect(() => { setPage(1); setEditing(false); }, [id, uid]);
+ useEffect(() => { setPage(1); setRosterLimit(10); setProfiles({}); setEditing(false); }, [id, uid]);
  useEffect(() => {
    let active = true;
-   const ids = participants.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-     .map(participant => participant.userId || participant.id);
+   const pageStart = (currentPage - 1) * pageSize;
+   const ids = participants.slice(0, rosterLimit).map(participant => participant.userId || participant.id);
+   if (challenge && !sharedChallenge(challenge.kind) && pageStart + pageSize > rosterLimit) {
+     ids.push(...participants.slice(pageStart, pageStart + pageSize).map(participant => participant.userId || participant.id));
+   }
    if (ids.length) void getPublicProfiles(ids).then(next => {
-     if (active) setProfiles(next);
+     if (active) setProfiles(previous => ({ ...previous, ...next }));
    }).catch(() => {});
    return () => { active = false; };
- }, [participants, currentPage]);
+ }, [participants, currentPage, rosterLimit, challenge]);
 
  const editRequest=async()=>{if(!challenge||busy||!isOwner)return;setBusy(true);try{if(!auth.currentUser)throw new Error("Nejsi přihlášen.");const token=await auth.currentUser.getIdToken(true);const res=await fetch("/api/challenges/manage",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({action:"edit",challengeId:id,name:editName,description:editDescription,kind:challengeKindFor(editType,editKind),activityType:editType,goal:Number(editGoal),startDate:editStart,endDate:editEnd,...await cover.resolve(challenge)})});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.error||"Výzvu se nepodařilo upravit.");cover.reset();setEditing(false);setReload(value=>value+1);showAppToast("Výzva byla upravena.","success")}catch(e){showAppToast(e instanceof Error?e.message:"Výzvu se nepodařilo upravit.","error")}finally{setBusy(false)}};
  async function request(action:string){if(!auth.currentUser)throw new Error("Nejsi přihlášen.");const token=await auth.currentUser.getIdToken(true);const res=await fetch("/api/challenges/manage",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({action,challengeId:id})});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.error||"Operaci se nepodařilo dokončit.");};
@@ -126,9 +136,15 @@ export default function ChallengeDetailPage(){
  const goal = Number(challenge.goal || 0);
  return <><Navbar title="Výzva" onMenuClick={()=>setMenu(true)} onHomeClick={()=>router.push("/")}/><Sidebar visible={menu} onClose={()=>setMenu(false)}/>
  <main className="container challenge-detail-page"><button className="back-button" onClick={()=>router.push("/challenges")}><ArrowLeft size={18}/> Zpět na výzvy</button>
- <ChallengeSummaryCard challenge={challenge} joined={active} authorName={author?.nickname || "Uživatel"} detail />
+ <ChallengeSummaryCard challenge={challenge} joined={active} authorName={author?.nickname || "Uživatel"} participantsHref="#ucastnici" detail />
  {isOwner&&challenge.state==="planned"&&<section className="tile challenge-edit-card">{!editing?<button className="run-secondary-button" onClick={()=>setEditing(true)}><Save size={17}/> Upravit výzvu</button>:<EntryFormPanel title="Upravit výzvu" description="Úpravy jsou možné pouze před začátkem." busy={busy} onClose={()=>{cover.reset();setEditing(false)}}><FormField label="Název výzvy"><input maxLength={40} value={editName} onChange={e=>setEditName(e.target.value)} placeholder="Název výzvy"/></FormField><FormField label="Popis" hint="volitelné"><textarea maxLength={200} value={editDescription} onChange={e=>setEditDescription(e.target.value)} placeholder="Popis"/></FormField><FormField label="Typ aktivity" group><ActivityTypeSelector value={editType} onChange={setEditType} ariaLabel="Typ aktivity výzvy" /></FormField><FormField label="Typ cíle"><select value={editKind} onChange={e=>setEditKind(e.target.value as ChallengeData["kind"])}><option value="distance">{isStrengthActivity(editType) ? "Počet opakování" : "Vzdálenost"}</option><option value="activities">Počet aktivit</option><option value="activeDays">Aktivní dny</option><option value="sharedDistance">Společný cíl</option></select></FormField><FormField label="Cíl"><input type="number" min="1" step={!isStrengthActivity(editType) && (editKind==="distance"||editKind==="sharedDistance")?"0.1":"1"} value={editGoal} onChange={e=>setEditGoal(e.target.value)}/></FormField><div className="challenge-dates"><FormField label="Od"><input type="date" value={editStart} onChange={e=>setEditStart(e.target.value)}/></FormField><FormField label="Do"><input type="date" value={editEnd} onChange={e=>setEditEnd(e.target.value)}/></FormField></div><CoverField draft={cover} existing={challenge.avatarUrl} busy={busy}/><button className="run-primary-button" onClick={()=>void editRequest()} disabled={busy||!editName.trim()||!editGoal||!editStart||!editEnd}><Save size={17}/>{busy?"Ukládám…":"Uložit změny"}</button></EntryFormPanel>}</section>}
  {challenge.state !== "completed" && <section className="tile challenge-action-row"><button className="run-primary-button" onClick={()=>void joinLeave()} disabled={busy}>{active?<><LogOut size={17}/> Odejít z výzvy</>:"Přidat se k výzvě"}</button>{isOwner&&challenge.state==="planned"&&<button className="run-danger-button" onClick={()=>void remove()} disabled={busy}>Smazat výzvu</button>}</section>}
+ <PeopleList id="ucastnici" title="Účastníci" people={roster}
+   empty={rosterError ? "Seznam účastníků se nepodařilo načíst." : "Výzva zatím nemá účastníky."}>
+  {rosterError && <button type="button" className="run-secondary-button people-list-action" onClick={() => setReload(value => value + 1)}>Zkusit znovu</button>}
+  {rosterIds.length > rosterLimit && <button type="button" className="run-secondary-button people-list-action"
+    onClick={() => setRosterLimit(limit => limit + pageSize)}>Zobrazit další účastníky</button>}
+ </PeopleList>
  <section className="tile challenge-results-section">
   <div className="challenge-results-header">
    <h2>{shared ? "Společný výsledek" : "Výsledky"}</h2>
@@ -137,10 +153,8 @@ export default function ChallengeDetailPage(){
     {challenge.goalReached ? "Cíl splněn" : "Cíl nesplněn"}
    </span>}
   </div>
-  {shared ? <>
-   <GoalProgress result={Number(challenge.sharedProgress || 0)} goal={goal} kind={challenge.kind} completed={completed} />
-   <p className="challenge-progress-caption">Počet účastníků: {Number(challenge.participantCount || 0)}</p>
-  </> : participants.length ? <ol className="challenge-result-list">
+  {shared ? <GoalProgress result={Number(challenge.sharedProgress || 0)} goal={goal} kind={challenge.kind} completed={completed} />
+  : rosterError ? <p>Výsledky se nepodařilo načíst.</p> : participants.length ? <ol className="challenge-result-list">
    {visibleParticipants.map((participant, index) => {
     const mine = participant.id === user?.uid;
     const winner = participant.id === challenge.winnerId;

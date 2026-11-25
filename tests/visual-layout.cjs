@@ -85,6 +85,33 @@ test('mobile record and summary layouts across themes', async () => {
   } finally { await browser.close(); }
 });
 
+test('challenge participant count links to the same profile list as teams', async () => {
+  const PeopleList = require('../app/components/PeopleList').default;
+  const people = [{ id: 'radek', nickname: 'Radek' }, { id: 'verca', nickname: 'Verča' }];
+  const challenge = render(Challenge, {
+    challenge: { id: 'test', name: 'Společná výzva', kind: 'sharedDistance', goal: 5, state: 'active',
+      activityType: 'běh', startDate: '2026-11-01', endDate: '2026-11-30', participantCount: 2 },
+    joined: true, detail: true, participantsHref: '#ucastnici',
+  });
+  const roster = render(PeopleList, { id: 'ucastnici', title: 'Účastníci', people });
+  const members = render(PeopleList, { id: 'clenove', title: 'Členové', people, managerId: 'radek' });
+  const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+  try {
+    const page = await browser.newPage({ viewport: { width: 320, height: 600 } });
+    await page.setContent('<main class="container">' + challenge + roster + members + '</main>');
+    await page.addStyleTag({ content: css });
+    const count = page.getByRole('link', { name: 'Účastníci 2' });
+    await count.click();
+    assert.equal(new URL(page.url()).hash, '#ucastnici');
+    const participantLinks = page.getByRole('region', { name: 'Účastníci' }).getByRole('link');
+    assert.equal(await participantLinks.count(), 2);
+    assert.equal(await participantLinks.first().getAttribute('href'), '/user/radek');
+    assert.equal(await participantLinks.first().getAttribute('class'),
+      await page.getByRole('region', { name: 'Členové' }).getByRole('link').first().getAttribute('class'));
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  } finally { await browser.close(); }
+});
+
 test('entry forms share light controls in every theme and chat picker is opaque', async () => {
   const Panel = require('../app/components/EntryFormPanel').default;
   const Field = require('../app/components/FormField').default;
