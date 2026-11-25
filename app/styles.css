@@ -3116,7 +3116,7 @@ button { touch-action:manipulation; }
 }
 .run-form-heading h3 { font-size:1.3rem !important; }
 .run-form-field input,
-.run-form-unit-field input {
+.run-form-unit-field input:not(.entry-form-fields *) {
   border-radius:15px !important;
 }
 .run-form-actions { gap:.7rem !important; }
@@ -4828,11 +4828,11 @@ html[data-theme="dark"] .avatar-upload-button, html[data-theme="white"] .avatar-
   background: var(--control-background) !important; border-color: var(--ui-border-strong) !important; color: var(--ui-text) !important;
 }
 html[data-theme="dark"] .tile-button:hover, html[data-theme="white"] .tile-button:hover { background: var(--control-background-hover) !important; }
-html[data-theme="dark"] input, html[data-theme="dark"] select, html[data-theme="dark"] textarea,
+html[data-theme="dark"] :is(input, select, textarea):not(.entry-form-fields *),
 html[data-theme="white"] input, html[data-theme="white"] select, html[data-theme="white"] textarea {
   background: var(--ui-bg-soft) !important; color: var(--ui-text) !important; border-color: var(--ui-border) !important;
 }
-html[data-theme="dark"] input::placeholder, html[data-theme="dark"] textarea::placeholder,
+html[data-theme="dark"] :is(input, textarea):not(.entry-form-fields *)::placeholder,
 html[data-theme="white"] input::placeholder, html[data-theme="white"] textarea::placeholder {
   color: var(--ui-muted) !important;
 }

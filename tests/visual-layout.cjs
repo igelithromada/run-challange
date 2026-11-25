@@ -72,3 +72,41 @@ test('mobile record and summary layouts across themes', async () => {
     }
   } finally { await browser.close(); }
 });
+
+test('entry forms share light controls in every theme and chat picker is opaque', async () => {
+  const Panel = require('../app/components/EntryFormPanel').default;
+  const Field = require('../app/components/FormField').default;
+  const field = (label, control) => React.createElement(Field, { label }, control);
+  const forms = ['Přidat běh', 'Vytvořit tým', 'Vytvořit výzvu'].map((title, i) =>
+    render(Panel, { title, children: React.createElement(React.Fragment, null,
+      field('Název', React.createElement('input', { type: i ? 'text' : 'number' })),
+      field('Popis', React.createElement('textarea')),
+      field('Typ cíle', React.createElement('select', null, React.createElement('option', null, 'Vzdálenost'))),
+    ) })
+  ).join('');
+  const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+  try {
+    const page = await browser.newPage();
+    for (const width of [320, 360, 393, 768]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const theme of ['dark', 'white', 'default']) {
+        await page.setContent('<html data-theme="'+theme+'"><main class="container">'+forms+'</main><dialog class="chat-activity-picker">Záznamy</dialog></html>');
+        await page.addStyleTag({ content: css + '\n.entry-form-fields * { transition: none !important; }' });
+        const controls = page.locator('.entry-form-fields :is(input, textarea, select)');
+        const styles = await controls.evaluateAll(elements => elements.map(element => {
+          const { backgroundColor, color, colorScheme, fontSize, borderRadius } = getComputedStyle(element);
+          return { backgroundColor, color, colorScheme, fontSize, borderRadius };
+        }));
+        assert.match(styles[0].backgroundColor, /^rgb\((245, 247, 249|255, 255, 255)\)$/);
+        assert.equal(styles[0].colorScheme, 'light');
+        for (const style of styles) assert.deepEqual(style, styles[0]);
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        const background = await page.locator('dialog').evaluate(dialog => {
+          dialog.showModal();
+          return getComputedStyle(dialog).backgroundColor;
+        });
+        assert.match(background, /^rgb\(/);
+      }
+    }
+  } finally { await browser.close(); }
+});
