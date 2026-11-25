@@ -1,3 +1,4 @@
+import { chatState } from "./chatAvailability";
 import type { Firestore } from 'firebase-admin/firestore';
 import webpush from 'web-push';
 import { isValidPushSubscription } from './validation';
@@ -8,7 +9,7 @@ export function chatPushReady() {
 }
 
 export async function notifyChatDevices(db: Firestore, sender: string) {
-  if (!chatPushReady()) return;
+  if (!chatPushReady() || (await chatState(db).get()).data()?.enabled === false) return;
   const vapidDetails = {
     subject: process.env.VAPID_SUBJECT!.trim(),
     publicKey: process.env.VAPID_PUBLIC_KEY!.trim(),

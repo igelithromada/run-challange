@@ -146,11 +146,9 @@ export default function RouteElevationProfile({
           <span key={r}>{(distance * r).toFixed(1)} km</span>
         ))}
       </div>
-      <output className="chart-readout route-profile-readout">
-        {active
-          ? `${active.distanceKm.toFixed(2)} km · ${active.elevation === null ? "Výška není v GPX uvedena" : `${Math.round(active.elevation)} m n. m.`}`
-          : "Vyber bod na profilu"}
-      </output>
+      {active && <output className="chart-readout route-profile-readout">
+        {`${active.distanceKm.toFixed(2)} km · ${active.elevation === null ? "Výška není v GPX uvedena" : `${Math.round(active.elevation)} m n. m.`}`}
+      </output>}
     </div>
   );
 }

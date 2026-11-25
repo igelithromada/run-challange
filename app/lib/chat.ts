@@ -5,6 +5,7 @@ export const CHAT_CHANGED = 'dolni-lhota:chat-changed';
 export type ChatRecord = {
   id: string;
   nickname: string;
+  avatarUrl?: string;
   type: string;
   timestamp: string | null;
   description: string;
@@ -33,6 +34,7 @@ export function chatRecord(id: string, run: Record<string, unknown> | undefined)
   return {
     id,
     nickname: nickname || 'Uživatel',
+    ...(typeof run.avatarUrl === 'string' && run.avatarUrl ? { avatarUrl: run.avatarUrl } : {}),
     type: typeof type === 'string' && type ? type : 'běh',
     timestamp: parseActivityDate(run.timestamp)?.toISOString() ?? null,
     description: typeof run.description === 'string' ? run.description.trim().slice(0, 1000) : '',

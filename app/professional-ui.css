@@ -940,3 +940,62 @@ html[data-theme="white"] .progress-chart-period input { color-scheme:light; }
 
 .app-form-group { min-width:0; padding:0; border:0; margin:0; }
 .app-form-group legend { padding:0; margin-bottom:.35rem; font-weight:700; }
+
+/* Shared activity, team and challenge forms. */
+.entry-form-panel .run-form-heading p {
+  margin: .35rem 0 0;
+  color: var(--ui-muted);
+}
+.entry-form-fields {
+  gap: 1rem;
+  min-width: 0;
+}
+.entry-form-fields input:not([type="file"]),
+.entry-form-fields select,
+.entry-form-fields textarea {
+  background: #f5f7f9;
+  color: #26333d;
+  -webkit-text-fill-color: currentColor;
+  color-scheme: light;
+  font-size: 1rem;
+}
+.entry-form-fields select {
+  appearance: auto;
+}
+.entry-form-fields .app-form-group > legend {
+  width: 100%;
+  margin-bottom: .38rem;
+  padding: 0;
+}
+.run-form-start {
+  display: grid;
+  gap: .5rem;
+  width: 100%;
+}
+.run-form-start .run-primary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  width: 100%;
+}
+.run-form-start .run-primary-button svg { flex: none; }
+.run-form-start .draft-recovery-note {
+  margin: 0;
+  text-align: center;
+}
+.user-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.admin-user-avatar.user-avatar,
+.admin-user-avatar.large.user-avatar { border-radius: 50%; }
+.social-comment > .user-avatar { flex-basis: 38px; width: 38px; height: 38px; }
+.team-member-avatar.user-avatar { border-radius: 50%; }
+.entry-form-fields .challenge-dates { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media(max-width: 360px) {
+  .entry-form-fields .challenge-dates { grid-template-columns: minmax(0, 1fr); }
+}

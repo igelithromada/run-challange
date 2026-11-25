@@ -1,4 +1,5 @@
 "use client";
+import UserAvatar from "./UserAvatar";
 import { isStrengthActivity } from "../lib/activity";
 import RecordCard, { RecordMetrics } from "./RecordCard";
 import Metric from "./Metric";
@@ -6,7 +7,6 @@ import { ActivityTypeIcon } from "./ActivityTypeSelector";
 import { MapPin, Gauge, ListChecks, Award, Trophy } from "lucide-react";
 import { formatCompactActivityTime, formatMetricNumber } from "../lib/activityMetrics";
 import { type ResultPerson } from "../lib/results";
-import { cloudinaryImageUrl } from "../lib/imageUrl";
 export default function ResultsPersonRow({
   person,
   type = "běh",
@@ -42,17 +42,7 @@ export default function ResultsPersonRow({
         <span className="results-person-rank">
           {alpha ? null : winner ? <Trophy size={17} /> : person.rank}
         </span>
-        <span className="activity-avatar">
-          {person.avatarUrl ? (
-            <img
-              src={cloudinaryImageUrl(person.avatarUrl, 96)}
-              alt=""
-              loading="lazy"
-            />
-          ) : (
-            person.name.charAt(0).toUpperCase()
-          )}
-        </span>
+        <UserAvatar name={person.name} url={person.avatarUrl}/>
         <span className="results-person-name">
           <strong>
             {person.name}

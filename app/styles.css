@@ -6185,11 +6185,6 @@ html[data-theme="white"] .social-modal input {
 }
 
 /* ===== CROSS-SCREEN QA: formuláře + navigace ===== */
-html:not([data-theme="white"]) .teams-create-form input,html:not([data-theme="white"]) .teams-create-form select,html:not([data-theme="white"]) .challenges-create input,html:not([data-theme="white"]) .challenges-create select,html:not([data-theme="white"]) .challenges-create textarea{color:#fff!important;-webkit-text-fill-color:#fff!important;background:rgba(0,0,0,.18)!important;color-scheme:dark}
-html:not([data-theme="white"]) .teams-create-form input::placeholder,html:not([data-theme="white"]) .challenges-create input::placeholder,html:not([data-theme="white"]) .challenges-create textarea::placeholder{color:rgba(255,255,255,.68)!important;opacity:1!important}
-html[data-theme="white"] .teams-create-form input,html[data-theme="white"] .teams-create-form select,html[data-theme="white"] .challenges-create input,html[data-theme="white"] .challenges-create select,html[data-theme="white"] .challenges-create textarea{color:#17232b!important;-webkit-text-fill-color:#17232b!important;background:#fff!important;border-color:#c7d4da;color-scheme:light}
-html[data-theme="white"] .teams-create-form input::placeholder,html[data-theme="white"] .challenges-create input::placeholder,html[data-theme="white"] .challenges-create textarea::placeholder{color:#667780!important;opacity:1!important}
-html:not([data-theme="white"]) .challenges-create .challenge-dates input{color:#fff!important;-webkit-text-fill-color:#fff!important;background:rgba(0,0,0,.18)!important;color-scheme:dark}
 html[data-theme="white"] .site-sidebar-profile{background:#f5f8fa;border-color:#dce3e8;color:#17212b}
 html[data-theme="white"] .site-sidebar-profile-icon{background:#e8eef2}
 html[data-theme="white"] .site-sidebar-profile-copy small,html[data-theme="white"] .site-sidebar-header small{color:#66737d!important}

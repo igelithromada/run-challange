@@ -75,7 +75,7 @@ export default function RunWeatherRecommendation({ linkToWeather = true, type }:
   const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Prague", hour: "2-digit", hourCycle: "h23" }).format(new Date()));
   const content = <section className={`run-weather-recommendation run-weather-compact run-weather-${strength ? "neutral" : advice.tone}${type ? " run-weather-home" : ""}`} aria-live="polite">
     <span className="run-weather-symbol">
-      <span className="run-weather-icon" aria-hidden="true">
+      <span aria-hidden="true">
         {validWeather ? <WeatherVisual type={current?.weatherCondition?.type} size={48} night={hour < 6 || hour >= 20} /> : <CloudSun size={32} />}
       </span>
       {validWeather && <strong className="run-weather-temperature">{Math.round(advice.temperature!)} °C</strong>}

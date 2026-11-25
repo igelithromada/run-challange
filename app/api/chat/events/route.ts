@@ -1,3 +1,4 @@
+import { chatState } from '../../../lib/chatAvailability';
 import { authErrorResponse, requireUser } from '../../../lib/apiAuth';
 
 export const runtime = 'nodejs';
@@ -7,6 +8,8 @@ export const maxDuration = 60;
 export async function GET(request: Request) {
   try {
     const { adminDb } = await requireUser(request);
+    const meta = chatState(adminDb);
+    if ((await meta.get()).data()?.enabled === false) return new Response(null, { status: 403 });
     const encoder = new TextEncoder();
     let dispose = () => {};
     const stream = new ReadableStream({
@@ -33,8 +36,9 @@ export async function GET(request: Request) {
           finish();
           return;
         }
-        unsubscribe = adminDb.collection('chatMeta').doc('community').onSnapshot(snapshot => {
+        unsubscribe = meta.onSnapshot(snapshot => {
           if (closed) return;
+          if (snapshot.data()?.enabled === false) { finish(); return; }
           const revision = String(snapshot.data()?.revision || 'empty');
           controller.enqueue(encoder.encode('data: ' + JSON.stringify(revision) + '\n\n'));
         }, () => finish());

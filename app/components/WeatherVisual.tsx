@@ -41,7 +41,7 @@ export default function WeatherVisual({ type, size, className = "", night = fals
         {kind === "rain" && <path className="wx-rain" d="m7 19-1 3m7-3-1 3m7-3-1 3" />}
         {kind === "drizzle" && <path className="wx-rain" d="M7 20v.5m5 1v.5m5-2v.5" />}
         {kind === "storm" && <><path className="wx-lightning" d="m13 16-4 5h4l-1 3 5-6h-4l1-2" /><path className="wx-rain" d="m5 19-.6 2m15-2-.6 2" /></>}
-        {kind === "snow" && <path className="wx-snow" d="M7 19v4m-2-2h4m6-2v4m-2-2h4" />}
+        {kind === "snow" && <path className="wx-snow" strokeWidth="1.15" d="M7 18.7v4.6m-2-3.45 4 2.3m-4 0 4-2.3m7-1.15v4.6m-2-3.45 4 2.3m-4 0 4-2.3" />}
         {kind === "fog" && <path className="wx-cloud" d="M3 19h18M5 22h14" />}
       </>}
     </svg>

@@ -9,6 +9,7 @@ import Sidebar from '../components/Sidebar';
 
 import ChatComposer from '../components/ChatComposer';
 import ChatActivityPreview from '../components/ChatActivityPreview';
+import { useChatAvailability } from '../lib/chatLive';
 import {CHAT_CHANGED,type ChatRecord,type ChatReply} from '../lib/chat';
 
 type Message={id:string;uid:string;nickname:string;text:string;deleted:boolean;createdAt:string|null;canDelete:boolean;records?:ChatRecord[];activityUnavailable?:boolean;reply?:ChatReply|null};
@@ -18,7 +19,20 @@ async function request(init?:RequestInit,before?:string,revision?:string):Promis
  const response=await fetch('/api/chat'+(before?'?before='+encodeURIComponent(before):revision?'?revision='+encodeURIComponent(revision):''),{...init,cache:'no-store',headers:{'Content-Type':'application/json',Authorization:'Bearer '+await user.getIdToken(),...init?.headers}});
  const data=await response.json();if(!response.ok)throw new Error(data.error||'Chat není dostupný.');return data;
 }
-export default function ChatPage(){
+export default function ChatPage() {
+ const enabled = useChatAvailability();
+ const router = useRouter();
+ useEffect(() => {
+  if (enabled === false) router.replace('/');
+  return onAuthStateChanged(auth, user => { if (!user) router.replace('/login'); });
+ }, [enabled, router]);
+
+ return enabled === true ? <ChatContent/> : <main className="container"><p role="status">
+  {enabled === false ? 'Společný chat je vypnutý.' : 'Ověřuji dostupnost chatu…'}
+ </p></main>;
+}
+
+function ChatContent(){
  const router=useRouter(),[uid,setUid]=useState(''),[menu,setMenu]=useState(false),[messages,setMessages]=useState<Message[]>([]),[reply,setReply]=useState<ChatReply|null>(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[olderBusy,setOlderBusy]=useState(false),[more,setMore]=useState(false),[cursor,setCursor]=useState<string|null>(null),[newMessages,setNewMessages]=useState(false);
  const latestMessage = useRef<string | null>(null);
  const latestCreatedAt = useRef('');

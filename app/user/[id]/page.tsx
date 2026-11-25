@@ -1,4 +1,5 @@
 "use client";
+import UserAvatar from "../../components/UserAvatar";
 import PhotoViewer from "../../components/PhotoViewer";
 import { activityAmount, activityUnit, isStrengthActivity } from "../../lib/activity";
 
@@ -10,7 +11,6 @@ import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import ActivityCard from "../../components/ActivityCard";
 import ActivityTypeSelector, { ActivityType } from "../../components/ActivityTypeSelector";
-import { cloudinaryImageUrl } from "../../lib/imageUrl";
 import { getPublicProfile } from "../../lib/services/publicProfiles";
 import { userRunsQuery } from "../../lib/services/runs";
 import { allTeamsQuery } from "../../lib/services/teams";
@@ -84,9 +84,7 @@ export default function UserPage() {
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} />
       <main className="container user-page-modern">
         <header className="user-page-header">
-          <div className="activity-avatar" aria-hidden="true">
-            {userInfo.avatarUrl ? <img src={cloudinaryImageUrl(userInfo.avatarUrl, 128)} alt="" loading="lazy" decoding="async" /> : profileName.charAt(0).toUpperCase()}
-          </div>
+          <UserAvatar name={profileName} url={userInfo.avatarUrl}/>
           <div><span className="user-page-eyebrow">AKTIVITY UŽIVATELE</span><h1>{profileName}</h1><p>{filteredRuns.length} {filteredRuns.length === 1 ? "aktivita" : filteredRuns.length < 5 ? "aktivity" : "aktivit"} · {filteredRuns.reduce((sum, run) => sum + activityAmount(run), 0).toLocaleString("cs-CZ",{maximumFractionDigits:isStrengthActivity(selectedType)?0:1})} {activityUnit(selectedType)}</p></div>
         </header>
 

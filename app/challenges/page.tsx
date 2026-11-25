@@ -1,4 +1,5 @@
 "use client";
+import EntryFormPanel from "../components/EntryFormPanel";
 import { challengeKindFor } from "../lib/challengeMeasurement";
 import { isStrengthActivity } from "../lib/activity";
 import CoverField, { useCoverDraft } from "../components/CoverField";
@@ -6,7 +7,7 @@ import CoverField, { useCoverDraft } from "../components/CoverField";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Plus, Target, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Target } from "lucide-react";
 import { auth } from "../lib/firebase";
 import ChallengeSummaryCard from "../components/ChallengeSummaryCard";
 import Navbar from "../components/Navbar";
@@ -116,13 +117,8 @@ export default function ChallengesPage() {
           <Plus size={18}/> Vytvořit výzvu
         </button>
       ) : (
-        <section className="tile challenges-create">
-          <div className="teams-section-heading">
-            <div><h2>Vytvořit výzvu</h2><p>Výzvy jsou veřejné a po vytvoření se automaticky účastníš.</p></div>
-            <button type="button" className="ui-icon-button" onClick={() => setShowCreate(false)} aria-label="Zavřít formulář"><X size={18}/></button>
-          </div>
-          <div className="teams-create-form professional-form">
-            <FormField label="Název výzvy">
+        <EntryFormPanel title="Vytvořit výzvu" description="Výzvy jsou veřejné a po vytvoření se automaticky účastníš." busy={creating} onClose={() => setShowCreate(false)}>
+              <FormField label="Název výzvy">
               <input className="professional-input" maxLength={40} placeholder={isStrengthActivity(activityType) ? "Např. 500 opakování za měsíc" : "Např. 50 km za listopad"} value={name} onChange={e=>setName(e.target.value)}/>
             </FormField>
             <FormField label="Popis" hint="volitelné">
@@ -150,8 +146,7 @@ export default function ChallengesPage() {
               <div className="professional-form-actions">
               <button className="run-primary-button" onClick={()=>void create()} disabled={creating||!name.trim()||!goal||!startDate||!endDate}><Plus size={18}/>{creating?"Vytvářím…":"Vytvořit výzvu"}</button>
             </div>
-          </div>
-        </section>
+          </EntryFormPanel>
       )}
       <div className="challenge-type-switch"><ActivityTypeSelector value={activityType} onChange={value=>setActivityType(value)} ariaLabel="Filtr typu aktivity" /></div>
       <div className="challenge-month"><button onClick={()=>shift(-1)} aria-label="Předchozí měsíc"><ChevronLeft/></button><strong>{MONTHS[month.getMonth()]} {month.getFullYear()}</strong><button onClick={()=>shift(1)} aria-label="Další měsíc"><ChevronRight/></button></div>

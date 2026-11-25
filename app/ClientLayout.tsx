@@ -1,5 +1,5 @@
 "use client";
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { auth } from "./lib/firebase";
 import { beforeAuthStateChanged, onAuthStateChanged } from "firebase/auth";
 import useThemeLoader from "./lib/useThemeLoader";
@@ -7,12 +7,16 @@ import NetworkStatus from "./components/NetworkStatus";
 import { setHapticsEnabled, triggerHaptic } from "./lib/haptics";
 import { mergePublicProfile } from "./lib/services/publicProfiles";
 import { getUserProfile, mergeUserProfile } from "./lib/services/users";
+import { ChatAvailability, useChatLive } from "./lib/chatLive";
 import FloatingChat from "./components/FloatingChat";
 import AppToast from "./components/AppToast";
 import { subscribeToFreshReactions } from "./lib/freshReactionSignal";
 import { removeChatPush } from "./lib/pushNotifications";
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
+  const [chatUid, setChatUid] = useState("");
+  useEffect(() => onAuthStateChanged(auth, user => setChatUid(user?.uid || "")), []);
+  const chatEnabled = useChatLive(chatUid);
   useThemeLoader();
   useEffect(subscribeToFreshReactions, []);
 
@@ -189,8 +193,10 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
       <div className="app-content-layer">
         <NetworkStatus />
         <AppToast />
-        {children}
-        <FloatingChat/>
+        <ChatAvailability.Provider value={chatEnabled}>
+          {children}
+          {chatEnabled && <FloatingChat/>}
+        </ChatAvailability.Provider>
       </div>
     </>
   );

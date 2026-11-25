@@ -9,6 +9,7 @@ import { applyTheme } from "../lib/useThemeLoader";
 import { useRouter } from "next/navigation";
 import { HexColorPicker } from "react-colorful";
 import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, Smartphone, Bell, Heart, MessageCircle, Moon, Sun, Users, Flag } from "lucide-react";
+import { useChatAvailability } from "../lib/chatLive";
 import { getChatPushStatus, registerChatPush, removeChatPush, registerTrainerPush, removeTrainerPush } from "../lib/pushNotifications";
 import { showAppToast } from "../components/AppToast";
 import ActivityTypeSelector, { ActivityType } from "../components/ActivityTypeSelector";
@@ -37,6 +38,7 @@ export default function SettingsPage() {
   const [trainerDeliveryReady, setTrainerDeliveryReady] = useState<boolean | null>(null);
   const [trainerNotifications, setTrainerNotifications] = useState({ enabled: false, today: true, tomorrow: true, todayTime: "07:00", tomorrowTime: "18:00" });
   const [socialNotifications, setSocialNotifications] = useState({ likes: true, comments: true, teams: true, challenges: true, chat: true });
+  const chatEnabled = useChatAvailability();
   const [chatPush, setChatPush] = useState<{ enabled: boolean; ready: boolean } | null>(null);
   const [chatPushBusy, setChatPushBusy] = useState(false);
   const socialBusyRef = useRef(false);
@@ -236,7 +238,7 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !chatEnabled) return;
     let current = true;
     setChatPush(null);
     getChatPushStatus().then(status => {
@@ -245,7 +247,7 @@ export default function SettingsPage() {
       if (current) setChatPush({ enabled: false, ready: false });
     });
     return () => { current = false; };
-  }, [userId]);
+  }, [userId, chatEnabled]);
 
   async function toggleChatPush(enabled: boolean) {
     if (chatPushBusy || auth.currentUser?.uid !== userId) return;
@@ -342,6 +344,7 @@ export default function SettingsPage() {
   const socialNotificationSection = (
     <section id="notifications" className="tile settings-notification-section">
       <div className="settings-section-heading"><Bell size={21} /><div><h2>Upozornění</h2><p>Vyber, na co chceš upozornění během používání aplikace.</p></div></div>
+      {chatEnabled && <>
       <label className="settings-notification-row">
         <span className="settings-notification-copy"><span className="settings-notification-title"><MessageCircle size={18} /> Chat v aplikaci</span><small>Upozorni mě na nové zprávy během používání aplikace.</small></span>
         <input type="checkbox" disabled={socialBusy} checked={socialNotifications.chat} onChange={e => void updateSocialNotifications({ chat: e.target.checked })} />
@@ -356,6 +359,7 @@ export default function SettingsPage() {
         <input type="checkbox" disabled={chatPushBusy || !chatPush || (!chatPush.ready && !chatPush.enabled)}
           checked={chatPush?.enabled ?? false} onChange={e => void toggleChatPush(e.target.checked)} />
       </label>
+      </>}
       <label className="settings-notification-row">
         <span className="settings-notification-copy"><span className="settings-notification-title"><Heart size={18} /> To se mi líbí</span><small>Upozorni mě, když někdo označí můj záznam.</small></span>
         <input type="checkbox" disabled={socialBusy} checked={socialNotifications.likes} onChange={e => void updateSocialNotifications({ likes: e.target.checked })} />

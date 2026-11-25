@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Camera, ShieldCheck, User, Footprints, Ban, UserCheck, Trash2, KeyRound } from "lucide-react";
+import { ArrowLeft, Camera, ShieldCheck, Footprints, Ban, UserCheck, Trash2, KeyRound } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { cloudinaryImageUrl } from "../lib/imageUrl";
+import UserAvatar from "../components/UserAvatar";
 import { auth } from "../lib/firebase";
 import { getAllUserProfiles, updateUserProfile } from "../lib/services/users";
 import useAdminGuard from "../lib/useAdminGuard";
 import Navbar from "../components/Navbar";
+import AdminChatSettings from "../components/AdminChatSettings";
 import AdminUsage from "../components/AdminUsage";
 import Sidebar from "../components/Sidebar";
 import { showAppToast } from "../components/AppToast";
@@ -205,6 +206,7 @@ export default function AdminPage() {
 
 
 
+        <AdminChatSettings/>
         <AdminUsage />
 
         <section className="tile admin-registration-code">
@@ -223,7 +225,7 @@ export default function AdminPage() {
               <div className="admin-user-list">
                 {users.map(u => (
                   <button type="button" className="admin-user-row" key={u.id} onClick={() => setSelectedUser(u)}>
-                    <span className="admin-user-avatar">{u.avatarUrl ? <img src={cloudinaryImageUrl(u.avatarUrl, 64)} alt="" loading="lazy" decoding="async" /> : <User size={19}/>}</span>
+                    <UserAvatar name={u.nickname || u.email} url={u.avatarUrl} className="admin-user-avatar"/>
                     <span className="admin-user-copy"><strong>{u.nickname || "Beze jména"}</strong><small>{u.email}</small></span>
                     {u.blocked && <span className="admin-status-badge blocked">BLOKOVÁN</span>}
                     {u.role === "admin" && <span className="admin-role">ADMIN</span>}
@@ -236,7 +238,7 @@ export default function AdminPage() {
           <section className="tile admin-detail">
             <button type="button" className="ui-icon-button admin-back-button" onClick={() => setSelectedUser(null)} aria-label="Zpět na seznam" title="Zpět na seznam"><ArrowLeft size={17}/></button>
             <div className="admin-detail-heading">
-              <span className="admin-user-avatar large">{selectedUser.avatarUrl ? <img src={cloudinaryImageUrl(selectedUser.avatarUrl, 128)} alt="" loading="lazy" decoding="async" /> : <User size={25}/>}</span>
+              <UserAvatar name={selectedUser.nickname || selectedUser.email} url={selectedUser.avatarUrl} className="admin-user-avatar large"/>
               <div><h2>{selectedUser.nickname || "Beze jména"}</h2><p>{selectedUser.email}</p><div className="admin-detail-status">{selectedUser.blocked ? <span className="admin-status-badge blocked">BLOKOVÁN</span> : <span className="admin-status-badge">AKTIVNÍ</span>}</div></div>
             </div>
 

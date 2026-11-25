@@ -9,7 +9,7 @@ type Props = {
 };
 
 export default function FormField({ label, hint, children, group = false, className = "" }: Props) {
-  if (group) return <fieldset className={`professional-form-field app-form-group ${className}`.trim()}><legend>{label}</legend>{children}</fieldset>;
+  if (group) return <fieldset className={`professional-form-field app-form-group ${className}`.trim()}><legend className="professional-form-label">{label}{hint && <small>{hint}</small>}</legend>{children}</fieldset>;
   return (
     <label className={`professional-form-field ${className}`.trim()}>
       <span>

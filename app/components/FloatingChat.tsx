@@ -8,7 +8,6 @@ import { MessageCircle } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { CHAT_CHANGED, type ChatUnread } from '../lib/chat';
 import { showAppToast } from './AppToast';
-import { useChatLive } from '../lib/chatLive';
 
 export default function FloatingChat() {
   const [uid, setUid] = useState('');
@@ -19,7 +18,6 @@ export default function FloatingChat() {
   const path = usePathname();
   const inChat = path === '/chat';
   const onLogin = path === '/login';
-  useChatLive(onLogin ? '' : uid);
 
   useEffect(() => {
     let currentUid = '';

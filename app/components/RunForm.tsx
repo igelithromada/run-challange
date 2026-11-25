@@ -1,4 +1,5 @@
 "use client";
+import EntryFormPanel from "./EntryFormPanel";
 import { parseActivityDuration, isStrengthActivity, activityLabel as labelFor } from "../lib/activity";
 import { readFormDraft, saveFormDraft, readRecorderDraft, clearRecovery, draftPhotos } from "../lib/activityRecovery";
 import FormField from "./FormField";
@@ -6,7 +7,7 @@ import { uploadPhoto, type UploadedPhoto } from "../lib/uploadPhoto";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { auth } from "../lib/firebase";
-import { ImagePlus, MapPin, Plus, Save, X } from "lucide-react";
+import { ImagePlus, MapPin, Play, Plus, Save } from "lucide-react";
 import { showAppToast } from "./AppToast";
 import { createRun } from "../lib/services/runs";
 import { getUserProfile } from "../lib/services/users";
@@ -259,24 +260,20 @@ export default function RunForm({ type }: {
 
   return (
     <div className="run-form-shell">
-      {!showForm && (
+      {!showForm && <div className="run-form-start">
         <button type="button" className="run-primary-button" onClick={() => void openForm()}>
-          <Plus size={19} aria-hidden="true" /> {recoverable ? "Pokračovat v rozpracované aktivitě" : "Přidat záznam"}
+          {recoverable ? <Play size={19} aria-hidden="true"/> : <Plus size={19} aria-hidden="true"/>}
+          {recoverable ? "Pokračovat v aktivitě" : "Přidat záznam"}
         </button>
-      )}
-
-      {!showForm&&recoverable&&<p className="draft-recovery-note">Máš uloženou rozpracovanou aktivitu v tomto telefonu.</p>}
+        {recoverable && <p className="draft-recovery-note">Rozpracovaná aktivita je uložená v tomto telefonu.</p>}
+      </div>}
       {showForm && (
-        <section ref={formPanelRef} className="run-form-panel" aria-label={`Nový záznam: ${type}`}>
-          <div className="run-form-heading">
-            <div>
-              <span className="run-form-eyebrow">NOVÁ AKTIVITA</span>
-              <h3>Přidat {activityLabel}</h3>
-            </div>
-            <button type="button" className="run-form-close" onClick={() => { setShowForm(false); setShowGpsRecorder(false); setRecoverable(readRecorderDraft(ownerUid,type)?"gps":readFormDraft(ownerUid,type)?"form":null); }} disabled={saving} aria-label="Zavřít formulář">
-              <X size={19} aria-hidden="true" />
-            </button>
-          </div>
+        <EntryFormPanel panelRef={formPanelRef} title={`Přidat ${activityLabel}`} eyebrow="NOVÁ AKTIVITA"
+          busy={saving} onClose={() => {
+            setShowForm(false);
+            setShowGpsRecorder(false);
+            setRecoverable(readRecorderDraft(ownerUid, type) ? "gps" : readFormDraft(ownerUid, type) ? "form" : null);
+          }}>
 
           {!strength && !showGpsRecorder && (
             <button type="button" className="run-secondary-button gps-form-launch" onClick={() => setShowGpsRecorder(true)} disabled={saving}>
@@ -290,12 +287,11 @@ export default function RunForm({ type }: {
             </div>
           ) : (
             <>
-              <FormField className="run-form-field" label={strength ? "Počet opakování" : "Vzdálenost"} hint={strength ? undefined : "km"}>
+              <FormField label={strength ? "Počet opakování" : "Vzdálenost"} hint={strength ? undefined : "km"}>
                 <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label={strength ? "Počet opakování" : "Vzdálenost v kilometrech"} type="number" min={strength ? "1" : "0.1"} step={strength ? "1" : "0.01"} inputMode={strength ? "numeric" : "decimal"} placeholder={strength ? "Např. 30" : "Např. 5,2"} value={km} onChange={e => setKm(e.target.value)} />
               </FormField>
 
-              <div className="run-form-field">
-                <span>Celkový čas <small>{strength ? "volitelné" : "minuty a sekundy"}</small></span>
+              <FormField label="Celkový čas" hint={strength ? "volitelné" : "minuty a sekundy"} group>
                 <div className="run-form-time-fields">
                   <label className="run-form-unit-field">
                     <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label="Minuty" type="number" min="0" max="9999" step="1" inputMode="numeric" placeholder="min" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))} />
@@ -304,7 +300,7 @@ export default function RunForm({ type }: {
                     <input onFocus={e => scrollFieldIntoView(e.currentTarget)} aria-label="Sekundy" type="number" min="0" max="59" step="1" inputMode="numeric" placeholder="s" value={durationSeconds} onChange={e => setDurationSeconds(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} />
                   </label>
                 </div>
-              </div>
+              </FormField>
 
               {!strength && pace !== null && pace > 0 && (
                 <div className="run-form-pace" role="status">
@@ -313,11 +309,11 @@ export default function RunForm({ type }: {
                 </div>
               )}
 
-              <FormField className="run-form-field" label="Popis" hint="volitelné">
+              <FormField label="Popis" hint="volitelné">
                 <textarea onFocus={e => scrollFieldIntoView(e.currentTarget)} className="run-form-description" maxLength={500} placeholder="Jaká byla dnešní aktivita?" value={description} onChange={e => setDescription(e.target.value)} />
               </FormField>
 
-              <FormField className="run-form-field" label="Datum a čas aktivity">
+              <FormField label="Datum a čas aktivity">
                 <input onFocus={e => scrollFieldIntoView(e.currentTarget)} type="datetime-local" value={activityDate} onChange={e => setActivityDate(e.target.value)} />
               </FormField>
 
@@ -360,7 +356,7 @@ export default function RunForm({ type }: {
               </div>
             </>
           )}
-        </section>
+        </EntryFormPanel>
       )}
 
       

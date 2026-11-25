@@ -1,5 +1,5 @@
 "use client";
-import { cloudinaryImageUrl } from "../lib/imageUrl";
+import UserAvatar from "../components/UserAvatar";
 import { uploadPhoto } from "../lib/uploadPhoto";
 
 import { useEffect, useRef, useState } from "react";
@@ -233,13 +233,7 @@ export default function ProfilePage() {
 
         {avatarFile && <AvatarCropper file={avatarFile} busy={avatarBusy} onCancel={() => setAvatarFile(null)} onSave={handleAvatarChange} />}
         <section className="tile settings-avatar">
-          <div className="settings-avatar-preview">
-            {avatarUrl ? (
-              <img src={cloudinaryImageUrl(avatarUrl, 256)} alt="Profilový avatar" loading="lazy" decoding="async" />
-            ) : (
-              <span>{(nickname || email).charAt(0).toUpperCase() || "?"}</span>
-            )}
-          </div>
+          <UserAvatar name={nickname || email} url={avatarUrl} className="settings-avatar-preview"/>
           <div className="settings-avatar-copy">
             <h3>Profilová fotografie</h3>
             <p>Vyber obrázek, který se zobrazí u tvých aktivit.</p>

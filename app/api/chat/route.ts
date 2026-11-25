@@ -1,3 +1,4 @@
+import { CHAT_DISABLED_MESSAGE, chatState } from '../../lib/chatAvailability';
 import {randomUUID} from 'node:crypto';
 import {chatRecord,type ChatRecord} from '../../lib/chat';
 import {mergeActivityFeed,RECENT_ACTIVITY_LIMIT} from '../../lib/runData';
@@ -23,8 +24,21 @@ function changesIn(journal: FirebaseFirestore.DocumentData | undefined, revision
  return changes.at(-1)?.revision === revision ? changes : [];
 }
 
+async function previewRecords(db: FirebaseFirestore.Firestore, runs: Array<Record<string, unknown> & { id: string }>) {
+ const refs = [...new Set(runs.map(run => run.uid).filter((uid): uid is string =>
+  typeof uid === 'string' && uid.length > 0 && !uid.includes('/')
+ ))].map(uid => db.collection('publicProfiles').doc(uid));
+ const profiles = refs.length ? await db.getAll(...refs) : [];
+ const avatarByUid = new Map(profiles.filter(profile => profile.exists).map(profile => [profile.id, profile.data()?.avatarUrl ?? '']));
+ return runs.flatMap(run => {
+  const avatarUrl = typeof run.uid === 'string' ? avatarByUid.get(run.uid) : undefined;
+  const record = chatRecord(run.id, { ...run, avatarUrl: avatarUrl ?? run.avatarUrl });
+  return record ? [record] : [];
+ });
+}
+
 async function recordChange(tx: FirebaseFirestore.Transaction, db: FirebaseFirestore.Firestore, id: string) {
- const meta = db.collection('chatMeta').doc('community');
+ const meta = chatState(db);
  const journal = db.collection('chatMeta').doc('changes');
  const [state, history] = await Promise.all([tx.get(meta), tx.get(journal)]);
  const previous = revisionOf(state.data());
@@ -32,11 +46,14 @@ async function recordChange(tx: FirebaseFirestore.Transaction, db: FirebaseFires
  const changes = [...changesIn(history.data(), previous), { previous, revision, id }].slice(-REVISION_WINDOW);
 
  // Clients listen to the small revision document. Only the API reads the change history.
- tx.set(meta, { revision });
+ tx.set(meta, { revision }, { merge: true });
  tx.set(journal, { changes });
 }
 const validId=(value:unknown,max=100):value is string=>typeof value==='string'&&value.length<=max&&/^[a-zA-Z0-9_-]+$/.test(value);
 function failure(error:unknown){
+ if (error instanceof Error && error.message === CHAT_DISABLED_MESSAGE) {
+  return NextResponse.json({ error: CHAT_DISABLED_MESSAGE }, { status: 403, headers });
+ }
  const auth=authErrorResponse(error);
  if(auth)return NextResponse.json({error:auth.message},{status:auth.status,headers});
  console.error('Chat request failed',error);
@@ -57,6 +74,7 @@ export async function PATCH(request: Request) {
   const profileRef = adminDb.collection('users').doc(decoded.uid);
   const messageRef = adminDb.collection('communityChat').doc(body.id);
   await adminDb.runTransaction(async tx => {
+   if ((await tx.get(chatState(adminDb))).data()?.enabled === false) throw new Error(CHAT_DISABLED_MESSAGE);
    const [account, message] = await Promise.all([tx.get(profileRef), tx.get(messageRef)]);
    const readAt = message.data()?.createdAt as Timestamp | undefined;
    const previous = account.data()?.chatReadAt as Timestamp | undefined;
@@ -72,13 +90,14 @@ export async function PATCH(request: Request) {
 export async function GET(request:Request){
  try{
   const {adminDb,decoded,profile}=await requireUser(request);
+  const chatMeta = await chatState(adminDb).get();
+  if (chatMeta.data()?.enabled === false) throw new Error(CHAT_DISABLED_MESSAGE);
   const params=new URL(request.url).searchParams;
   if (params.has('gallery')) return NextResponse.json({ error: 'Chat už fotky nesdílí.' }, { status: 404, headers });
   if (params.get('view') === 'unread') {
-   const meta = await adminDb.collection('chatMeta').doc('community').get();
    const readAt = profile?.data()?.chatReadAt as Timestamp | undefined;
    const enabled = profile?.data()?.socialNotifications?.chat !== false;
-   const version = JSON.stringify([meta.data()?.revision || '', readAt?.seconds, readAt?.nanoseconds]);
+   const version = JSON.stringify([chatMeta.data()?.revision || '', readAt?.seconds, readAt?.nanoseconds]);
    if (params.get('version') === version) return NextResponse.json({ version, enabled }, { headers });
 
    const messages = adminDb.collection('communityChat');
@@ -104,12 +123,12 @@ export async function GET(request:Request){
    const snapshot = await adminDb.collection('runs').orderBy('timestamp', 'desc').limit(RECENT_ACTIVITY_LIMIT).get();
    const recent = mergeActivityFeed([], snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
    return NextResponse.json({
-    records: recent.map(run => chatRecord(run.id, run)).filter(record => record !== null),
+    records: await previewRecords(adminDb, recent),
    }, { headers });
   }
   const before=params.get('before');
   if(before&&!validId(before,230))return NextResponse.json({error:'Neplatná stránka chatu.'},{status:400,headers});
-  const meta = before ? undefined : (await adminDb.collection('chatMeta').doc('community').get()).data();
+  const meta = before ? undefined : chatMeta.data();
   const revision = revisionOf(meta);
   const since = params.get('revision');
   if (!before && since === revision) return NextResponse.json({ messages: [], unchanged: true, revision }, { headers });
@@ -142,10 +161,10 @@ export async function GET(request:Request){
   const ids = [...new Set(visible.flatMap(doc => attachedRecordIds(doc.data() ?? {})))];
   for (let i = 0; i < ids.length; i += 50) {
    const batch = await Promise.all(ids.slice(i, i + 50).map(id => adminDb.collection('runs').doc(id).get()));
-   for (const run of batch) {
-    const record = chatRecord(run.id, run.data());
-    if (record) records.set(run.id, record);
-   }
+   for (const record of await previewRecords(adminDb, batch.flatMap(run => {
+    const data = run.data();
+    return data ? [{ ...data, id: run.id }] : [];
+   }))) records.set(record.id, record);
   }
   const replies=new Map<string,{id:string;nickname:string;text:string}>();
   await Promise.all([...new Set(visible.filter(doc=>!doc.data()?.deleted).map(doc=>doc.data()?.reply?.id).filter((id):id is string=>validId(id,230)))].map(async id=>{const parent=await adminDb.collection('communityChat').doc(id).get();const data=parent.data();replies.set(id,{id,nickname:!data?.deleted?String(data?.nickname||'Uživatel'):'',text:!parent.exists||data?.deleted?'Původní zpráva byla odstraněna.':String(data?.text||'Sdílený záznam').slice(0,120)});}));
@@ -188,6 +207,7 @@ export async function POST(request:Request){
   const message=adminDb.collection('communityChat').doc(`${decoded.uid}_${body.clientId}`);
   const rate=adminDb.collection('chatRateLimits').doc(decoded.uid);
   const result=await adminDb.runTransaction(async tx=>{
+   if ((await tx.get(chatState(adminDb))).data()?.enabled === false) throw new Error(CHAT_DISABLED_MESSAGE);
    const existing=await tx.get(message);
    if(existing.exists)return {id:message.id,duplicate:true};
    const recent=await tx.get(rate),profile=await tx.get(adminDb.collection('users').doc(decoded.uid));
@@ -224,6 +244,7 @@ export async function DELETE(request:Request){
   if(!validId(body?.id,230))return NextResponse.json({error:'Neplatná zpráva.'},{status:400,headers});
   const ref=adminDb.collection('communityChat').doc(body.id);
   const result=await adminDb.runTransaction(async tx=>{
+   if ((await tx.get(chatState(adminDb))).data()?.enabled === false) throw new Error(CHAT_DISABLED_MESSAGE);
    const message=await tx.get(ref),profile=await tx.get(adminDb.collection('users').doc(decoded.uid));
    if(!message.exists)return 404;
    if(message.data()?.uid!==decoded.uid&&profile.data()?.role!=='admin'&&decoded.admin!==true)return 403;

@@ -1,3 +1,4 @@
+import UserAvatar from "./UserAvatar";
 import type { ReactNode } from "react";
 
 import { activityLabel, isStrengthActivity } from "../lib/activity";
@@ -17,14 +18,8 @@ export function ActivityCardHeading({ nickname, avatarUrl, activityType, date, b
   teamAvatarUrl?: string;
   onUserClick?: () => void;
 }) {
-  const avatar = avatarUrl
-    ? <img src={cloudinaryImageUrl(avatarUrl, 128)} alt="" loading="lazy" decoding="async" />
-    : nickname.charAt(0).toUpperCase();
-
   return <RecordCardHeading
-    avatar={onUserClick
-      ? <button type="button" className="activity-avatar" onClick={onUserClick} aria-label={`Profil uživatele ${nickname}`}>{avatar}</button>
-      : <span className="activity-avatar" aria-hidden="true">{avatar}</span>}
+    avatar={<UserAvatar name={nickname} url={avatarUrl} onClick={onUserClick}/>}
     title={<span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{nickname}</span>}
     badge={badge}
     meta={date && <time className="activity-date" dateTime={date.toISOString()}>

@@ -1,4 +1,5 @@
 "use client";
+import EntryFormPanel from "../components/EntryFormPanel";
 import RecordCard from "../components/RecordCard";
 import TeamCardContent from "../components/TeamCardContent";
 import Link from "next/link";
@@ -7,7 +8,7 @@ import CoverField, { useCoverDraft } from "../components/CoverField";
 import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Plus, Users, X } from "lucide-react";
+import { ChevronRight, Plus, Users } from "lucide-react";
 import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -153,15 +154,7 @@ export default function TeamsPage() {
             <Plus size={18} /> Vytvořit tým
           </button>
         ) : (
-          <section className="tile teams-create">
-            <div className="teams-section-heading">
-              <div>
-                <h2>Vytvořit tým</h2>
-                <p>Každý tým je veřejný a po vytvoření se stáváš jeho správcem.</p>
-              </div>
-              <button type="button" className="ui-icon-button" onClick={() => setShowCreate(false)} aria-label="Zavřít formulář"><X size={18} /></button>
-            </div>
-            <div className="teams-create-form professional-form">
+          <EntryFormPanel title="Vytvořit tým" description="Každý tým je veřejný a po vytvoření se stáváš jeho správcem." busy={creating} onClose={() => setShowCreate(false)}>
               <FormField label="Název týmu">
                 <input type="text" maxLength={40} placeholder="Např. Dolní Lhota běhá" value={name} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") void createTeam(); }} />
               </FormField>
@@ -174,8 +167,7 @@ export default function TeamsPage() {
                   <Plus size={18} /> {creating ? "Vytvářím…" : "Vytvořit tým"}
                 </button>
               </div>
-            </div>
-          </section>
+          </EntryFormPanel>
         )}
 
         <div className="teams-tabs" role="tablist" aria-label="Týmy">

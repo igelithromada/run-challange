@@ -1,4 +1,5 @@
 "use client";
+import UserAvatar from "./UserAvatar";
 
 import RecordCard from "./RecordCard";
 import OverlayDialog from "./OverlayDialog";
@@ -8,7 +9,6 @@ import ActivityGallery from "./ActivityGallery";
 import ActivityAwardsButton from "./ActivityAwardsButton";
 import { auth } from "../lib/firebase";
 import { Heart, MessageCircle, Pencil, Trash2, X, Send } from "lucide-react";
-import { cloudinaryImageUrl } from "../lib/imageUrl";
 import { getPublicProfiles } from "../lib/services/publicProfiles";
 import { showAppToast } from "./AppToast";
 
@@ -82,7 +82,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
         if (cancelled) return;
         const profile = profiles[userId];
         if (profile?.nickname) setResolvedNickname(profile.nickname);
-        if (profile?.avatarUrl) setResolvedAvatarUrl(profile.avatarUrl);
+        if (profile) setResolvedAvatarUrl(profile.avatarUrl || "");
       }).catch(error => {
         console.warn("Nepodařilo se načíst veřejný profil aktivity", error);
       });
@@ -294,7 +294,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
               likeUsers.length ? (
                 <>
                   <div className="social-user-list">
-                    {likeUsers.map(user => <button key={user.uid} type="button" className="social-user-row" onClick={() => routerSafeUser(user.uid)}><span className="activity-avatar">{user.avatarUrl ? <img src={cloudinaryImageUrl(user.avatarUrl, 64)} alt="" loading="lazy" decoding="async" /> : user.nickname.charAt(0).toUpperCase()}</span><strong>{user.nickname}</strong></button>)}
+                    {likeUsers.map(user => <button key={user.uid} type="button" className="social-user-row" onClick={() => routerSafeUser(user.uid)}><UserAvatar name={user.nickname} url={user.avatarUrl}/><strong>{user.nickname}</strong></button>)}
                   </div>
                   {likesTruncated && <p className="social-modal-note">Zobrazeno je prvních 100 reakcí.</p>}
                 </>
@@ -304,7 +304,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
                 <div className="social-comment-list">
                   {comments.length ? comments.map(comment => (
                     <article className="social-comment" key={comment.id}>
-                      <div className="activity-avatar">{comment.avatarUrl ? <img src={cloudinaryImageUrl(comment.avatarUrl, 64)} alt="" loading="lazy" decoding="async" /> : comment.nickname.charAt(0).toUpperCase()}</div>
+                      <UserAvatar name={comment.nickname} url={comment.avatarUrl}/>
                       <div className="social-comment-body">
                         <div className="social-comment-heading"><div className="social-comment-meta"><strong>{comment.nickname}</strong><time>{formatCommentDate(comment.createdAt)}</time></div>
                         {(comment.mine || isAdmin) && editingCommentId !== comment.id && <div className="social-comment-tools">

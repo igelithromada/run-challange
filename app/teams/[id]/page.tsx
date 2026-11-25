@@ -13,7 +13,7 @@ import { auth } from "../../lib/firebase";
 import { ActivityTypeIcon } from "../../components/ActivityTypeSelector";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
-import { cloudinaryImageUrl } from "../../lib/imageUrl";
+import UserAvatar from "../../components/UserAvatar";
 import type { TeamData, PublicProfileData } from "../../types";
 import { getPublicProfiles } from "../../lib/services/publicProfiles";
 import { getTeam, getTeamMemberIds } from "../../lib/services/teams";
@@ -185,10 +185,12 @@ export default function TeamDetailPage() {
         {isManager && (
           <section className="tile team-settings-card">
             <div className="progress-section-title"><Save /><div><h2>Správa týmu</h2><p>Můžeš kdykoli upravit název, popis a obrázek týmu.</p></div></div>
-            <FormField className="team-detail-field" label="Název týmu"><input value={name} maxLength={40} onChange={e => setName(e.target.value)} /></FormField>
-            <FormField className="team-detail-field" label="Popis"><input value={description} maxLength={200} onChange={e => setDescription(e.target.value)} /></FormField>
+            <div className="professional-form entry-form-fields">
+            <FormField label="Název týmu"><input value={name} maxLength={40} onChange={e => setName(e.target.value)} /></FormField>
+            <FormField label="Popis" hint="volitelné"><textarea value={description} maxLength={200} onChange={e => setDescription(e.target.value)} /></FormField>
             <CoverField draft={cover} existing={team.avatarUrl} busy={saving}/>
             <button className="run-primary-button team-save-button" onClick={() => void save()} disabled={saving}><Save size={18} />{saving ? "Ukládám…" : "Uložit změny"}</button>
+            </div>
           </section>
         )}
 
@@ -197,7 +199,7 @@ export default function TeamDetailPage() {
           <div className="team-members-list">
             {members.map(member => (
               <button key={member.id} type="button" className="team-member-row" onClick={() => router.push("/user/" + member.id)}>
-                <span className="team-member-avatar">{member.avatarUrl ? <img src={cloudinaryImageUrl(member.avatarUrl, 96)} alt="" loading="lazy" decoding="async" /> : (member.nickname || "U").charAt(0).toUpperCase()}</span>
+                <UserAvatar name={member.nickname || "Uživatel"} url={member.avatarUrl} className="team-member-avatar"/>
                 <span><strong>{member.nickname || "Uživatel"}</strong></span>
                 {member.id === team.managerId && <Crown size={16} aria-label="Správce týmu" />}
               </button>
