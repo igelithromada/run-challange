@@ -165,7 +165,9 @@ test('point sources and numbered shield stay legible at mobile widths', async ()
         await page.setContent('<html data-theme="'+theme+'"><main class="container"><section class="tile">'+render(Summary, { score })+'</section></main></html>');
         await page.addStyleTag({ content: css });
         assert.equal(await page.getByRole('listitem').count(), 2);
-        assert.equal(await page.locator('.activity-point-total strong').textContent(), '17');
+        assert.equal(await page.locator('.activity-point-progress-values strong').textContent(), '17 bodů');
+        assert.equal(await page.locator('.activity-point-progress-values span').textContent(), '20 bodů');
+        assert.equal(await page.locator('.activity-point-total').count(), 0);
         assert.equal(await page.locator('.level-shield b').textContent(), '1');
         assert.equal(await page.getByRole('progressbar').getAttribute('aria-valuetext'), 'Zbývá 3 body');
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
@@ -181,6 +183,18 @@ test('point sources and numbered shield stay legible at mobile widths', async ()
         assert.equal(await page.getByText('+2 body', { exact: true }).count(), 1);
         assert.equal(await page.getByText('Desítka', { exact: true }).count(), 1);
         assert.equal(await page.getByText('Za tento záznam', { exact: true }).count(), 1);
+        assert.equal(await page.locator('.activity-point-level-divider').count(), 1);
+        assert.equal(await page.locator('.record-point-awards > li + li').evaluate(el => getComputedStyle(el).borderTopWidth), '1px');
+        const awards = awardsForRecord(runs, 'record', now).filter(award => !award.repeatable);
+        await page.setContent('<html data-theme="'+theme+'"><main class="container"><section class="tile">'+
+          render(Summary, { score, recordAwards: awards })+'</section></main></html>');
+        await page.addStyleTag({ content: css });
+        assert.equal(await page.getByText('Odznaky', { exact: true }).count(), 0);
+        assert.equal(await page.getByText('Žádný odznak', { exact: true }).count(), 0);
+        const group = await page.locator('.activity-point-sources').boundingBox();
+        const branch = await page.locator('[data-point-tone="achievements"]').boundingBox();
+        assert.ok(Math.abs(group.x + group.width / 2 - branch.x - branch.width / 2) < 1);
+        assert.equal(await page.locator('.activity-point-connector').getAttribute('data-branches'), '1');
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
       }
     }

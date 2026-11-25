@@ -477,14 +477,30 @@ html[data-theme="white"] .activity-point-summary {
   margin: 0;
   list-style: none;
 }
+.activity-point-sources[data-branches="1"] {
+  grid-template-columns: minmax(0, 18rem);
+  justify-content: center;
+}
 .activity-point-sources > li {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: .35rem;
+  min-width: 0;
+  text-align: center;
+}
+.activity-point-source-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+}
+.activity-point-source-card {
   display: grid;
   justify-items: center;
   align-content: start;
   gap: .25rem;
-  padding: .65rem .2rem;
-  text-align: center;
   min-width: 0;
+  padding: .65rem .45rem;
   border: 1px solid var(--hierarchy-line);
   border-radius: 12px;
 }
@@ -493,7 +509,7 @@ html[data-theme="white"] .activity-point-summary {
 [data-point-tone="achievements"] { --point-icon: var(--point-achievements); }
 .activity-point-source-icon svg { color: var(--point-icon); width: 1.35rem; height: 1.35rem; }
 .activity-point-sources strong { font-size: .86rem; }
-.activity-point-sources li > span:not(.activity-point-source-icon) { font-size: .75rem; }
+.activity-point-source-card > span { font-size: .75rem; }
 .activity-point-sources b { font-size: .86rem; font-variant-numeric: tabular-nums; }
 .activity-point-summary small { color: var(--hierarchy-muted); font-size: .72rem; line-height: 1.3; }
 .activity-point-sources small { overflow-wrap: anywhere; }
@@ -504,7 +520,7 @@ html[data-theme="white"] .activity-point-summary {
   height: 1.65rem;
   color: var(--point-connector);
 }
-.activity-point-connector::before {
+.activity-point-connector[data-branches="2"]::before {
   content: "";
   position: absolute;
   inset: 0 calc(25% - .0875rem) auto;
@@ -515,11 +531,17 @@ html[data-theme="white"] .activity-point-summary {
 .activity-point-connector svg, .activity-point-arrow { width: 1rem; height: 1rem; }
 .activity-point-arrow { justify-self: center; color: var(--point-connector); }
 .activity-point-connector svg { position: relative; }
-.record-point-awards { list-style: none; padding: 0; margin: .3rem 0 0; width: 100%; }
+.activity-point-level-divider {
+  width: 100%;
+  height: 1px;
+  margin-block: .25rem .45rem;
+  background: var(--hierarchy-line);
+}
+.record-point-awards { display: block; list-style: none; margin: 0; }
 .record-point-awards > li { display: grid; justify-items: center; gap: .2rem; padding: .35rem .15rem; font-size: .8rem; }
-.record-point-awards > li + li { border-top: 1px solid var(--hierarchy-line); }
+.record-point-awards > li + li { border-top: 1px solid var(--point-connector); margin-top: .3rem; padding-top: .55rem; }
 .record-point-awards svg { width: 1.1rem; height: 1.1rem; color: var(--point-icon); }
-.record-point-none, .activity-point-empty { color: var(--hierarchy-muted); }
+.activity-point-empty { color: var(--hierarchy-muted); }
 .activity-point-empty { margin: .2rem 0 .55rem; font-size: .86rem; }
 .activity-point-total {
   display: flex;
@@ -537,7 +559,18 @@ html[data-theme="white"] .activity-point-summary {
 .activity-point-level-heading { display: flex; justify-content: center; align-items: center; gap: .55rem; }
 .activity-point-level-heading div { display: grid; line-height: 1.2; }
 .activity-point-level-heading div > span { color: var(--hierarchy-muted); font-size: .76rem; }
-.activity-point-level > small { text-align: center; }
+.activity-point-progress-values {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .55rem;
+  margin-top: .2rem;
+  color: var(--hierarchy-muted);
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+}
+.activity-point-progress-values strong { color: var(--hierarchy-text); font-size: 1rem; }
+.activity-point-level > small { text-align: start; }
 .activity-point-level progress { width: 100%; height: .55rem; accent-color: var(--hierarchy-caution); }
 .level-shield {
   --shield-size: 2.35rem;

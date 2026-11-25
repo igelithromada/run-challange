@@ -28,39 +28,55 @@ export default function ActivityPointSummary({ score, recordAwards }: {
   ];
   const recordMode = recordAwards !== undefined;
   const earnedPoints = recordAwards?.reduce((sum, award) => sum + award.count * pointsForAward(award), 0) ?? 0;
+  const visibleSources = sources.map(source => ({
+    ...source,
+    awards: recordAwards?.filter(award => award.repeatable === (source.tone === "badges")) ?? [],
+  })).filter(source => recordMode ? source.awards.length > 0 : source.value > 0);
+
   return <div className="activity-point-summary">
     {recordAwards === null && <p className="activity-point-empty">Ocenění za tento záznam se nepodařilo načíst.</p>}
     {recordAwards?.length === 0 && <p className="activity-point-empty">Za tento záznam nebyl získán žádný odznak ani úspěch.</p>}
-    {!recordMode || !!recordAwards?.length ? <>
-    <ul className="activity-point-sources">
-      {sources.map(source => <li key={source.tone} data-point-tone={source.tone}>
-        <span className="activity-point-source-icon" aria-hidden="true">{source.icon}</span>
-        <strong>{source.label}</strong>
-        {recordMode ? (
-          <ul className="record-point-awards">
-            {(recordAwards ?? []).filter(award => award.repeatable === (source.tone === "badges")).map(award =>
-              <li key={award.id}><AwardGlyph id={award.id}/><span>{award.title}</span><b>+{points(award.count * pointsForAward(award))}</b></li>
-            )}
-            {!recordAwards?.some(award => award.repeatable === (source.tone === "badges")) &&
-              <li className="record-point-none">{source.tone === "badges" ? "Žádný odznak" : "Žádný úspěch"}</li>}
-          </ul>
-        ) : <><span>{counted(source.value, source.forms)}</span>
-          <b>{points(source.amount)}</b>
-          <small>{source.note}</small></>}
-      </li>)}
-    </ul>
-    <div className="activity-point-connector" aria-hidden="true"><ArrowDown /></div>
-    {recordMode && <>
-      <div className="activity-point-total"><span>Za tento záznam</span><strong>+{points(earnedPoints)}</strong></div>
-      <ArrowDown className="activity-point-arrow" aria-hidden="true" />
+    {visibleSources.length > 0 && <>
+      <ul className="activity-point-sources" data-branches={visibleSources.length}>
+        {visibleSources.map(source => <li key={source.tone} data-point-tone={source.tone}>
+          <div className="activity-point-source-heading">
+            <span className="activity-point-source-icon" aria-hidden="true">{source.icon}</span>
+            <strong>{source.label}</strong>
+          </div>
+          {recordMode ? (
+            <ul className="activity-point-source-card record-point-awards">
+              {source.awards.map(award => (
+                <li key={award.id}>
+                  <AwardGlyph id={award.id}/>
+                  <span>{award.title}</span>
+                  <b>+{points(award.count * pointsForAward(award))}</b>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="activity-point-source-card">
+              <span>{counted(source.value, source.forms)}</span>
+              <b>{points(source.amount)}</b>
+              <small>{source.note}</small>
+            </div>
+          )}
+        </li>)}
+      </ul>
+      <div className="activity-point-connector" data-branches={visibleSources.length} aria-hidden="true"><ArrowDown /></div>
+      {recordMode && <>
+        <div className="activity-point-total"><span>Za tento záznam</span><strong>+{points(earnedPoints)}</strong></div>
+        <ArrowDown className="activity-point-arrow" aria-hidden="true" />
+      </>}
+      <div className="activity-point-level-divider" aria-hidden="true" />
     </>}
-    </> : null}
-    <div className="activity-point-total"><span>Celkové body</span><strong>{number.format(total)}</strong></div>
-    <ArrowDown className="activity-point-arrow" aria-hidden="true" />
     <div className="activity-point-level">
       <div className="activity-point-level-heading">
         <LevelShield level={level} tone={rank.tone}/>
         <div><strong>Úroveň {number.format(level)}</strong><span>{rank.name}</span></div>
+      </div>
+      <div className="activity-point-progress-values">
+        <strong>{points(total)}</strong>
+        <span>{points(nextLevelAt)}</span>
       </div>
       <progress value={total - levelStart} max={nextLevelAt - levelStart}
         aria-label={`Postup do úrovně ${level + 1}`} aria-valuetext={`Zbývá ${points(nextLevelAt - total)}`} />
