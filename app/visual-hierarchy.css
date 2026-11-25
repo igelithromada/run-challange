@@ -179,10 +179,12 @@ html body :is(.container,.activity-awards-dialog) [data-metric-layout="row"] {
 /* Draw horizontal rules only between populated sections or between metric rows.
    A standalone metric group has no rules facing empty space at the card edges. */
 html body :is(.container,.activity-awards-dialog) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::before,
+.record-summary-card > .activity-description + [data-metric-layout="summary"]::before,
 html body :is(.container,.activity-awards-dialog) :is(.activity-card-modern > .activity-metrics:not(:last-child),.weather-stat-grid)::after {
   content:"";position:absolute;inset-inline:.5rem;height:1px;background:var(--hierarchy-line);pointer-events:none;
 }
-html body :is(.container,.activity-awards-dialog) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::before {top:.25rem;}
+html body :is(.container,.activity-awards-dialog) :is(.activity-card-modern > .activity-metrics,.weather-stat-grid)::before,
+.record-summary-card > .activity-description + [data-metric-layout="summary"]::before {top:.25rem;}
 html body :is(.container,.activity-awards-dialog) :is(.activity-card-modern > .activity-metrics:not(:last-child),.weather-stat-grid)::after {bottom:.25rem;}
 html body :is(.container,.activity-awards-dialog) [data-metric-layout] > .app-metric:nth-child(n) {
   position:relative;border:0 !important;margin:0 !important;min-width:0;box-sizing:border-box;
@@ -444,4 +446,4 @@ html body .container .record-card-heading {grid-template-columns:auto minmax(0,1
 
 .results-person > details, .results-overview > details { align-self:stretch; min-width:0; }
 
-.record-summary-card > [data-metric-layout="summary"] { align-self:stretch; border-block-start:1px solid var(--hierarchy-line) !important; }
+.record-summary-card > [data-metric-layout="summary"] { align-self:stretch; }

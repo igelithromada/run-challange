@@ -1934,7 +1934,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .team-detail-field input{min-height:46px;padding:.65rem .8rem;border:1px solid var(--ui-border);border-radius:13px;background:rgba(255,255,255,.96);color:#12222c}
 .team-avatar-upload{display:flex;align-items:center;gap:.55rem;min-height:46px;padding:.65rem .8rem;border:1px dashed var(--ui-border);border-radius:13px;cursor:pointer;font-weight:750}
 .team-avatar-upload input{display:none}
-.team-save-button{margin-top:.75rem}
+.team-management-actions { margin-top: 1rem; display: grid; gap: .75rem; }
+.team-transfer-actions { display: grid; gap: .55rem; }
+.team-management-actions p { margin: 0; }
+.team-detail-delete {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+}
+html[data-theme="white"] .team-detail-delete { color: var(--hierarchy-danger); }
 .team-members-list{display:grid;gap:.5rem}
 .team-member-row{width:100%;display:flex;align-items:center;gap:.7rem;text-align:left;padding:.65rem;border:1px solid var(--ui-border);border-radius:14px;background:rgba(255,255,255,.055);color:inherit;cursor:pointer}
 .team-member-row:hover{background:rgba(255,255,255,.1)}

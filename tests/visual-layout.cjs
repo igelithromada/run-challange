@@ -18,7 +18,7 @@ const { ActivityCardHeading, ActivityCardStats } = require('../app/components/Ac
 const Team = require('../app/components/TeamCardContent').default;
 const Challenge = require('../app/components/ChallengeSummaryCard').default;
 const Row = require('../app/components/ResultsPersonRow').default;
-const Card = require('../app/components/RecordCard').default;
+const { default: Card, RecordMetrics } = require('../app/components/RecordCard');
 const Metric = require('../app/components/Metric').default;
 const render = (component, props) => renderToStaticMarkup(React.createElement(component, props));
 const css = ['styles','professional-ui','visual-hierarchy','chat'].map(name => fs.readFileSync('app/'+name+'.css','utf8')).join('\n');
@@ -31,12 +31,18 @@ test('mobile record and summary layouts across themes', async () => {
     const record = (type, minutes) => render(ActivityCardStats, { activityType:type, run:{ km:5.2, minuty:minutes, repetitions:30, tempo:6 } });
     const summary = ['distance','time','pace'].map(tone => render(Metric,{tone,label:tone,value:12})).join('');
     const team = render(Card, {className:'record-summary-card',children:React.createElement(Team,{team:{name:'Sousedé',memberCount:3,description:'Denní procházky'}})});
+    const teamDetail = description => render(Card, { className: 'record-summary-card', children: React.createElement(React.Fragment, null,
+      React.createElement(Team, { team: { name: 'Sousedé', memberCount: 3, description }, detail: true }),
+      React.createElement(RecordMetrics, { layout: 'summary' }, ['Běh', 'Chůze', 'Dřepy', 'Kliky'].map(label =>
+        React.createElement(Metric, { key: label, label, value: 1 })
+      )),
+    ) });
     const challenge = render(Challenge, {challenge:{id:'test',name:'Pět kilometrů',kind:'distance',goal:5,state:'active',activityType:'běh',startDate:'2026-11-01',endDate:'2026-11-30',description:'Běháme společně'},joined:true});
     const results = render(Row, {person:{name:'Radek',km:5,count:1,pace:6,minutes:30,awards:[],rank:1},type:'běh',metric:'km'});
     for (const width of [320,360,393]) {
       await page.setViewportSize({ width, height:800 });
       for (const theme of ['white','dark']) {
-        await page.setContent('<html data-theme="'+theme+'"><main class="container"><article id="run" class="activity-card activity-card-modern">'+heading+record('běh',30)+'</article><article id="one">'+record('kliky',0)+'</article><article id="two">'+record('dřepy',5)+'</article><div id="summary" class="tile-group activity-summary-grid" data-metric-layout="summary">'+summary+'</div><section id="team">'+team+'</section><section id="challenge">'+challenge+'</section>'+results+'</main></html>');
+        await page.setContent('<html data-theme="'+theme+'"><main class="container"><article id="run" class="activity-card activity-card-modern">'+heading+record('běh',30)+'</article><article id="one">'+record('kliky',0)+'</article><article id="two">'+record('dřepy',5)+'</article><div id="summary" class="tile-group activity-summary-grid" data-metric-layout="summary">'+summary+'</div><section id="team">'+team+'</section><section id="challenge">'+challenge+'</section>'+results+'<section id="team-with-description">'+teamDetail('Denní procházky')+'</section><section id="team-without-description">'+teamDetail('')+'</section>'+'</main></html>');
         await page.addStyleTag({content:css});
         const box = selector => page.locator(selector).boundingBox();
         const middle = rect => rect.x + rect.width/2;
@@ -53,6 +59,12 @@ test('mobile record and summary layouts across themes', async () => {
           assert.deepEqual(await parity('#'+id+' article > header',headingProps),await parity('#run > header',headingProps));
           near((await box('#'+id+' .activity-avatar')).width,(await box('#run .activity-avatar')).width);
         }
+        const divider = id => page.locator('#'+id+' .app-metric-grid').evaluate(el => {
+          const rule = getComputedStyle(el, '::before');
+          return { content: rule.content, height: rule.height, inset: rule.insetInlineStart };
+        });
+        assert.deepEqual(await divider('team-with-description'), { content: '""', height: '1px', inset: '8px' });
+        assert.equal((await divider('team-without-description')).content, 'none');
         const linkCoversTitle = await page.locator('#challenge h3').evaluate(el => {
           const r = el.getBoundingClientRect(); el.scrollIntoView();
           const visible = el.getBoundingClientRect();

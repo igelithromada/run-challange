@@ -1,4 +1,5 @@
 "use client";
+import EntryFormPanel from "../../components/EntryFormPanel";
 import FormField from "../../components/FormField";
 import Metric from "../../components/Metric";
 import RecordCard, { RecordMetrics } from "../../components/RecordCard";
@@ -8,7 +9,7 @@ import CoverField, { useCoverDraft } from "../../components/CoverField";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Save, Users, Crown, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Save, Users, Crown, Trash2 } from "lucide-react";
 import { auth } from "../../lib/firebase";
 import { ActivityTypeIcon } from "../../components/ActivityTypeSelector";
 import Navbar from "../../components/Navbar";
@@ -18,6 +19,11 @@ import type { TeamData, PublicProfileData } from "../../types";
 import { getPublicProfiles } from "../../lib/services/publicProfiles";
 import { getTeam, getTeamMemberIds } from "../../lib/services/teams";
 import { showAppToast } from "../../components/AppToast";
+
+function activityCount(value = 0) {
+  const unit = value === 1 ? "aktivita" : value >= 2 && value <= 4 ? "aktivity" : "aktivit";
+  return `${value} ${unit}`;
+}
 
 export default function TeamDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,6 +36,8 @@ export default function TeamDetailPage() {
   const [description, setDescription] = useState("");
   const cover = useCoverDraft(`${user?.uid || ""}/${id}`);
   const [selectedManager, setSelectedManager] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -102,13 +110,26 @@ export default function TeamDetailPage() {
   const isManager = team?.managerId === user?.uid;
   const isMember = !!user && members.some(member => member.id === user.uid);
 
+  const openEdit = () => {
+    if (!team) return;
+    setName(team.name || "");
+    setDescription(team.description || "");
+    cover.reset();
+    setEditing(true);
+  };
+
+  const closeEdit = () => {
+    cover.reset();
+    setEditing(false);
+  };
+
   const save = async () => {
-    if (!isManager || !team) return;
+    if (!isManager || !team || saving || deleting) return;
     setSaving(true);
     try {
       await request("edit", { name, description, ...await cover.resolve(team) });
       await load();
-      cover.reset();
+      closeEdit();
       showAppToast("Nastavení týmu bylo uloženo.", "success");
     } catch (error) {
       showAppToast(error instanceof Error ? error.message : "Nastavení se nepodařilo uložit.", "error");
@@ -131,7 +152,7 @@ export default function TeamDetailPage() {
   };
 
   const transferAndLeave = async () => {
-    if (!isManager || !selectedManager) return;
+    if (!isManager || !selectedManager || saving || deleting) return;
     const target = members.find(member => member.id === selectedManager);
     if (!target) return;
     if (!window.confirm(`Předat správu uživateli ${target.nickname || "Uživatel"} a odejít z týmu?`)) return;
@@ -145,12 +166,14 @@ export default function TeamDetailPage() {
   };
 
   const deleteTeam = async () => {
-    if (!isManager || !window.confirm("Opravdu chceš tento tým trvale smazat?")) return;
+    if (!isManager || saving || deleting || !window.confirm("Opravdu chceš tento tým trvale smazat?")) return;
+    setDeleting(true);
     try {
       await request("delete");
       showAppToast("Tým byl smazán.", "success");
       router.push("/teams");
     } catch (error) {
+      setDeleting(false);
       showAppToast(error instanceof Error ? error.message : "Tým se nepodařilo smazat.", "error");
     }
   };
@@ -175,23 +198,34 @@ export default function TeamDetailPage() {
         <RecordCard className="record-summary-card">
           <TeamCardContent team={team} detail/>
           <RecordMetrics layout="summary">
-            <Metric icon={<ActivityTypeIcon type="běh" size={20}/>} label="Běh" tone="distance" value={Number(stats.runningKm || 0).toLocaleString("cs-CZ")} unit="km" detail={`${Number(stats.runningActivities || 0)} aktivit`}/>
-            <Metric icon={<ActivityTypeIcon type="chůze" size={20}/>} label="Chůze" tone="distance" value={Number(stats.walkingKm || 0).toLocaleString("cs-CZ")} unit="km" detail={`${Number(stats.walkingActivities || 0)} aktivit`}/>
-            <Metric icon={<ActivityTypeIcon type="dřepy" size={20}/>} label="Dřepy" tone="repetitions" value={Number(stats.squatRepetitions || 0).toLocaleString("cs-CZ")} unit="opakování" detail={`${Number(stats.squatActivities || 0)} aktivit`}/>
-            <Metric icon={<ActivityTypeIcon type="kliky" size={20}/>} label="Kliky" tone="repetitions" value={Number(stats.pushupRepetitions || 0).toLocaleString("cs-CZ")} unit="opakování" detail={`${Number(stats.pushupActivities || 0)} aktivit`}/>
+            <Metric icon={<ActivityTypeIcon type="běh" size={20}/>} label="Běh" tone="distance" value={Number(stats.runningKm || 0).toLocaleString("cs-CZ")} unit="km" detail={activityCount(stats.runningActivities)}/>
+            <Metric icon={<ActivityTypeIcon type="chůze" size={20}/>} label="Chůze" tone="distance" value={Number(stats.walkingKm || 0).toLocaleString("cs-CZ")} unit="km" detail={activityCount(stats.walkingActivities)}/>
+            <Metric icon={<ActivityTypeIcon type="dřepy" size={20}/>} label="Dřepy" tone="repetitions" value={Number(stats.squatRepetitions || 0).toLocaleString("cs-CZ")} unit="opakování" detail={activityCount(stats.squatActivities)}/>
+            <Metric icon={<ActivityTypeIcon type="kliky" size={20}/>} label="Kliky" tone="repetitions" value={Number(stats.pushupRepetitions || 0).toLocaleString("cs-CZ")} unit="opakování" detail={activityCount(stats.pushupActivities)}/>
           </RecordMetrics>
         </RecordCard>
 
         {isManager && (
-          <section className="tile team-settings-card">
-            <div className="progress-section-title"><Save /><div><h2>Správa týmu</h2><p>Můžeš kdykoli upravit název, popis a obrázek týmu.</p></div></div>
-            <div className="professional-form entry-form-fields">
-            <FormField label="Název týmu"><input value={name} maxLength={40} onChange={e => setName(e.target.value)} /></FormField>
-            <FormField label="Popis" hint="volitelné"><textarea value={description} maxLength={200} onChange={e => setDescription(e.target.value)} /></FormField>
-            <CoverField draft={cover} existing={team.avatarUrl} busy={saving}/>
-            <button className="run-primary-button team-save-button" onClick={() => void save()} disabled={saving}><Save size={18} />{saving ? "Ukládám…" : "Uložit změny"}</button>
-            </div>
-          </section>
+          <div className="team-settings-card">
+            {editing ? (
+              <EntryFormPanel title="Upravit tým" onClose={closeEdit} busy={saving}>
+                <FormField label="Název týmu">
+                  <input value={name} maxLength={40} onChange={e => setName(e.target.value)} />
+                </FormField>
+                <FormField label="Popis" hint="volitelné">
+                  <textarea value={description} maxLength={200} onChange={e => setDescription(e.target.value)} />
+                </FormField>
+                <CoverField draft={cover} existing={team.avatarUrl} busy={saving}/>
+                <button type="button" className="run-primary-button" onClick={() => void save()} disabled={saving || deleting || !name.trim()}>
+                  <Save size={18} aria-hidden="true" />{saving ? "Ukládám…" : "Uložit změny"}
+                </button>
+              </EntryFormPanel>
+            ) : (
+              <button type="button" className="run-secondary-button" onClick={openEdit} disabled={deleting}>
+                <Pencil size={17} aria-hidden="true" /> Upravit tým
+              </button>
+            )}
+          </div>
         )}
 
         <section className="tile team-members-card">
@@ -208,26 +242,30 @@ export default function TeamDetailPage() {
         </section>
 
         {isMember && (
-          <section className="team-management-actions">
+          <section className={isManager ? "tile team-management-actions" : "team-management-actions"}>
             {isManager ? (
               otherMembers.length ? (
-                <div className="tile">
+                <div className="team-transfer-actions">
                   <strong>Předat správu a odejít</strong>
                   <p>Nejdříve vyber nového správce.</p>
                   <select value={selectedManager} onChange={e => setSelectedManager(e.target.value)}>
                     <option value="">Vyber člena</option>
                     {otherMembers.map(member => <option key={member.id} value={member.id}>{member.nickname || "Uživatel"}</option>)}
                   </select>
-                  <button className="run-secondary-button" disabled={!selectedManager} onClick={() => void transferAndLeave()}>Předat správu a odejít</button>
+                  <button className="run-secondary-button" disabled={!selectedManager || saving || deleting} onClick={() => void transferAndLeave()}>Předat správu a odejít</button>
                 </div>
               ) : (
-                <div className="tile"><p>Jsi jediný člen. Tým můžeš pouze smazat.</p></div>
+                <p>Jsi jediný člen. Pokud chceš tým opustit, můžeš ho smazat.</p>
               )
             ) : (
               <button type="button" className="trainer-secondary-button team-leave-button" onClick={() => void leave()}>Odejít z týmu</button>
             )}
 
-            {isManager && <button type="button" className="team-delete-button" onClick={() => void deleteTeam()}><Trash2 size={17} /> Smazat tým</button>}
+            {isManager && (
+              <button type="button" className="run-danger-button team-detail-delete" disabled={saving || deleting} onClick={() => void deleteTeam()}>
+                <Trash2 size={17} aria-hidden="true" /> {deleting ? "Mažu tým…" : "Smazat tým"}
+              </button>
+            )}
           </section>
         )}
       </main>
