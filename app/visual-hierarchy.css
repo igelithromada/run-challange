@@ -451,3 +451,108 @@ html body .container .record-card-heading {grid-template-columns:auto minmax(0,1
 .results-person > details, .results-overview > details { align-self:stretch; min-width:0; }
 
 .record-summary-card > [data-metric-layout="summary"] { align-self:stretch; }
+
+/* Shared breakdown of lifetime points, in the progress view and the level dialog. */
+.progress-point-summary { margin-block: .6rem 1rem; }
+.progress-point-summary > h2 { margin: 0 0 .75rem; font-size: 1.1rem; }
+.activity-point-summary {
+  --point-days: #78c7e4;
+  --point-badges: #e9c474;
+  --point-achievements: #c8b6ef;
+  display: grid;
+  justify-items: stretch;
+  gap: .15rem;
+  padding-block: .45rem;
+}
+html[data-theme="white"] .activity-point-summary {
+  --point-days: #186483;
+  --point-badges: #79551e;
+  --point-achievements: #69469a;
+}
+.activity-point-sources {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .35rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.activity-point-sources > li {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: .25rem;
+  padding: .65rem .2rem;
+  text-align: center;
+  min-width: 0;
+  border: 1px solid var(--hierarchy-line);
+  border-radius: 12px;
+}
+.activity-point-source-icon { --point-icon: var(--point-days); display: inline-flex; }
+[data-point-tone="badges"] .activity-point-source-icon { --point-icon: var(--point-badges); }
+[data-point-tone="achievements"] .activity-point-source-icon { --point-icon: var(--point-achievements); }
+.activity-point-source-icon svg { color: var(--point-icon); width: 1.35rem; height: 1.35rem; }
+.activity-point-sources strong { font-size: .86rem; }
+.activity-point-sources li > span:not(.activity-point-source-icon) { font-size: .75rem; }
+.activity-point-sources b { font-size: .86rem; font-variant-numeric: tabular-nums; }
+.activity-point-summary small { color: var(--hierarchy-muted); font-size: .72rem; line-height: 1.3; }
+.activity-point-sources small { overflow-wrap: anywhere; }
+.activity-point-connector {
+  position: relative;
+  display: grid;
+  place-items: end center;
+  height: 1.65rem;
+  color: var(--hierarchy-muted);
+}
+.activity-point-connector::before {
+  content: "";
+  position: absolute;
+  inset: 0 16.67% auto;
+  height: .55rem;
+  border-inline: 1px solid var(--hierarchy-line);
+  border-bottom: 1px solid var(--hierarchy-line);
+}
+.activity-point-connector svg, .activity-point-arrow { width: 1rem; height: 1rem; }
+.activity-point-arrow { justify-self: center; color: var(--hierarchy-muted); }
+.activity-point-total {
+  display: flex;
+  justify-self: center;
+  justify-content: center;
+  align-items: baseline;
+  gap: .65rem;
+  padding: .45rem .9rem;
+  border: 1px solid var(--hierarchy-line);
+  border-radius: 12px;
+  font-size: .86rem;
+}
+.activity-point-total strong { color: var(--hierarchy-text); font-size: 1.2rem; }
+.activity-point-level { display: grid; gap: .4rem; }
+.activity-point-level-heading { display: flex; justify-content: center; align-items: center; gap: .55rem; }
+.activity-point-level-heading div { display: grid; line-height: 1.2; }
+.activity-point-level-heading div > span { color: var(--hierarchy-muted); font-size: .76rem; }
+.activity-point-level > small { text-align: center; }
+.activity-point-level progress { width: 100%; height: .55rem; accent-color: var(--hierarchy-caution); }
+.level-shield {
+  --shield-size: 2.35rem;
+  --shield-color: var(--hierarchy-muted);
+  display: inline-grid;
+  place-items: center;
+  width: var(--shield-size);
+  height: var(--shield-size);
+  color: var(--shield-color);
+  font-variant-numeric: tabular-nums;
+}
+.level-shield > * { grid-area: 1 / 1; color: var(--shield-color); }
+.level-shield svg { width: 100%; height: 100%; }
+.level-shield b { font-size: calc(var(--shield-size) * .37); line-height: 1; }
+.level-shield:is([data-level-tone="sport"], [data-level-tone="endurance"], [data-level-tone="elite"], [data-level-tone="legend"]) {
+  --shield-color: var(--hierarchy-caution);
+}
+.level-shield:is([data-level-tone="active"], [data-level-tone="veteran"]) { --shield-color: var(--point-days, var(--hierarchy-accent)); }
+.level-shield[data-level-tone="champion"] { --shield-color: var(--point-achievements, var(--hierarchy-accent)); }
+.activity-level-button .level-shield { --shield-size: 1.6rem; }
+.record-card-heading .activity-person-name:has(.activity-level-button) { align-items: center; }
+.user-page-header h1 .activity-awards-anchor { margin-inline-start: .25rem; vertical-align: middle; }
+.activity-level-dialog { max-height: min(86dvh, calc(var(--overlay-height, 86dvh) - 1rem)); }
+.activity-level-badges { margin-top: .75rem; font-size: .86rem; }
+.activity-level-badges > summary { cursor: pointer; }

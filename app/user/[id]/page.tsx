@@ -1,4 +1,6 @@
 "use client";
+import ActivityLevelButton from "../../components/ActivityLevelButton";
+import { activityPoints } from "../../lib/activityPoints";
 import UserAvatar from "../../components/UserAvatar";
 import PhotoViewer from "../../components/PhotoViewer";
 import { activityAmount, activityUnit, isStrengthActivity } from "../../lib/activity";
@@ -55,6 +57,7 @@ export default function UserPage() {
   }, [runsState.data]);
 
   const teams = teamsState.data;
+  const score = useMemo(() => activityPoints(runsState.data), [runsState.data]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -85,7 +88,7 @@ export default function UserPage() {
       <main className="container user-page-modern">
         <header className="user-page-header">
           <UserAvatar name={profileName} url={userInfo.avatarUrl}/>
-          <div><span className="user-page-eyebrow">AKTIVITY UŽIVATELE</span><h1>{profileName}</h1><p>{filteredRuns.length} {filteredRuns.length === 1 ? "aktivita" : filteredRuns.length < 5 ? "aktivity" : "aktivit"} · {filteredRuns.reduce((sum, run) => sum + activityAmount(run), 0).toLocaleString("cs-CZ",{maximumFractionDigits:isStrengthActivity(selectedType)?0:1})} {activityUnit(selectedType)}</p></div>
+          <div><span className="user-page-eyebrow">AKTIVITY UŽIVATELE</span><h1>{profileName}{id && !runsState.loading && (!runsState.error || runsState.data.length > 0) && <ActivityLevelButton key={id} uid={id} nickname={profileName} score={score}/>}</h1><p>{filteredRuns.length} {filteredRuns.length === 1 ? "aktivita" : filteredRuns.length < 5 ? "aktivity" : "aktivit"} · {filteredRuns.reduce((sum, run) => sum + activityAmount(run), 0).toLocaleString("cs-CZ",{maximumFractionDigits:isStrengthActivity(selectedType)?0:1})} {activityUnit(selectedType)}</p></div>
         </header>
 
         <ActivityTypeSelector value={selectedType} onChange={setSelectedType} ariaLabel="Typ aktivity" />
@@ -98,6 +101,7 @@ export default function UserPage() {
               <ActivityCard
                 key={run.id}
                 run={run}
+                levelScore={score}
                 teamName={teamName}
                 activityType={selectedType}
                 onPhotosClick={showRunImages}

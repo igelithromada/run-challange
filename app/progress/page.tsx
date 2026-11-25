@@ -1,4 +1,6 @@
 "use client";
+import ActivityPointSummary from "../components/ActivityPointSummary";
+import { activityPoints } from "../lib/activityPoints";
 import Metric from "../components/Metric";
 import AwardMetrics, { BadgeTotal } from "../components/AwardMetrics";
 import { formatCompactActivityTime, formatMetricNumber } from "../lib/activityMetrics";
@@ -11,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { CalendarDays, MapPin, Trophy, Flame } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { parseActivityDate } from "../lib/runData";
-import { activityAwards, awardTotal, type Award as ProgressAward } from "../lib/awards";
+import { awardTotal, type Award as ProgressAward } from "../lib/awards";
 import ActivityCalendar from "../components/ActivityCalendar";
 import ProgressChart from "../components/ProgressChart";
 import Navbar from "../components/Navbar";
@@ -68,7 +70,6 @@ export default function ProgressPage() {
     return date && date <= now && amount > 0 ? [{ run, date, amount }] : [];
   });
   const selected = eligible.map(entry => entry.run);
-  const lifetimeAmount = eligible.reduce((sum, entry) => sum + entry.amount, 0);
   const sorted = eligible.sort((a, b) => +a.date - +b.date);
   type Entry = (typeof sorted)[number];
   const longest = sorted.reduce<Entry | null>((best, entry) => !best || entry.amount > best.amount ? entry : best, null);
@@ -89,30 +90,18 @@ export default function ProgressPage() {
     return count;
   })();
 
-  const activityWord = goalType === "chůze" ? "chodec" : "běžec";
-  const baseLevels = [
-    { name:"Začátečník", min:0, next:25, icon:"🌱" },
-    { name:`Pravidelný ${activityWord}`, min:25, next:100, icon:"👟" },
-    { name:"Pokročilý", min:100, next:250, icon:"🔥" },
-    { name:`Zkušený ${activityWord}`, min:250, next:500, icon:"🏅" },
-    { name:`${goalType === "chůze" ? "Chodecký" : "Běžecký"} matador`, min:500, next:1000, icon:"🏆" },
-    { name:"Legenda", min:1000, next:2000, icon:"👑" },
-    { name:"Legenda 2.0", min:2000, next:5000, icon:"💎" }
-  ];
-  const levels = strength ? baseLevels.map((item, index) => ({...item, name:["Začátečník","Pravidelný trénink","Pokročilý","Zkušený sportovec","Silový matador","Legenda","Legenda 2.0"][index], min:item.min*10,next:item.next*10})) : baseLevels;
-  const level = [...levels].reverse().find(item => lifetimeAmount >= item.min) || levels[0];
-  const levelProgress = Math.min(100, Math.max(0, (lifetimeAmount - level.min) / (level.next - level.min) * 100));
-
-  const levelNumber = levels.indexOf(level) + 1;
-  const nextLevel = levels[levelNumber];
-  const remaining = Math.max(0, level.next - lifetimeAmount);
-  const experienceAmount = (amount: number) => amount.toLocaleString("cs-CZ", { maximumFractionDigits: strength ? 0 : 2 }) + " " + unit;
-  const awards = activityAwards(selected, goalType);
+  const score = useMemo(() => activityPoints(personalState.data), [personalState.data]);
+  const awards = score.awardsByType[goalType];
 
   return <>
     <Navbar title="Můj pokrok" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
     <Sidebar visible={menuVisible} onClose={()=>setMenuVisible(false)}/>
     <main className="container progress-page">
+      {(!personalState.loading || personalState.data.length > 0) && (!personalState.error || personalState.data.length > 0) &&
+        <section className="tile progress-point-summary" aria-labelledby="progress-points-title">
+          <h2 id="progress-points-title">Body a úroveň</h2>
+          <ActivityPointSummary score={score}/>
+        </section>}
       <ActivityTypeSelector value={goalType} onChange={setGoalType} ariaLabel="Typ aktivity pro pokrok" />
 
 
@@ -141,24 +130,7 @@ export default function ProgressPage() {
         </div>
       </section>
 
-      <details className="progress-level tile progress-experience">
-        <summary>Úrovně aktivity</summary>
-        <p className="chart-hint">Úroveň vychází z {strength ? "celkového počtu opakování" : "celkové vzdálenosti"} v této kategorii za celou dobu.</p>
-        <div className="progress-experience-main">
-          <span className="progress-level-emoji" aria-hidden="true">{level.icon}</span>
-          <div><small>Úroveň {levelNumber} / {levels.length}</small><h3>{level.name}</h3></div>
-          <strong>{experienceAmount(lifetimeAmount)}<small>Celkem</small></strong>
-        </div>
-        <div className="progress-experience-target">
-          <span>{nextLevel ? `Další úroveň: ${nextLevel.name}` : "Milník nejvyšší úrovně"}</span>
-          <strong>{experienceAmount(level.next)}</strong>
-        </div>
-        <progress max={100} value={levelProgress} aria-label="Postup v aktuální úrovni" />
-        <div className="progress-level-foot">
-          <span>{remaining ? `Zbývá ${experienceAmount(remaining)}` : "Milník splněn"}</span>
-          <strong>{Math.round(levelProgress)} %</strong>
-        </div>
-      </details>
+
 
       </>}
       {personalState.loading && <LoadingSkeleton count={2} />}

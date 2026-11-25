@@ -149,3 +149,27 @@ test('entry forms share light controls in every theme and chat picker is opaque'
     }
   } finally { await browser.close(); }
 });
+
+test('point sources and numbered shield stay legible at mobile widths', async () => {
+  const Summary = require('../app/components/ActivityPointSummary').default;
+  const { activityPoints } = require('../app/lib/activityPoints');
+  const score = activityPoints([{ id: 'record', km: 12, timestamp: '2026-11-20T06:00:00Z' }], Date.parse('2026-11-25T12:00:00Z'));
+  const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+  try {
+    const page = await browser.newPage();
+    for (const width of [320, 393]) {
+      await page.setViewportSize({ width, height: 720 });
+      for (const theme of ['white', 'dark']) {
+        await page.setContent('<html data-theme="'+theme+'"><main class="container"><section class="tile">'+render(Summary, { score })+'</section></main></html>');
+        await page.addStyleTag({ content: css });
+        assert.equal(await page.getByRole('listitem').count(), 3);
+        assert.equal(await page.locator('.activity-point-total strong').textContent(), '18');
+        assert.equal(await page.locator('.level-shield b').textContent(), '1');
+        assert.equal(await page.getByRole('progressbar').getAttribute('aria-valuetext'), 'Zbývá 2 body');
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        const colors = await page.locator('.activity-point-source-icon svg').evaluateAll(icons => icons.map(icon => getComputedStyle(icon).color));
+        assert.equal(new Set(colors).size, 3);
+      }
+    }
+  } finally { await browser.close(); }
+});
