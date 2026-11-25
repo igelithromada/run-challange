@@ -102,6 +102,7 @@ export default function UserPage() {
                 key={run.id}
                 run={run}
                 levelScore={score}
+                levelHistory={runsState.data}
                 teamName={teamName}
                 activityType={selectedType}
                 onPhotosClick={showRunImages}

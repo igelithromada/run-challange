@@ -1,12 +1,7 @@
 import { ACTIVITY_TYPES, activityAmount, recordActivityType } from "./activity";
-import { activityAwards, type AwardRun } from "./awards";
+import { activityAwards, type Award, type AwardRun } from "./awards";
 import { parseActivityDate } from "./runData";
 
-const pragueDay = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Europe/Prague", year: "numeric", month: "2-digit", day: "2-digit",
-});
-
-export const DAILY_ACTIVITY_POINTS = 1;
 export const BADGE_POINTS = 2;
 export const ACHIEVEMENT_POINTS: Readonly<Record<string, number>> = {
   first: 5,
@@ -26,17 +21,39 @@ const ranks = [
   { min: 1, name: "Začátečník", tone: "beginner" },
 ] as const;
 
-export function activityPoints(runs: AwardRun[], now = Date.now()) {
-  const dates = new Set<string>();
+function validActivities(runs: AwardRun[], now: number) {
   const seen = new Set<string>();
-  const validRuns = runs.filter(run => {
-    if (run.deleting || seen.has(run.id) || !ACTIVITY_TYPES.some(type => type === recordActivityType(run))) return false;
-    const date = parseActivityDate(run.timestamp);
-    if (!date || date.getTime() > now || !activityAmount(run)) return false;
+  return runs.flatMap(run => {
+    if (run.deleting || seen.has(run.id) || !activityAmount(run)) return [];
+    const type = ACTIVITY_TYPES.find(type => type === recordActivityType(run));
+    const time = parseActivityDate(run.timestamp)?.getTime();
+    if (!type || time === undefined || time > now) return [];
     seen.add(run.id);
-    dates.add(pragueDay.format(date));
-    return true;
+    return [{ run, time, type }];
   });
+}
+
+export function pointsForAward(award: Award): number {
+  return award.repeatable ? BADGE_POINTS : ACHIEVEMENT_POINTS[award.id] ?? 0;
+}
+
+export function awardsForRecord(runs: AwardRun[], id: string, now = Date.now()) {
+  const valid = validActivities(runs, now);
+  const target = valid.find(item => item.run.id === id);
+  if (!target) return null;
+  // Older records establish the baseline. Equal timestamps use a stable ID order.
+  const before = valid.filter(item => item.type === target.type && (
+    item.time < target.time || (item.time === target.time && item.run.id < id)
+  )).map(item => item.run);
+  const previous = new Map(activityAwards(before, target.type, now).map(award => [award.id, award.count]));
+  return activityAwards([...before, target.run], target.type, now).flatMap(award => {
+    const count = award.count - (previous.get(award.id) ?? 0);
+    return count > 0 ? [{ ...award, count }] : [];
+  });
+}
+
+export function activityPoints(runs: AwardRun[], now = Date.now()) {
+  const validRuns = validActivities(runs, now).map(item => item.run);
   const awardsByType = Object.fromEntries(ACTIVITY_TYPES.map(type => [type, activityAwards(validRuns, type, now)]));
   const awards = Object.values(awardsByType).flat();
   let badges = 0, achievements = 0, achievementPoints = 0;
@@ -44,18 +61,17 @@ export function activityPoints(runs: AwardRun[], now = Date.now()) {
     if (award.repeatable) badges += award.count;
     else {
       achievements += award.count;
-      achievementPoints += award.count * (ACHIEVEMENT_POINTS[award.id] ?? 0);
+      achievementPoints += award.count * pointsForAward(award);
     }
   }
-  const dailyPoints = dates.size * DAILY_ACTIVITY_POINTS;
   const badgePoints = badges * BADGE_POINTS;
-  const total = dailyPoints + badgePoints + achievementPoints;
+  const total = badgePoints + achievementPoints;
   // Level n starts at 10 × n × (n − 1) points.
   const level = Math.floor((1 + Math.sqrt(1 + total * 0.4)) / 2);
   const levelStart = 10 * level * (level - 1);
   const nextLevelAt = 10 * level * (level + 1);
   const rank = ranks.find(item => level >= item.min) ?? ranks[ranks.length - 1];
-  return { activeDays: dates.size, dailyPoints, badges, badgePoints, achievements, achievementPoints, total,
+  return { badges, badgePoints, achievements, achievementPoints, total,
     level, levelStart, nextLevelAt, rank, awardsByType };
 }
 

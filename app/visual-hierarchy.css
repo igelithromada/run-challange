@@ -456,7 +456,7 @@ html body .container .record-card-heading {grid-template-columns:auto minmax(0,1
 .progress-point-summary { margin-block: .6rem 1rem; }
 .progress-point-summary > h2 { margin: 0 0 .75rem; font-size: 1.1rem; }
 .activity-point-summary {
-  --point-days: #78c7e4;
+  --point-connector: #aab4be;
   --point-badges: #e9c474;
   --point-achievements: #c8b6ef;
   display: grid;
@@ -465,13 +465,13 @@ html body .container .record-card-heading {grid-template-columns:auto minmax(0,1
   padding-block: .45rem;
 }
 html[data-theme="white"] .activity-point-summary {
-  --point-days: #186483;
+  --point-connector: #6e7b87;
   --point-badges: #79551e;
   --point-achievements: #69469a;
 }
 .activity-point-sources {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: .35rem;
   padding: 0;
   margin: 0;
@@ -488,9 +488,9 @@ html[data-theme="white"] .activity-point-summary {
   border: 1px solid var(--hierarchy-line);
   border-radius: 12px;
 }
-.activity-point-source-icon { --point-icon: var(--point-days); display: inline-flex; }
-[data-point-tone="badges"] .activity-point-source-icon { --point-icon: var(--point-badges); }
-[data-point-tone="achievements"] .activity-point-source-icon { --point-icon: var(--point-achievements); }
+.activity-point-source-icon { display: inline-flex; }
+[data-point-tone="badges"] { --point-icon: var(--point-badges); }
+[data-point-tone="achievements"] { --point-icon: var(--point-achievements); }
 .activity-point-source-icon svg { color: var(--point-icon); width: 1.35rem; height: 1.35rem; }
 .activity-point-sources strong { font-size: .86rem; }
 .activity-point-sources li > span:not(.activity-point-source-icon) { font-size: .75rem; }
@@ -502,18 +502,25 @@ html[data-theme="white"] .activity-point-summary {
   display: grid;
   place-items: end center;
   height: 1.65rem;
-  color: var(--hierarchy-muted);
+  color: var(--point-connector);
 }
 .activity-point-connector::before {
   content: "";
   position: absolute;
-  inset: 0 16.67% auto;
+  inset: 0 calc(25% - .0875rem) auto;
   height: .55rem;
-  border-inline: 1px solid var(--hierarchy-line);
-  border-bottom: 1px solid var(--hierarchy-line);
+  border-inline: 1px solid var(--point-connector);
+  border-bottom: 1px solid var(--point-connector);
 }
 .activity-point-connector svg, .activity-point-arrow { width: 1rem; height: 1rem; }
-.activity-point-arrow { justify-self: center; color: var(--hierarchy-muted); }
+.activity-point-arrow { justify-self: center; color: var(--point-connector); }
+.activity-point-connector svg { position: relative; }
+.record-point-awards { list-style: none; padding: 0; margin: .3rem 0 0; width: 100%; }
+.record-point-awards > li { display: grid; justify-items: center; gap: .2rem; padding: .35rem .15rem; font-size: .8rem; }
+.record-point-awards > li + li { border-top: 1px solid var(--hierarchy-line); }
+.record-point-awards svg { width: 1.1rem; height: 1.1rem; color: var(--point-icon); }
+.record-point-none, .activity-point-empty { color: var(--hierarchy-muted); }
+.activity-point-empty { margin: .2rem 0 .55rem; font-size: .86rem; }
 .activity-point-total {
   display: flex;
   justify-self: center;

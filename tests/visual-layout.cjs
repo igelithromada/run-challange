@@ -152,8 +152,10 @@ test('entry forms share light controls in every theme and chat picker is opaque'
 
 test('point sources and numbered shield stay legible at mobile widths', async () => {
   const Summary = require('../app/components/ActivityPointSummary').default;
-  const { activityPoints } = require('../app/lib/activityPoints');
-  const score = activityPoints([{ id: 'record', km: 12, timestamp: '2026-11-20T06:00:00Z' }], Date.parse('2026-11-25T12:00:00Z'));
+  const { activityPoints, awardsForRecord } = require('../app/lib/activityPoints');
+  const runs = [{ id: 'record', km: 12, timestamp: '2026-11-20T06:00:00Z' }];
+  const now = Date.parse('2026-11-25T12:00:00Z');
+  const score = activityPoints(runs, now);
   const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
   try {
     const page = await browser.newPage();
@@ -162,13 +164,24 @@ test('point sources and numbered shield stay legible at mobile widths', async ()
       for (const theme of ['white', 'dark']) {
         await page.setContent('<html data-theme="'+theme+'"><main class="container"><section class="tile">'+render(Summary, { score })+'</section></main></html>');
         await page.addStyleTag({ content: css });
-        assert.equal(await page.getByRole('listitem').count(), 3);
-        assert.equal(await page.locator('.activity-point-total strong').textContent(), '18');
+        assert.equal(await page.getByRole('listitem').count(), 2);
+        assert.equal(await page.locator('.activity-point-total strong').textContent(), '17');
         assert.equal(await page.locator('.level-shield b').textContent(), '1');
-        assert.equal(await page.getByRole('progressbar').getAttribute('aria-valuetext'), 'Zbývá 2 body');
+        assert.equal(await page.getByRole('progressbar').getAttribute('aria-valuetext'), 'Zbývá 3 body');
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
         const colors = await page.locator('.activity-point-source-icon svg').evaluateAll(icons => icons.map(icon => getComputedStyle(icon).color));
-        assert.equal(new Set(colors).size, 3);
+        assert.equal(new Set(colors).size, 2);
+        const connector = await page.locator('.activity-point-connector').evaluate(node =>
+          getComputedStyle(node, '::before').borderBottomColor);
+        assert.equal(connector, theme === 'white' ? 'rgb(110, 123, 135)' : 'rgb(170, 180, 190)');
+        await page.setContent('<html data-theme="'+theme+'"><main class="container"><section class="tile">'+
+          render(Summary, { score, recordAwards: awardsForRecord(runs, 'record', now) })+'</section></main></html>');
+        await page.addStyleTag({ content: css });
+        assert.equal(await page.getByText('Ranní ptáče', { exact: true }).count(), 1);
+        assert.equal(await page.getByText('+2 body', { exact: true }).count(), 1);
+        assert.equal(await page.getByText('Desítka', { exact: true }).count(), 1);
+        assert.equal(await page.getByText('Za tento záznam', { exact: true }).count(), 1);
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
       }
     }
   } finally { await browser.close(); }

@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
-import { activityPoints, type ActivityPoints } from "../lib/activityPoints";
+import { activityPoints, awardsForRecord, type ActivityPoints } from "../lib/activityPoints";
 import { personalHistoryQuery } from "../lib/services/runs";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import type { RunData } from "../types";
 import ActivityPointSummary, { LevelShield } from "./ActivityPointSummary";
 import AwardMetrics from "./AwardMetrics";
-import type { Award } from "../lib/awards";
+import type { Award, AwardRun } from "../lib/awards";
 import OverlayDialog from "./OverlayDialog";
 
 const summaryCache = new WeakMap<RunData[], ActivityPoints>();
@@ -24,9 +24,13 @@ function earnedBadges(score: ActivityPoints) {
   return [...byId.values()];
 }
 
-function LevelButton({ score, nickname }: { score: ActivityPoints; nickname: string }) {
+function LevelButton({ score, nickname, recordId, history }: {
+  score: ActivityPoints; nickname: string; recordId?: string; history?: AwardRun[];
+}) {
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
+  const recordAwards = useMemo(() => open && recordId ? awardsForRecord(history ?? [], recordId) : undefined,
+    [open, recordId, history]);
   const dismiss = () => {
     setOpen(false);
     requestAnimationFrame(() => button.current?.focus());
@@ -39,11 +43,11 @@ function LevelButton({ score, nickname }: { score: ActivityPoints; nickname: str
     </button>
     {open && <OverlayDialog label={`Body a úroveň uživatele ${nickname}`} className="activity-awards-dialog activity-level-dialog" onDismiss={dismiss}>
       <section>
-        <header><div><h2>Body a úroveň</h2><small>{nickname}</small></div>
+        <header><div><h2>{recordId ? "Ocenění za záznam" : "Body a úroveň"}</h2><small>{nickname}</small></div>
           <button type="button" className="ui-icon-button" aria-label="Zavřít přehled" onClick={dismiss}><X size={18}/></button>
         </header>
-        <ActivityPointSummary score={score}/>
-        {score.badges > 0 && <details className="activity-level-badges">
+        <ActivityPointSummary score={score} recordAwards={recordAwards}/>
+        {!recordId && score.badges > 0 && <details className="activity-level-badges">
           <summary>Získané odznaky</summary>
           <AwardMetrics awards={earnedBadges(score)} label="Získané odznaky"/>
         </details>}
@@ -52,7 +56,7 @@ function LevelButton({ score, nickname }: { score: ActivityPoints; nickname: str
   </>;
 }
 
-function LiveLevelButton({ uid, nickname }: { uid: string; nickname: string }) {
+function LiveLevelButton({ uid, nickname, recordId }: { uid: string; nickname: string; recordId?: string }) {
   const query = useMemo(() => personalHistoryQuery(uid), [uid]);
   const { data, loading, error } = useSharedFirestoreQuery<RunData>("personal-history:v2:" + uid, query);
   if (loading || (error && !data.length)) return null;
@@ -61,11 +65,11 @@ function LiveLevelButton({ uid, nickname }: { uid: string; nickname: string }) {
     score = activityPoints(data);
     summaryCache.set(data, score);
   }
-  return <LevelButton score={score} nickname={nickname}/>;
+  return <LevelButton score={score} nickname={nickname} recordId={recordId} history={data}/>;
 }
 
-export default function ActivityLevelButton({ uid, nickname, score }: {
-  uid: string; nickname: string; score?: ActivityPoints;
+export default function ActivityLevelButton({ uid, nickname, score, recordId, history }: {
+  uid: string; nickname: string; score?: ActivityPoints; recordId?: string; history?: AwardRun[];
 }) {
   const [nearViewport, setNearViewport] = useState(false);
   const anchor = useRef<HTMLSpanElement>(null);
@@ -83,6 +87,6 @@ export default function ActivityLevelButton({ uid, nickname, score }: {
   }, [score]);
 
   return <span ref={anchor} className="activity-awards-anchor">
-    {score ? <LevelButton score={score} nickname={nickname}/> : nearViewport && <LiveLevelButton uid={uid} nickname={nickname}/>}
+    {score ? <LevelButton score={score} nickname={nickname} recordId={recordId} history={history}/> : nearViewport && <LiveLevelButton uid={uid} nickname={nickname} recordId={recordId}/>}
   </span>;
 }
