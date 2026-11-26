@@ -38,7 +38,7 @@ test('mobile record and summary layouts across themes', async () => {
       )),
     ) });
     const challenge = render(Challenge, {challenge:{id:'test',name:'Pět kilometrů',kind:'distance',goal:5,state:'active',activityType:'běh',startDate:'2026-11-01',endDate:'2026-11-30',description:'Běháme společně'},joined:true});
-    const results = render(Row, {person:{name:'Radek',km:5,count:1,pace:6,minutes:30,awards:[],rank:1},type:'běh',metric:'km'});
+    const results = render(Row, {person:{name:'Radek',km:5,count:1,pace:6,minutes:30,rank:1},type:'běh',metric:'km'});
     for (const width of [320,360,393]) {
       await page.setViewportSize({ width, height:800 });
       for (const theme of ['white','dark']) {
@@ -150,52 +150,34 @@ test('entry forms share light controls in every theme and chat picker is opaque'
   } finally { await browser.close(); }
 });
 
-test('point sources and numbered shield stay legible at mobile widths', async () => {
+test('running points, deductions and the rules fit mobile widths', async () => {
   const Summary = require('../app/components/ActivityPointSummary').default;
-  const { activityPoints, awardsForRecord } = require('../app/lib/activityPoints');
-  const runs = [{ id: 'record', km: 12, timestamp: '2026-11-20T06:00:00Z' }];
-  const now = Date.parse('2026-11-25T12:00:00Z');
-  const score = activityPoints(runs, now);
+  const Rules = require('../app/components/RunningPointsRules').default;
+  const { activityPoints } = require('../app/lib/activityPoints');
+  const record = { id: 'run', km: 20, timestamp: '2026-11-23T12:00:00Z' };
+  const score = activityPoints([record], Date.parse('2026-12-23T12:00:00Z'));
   const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
   try {
     const page = await browser.newPage();
     for (const width of [320, 393]) {
       await page.setViewportSize({ width, height: 720 });
       for (const theme of ['white', 'dark']) {
-        await page.setContent('<html data-theme="'+theme+'"><main class="container"><section class="tile">'+render(Summary, { score })+'</section></main></html>');
-        await page.addStyleTag({ content: css });
-        assert.equal(await page.getByRole('listitem').count(), 2);
-        assert.equal(await page.locator('.activity-point-progress-values strong').textContent(), '17 bodů');
-        assert.equal(await page.locator('.activity-point-progress-values span').textContent(), '20 bodů');
-        assert.equal(await page.locator('.activity-point-total').count(), 0);
-        assert.equal(await page.locator('.level-shield b').textContent(), '1');
-        assert.equal(await page.getByRole('progressbar').getAttribute('aria-valuetext'), 'Zbývá 3 body');
+        const show = async props => {
+          await page.setContent('<html data-theme="'+theme+'"><main class="container"><section class="tile">'+
+            render(Summary, props)+render(Rules, {})+'</section></main></html>');
+          await page.addStyleTag({ content: css });
+        };
+        await show({ score });
+        assert.equal(await page.getByText('Vzdálenost', { exact: true }).count(), 1);
+        assert.equal(await page.getByText('Pravidelnost', { exact: true }).count(), 1);
+        assert.equal(await page.getByText('Za pauzy odečteno').count(), 1);
+        assert.equal(await page.locator('.activity-point-progress-values strong').textContent(), '124 bodů');
+        await page.getByText('Pravidla bodování', { exact: true }).click();
+        assert.equal(await page.getByText('32 bodů', { exact: true }).isVisible(), true);
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-        const colors = await page.locator('.activity-point-source-icon svg').evaluateAll(icons => icons.map(icon => getComputedStyle(icon).color));
-        assert.equal(new Set(colors).size, 2);
-        const connector = await page.locator('.activity-point-connector').evaluate(node =>
-          getComputedStyle(node, '::before').borderBottomColor);
-        assert.equal(connector, theme === 'white' ? 'rgb(110, 123, 135)' : 'rgb(170, 180, 190)');
-        await page.setContent('<html data-theme="'+theme+'"><main class="container"><section class="tile">'+
-          render(Summary, { score, recordAwards: awardsForRecord(runs, 'record', now) })+'</section></main></html>');
-        await page.addStyleTag({ content: css });
-        assert.equal(await page.getByText('Ranní ptáče', { exact: true }).count(), 1);
-        assert.equal(await page.getByText('+2 body', { exact: true }).count(), 1);
-        assert.equal(await page.getByText('Desítka', { exact: true }).count(), 1);
-        assert.equal(await page.getByText('Za tento záznam', { exact: true }).count(), 1);
-        assert.equal(await page.locator('.activity-point-level-divider').count(), 1);
-        assert.equal(await page.locator('.record-point-awards > li + li').evaluate(el => getComputedStyle(el).borderTopWidth), '1px');
-        const awards = awardsForRecord(runs, 'record', now).filter(award => !award.repeatable);
-        await page.setContent('<html data-theme="'+theme+'"><main class="container"><section class="tile">'+
-          render(Summary, { score, recordAwards: awards })+'</section></main></html>');
-        await page.addStyleTag({ content: css });
-        assert.equal(await page.getByText('Odznaky', { exact: true }).count(), 0);
-        assert.equal(await page.getByText('Žádný odznak', { exact: true }).count(), 0);
-        const group = await page.locator('.activity-point-sources').boundingBox();
-        const branch = await page.locator('[data-point-tone="achievements"]').boundingBox();
-        assert.ok(Math.abs(group.x + group.width / 2 - branch.x - branch.width / 2) < 1);
-        assert.equal(await page.locator('.activity-point-connector').getAttribute('data-branches'), '1');
-        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        await show({ score, record: score.records.get('run') });
+        assert.equal(await page.getByText('Za tento běh', { exact: true }).count(), 1);
+        assert.equal(await page.getByText('+138 bodů', { exact: true }).count(), 1);
       }
     }
   } finally { await browser.close(); }

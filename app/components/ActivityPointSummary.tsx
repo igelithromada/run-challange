@@ -1,8 +1,5 @@
-import { ArrowDown, Award, Shield, Trophy } from "lucide-react";
-import { BADGE_POINTS, pointsForAward, type ActivityPoints } from "../lib/activityPoints";
-
-import type { Award as EarnedAward } from "../lib/awards";
-import { AwardGlyph } from "./AwardMetrics";
+import { ArrowDown, CalendarDays, MapPin, Shield } from "lucide-react";
+import type { ActivityPoints, RecordPoints } from "../lib/activityPoints";
 
 const number = new Intl.NumberFormat("cs-CZ");
 const counted = (value: number, forms: readonly [string, string, string]) =>
@@ -16,57 +13,30 @@ export function LevelShield({ level, tone }: { level: number; tone: ActivityPoin
   </span>;
 }
 
-export default function ActivityPointSummary({ score, recordAwards }: {
-  score: ActivityPoints; recordAwards?: EarnedAward[] | null;
+export default function ActivityPointSummary({ score, record }: {
+  score: ActivityPoints; record?: RecordPoints | null;
 }) {
   const { level, levelStart, nextLevelAt, rank, total } = score;
-  const sources = [
-    { label: "Odznaky", value: score.badges, forms: ["odznak", "odznaky", "odznaků"] as const,
-      amount: score.badgePoints, note: `${points(BADGE_POINTS)} za každý odznak`, icon: <Award />, tone: "badges" },
-    { label: "Úspěchy", value: score.achievements, forms: ["úspěch", "úspěchy", "úspěchů"] as const,
-      amount: score.achievementPoints, note: "Za dosažení milníku", icon: <Trophy />, tone: "achievements" },
-  ];
-  const recordMode = recordAwards !== undefined;
-  const earnedPoints = recordAwards?.reduce((sum, award) => sum + award.count * pointsForAward(award), 0) ?? 0;
-  const visibleSources = sources.map(source => ({
-    ...source,
-    awards: recordAwards?.filter(award => award.repeatable === (source.tone === "badges")) ?? [],
-  })).filter(source => recordMode ? source.awards.length > 0 : source.value > 0);
-
+  const amounts = record ?? score;
   return <div className="activity-point-summary">
-    {recordAwards === null && <p className="activity-point-empty">Ocenění za tento záznam se nepodařilo načíst.</p>}
-    {recordAwards?.length === 0 && <p className="activity-point-empty">Za tento záznam nebyl získán žádný odznak ani úspěch.</p>}
-    {visibleSources.length > 0 && <>
-      <ul className="activity-point-sources" data-branches={visibleSources.length}>
-        {visibleSources.map(source => <li key={source.tone} data-point-tone={source.tone}>
-          <div className="activity-point-source-heading">
-            <span className="activity-point-source-icon" aria-hidden="true">{source.icon}</span>
-            <strong>{source.label}</strong>
-          </div>
-          {recordMode ? (
-            <ul className="activity-point-source-card record-point-awards">
-              {source.awards.map(award => (
-                <li key={award.id}>
-                  <AwardGlyph id={award.id}/>
-                  <span>{award.title}</span>
-                  <b>+{points(award.count * pointsForAward(award))}</b>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="activity-point-source-card">
-              <span>{counted(source.value, source.forms)}</span>
-              <b>{points(source.amount)}</b>
-              <small>{source.note}</small>
-            </div>
-          )}
-        </li>)}
+    {record === null ? <p className="activity-point-empty">Body se počítají za běhy od 1 km.</p> : <>
+      <ul className="activity-point-sources">
+        <li data-point-tone="distance">
+          <div className="activity-point-source-heading"><span className="activity-point-source-icon"><MapPin aria-hidden="true"/></span><strong>Vzdálenost</strong></div>
+          <div className="activity-point-source-card"><b>{points(amounts.distancePoints)}</b></div>
+        </li>
+        <li data-point-tone="consistency">
+          <div className="activity-point-source-heading"><span className="activity-point-source-icon"><CalendarDays aria-hidden="true"/></span><strong>Pravidelnost</strong></div>
+          <div className="activity-point-source-card"><b>{points(amounts.consistencyPoints)}</b></div>
+        </li>
       </ul>
-      <div className="activity-point-connector" data-branches={visibleSources.length} aria-hidden="true"><ArrowDown /></div>
-      {recordMode && <>
-        <div className="activity-point-total"><span>Za tento záznam</span><strong>+{points(earnedPoints)}</strong></div>
+      <div className="activity-point-connector" data-branches="2" aria-hidden="true"><ArrowDown /></div>
+      {record && <>
+        <div className="activity-point-total"><span>Za tento běh</span><strong>+{points(record.distancePoints + record.consistencyPoints)}</strong></div>
         <ArrowDown className="activity-point-arrow" aria-hidden="true" />
       </>}
+      {!record && score.deducted > 0 &&
+        <p className="activity-point-deduction">Za pauzy odečteno <strong>{points(score.deducted)}</strong></p>}
       <div className="activity-point-level-divider" aria-hidden="true" />
     </>}
     <div className="activity-point-level">
@@ -75,8 +45,7 @@ export default function ActivityPointSummary({ score, recordAwards }: {
         <div><strong>Úroveň {number.format(level)}</strong><span>{rank.name}</span></div>
       </div>
       <div className="activity-point-progress-values">
-        <strong>{points(total)}</strong>
-        <span>{points(nextLevelAt)}</span>
+        <strong>{points(total)}</strong><span>{points(nextLevelAt)}</span>
       </div>
       <progress value={total - levelStart} max={nextLevelAt - levelStart}
         aria-label={`Postup do úrovně ${level + 1}`} aria-valuetext={`Zbývá ${points(nextLevelAt - total)}`} />

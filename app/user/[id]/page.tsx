@@ -1,5 +1,6 @@
 "use client";
 import ActivityLevelButton from "../../components/ActivityLevelButton";
+import { useScoringDay } from "../../lib/useScoringDay";
 import { activityPoints } from "../../lib/activityPoints";
 import UserAvatar from "../../components/UserAvatar";
 import PhotoViewer from "../../components/PhotoViewer";
@@ -57,7 +58,8 @@ export default function UserPage() {
   }, [runsState.data]);
 
   const teams = teamsState.data;
-  const score = useMemo(() => activityPoints(runsState.data), [runsState.data]);
+  const scoringDay = useScoringDay();
+  const score = useMemo(() => activityPoints(runsState.data, scoringDay ? undefined : 0), [runsState.data, scoringDay]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -102,7 +104,6 @@ export default function UserPage() {
                 key={run.id}
                 run={run}
                 levelScore={score}
-                levelHistory={runsState.data}
                 teamName={teamName}
                 activityType={selectedType}
                 onPhotosClick={showRunImages}

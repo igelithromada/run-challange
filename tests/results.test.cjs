@@ -41,8 +41,9 @@ test('legacy participants slot opens the personal gallery and results remain uni
  const items=load('app/lib/navigation.ts').NAVIGATION_ITEMS;assert.equal(items.filter(i=>i.id==='statistics').length,1);assert.equal(items.some(i=>i.id==='participants'),false);
 });
 
-test('award results show community totals and individual counters while retaining distance and other metrics',()=>{
- const html=renderResults({4:'badges'});assert.match(html,/Celkové vyhodnocení odznaků/);assert.match(html,/Ranní ptáče/);assert.match(html,/Noční běh/);assert.match(html,/Počty jednotlivých odznaků/);assert.match(html,/6 <small class="app-metric-unit">km<\/small>/);assert.match(html,/Podle odznaků/);
+test('results show distance and pace without the former award tally',()=>{
+ const html=renderResults();assert.doesNotMatch(html,/Odznaky|Ranní ptáče|Noční běh/);
+ assert.match(html,/6 <small class="app-metric-unit">km<\/small>/);
 });
 
 test('redesigned results keep advanced filters and secondary calculations collapsed by default',()=>{

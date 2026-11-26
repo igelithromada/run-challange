@@ -1,0 +1,5 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),Module=require('node:module'),ts=require('typescript');
+function load(file,deps={}){const filename=path.resolve(file),module={exports:{}},req=Module.createRequire(filename);const code=ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;vm.runInNewContext(code,{module,exports:module.exports,require:name=>{if(deps[name])return deps[name];if(name.startsWith('.'))for(const ext of ['.ts','.tsx']){const f=path.resolve(path.dirname(filename),name+ext);if(fs.existsSync(f))return load(f,deps);}return req(name);},Date,Map,Set,Intl,console},{filename});return module.exports;}
+test('gallery is in tools',()=>{
+ const {NAVIGATION_ITEMS}=load('app/lib/navigation.ts');assert.equal(NAVIGATION_ITEMS.find(i=>i.id==='gallery').group,'tools');
+});

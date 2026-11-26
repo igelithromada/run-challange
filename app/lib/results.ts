@@ -1,6 +1,4 @@
 import { recordActivityType } from "./activity";
-import { normalizeActivityType } from "./validation";
-import { activityAwards, awardTotal, type Award } from "./awards";
 import { activityMetrics, type ActivityMetric } from "./activityMetrics";
 import { parseActivityDate } from "./runData";
 import type { ActivityType, PublicProfileData, RunData } from "../types";
@@ -43,8 +41,6 @@ export type ResultPerson = ActivityMetric & {
   name: string;
   avatarUrl: string;
   rank: number;
-  awards: Award[];
-  awardCount: number;
 };
 export const normalizeName = (value: string) =>
   value
@@ -79,7 +75,7 @@ export function resultRuns(
 export function resultPeople(
   runs: RunData[],
   profiles: Record<string, PublicProfileData>,
-  metric: "km" | "tempo" | "badges" | "repetitions",
+  metric: "km" | "tempo" | "repetitions",
 ): ResultPerson[] {
   const groups = new Map<string, RunData[]>();
   for (const run of runs) {
@@ -91,13 +87,7 @@ export function resultPeople(
     const metrics = activityMetrics(items),
       fallback = items.find((r) => r.nickname?.trim()),
       avatar = items.find((r) => r.avatarUrl);
-    const awards = activityAwards(
-      items,
-      normalizeActivityType(recordActivityType(items[0])),
-    );
     return {
-      awards,
-      awardCount: awardTotal(awards),
       uid,
       ...metrics,
       name:
@@ -110,9 +100,7 @@ export function resultPeople(
   });
   people.sort((a, b) => {
     const difference =
-      metric === "badges"
-        ? b.awardCount - a.awardCount
-        : metric === "tempo"
+      metric === "tempo"
           ? (a.pace > 0 ? a.pace : Infinity) - (b.pace > 0 ? b.pace : Infinity)
           : metric === "repetitions" ? b.repetitions - a.repetitions : b.km - a.km;
     return (

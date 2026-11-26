@@ -4,7 +4,7 @@ import { isStrengthActivity } from "../lib/activity";
 import RecordCard, { RecordMetrics } from "./RecordCard";
 import Metric from "./Metric";
 import { ActivityTypeIcon } from "./ActivityTypeSelector";
-import { MapPin, Gauge, ListChecks, Award, Trophy } from "lucide-react";
+import { MapPin, Gauge, ListChecks, Trophy } from "lucide-react";
 import { formatCompactActivityTime, formatMetricNumber } from "../lib/activityMetrics";
 import { type ResultPerson } from "../lib/results";
 export default function ResultsPersonRow({
@@ -17,17 +17,16 @@ export default function ResultsPersonRow({
   onOpen,
 }: {
   person: ResultPerson; type?:string;
-  metric: "km" | "tempo" | "badges" | "repetitions";
+  metric: "km" | "tempo" | "repetitions";
   alpha: boolean;
   mine: boolean;
   winner: boolean;
   onOpen: () => void;
 }) {
   const strength = isStrengthActivity(type);
-  const value = metric === "badges" ? formatMetricNumber(person.awardCount, 0)
-    : metric === "tempo" ? person.pace > 0 ? formatCompactActivityTime(person.pace) : "—"
+  const value = metric === "tempo" ? person.pace > 0 ? formatCompactActivityTime(person.pace) : "—"
     : strength ? formatMetricNumber(person.repetitions, 0) : formatMetricNumber(person.km);
-  const unit = metric === "badges" ? "×" : metric === "tempo" ? person.pace > 0 ? "/km" : undefined
+  const unit = metric === "tempo" ? person.pace > 0 ? "/km" : undefined
     : strength ? "opakování" : "km";
   return (
     <RecordCard
@@ -49,28 +48,23 @@ export default function ResultsPersonRow({
             {mine ? " · ty" : ""}
           </strong>
           <small>
-            {metric === "badges"
-              ? `${person.awards.filter((a) => a.count > 0).length} druhů odznaků`
-              : metric === "tempo"
+            {metric === "tempo"
                 ? `${person.km.toFixed(2)} km`
                 : `Aktivity: ${person.count}`}
           </small>
         </span>
       </button>
       <RecordMetrics>
-        <Metric icon={metric === "badges" ? <Award/> : metric === "tempo" ? <Gauge/> : strength ? <ActivityTypeIcon type={type} size={19}/> : <MapPin/>} label={metric === "badges" ? "Odznaky" : metric === "tempo" ? "Tempo" : strength ? "Opakování" : "Vzdálenost"} tone={metric === "badges" ? "award" : metric === "tempo" ? "pace" : strength ? "repetitions" : "distance"} value={value} unit={unit}/>
+        <Metric icon={metric === "tempo" ? <Gauge/> : strength ? <ActivityTypeIcon type={type} size={19}/> : <MapPin/>} label={metric === "tempo" ? "Tempo" : strength ? "Opakování" : "Vzdálenost"} tone={metric === "tempo" ? "pace" : strength ? "repetitions" : "distance"} value={value} unit={unit}/>
         <Metric icon={<ListChecks/>} label="Aktivity" tone="count" value={person.count}/>
         <Metric label="Čas" tone="time" value={strength && person.minutes === 0 ? "—" : formatCompactActivityTime(person.minutes)}/>
       </RecordMetrics>
       <details className="results-person-details">
-        <summary>{metric === "badges" ? "Odznaky" : "Podrobnosti"}</summary>
+        <summary>Podrobnosti</summary>
         <RecordMetrics layout="summary">
           <Metric icon={strength ? <ActivityTypeIcon type={type} size={19}/> : <MapPin/>} label={strength ? "Celkem opakování" : "Celkem km"} tone={strength ? "repetitions" : "distance"} value={strength ? formatMetricNumber(person.repetitions, 0) : formatMetricNumber(person.km)} unit={strength ? undefined : "km"}/>
           {!strength && <Metric label="Průměrné tempo" tone="pace" value={person.pace > 0 ? formatCompactActivityTime(person.pace) : "—"} unit={person.pace > 0 ? "/km" : undefined}/>}
         </RecordMetrics>
-        {metric === "badges" && <RecordMetrics layout="summary">
-          {person.awards.map(award => <Metric key={award.id} icon={<Award/>} tone="award" label={award.title} value={award.count} unit="×"/>)}
-        </RecordMetrics>}
       </details>
     </RecordCard>
   );

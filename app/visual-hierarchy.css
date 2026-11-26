@@ -457,8 +457,8 @@ html body .container .record-card-heading {grid-template-columns:auto minmax(0,1
 .progress-point-summary > h2 { margin: 0 0 .75rem; font-size: 1.1rem; }
 .activity-point-summary {
   --point-connector: #aab4be;
-  --point-badges: #e9c474;
-  --point-achievements: #c8b6ef;
+  --point-distance: #e9c474;
+  --point-consistency: #c8b6ef;
   display: grid;
   justify-items: stretch;
   gap: .15rem;
@@ -466,8 +466,8 @@ html body .container .record-card-heading {grid-template-columns:auto minmax(0,1
 }
 html[data-theme="white"] .activity-point-summary {
   --point-connector: #6e7b87;
-  --point-badges: #79551e;
-  --point-achievements: #69469a;
+  --point-distance: #79551e;
+  --point-consistency: #69469a;
 }
 .activity-point-sources {
   display: grid;
@@ -476,10 +476,6 @@ html[data-theme="white"] .activity-point-summary {
   padding: 0;
   margin: 0;
   list-style: none;
-}
-.activity-point-sources[data-branches="1"] {
-  grid-template-columns: minmax(0, 18rem);
-  justify-content: center;
 }
 .activity-point-sources > li {
   display: grid;
@@ -505,8 +501,8 @@ html[data-theme="white"] .activity-point-summary {
   border-radius: 12px;
 }
 .activity-point-source-icon { display: inline-flex; }
-[data-point-tone="badges"] { --point-icon: var(--point-badges); }
-[data-point-tone="achievements"] { --point-icon: var(--point-achievements); }
+[data-point-tone="distance"] { --point-icon: var(--point-distance); }
+[data-point-tone="consistency"] { --point-icon: var(--point-consistency); }
 .activity-point-source-icon svg { color: var(--point-icon); width: 1.35rem; height: 1.35rem; }
 .activity-point-sources strong { font-size: .86rem; }
 .activity-point-source-card > span { font-size: .75rem; }
@@ -589,10 +585,22 @@ html[data-theme="white"] .activity-point-summary {
   --shield-color: var(--hierarchy-caution);
 }
 .level-shield:is([data-level-tone="active"], [data-level-tone="veteran"]) { --shield-color: var(--point-days, var(--hierarchy-accent)); }
-.level-shield[data-level-tone="champion"] { --shield-color: var(--point-achievements, var(--hierarchy-accent)); }
+.level-shield[data-level-tone="champion"] { --shield-color: var(--point-consistency, var(--hierarchy-accent)); }
 .activity-level-button .level-shield { --shield-size: 1.6rem; }
 .record-card-heading .activity-person-name:has(.activity-level-button) { align-items: center; }
 .user-page-header h1 .activity-awards-anchor { margin-inline-start: .25rem; vertical-align: middle; }
 .activity-level-dialog { max-height: min(86dvh, calc(var(--overlay-height, 86dvh) - 1rem)); }
-.activity-level-badges { margin-top: .75rem; font-size: .86rem; }
-.activity-level-badges > summary { cursor: pointer; }
+
+.activity-point-deduction {
+  margin: .25rem 0 0;
+  text-align: center;
+  color: var(--hierarchy-muted);
+  font-size: .8rem;
+}
+.running-points-rules { margin-top: .7rem; font-size: .84rem; }
+.running-points-rules summary { cursor: pointer; font-weight: 700; }
+.running-points-rules :is(ul, dl, p) { margin-block: .55rem; }
+.running-points-rules ul { padding-inline-start: 1.15rem; }
+.running-points-rules li + li, .running-points-rules dt { margin-top: .35rem; }
+.running-points-rules dt { font-weight: 700; }
+.running-points-rules dd { margin-inline-start: 0; }

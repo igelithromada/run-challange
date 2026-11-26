@@ -2,35 +2,23 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
-import { activityPoints, awardsForRecord, type ActivityPoints } from "../lib/activityPoints";
+import { activityPoints, type ActivityPoints } from "../lib/activityPoints";
 import { personalHistoryQuery } from "../lib/services/runs";
 import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import type { RunData } from "../types";
 import ActivityPointSummary, { LevelShield } from "./ActivityPointSummary";
-import AwardMetrics from "./AwardMetrics";
-import type { Award, AwardRun } from "../lib/awards";
+import { useScoringDay } from "../lib/useScoringDay";
+import RunningPointsRules from "./RunningPointsRules";
 import OverlayDialog from "./OverlayDialog";
 
-const summaryCache = new WeakMap<RunData[], ActivityPoints>();
+const summaryCache = new WeakMap<RunData[], { day: number; score: ActivityPoints }>();
 
-function earnedBadges(score: ActivityPoints) {
-  const byId = new Map<string, Award>();
-  for (const award of Object.values(score.awardsByType).flat()) {
-    if (!award.repeatable || !award.count) continue;
-    const previous = byId.get(award.id);
-    const title = previous && previous.title !== award.title ? "Noční aktivita" : award.title;
-    byId.set(award.id, { ...award, title, count: (previous?.count ?? 0) + award.count });
-  }
-  return [...byId.values()];
-}
-
-function LevelButton({ score, nickname, recordId, history }: {
-  score: ActivityPoints; nickname: string; recordId?: string; history?: AwardRun[];
+function LevelButton({ score, nickname, recordId }: {
+  score: ActivityPoints; nickname: string; recordId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
-  const recordAwards = useMemo(() => open && recordId ? awardsForRecord(history ?? [], recordId) : undefined,
-    [open, recordId, history]);
+  const record = recordId ? score.records.get(recordId) ?? null : undefined;
   const dismiss = () => {
     setOpen(false);
     requestAnimationFrame(() => button.current?.focus());
@@ -43,14 +31,11 @@ function LevelButton({ score, nickname, recordId, history }: {
     </button>
     {open && <OverlayDialog label={`Body a úroveň uživatele ${nickname}`} className="activity-awards-dialog activity-level-dialog" onDismiss={dismiss}>
       <section>
-        <header><div><h2>{recordId ? "Ocenění za záznam" : "Body a úroveň"}</h2><small>{nickname}</small></div>
+        <header><div><h2>{recordId ? "Body za běh" : "Body a úroveň"}</h2><small>{nickname}</small></div>
           <button type="button" className="ui-icon-button" aria-label="Zavřít přehled" onClick={dismiss}><X size={18}/></button>
         </header>
-        <ActivityPointSummary score={score} recordAwards={recordAwards}/>
-        {!recordId && score.badges > 0 && <details className="activity-level-badges">
-          <summary>Získané odznaky</summary>
-          <AwardMetrics awards={earnedBadges(score)} label="Získané odznaky"/>
-        </details>}
+        <ActivityPointSummary score={score} record={record}/>
+        <RunningPointsRules/>
       </section>
     </OverlayDialog>}
   </>;
@@ -59,17 +44,18 @@ function LevelButton({ score, nickname, recordId, history }: {
 function LiveLevelButton({ uid, nickname, recordId }: { uid: string; nickname: string; recordId?: string }) {
   const query = useMemo(() => personalHistoryQuery(uid), [uid]);
   const { data, loading, error } = useSharedFirestoreQuery<RunData>("personal-history:v2:" + uid, query);
+  const day = useScoringDay();
   if (loading || (error && !data.length)) return null;
-  let score = summaryCache.get(data);
-  if (!score) {
-    score = activityPoints(data);
-    summaryCache.set(data, score);
+  let cached = summaryCache.get(data);
+  if (cached?.day !== day) {
+    cached = { day, score: activityPoints(data) };
+    summaryCache.set(data, cached);
   }
-  return <LevelButton score={score} nickname={nickname} recordId={recordId} history={data}/>;
+  return <LevelButton score={cached.score} nickname={nickname} recordId={recordId}/>;
 }
 
-export default function ActivityLevelButton({ uid, nickname, score, recordId, history }: {
-  uid: string; nickname: string; score?: ActivityPoints; recordId?: string; history?: AwardRun[];
+export default function ActivityLevelButton({ uid, nickname, score, recordId }: {
+  uid: string; nickname: string; score?: ActivityPoints; recordId?: string;
 }) {
   const [nearViewport, setNearViewport] = useState(false);
   const anchor = useRef<HTMLSpanElement>(null);
@@ -87,6 +73,6 @@ export default function ActivityLevelButton({ uid, nickname, score, recordId, hi
   }, [score]);
 
   return <span ref={anchor} className="activity-awards-anchor">
-    {score ? <LevelButton score={score} nickname={nickname} recordId={recordId} history={history}/> : nearViewport && <LiveLevelButton uid={uid} nickname={nickname} recordId={recordId}/>}
+    {score ? <LevelButton score={score} nickname={nickname} recordId={recordId}/> : nearViewport && <LiveLevelButton uid={uid} nickname={nickname} recordId={recordId}/>}
   </span>;
 }

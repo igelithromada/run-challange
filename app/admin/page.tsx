@@ -9,6 +9,7 @@ import { getAllUserProfiles, updateUserProfile } from "../lib/services/users";
 import useAdminGuard from "../lib/useAdminGuard";
 import Navbar from "../components/Navbar";
 import AdminChatSettings from "../components/AdminChatSettings";
+import RunningPointsRules from "../components/RunningPointsRules";
 import AdminUsage from "../components/AdminUsage";
 import Sidebar from "../components/Sidebar";
 import { showAppToast } from "../components/AppToast";
@@ -207,6 +208,7 @@ export default function AdminPage() {
 
 
         <AdminChatSettings/>
+        <RunningPointsRules detailed/>
         <AdminUsage />
 
         <section className="tile admin-registration-code">

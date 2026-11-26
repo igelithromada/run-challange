@@ -6,7 +6,6 @@ import OverlayDialog from "./OverlayDialog";
 import { useEffect, useRef, useState } from "react";
 import { ActivityCardHeading, ActivityCardStats } from "./ActivityCardContent";
 import ActivityGallery from "./ActivityGallery";
-import type { AwardRun } from "../lib/awards";
 import type { ActivityPoints } from "../lib/activityPoints";
 import ActivityLevelButton from "./ActivityLevelButton";
 import { auth } from "../lib/firebase";
@@ -24,7 +23,6 @@ type SocialComment = { id: string; uid: string; nickname: string; avatarUrl?: st
 type SocialUser = { uid: string; nickname: string; avatarUrl?: string };
 type Props = {
   levelScore?: ActivityPoints;
-  levelHistory?: AwardRun[];
   run: ActivityCardRun; nickname?: string; avatarUrl?: string; teamName?: string | null; teamAvatarUrl?: string;
   activityType: string; onUserClick?: () => void; onPhotosClick: (images: string[], fallback: string, startIndex?: number) => void;
   onEdit?: () => void; onDelete?: () => void;
@@ -47,7 +45,7 @@ async function socialRequest(runId: string, init?: RequestInit) {
   return result;
 }
 
-export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamAvatarUrl, activityType, onUserClick, onPhotosClick, onEdit, onDelete, levelScore, levelHistory }: Props) {
+export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamAvatarUrl, activityType, onUserClick, onPhotosClick, onEdit, onDelete, levelScore }: Props) {
   const date = run.timestamp instanceof Date ? run.timestamp : run.timestamp?.seconds ? new Date(run.timestamp.seconds * 1000) : null;
   const images = Array.isArray(run.imageUrls) && run.imageUrls.length ? run.imageUrls : run.imageUrl ? [run.imageUrl] : [];
   const [liked, setLiked] = useState(() => !!auth.currentUser?.uid && (run.likedBy || []).includes(auth.currentUser?.uid || ""));
@@ -257,7 +255,7 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
       <RecordCard ref={cardRef} id={`run-${run.id}`}>
         <ActivityCardHeading nickname={resolvedNickname} avatarUrl={resolvedAvatarUrl} activityType={activityType} date={date}
           onUserClick={onUserClick} teamName={teamName} teamAvatarUrl={teamAvatarUrl}
-          badge={run.uid && <ActivityLevelButton key={run.uid} uid={run.uid} nickname={resolvedNickname} score={levelScore} recordId={run.id} history={levelHistory} />}/>
+          badge={activityType === "běh" && run.uid && <ActivityLevelButton key={run.uid} uid={run.uid} nickname={resolvedNickname} score={levelScore} recordId={run.id} />}/>
         <ActivityCardStats run={run} activityType={activityType}/>
 
         {images.length > 0 && <ActivityGallery key={run.id} images={images} onOpen={index => onPhotosClick(images, run.imageUrl || "", index)} />}

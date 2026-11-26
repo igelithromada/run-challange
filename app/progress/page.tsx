@@ -2,7 +2,8 @@
 import ActivityPointSummary from "../components/ActivityPointSummary";
 import { activityPoints } from "../lib/activityPoints";
 import Metric from "../components/Metric";
-import AwardMetrics, { BadgeTotal } from "../components/AwardMetrics";
+import RunningPointsRules from "../components/RunningPointsRules";
+import { useScoringDay } from "../lib/useScoringDay";
 import { formatCompactActivityTime, formatMetricNumber } from "../lib/activityMetrics";
 import { activityAmount, activityUnit, isStrengthActivity, recordActivityType } from "../lib/activity";
 
@@ -13,7 +14,6 @@ import { useRouter } from "next/navigation";
 import { CalendarDays, MapPin, Trophy, Flame } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { parseActivityDate } from "../lib/runData";
-import { awardTotal, type Award as ProgressAward } from "../lib/awards";
 import ActivityCalendar from "../components/ActivityCalendar";
 import ProgressChart from "../components/ProgressChart";
 import Navbar from "../components/Navbar";
@@ -30,19 +30,6 @@ const asNumber = (value: unknown) => {
 };
 
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
-function AwardSection({ title, awards }: { title: string; awards: ProgressAward[] }) {
-  const repeatable = awards.some(award => award.repeatable);
-  return <section className="tile progress-section progress-records">
-    <div className="progress-section-title">
-      <div>
-        <h2 className="award-heading">{title}{repeatable && <BadgeTotal count={awardTotal(awards)}/>}</h2>
-        {!repeatable && <p>Splněno {awards.filter(award => award.count > 0).length} z {awards.length}</p>}
-      </div>
-    </div>
-    <AwardMetrics awards={awards} label={title} scroll={!repeatable}/>
-  </section>;
-}
-
 export default function ProgressPage() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -90,8 +77,8 @@ export default function ProgressPage() {
     return count;
   })();
 
-  const score = useMemo(() => activityPoints(personalState.data), [personalState.data]);
-  const awards = score.awardsByType[goalType];
+  const scoringDay = useScoringDay();
+  const score = useMemo(() => activityPoints(personalState.data, scoringDay ? undefined : 0), [personalState.data, scoringDay]);
 
   return <>
     <Navbar title="Můj pokrok" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
@@ -101,6 +88,7 @@ export default function ProgressPage() {
         <section className="tile progress-point-summary" aria-labelledby="progress-points-title">
           <h2 id="progress-points-title">Body a úroveň</h2>
           <ActivityPointSummary score={score}/>
+          <RunningPointsRules/>
         </section>}
       <ActivityTypeSelector value={goalType} onChange={setGoalType} ariaLabel="Typ aktivity pro pokrok" />
 
@@ -108,9 +96,6 @@ export default function ProgressPage() {
       <ProgressChart key={goalType} runs={selected} activityType={goalType} loading={personalState.loading} error={!!personalState.error} />
 
       {(!personalState.loading || personalState.data.length > 0) && (!personalState.error || personalState.data.length > 0) && <>
-      <AwardSection title="Odznaky" awards={awards.filter(award => award.repeatable)} />
-      <AwardSection title="Úspěchy" awards={awards.filter(award => !award.repeatable)} />
-
       <ActivityCalendar key={goalType} runs={selected} activityType={goalType} />
 
       <section className="tile progress-records">

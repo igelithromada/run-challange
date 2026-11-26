@@ -29,7 +29,7 @@ export default function StatisticsPage() {
     [uid, setUid] = useState(""),
     [selectedType, setSelectedType] = useState<ActivityType>("běh"),
     [view, setView] = useState<"já" | "jednotlivci">("jednotlivci"),
-    [metric, setMetric] = useState<"km" | "tempo" | "badges" | "repetitions">("km"),
+    [metric, setMetric] = useState<"km" | "tempo" | "repetitions">("km"),
     [sort, setSort] = useState<"rank" | "alpha">("rank"),
     [startDate, setStartDate] = useState(""),
     [endDate, setEndDate] = useState(""),
@@ -85,15 +85,13 @@ export default function StatisticsPage() {
     };
   }, [filtered]);
   const strength = isStrengthActivity(selectedType);
-  const effectiveMetric = strength ? (metric === "badges" ? "badges" : "repetitions") : metric === "repetitions" ? "km" : metric;
+  const effectiveMetric = strength ? "repetitions" : metric === "repetitions" ? "km" : metric;
   const people = useMemo(
     () => resultPeople(filtered, profiles, effectiveMetric),
     [filtered, profiles, effectiveMetric],
   );
   const scope =
     view === "já" ? filtered.filter((run) => run.uid === uid) : filtered;
-  const scopePeople =
-    view === "já" ? people.filter((person) => person.uid === uid) : people;
   const filterCount =
     Number(!!(startDate || endDate)) +
     Number(view === "já") +
@@ -111,9 +109,7 @@ export default function StatisticsPage() {
   const showPodium =
     view === "jednotlivci" && sort === "rank" && !search.trim();
   const ranked = people.filter((p) =>
-    effectiveMetric === "badges"
-      ? p.awardCount > 0
-      : effectiveMetric === "km"
+    effectiveMetric === "km"
         ? p.km > 0
         : effectiveMetric === "repetitions" ? p.repetitions > 0 : p.pace > 0,
   );
@@ -162,7 +158,6 @@ export default function StatisticsPage() {
           {(
             [
               ...(strength ? [{ id: "repetitions", label: "Opakování" }] as const : [{ id: "km", label: "Kilometry" }, { id: "tempo", label: "Tempo" }] as const),
-              { id: "badges", label: "Odznaky" },
             ] as const
           ).map((item) => (
             <button
@@ -228,9 +223,7 @@ export default function StatisticsPage() {
               }
             >
               <option value="rank">
-                {effectiveMetric === "badges"
-                  ? "Podle odznaků"
-                  : effectiveMetric === "tempo"
+                {effectiveMetric === "tempo"
                     ? "Podle tempa"
                     : effectiveMetric === "repetitions" ? "Podle opakování" : "Podle kilometrů"}
               </option>
@@ -293,7 +286,6 @@ export default function StatisticsPage() {
           <>
             <ResultsSummary
               runs={scope}
-              people={scopePeople}
               metric={effectiveMetric}
               type={selectedType}
               mine={view === "já"}

@@ -1,14 +1,17 @@
-import { ACTIVITY_TYPES, activityAmount, recordActivityType } from "./activity";
-import { activityAwards, type Award, type AwardRun } from "./awards";
+import { recordActivityType } from "./activity";
 import { parseActivityDate } from "./runData";
 
-export const BADGE_POINTS = 2;
-export const ACHIEVEMENT_POINTS: Readonly<Record<string, number>> = {
-  first: 5,
-  km10: 10, km50: 15, km100: 20, km250: 40, month100: 25,
-  reps100: 10, reps500: 15, reps1000: 20, reps5000: 40, month1000: 25,
-  streak7: 15, activities10: 10, activities50: 25,
-};
+export const RUN_POINTS = {
+  minimumKm: 1,
+  perKm: 5,
+  distanceBonusCapKm: 20,
+  distanceDivisor: 60,
+  fullDayBonusKm: 5,
+  weeklyBonuses: [5, 5, 5, 10, 15, 20, 25],
+  inactivityDays: 30,
+  inactivityPercent: 10,
+  levelFactor: 50,
+} as const;
 
 const ranks = [
   { min: 100, name: "Legenda", tone: "legend" },
@@ -21,58 +24,87 @@ const ranks = [
   { min: 1, name: "Začátečník", tone: "beginner" },
 ] as const;
 
-function validActivities(runs: AwardRun[], now: number) {
+const DAY_MS = 86_400_000;
+const pragueDate = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Prague", year: "numeric", month: "2-digit", day: "2-digit",
+});
+
+export function scoringDay(date: Date) {
+  const parts = pragueDate.formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find(item => item.type === type)?.value);
+  return Date.UTC(part("year"), part("month") - 1, part("day")) / DAY_MS;
+}
+
+export type PointRun = { id: string; km?: number | string; timestamp?: unknown; type?: string; activityType?: string; deleting?: boolean };
+export type RecordPoints = { distancePoints: number; consistencyPoints: number };
+
+export function runningDistancePoints(km: number) {
+  if (!Number.isFinite(km) || km < RUN_POINTS.minimumKm) return 0;
+  return Math.round(RUN_POINTS.perKm * km * (1 + Math.min(km, RUN_POINTS.distanceBonusCapKm) / RUN_POINTS.distanceDivisor));
+}
+
+export function runningDayBonus(km: number, dayNumber: number) {
+  const base = RUN_POINTS.weeklyBonuses[dayNumber - 1] ?? 0;
+  if (!base || km < RUN_POINTS.minimumKm) return 0;
+  return Math.max(1, Math.round(base * Math.min(1, (km / RUN_POINTS.fullDayBonusKm) ** 2)));
+}
+
+export function levelThreshold(level: number) {
+  return RUN_POINTS.levelFactor * level * (level - 1);
+}
+
+export function activityPoints(runs: readonly PointRun[], now = Date.now()) {
   const seen = new Set<string>();
-  return runs.flatMap(run => {
-    if (run.deleting || seen.has(run.id) || !activityAmount(run)) return [];
-    const type = ACTIVITY_TYPES.find(type => type === recordActivityType(run));
-    const time = parseActivityDate(run.timestamp)?.getTime();
-    if (!type || time === undefined || time > now) return [];
+  const eligible = runs.flatMap(run => {
+    if (run.deleting || seen.has(run.id) || recordActivityType(run) !== "běh") return [];
+    const km = Number(run.km);
+    const distancePoints = runningDistancePoints(km);
+    const date = parseActivityDate(run.timestamp);
+    if (!distancePoints || !date || date.getTime() > now) return [];
     seen.add(run.id);
-    return [{ run, time, type }];
-  });
-}
+    return [{ id: run.id, time: date.getTime(), day: scoringDay(date), km, distancePoints }];
+  }).sort((a, b) => a.time - b.time || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-export function pointsForAward(award: Award): number {
-  return award.repeatable ? BADGE_POINTS : ACHIEVEMENT_POINTS[award.id] ?? 0;
-}
+  const records = new Map<string, RecordPoints>();
+  let lastDay: number | undefined;
+  let week: number | undefined;
+  let weeklyDays = 0, dayKm = 0, dayBonus = 0;
+  let distancePoints = 0, consistencyPoints = 0, balance = 0;
 
-export function awardsForRecord(runs: AwardRun[], id: string, now = Date.now()) {
-  const valid = validActivities(runs, now);
-  const target = valid.find(item => item.run.id === id);
-  if (!target) return null;
-  // Older records establish the baseline. Equal timestamps use a stable ID order.
-  const before = valid.filter(item => item.type === target.type && (
-    item.time < target.time || (item.time === target.time && item.run.id < id)
-  )).map(item => item.run);
-  const previous = new Map(activityAwards(before, target.type, now).map(award => [award.id, award.count]));
-  return activityAwards([...before, target.run], target.type, now).flatMap(award => {
-    const count = award.count - (previous.get(award.id) ?? 0);
-    return count > 0 ? [{ ...award, count }] : [];
-  });
-}
-
-export function activityPoints(runs: AwardRun[], now = Date.now()) {
-  const validRuns = validActivities(runs, now).map(item => item.run);
-  const awardsByType = Object.fromEntries(ACTIVITY_TYPES.map(type => [type, activityAwards(validRuns, type, now)]));
-  const awards = Object.values(awardsByType).flat();
-  let badges = 0, achievements = 0, achievementPoints = 0;
-  for (const award of awards) {
-    if (award.repeatable) badges += award.count;
-    else {
-      achievements += award.count;
-      achievementPoints += award.count * pointsForAward(award);
-    }
+  function applyInactivity(untilDay: number) {
+    if (lastDay === undefined) return;
+    const periods = Math.floor((untilDay - lastDay) / RUN_POINTS.inactivityDays);
+    balance *= (1 - RUN_POINTS.inactivityPercent / 100) ** periods;
   }
-  const badgePoints = badges * BADGE_POINTS;
-  const total = badgePoints + achievementPoints;
-  // Level n starts at 10 × n × (n − 1) points.
-  const level = Math.floor((1 + Math.sqrt(1 + total * 0.4)) / 2);
-  const levelStart = 10 * level * (level - 1);
-  const nextLevelAt = 10 * level * (level + 1);
+
+  for (const run of eligible) {
+    if (run.day !== lastDay) {
+      applyInactivity(run.day);
+      // Day zero was a Thursday. Each scoring week starts on Monday.
+      const runWeek = Math.floor((run.day + 3) / 7);
+      weeklyDays = runWeek === week ? weeklyDays + 1 : 1;
+      week = runWeek;
+      lastDay = run.day;
+      dayKm = 0;
+      dayBonus = 0;
+    }
+    dayKm += run.km;
+    const bonus = runningDayBonus(dayKm, weeklyDays);
+    const addedBonus = bonus - dayBonus;
+    dayBonus = bonus;
+    distancePoints += run.distancePoints;
+    consistencyPoints += addedBonus;
+    balance += run.distancePoints + addedBonus;
+    records.set(run.id, { distancePoints: run.distancePoints, consistencyPoints: addedBonus });
+  }
+
+  applyInactivity(scoringDay(new Date(now)));
+  const total = Math.round(balance);
+  const deducted = distancePoints + consistencyPoints - total;
+  const level = Math.floor((1 + Math.sqrt(1 + 4 * total / RUN_POINTS.levelFactor)) / 2);
   const rank = ranks.find(item => level >= item.min) ?? ranks[ranks.length - 1];
-  return { badges, badgePoints, achievements, achievementPoints, total,
-    level, levelStart, nextLevelAt, rank, awardsByType };
+  return { distancePoints, consistencyPoints, deducted, total, level, levelStart: levelThreshold(level),
+    nextLevelAt: levelThreshold(level + 1), rank, records };
 }
 
 export type ActivityPoints = ReturnType<typeof activityPoints>;
