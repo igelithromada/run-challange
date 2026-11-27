@@ -575,10 +575,6 @@
   gap: .2rem;
 }
 .settings-section-heading { margin-bottom: .65rem !important; }
-.theme-options { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: .5rem !important; }
-.theme-option { min-width: 0; min-height: 54px !important; gap: .45rem; padding: .6rem !important; border-radius: 13px !important; }
-.theme-option .theme-color-dot { width: 28px !important; height: 28px !important; flex-basis: 28px !important; border-radius: 9px !important; }
-.theme-option > span:nth-child(2) { font-size: .85rem !important; overflow-wrap: anywhere; }
 .professional-form { gap: .65rem; }
 .professional-form input:not([type="checkbox"]):not([type="radio"]),
 .professional-form select { min-height: 48px; padding: .7rem .85rem; }
@@ -610,7 +606,6 @@
   .myruns-page .activity-summary-grid svg { width: 18px; height: 18px; }
 }
 @media (max-width: 360px) {
-  .theme-option { flex-wrap: wrap; }
   .challenges-create .challenge-dates { grid-template-columns: 1fr; }
 }
 
@@ -621,7 +616,7 @@
   max-height: min(620px, calc(100dvh - 88px - env(safe-area-inset-bottom))) !important;
   border: 1px solid var(--ui-border);
   border-radius: 16px;
-  background: #142d3a;
+  background: var(--overlay-surface);
   color: var(--ui-text);
   box-shadow: 0 12px 35px rgba(0,0,0,.25);
 }
@@ -656,8 +651,6 @@
 .team-card-title-row h3 { flex: 1 1 auto; }
 .team-card-title-row .team-member-label, .team-card-title-row .challenge-participating { margin-top: 0; }
 .activity-card[id^="run-"] { scroll-margin-top: 86px; }
-html[data-theme="light"] .notification-panel { background: #fff; color: #17232b; }
-html[data-theme="light"] .notification-item.is-unread { background: #edf7fa; }
 .settings-delivery-status { margin: .5rem 0 .65rem; padding: .65rem .75rem; border: 1px solid var(--ui-border); border-radius: 12px; color: var(--ui-muted); font-size: .8rem; line-height: 1.45; }
 .notification-avatar .lucide-heart { color: #ff647d; }
 
@@ -827,9 +820,9 @@ html[data-theme="light"] .activity-card-modern .activity-date { background: tran
 .social-comment-tools .social-comment-icon-button { width:40px; height:40px; min-width:40px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
 .social-comment-body > p { margin:.35rem 0 0; white-space:pre-wrap; overflow-wrap:anywhere; }
 .social-modal { display:flex; flex-direction:column; max-height:calc(100dvh - 2rem); overflow-y:auto; }
-.social-comment-form { position:sticky; bottom:0; flex-shrink:0; background:var(--ui-bg); }
+.social-comment-form { position:sticky; bottom:0; flex-shrink:0; background:var(--overlay-surface); }
 .social-comment-edit textarea { width:100%; min-height:85px; }
-.avatar-crop-dialog { width:min(94vw,420px); max-height:92dvh; overflow:auto; padding:1.1rem; border:1px solid var(--ui-border); border-radius:20px; color:var(--ui-text); background:var(--ui-bg); }
+.avatar-crop-dialog { width:min(94vw,420px); max-height:92dvh; overflow:auto; padding:1.1rem; border:1px solid var(--ui-border); border-radius:20px; color:var(--ui-text); background:var(--overlay-surface); }
 .avatar-crop-dialog::backdrop { background:rgba(0,0,0,.7); }
 .avatar-crop-dialog h2 { font-size:1.2rem; margin:0 0 .5rem; }
 .avatar-crop-dialog p { color:var(--ui-muted); font-size:.9rem; }

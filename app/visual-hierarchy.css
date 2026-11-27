@@ -301,7 +301,7 @@ html body .container .record-card-heading {grid-template-columns:auto minmax(0,1
 .activity-awards-dialog {
   width:min(90vw, 400px);max-height:80dvh;padding:0;overflow:auto;
   border:1px solid var(--hierarchy-line);border-radius:18px;
-  background:linear-gradient(var(--hierarchy-card),var(--hierarchy-card)), var(--main-gradient, #263953);
+  background:var(--overlay-surface);
   color:var(--hierarchy-text);
 }
 .activity-awards-dialog::backdrop { background: rgb(0 0 0 / 58%); }

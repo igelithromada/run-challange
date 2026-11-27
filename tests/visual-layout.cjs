@@ -21,7 +21,7 @@ const Row = require('../app/components/ResultsPersonRow').default;
 const { default: Card, RecordMetrics } = require('../app/components/RecordCard');
 const Metric = require('../app/components/Metric').default;
 const render = (component, props) => renderToStaticMarkup(React.createElement(component, props));
-const css = ['styles','professional-ui','visual-hierarchy','chat'].map(name => fs.readFileSync('app/'+name+'.css','utf8')).join('\n');
+const css = ['styles','professional-ui','visual-hierarchy','chat','appearance'].map(name => fs.readFileSync('app/'+name+'.css','utf8')).join('\n');
 
 test('mobile record and summary layouts across themes', async () => {
   const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--no-sandbox','--disable-dev-shm-usage'] });
@@ -41,7 +41,7 @@ test('mobile record and summary layouts across themes', async () => {
     const results = render(Row, {person:{name:'Radek',km:5,count:1,pace:6,minutes:30,rank:1},type:'běh',metric:'km'});
     for (const width of [320,360,393]) {
       await page.setViewportSize({ width, height:800 });
-      for (const theme of ['white','dark']) {
+      for (const theme of ['white','dark','default','auto','weather','custom']) {
         await page.setContent('<html data-theme="'+theme+'"><main class="container"><article id="run" class="activity-card activity-card-modern">'+heading+record('běh',30)+'</article><article id="one">'+record('kliky',0)+'</article><article id="two">'+record('dřepy',5)+'</article><div id="summary" class="tile-group activity-summary-grid" data-metric-layout="summary">'+summary+'</div><section id="team">'+team+'</section><section id="challenge">'+challenge+'</section>'+results+'<section id="team-with-description">'+teamDetail('Denní procházky')+'</section><section id="team-without-description">'+teamDetail('')+'</section>'+'</main></html>');
         await page.addStyleTag({content:css});
         const box = selector => page.locator(selector).boundingBox();
@@ -66,7 +66,7 @@ test('mobile record and summary layouts across themes', async () => {
         assert.deepEqual(await divider('team-with-description'), { content: '""', height: '1px', inset: '8px' });
         assert.equal((await divider('team-without-description')).content, 'none');
         const linkCoversTitle = await page.locator('#challenge h3').evaluate(el => {
-          const r = el.getBoundingClientRect(); el.scrollIntoView();
+          const r = el.getBoundingClientRect(); el.scrollIntoView({ behavior: "instant", block: "center" });
           const visible = el.getBoundingClientRect();
           return r.width > 0 && Boolean(document.elementFromPoint(visible.x+2,visible.y+2)?.closest('a[href="/challenges/test"]'));
         });
@@ -128,7 +128,7 @@ test('entry forms share light controls in every theme and chat picker is opaque'
     const page = await browser.newPage();
     for (const width of [320, 360, 393, 768]) {
       await page.setViewportSize({ width, height: 800 });
-      for (const theme of ['dark', 'white', 'default']) {
+      for (const theme of ['dark', 'white', 'default', 'auto', 'weather', 'custom']) {
         await page.setContent('<html data-theme="'+theme+'"><main class="container">'+forms+'</main><dialog class="chat-activity-picker">Záznamy</dialog></html>');
         await page.addStyleTag({ content: css + '\n.entry-form-fields * { transition: none !important; }' });
         const controls = page.locator('.entry-form-fields :is(input, textarea, select)');
@@ -142,9 +142,12 @@ test('entry forms share light controls in every theme and chat picker is opaque'
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
         const background = await page.locator('dialog').evaluate(dialog => {
           dialog.showModal();
-          return getComputedStyle(dialog).backgroundColor;
+          const canvas = document.createElement('canvas').getContext('2d');
+          canvas.fillStyle = getComputedStyle(dialog).backgroundColor;
+          canvas.fillRect(0, 0, 1, 1);
+          return canvas.getImageData(0, 0, 1, 1).data[3];
         });
-        assert.match(background, /^rgb\(/);
+        assert.equal(background, 255);
       }
     }
   } finally { await browser.close(); }
@@ -215,6 +218,81 @@ test('a running record shows the level as information and a single points button
       assert.equal(await card.getByRole('button').count(), 1);
       assert.equal(await page.locator('#short .activity-run-points').count(), 0);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    }
+  } finally { await browser.close(); }
+});
+
+test('appearance settings fit every scheme and shared surfaces keep readable contrast', async () => {
+  const AppearanceSettings = require('../app/components/AppearanceSettings').default;
+  const { DEFAULT_APPEARANCE, TIME_PERIODS } = require('../app/lib/appearance');
+  const schemes = ['default', 'light', 'dark', 'auto', 'weather', 'custom'];
+  const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+  try {
+    const page = await browser.newPage({ viewport: { width: 320, height: 720 } });
+    for (const theme of schemes) {
+      const settings = render(AppearanceSettings, { appearance: { ...DEFAULT_APPEARANCE, theme }, onSave() {} });
+      const mode = theme === 'light' ? 'white' : theme;
+      await page.setContent('<html data-theme="' + mode + '"><body><main class="container settings-page">' + settings +
+        '<section class="auth-card"><button class="auth-secondary">Přihlášení</button></section>' +
+        '<section class="notification-panel">Upozornění</section>' +
+        '<section class="app-fallback-card">Stránka nebyla nalezena</section>' +
+        '<section class="trainer-day-modal">Trénink</section><section class="social-modal">Komentáře</section>' +
+        '<dialog open class="activity-awards-dialog">Body za běh</dialog>' +
+        '<dialog open class="chat-activity-picker">Výběr záznamu</dialog></main></body></html>');
+      await page.addStyleTag({ content: css });
+      const panel = page.getByRole('region', { name: 'Vzhled' });
+      assert.equal(await panel.locator('.appearance-preset').count(), 5);
+      assert.equal(await panel.locator('[aria-pressed="true"]').count(), theme === 'custom' ? 0 : 1);
+      assert.equal(await panel.getByRole('switch').isEnabled(), !['light', 'dark'].includes(theme));
+      const previewInk = await panel.locator('.appearance-preview svg').evaluateAll(icons => icons.map(icon => getComputedStyle(icon).color));
+      assert.deepEqual(previewInk, ['rgb(40, 53, 67)', 'rgb(244, 245, 246)', 'rgb(224, 250, 255)', 'rgb(255, 255, 255)', 'rgb(255, 240, 188)']);
+      const pageGradient = await page.locator('html').evaluate(root => getComputedStyle(root).backgroundImage);
+      assert.equal(pageGradient.startsWith('linear-gradient'), !['light', 'dark'].includes(theme));
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), mode);
+      await page.evaluate(() => document.documentElement.toggleAttribute('data-solid-theme', true));
+      if (theme === 'custom') await page.evaluate(() => document.documentElement.style.setProperty('--custom-theme-color', '#ffffff'));
+
+      const palettes = theme === 'auto' ? [...new Set(TIME_PERIODS.map(([, period]) => period))]
+        : theme === 'weather' ? ['clear', 'cloudy', 'cloudy-night', 'night', 'fog', 'rain', 'rain-night', 'snow', 'snow-night', 'storm', 'wind']
+        : [''];
+      const colors = new Set();
+      for (const palette of palettes) {
+        const result = await page.evaluate(({ theme, palette }) => {
+          const root = document.documentElement;
+          if (theme === 'auto') root.dataset.autoPeriod = palette;
+          if (theme === 'weather') root.dataset.weather = palette;
+          const paint = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+          const luminance = color => {
+            paint.clearRect(0, 0, 1, 1);
+            paint.fillStyle = color;
+            paint.fillRect(0, 0, 1, 1);
+            const rgb = [...paint.getImageData(0, 0, 1, 1).data].slice(0, 3).map(value => value / 255)
+              .map(value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4);
+            return .2126 * rgb[0] + .7152 * rgb[1] + .0722 * rgb[2];
+          };
+          const contrast = (foreground, background) => {
+            const [low, high] = [luminance(foreground), luminance(background)].sort((a, b) => a - b);
+            return (high + .05) / (low + .05);
+          };
+          const overlays = [...document.querySelectorAll('.auth-card,.app-fallback-card,.notification-panel,.trainer-day-modal,.social-modal,dialog')].map(node => {
+            const style = getComputedStyle(node);
+            return contrast(style.color, style.backgroundColor);
+          });
+          const styles = getComputedStyle(document.body);
+          const background = getComputedStyle(root).backgroundColor;
+          const pageContrast = contrast(styles.color, background);
+          return { overlays, pageContrast, background, image: getComputedStyle(root).backgroundImage };
+        }, { theme, palette });
+        assert.equal(result.image, 'none', theme);
+        assert.ok(result.pageContrast >= 4.5, theme + '/' + palette);
+        for (const contrast of result.overlays) assert.ok(contrast >= 4.5, theme + '/' + palette);
+        colors.add(result.background);
+      }
+      assert.equal(colors.size, palettes.length, theme + ' keeps its palettes with a solid background');
+      await page.setViewportSize({ width: 940, height: 820 });
+      const rows = await panel.locator('.appearance-preset').evaluateAll(buttons => new Set(buttons.map(button => button.offsetTop)).size);
+      assert.equal(rows, 1);
+      await page.setViewportSize({ width: 320, height: 720 });
     }
   } finally { await browser.close(); }
 });

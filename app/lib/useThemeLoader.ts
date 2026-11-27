@@ -1,178 +1,128 @@
 "use client";
+
 import { useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
 import { getUserProfile } from "./services/users";
+import type { UserData } from "../types";
+import { DEFAULT_APPEARANCE, THEME_CACHE_KEY, normalizeAppearance, timePeriod, weatherPalette, type Appearance } from "./appearance";
 
-const CACHE_KEY = "dolni-lhota-theme-v1";
-type ThemeCache = { theme: string; customColor: string; gradientEnabled: boolean; savedAt: number; uid?: string };
-const defaults: ThemeCache = { theme: "default", customColor: "#36D1DC", gradientEnabled: true, savedAt: 0 };
+type CachedAppearance = Appearance & { savedAt: number; uid?: string };
+let currentAppearance = DEFAULT_APPEARANCE;
+let weatherRequest: AbortController | undefined;
 
-function readThemeCache(): ThemeCache {
+export function readAppearanceCache(): CachedAppearance {
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return defaults;
-    const value = JSON.parse(raw);
+    const cached = JSON.parse(localStorage.getItem(THEME_CACHE_KEY) || "null");
     return {
-      theme: typeof value.theme === "string" ? value.theme : defaults.theme,
-      customColor: typeof value.customColor === "string" ? value.customColor : defaults.customColor,
-            gradientEnabled: value.gradientEnabled !== false,
-      uid: typeof value.uid === "string" ? value.uid : "",
-      savedAt: typeof value.savedAt === "number" ? value.savedAt : 0
+      ...normalizeAppearance(cached),
+      savedAt: typeof cached?.savedAt === "number" ? cached.savedAt : 0,
+      uid: typeof cached?.uid === "string" ? cached.uid : undefined,
     };
-  } catch { return defaults; }
+  } catch {
+    return { ...DEFAULT_APPEARANCE, savedAt: 0 };
+  }
 }
-function writeThemeCache(value: ThemeCache) {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(value)); } catch {}
+
+function writeAppearanceCache(appearance: CachedAppearance) {
+  try { localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(appearance)); } catch {}
+}
+
+export function resolveAppearance(profile: UserData, uid: string): CachedAppearance {
+  const local = readAppearanceCache();
+  const date = profile.themeUpdatedAt;
+  const savedAt = date instanceof Date ? date.getTime()
+    : date && "seconds" in date ? date.seconds * 1000 + (date.nanoseconds ?? 0) / 1_000_000
+    : Number(date || 0);
+  if (local.uid === uid && local.savedAt > savedAt) return local;
+  return { ...normalizeAppearance(profile), uid, savedAt };
 }
 
 export default function useThemeLoader() {
   useEffect(() => {
     let active = true;
-    let userData = readThemeCache();
-    // Lokální kopie se aplikuje hned; Firestore ji později případně aktualizuje.
-    void applyTheme(userData.theme, userData.customColor, userData.gradientEnabled, false);
-    const unsub = onAuthStateChanged(auth, async (user) => {
+    const initial = readAppearanceCache();
+    applyAppearance(initial);
+    const unsubscribe = onAuthStateChanged(auth, async user => {
       if (!user) return;
+      const cached = readAppearanceCache();
+      if (cached.uid && cached.uid !== user.uid) applyAppearance(DEFAULT_APPEARANCE);
       try {
-        const data = await getUserProfile(user.uid);
-        if (!active || !data) return;
-        userData = {
-          theme: data.theme || "default",
-          customColor: data.customColor || "#36D1DC",
-                    gradientEnabled: data.gradientEnabled !== false,
-          uid: user.uid,
-          savedAt: data.themeUpdatedAt instanceof Date ? data.themeUpdatedAt.getTime() : data.themeUpdatedAt && "toDate" in data.themeUpdatedAt && typeof data.themeUpdatedAt.toDate === "function" ? data.themeUpdatedAt.toDate().getTime() : data.themeUpdatedAt && "seconds" in data.themeUpdatedAt && typeof data.themeUpdatedAt.seconds === "number" ? data.themeUpdatedAt.seconds * 1000 : Number(data.themeUpdatedAt || 0)
-        };
-        const cached = readThemeCache();
-        const remoteIsNewer = cached.uid !== user.uid || userData.savedAt > cached.savedAt;
-        if (remoteIsNewer || cached.savedAt === 0) {
-          writeThemeCache(userData);
-          await applyTheme(userData.theme, userData.customColor, userData.gradientEnabled, false);
-        } else {
-          userData = cached;
-          await applyTheme(userData.theme, userData.customColor, userData.gradientEnabled, false);
-        }
-      } catch (error) { console.error("Nepodařilo se načíst vzhled", error); }
-    });
-    const interval = window.setInterval(() => {
-      if (userData.theme === "auto" || userData.theme === "weather") {
-        void applyTheme(userData.theme, userData.customColor, userData.gradientEnabled, false);
+        const profile = await getUserProfile(user.uid);
+        if (!active || auth.currentUser?.uid !== user.uid || !profile) return;
+        const appearance = resolveAppearance(profile, user.uid);
+        writeAppearanceCache(appearance);
+        applyAppearance(appearance);
+      } catch (error) {
+        console.error("Nepodařilo se načíst vzhled", error);
       }
-    }, 5 * 60 * 1000);
-    return () => { active = false; unsub(); window.clearInterval(interval); };
+    });
+
+    function refresh() {
+      if (document.visibilityState !== "visible") return;
+      if (currentAppearance.theme === "auto" || currentAppearance.theme === "weather") {
+        applyAppearance(currentAppearance, false);
+      }
+    }
+    // Time-dependent palettes change on an hour boundary. Weather needs fewer refreshes.
+    const interval = window.setInterval(refresh, 60_000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      active = false;
+      unsubscribe();
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refresh);
+      weatherRequest?.abort();
+      weatherRequest = undefined;
+    };
   }, []);
 }
 
-let themeRevision = 0;
+let lastWeatherCheck = 0;
 
-export async function applyTheme(selectedTheme: string, color: string, gradientEnabled = true, persist = true) {
-  const revision = ++themeRevision;
-  const activeTheme = ["default", "light", "white", "dark", "auto", "weather", "custom"].includes(selectedTheme) ? (selectedTheme === "white" ? "light" : selectedTheme) : "default";
-  let gradient = "linear-gradient(180deg, #36D1DC, #5B86E5)";
+export function applyAppearance(appearance: Appearance, refreshWeather = true) {
+  currentAppearance = appearance;
+  const { theme, customColor, gradientEnabled } = appearance;
   const root = document.documentElement;
-  root.removeAttribute("data-weather");
-  root.removeAttribute("data-auto-period");
-  root.removeAttribute("data-theme");
+  const switchedMode = root.dataset.theme !== theme;
+  root.dataset.theme = theme === "light" ? "white" : theme;
+  root.toggleAttribute("data-solid-theme", !gradientEnabled);
+  if (theme === "auto") root.dataset.autoPeriod = timePeriod(new Date().getHours());
+  else delete root.dataset.autoPeriod;
+  if (theme === "custom") root.style.setProperty("--custom-theme-color", customColor);
+  else root.style.removeProperty("--custom-theme-color");
 
-  if (activeTheme === "light") {
-    gradient = "#f4f7f9";
-    root.setAttribute("data-theme", "white");
-  } else if (activeTheme === "dark") {
-    gradient = "#000000";
-    root.setAttribute("data-theme", "dark");
-  } else if (activeTheme === "auto") {
-    const timeTheme = getTimeTheme(new Date());
-    gradient = timeTheme.gradient;
-    root.setAttribute("data-auto-period", timeTheme.period);
-  } else if (activeTheme === "custom") {
-    gradient = `linear-gradient(180deg, ${color}, #000000)`;
+  if (theme !== "weather") {
+    weatherRequest?.abort();
+    weatherRequest = undefined;
+    lastWeatherCheck = 0;
+    delete root.dataset.weather;
+    return;
   }
 
-  if (persist) writeThemeCache({ theme: activeTheme, customColor: color, gradientEnabled, savedAt: Date.now(), uid: auth.currentUser?.uid || "" });
-
-  if (!gradientEnabled) {
-    const solid =
-      activeTheme === "dark" ? "#000000" :
-      activeTheme === "light" ? "#f4f7f9" :
-      activeTheme === "custom" ? color :
-      "#36D1DC";
-    gradient = solid;
-  }
-  root.style.setProperty("--main-gradient", gradient);
-  const accent = activeTheme === "custom" ? color : activeTheme === "dark" ? "#2f2f2f" : gradient.match(/#[0-9a-fA-F]{6}/)?.[0] || "#36D1DC";
-  root.style.setProperty("--theme-accent", accent);
-
-  if (activeTheme === "weather") {
+  if (weatherRequest || (!switchedMode && !refreshWeather && Date.now() - lastWeatherCheck < 5 * 60_000)) return;
+  const controller = new AbortController();
+  weatherRequest = controller;
+  lastWeatherCheck = Date.now();
+  const timeout = window.setTimeout(() => controller.abort(), 8_000);
+  void (async () => {
     try {
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 8_000);
-      let response: Response;
-      try {
-        response = await fetch("/api/weather", { signal: controller.signal, cache: "no-store" });
-      } finally {
-        window.clearTimeout(timeout);
-      }
-      if (!response.ok) throw new Error("Počasí není dostupné");
-      const data = await response.json();
-      if (revision !== themeRevision) return;
-      const current = data.current;
-      if (!current) throw new Error("Chybí aktuální počasí");
-
-      const condition = String(current.weatherCondition?.type || "").toUpperCase();
-      const wind = Number(current.wind?.speed?.value || 0);
-      const hour = new Date().getHours();
-      const night = hour < 6 || hour >= 20;
-      const isSnow = condition.includes("SNOW") || condition.includes("SLEET") || condition.includes("HAIL");
-      const isRain = condition.includes("RAIN") || condition.includes("DRIZZLE") || condition.includes("THUNDER");
-      const isWindy = wind >= 8;
-
-      if (condition.includes("THUNDER")) gradient = night
-        ? "linear-gradient(180deg,#17152d,#34204d)"
-        : "linear-gradient(180deg,#53647f,#2f3b59)";
-      else if (isRain) gradient = night
-        ? "linear-gradient(180deg,#1b2a38,#101820)"
-        : "linear-gradient(180deg,#6688a3,#304f68)";
-      else if (isSnow) gradient = night
-        ? "linear-gradient(180deg,#1d2b3a,#101923)"
-        : "linear-gradient(180deg,#b9d4e6,#587d96)";
-      else if (condition.includes("FOG")) gradient = "linear-gradient(180deg,#74818a,#414b52)";
-      else if (condition.includes("CLOUD")) gradient = night
-        ? "linear-gradient(180deg,#202d3a,#17212a)"
-        : "linear-gradient(180deg,#8fa9bc,#496c83)";
-      else gradient = night
-        ? "linear-gradient(180deg,#17253a,#293e61)"
-        : "linear-gradient(180deg,#f2b95f,#438bc0)";
-
-      let weather = "clear";
-      if (isSnow) weather = isWindy ? "snow-wind" : "snow";
-      else if (isRain) weather = isWindy ? "rain-wind" : "rain";
-      else if (condition.includes("FOG")) weather = "fog";
-      else if (isWindy) weather = "wind";
-      else if (condition.includes("CLOUD")) weather = "cloudy";
-      else if (night) weather = "night";
-      root.setAttribute("data-weather", weather);
-
-      if (!gradientEnabled) {
-        const match = gradient.match(/#[0-9a-fA-F]{6}/);
-        gradient = match?.[0] || "#36D1DC";
-      }
-    } catch (error) {
-      console.warn("Vzhled podle počasí se nepodařilo aktualizovat.", error);
+      const response = await fetch("/api/weather", { signal: controller.signal });
+      if (!response.ok) return;
+      const { current } = await response.json();
+      if (!current || controller.signal.aborted || currentAppearance.theme !== "weather") return;
+      const palette = weatherPalette(current, new Date().getHours());
+      if (palette) root.dataset.weather = palette;
+    } catch {
+      // Keep the current palette through temporary network failures.
+    } finally {
+      window.clearTimeout(timeout);
+      if (weatherRequest === controller) weatherRequest = undefined;
     }
-  }
-
-  if (revision === themeRevision) root.style.setProperty("--main-gradient", gradient);
+  })();
 }
 
-function getTimeTheme(date: Date): { period: string; gradient: string } {
-  const hour = date.getHours();
-  if (hour < 5) return { period: "noc", gradient: "linear-gradient(180deg,#111827,#24163d)" };
-  if (hour < 7) return { period: "svitani", gradient: "linear-gradient(180deg,#433b72,#e69a6b)" };
-  if (hour < 10) return { period: "rano", gradient: "linear-gradient(180deg,#4d8fc4,#6fc2d8)" };
-  if (hour < 13) return { period: "dopoledne", gradient: "linear-gradient(180deg,#3c98cf,#4f78b8)" };
-  if (hour < 16) return { period: "odpoledne", gradient: "linear-gradient(180deg,#2e8fc0,#536fb0)" };
-  if (hour < 19) return { period: "zapad", gradient: "linear-gradient(180deg,#d77d68,#5869a5)" };
-  if (hour < 22) return { period: "soumrak", gradient: "linear-gradient(180deg,#30486d,#2a3155)" };
-  return { period: "noc", gradient: "linear-gradient(180deg,#111827,#24163d)" };
+export function saveAppliedAppearance(appearance: Appearance, uid: string, savedAt: number) {
+  writeAppearanceCache({ ...appearance, uid, savedAt });
+  applyAppearance(appearance);
 }

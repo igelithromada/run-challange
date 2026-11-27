@@ -114,7 +114,7 @@ dialog.chat-activity-picker {
   padding: .85rem;
   overflow: hidden;
   color: var(--ui-text);
-  background: #101f2d;
+  background: var(--overlay-surface);
 }
 dialog.chat-activity-picker[open] {
   display: grid;
@@ -122,5 +122,3 @@ dialog.chat-activity-picker[open] {
   gap: .5rem;
 }
 dialog.chat-activity-picker::backdrop { background: rgb(0 0 0 / 58%); }
-html[data-theme="dark"] dialog.chat-activity-picker { background: #151515; }
-html[data-theme="white"] dialog.chat-activity-picker { background: #f4f7f9; }

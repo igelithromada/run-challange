@@ -52,27 +52,55 @@ test('weather distinguishes rain showers from snow and preserves absolute foreca
   assert.equal(body.hourly[0].interval.startTime,new Date(1794852000*1000).toISOString());
   assert.equal(new URL(requested).searchParams.get('timeformat'),'unixtime');
 });
-test('theme startup preserves cache timestamp so a newer remote theme wins',async()=>{
-  let cache=JSON.stringify({uid:'u',theme:'light',customColor:'#36D1DC',gradientEnabled:true,savedAt:1000});
-  const values={},effects=[];
-  const theme=loadIsolated('app/lib/useThemeLoader.ts',{
-    react:{useEffect:fn=>effects.push(fn)},
-    'firebase/auth':{onAuthStateChanged:(_,fn)=>{queueMicrotask(()=>fn({uid:'u'}));return ()=>{};}},
-    './firebase':{auth:{currentUser:{uid:'u'}}},
-    './services/users':{getUserProfile:async()=>({theme:'dark',themeUpdatedAt:new Date(2000)})},
-  },{queueMicrotask,localStorage:{getItem:()=>cache,setItem:(_,v)=>cache=v},window:{setInterval:()=>1,clearInterval(){},setTimeout,clearTimeout},document:{documentElement:{setAttribute:(k,v)=>values[k]=v,removeAttribute:k=>delete values[k],style:{setProperty:(k,v)=>values[k]=v}}}});
-  theme.default();effects.forEach(fn=>fn());await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(values['data-theme'],'dark');assert.equal(JSON.parse(cache).savedAt,2000);
+function appearanceDocument() {
+  const values = {};
+  const document = {
+    documentElement: {
+      dataset: {},
+      style: { setProperty: (key, value) => values[key] = value, removeProperty: key => delete values[key] },
+      toggleAttribute: (key, enabled) => values[key] = enabled,
+    },
+    addEventListener() {},
+    removeEventListener() {},
+    visibilityState: 'visible',
+  };
+  return { document, values };
+}
+
+test('theme startup preserves cache timestamp so a newer remote theme wins', async () => {
+  let cache = JSON.stringify({ uid: 'u', theme: 'light', customColor: '#36D1DC', gradientEnabled: true, savedAt: 1000 });
+  const effects = [];
+  const { document } = appearanceDocument();
+  const theme = loadIsolated('app/lib/useThemeLoader.ts', {
+    react: { useEffect: fn => effects.push(fn) },
+    'firebase/auth': { onAuthStateChanged: (_, fn) => { queueMicrotask(() => fn({ uid: 'u' })); return () => {}; } },
+    './firebase': { auth: { currentUser: { uid: 'u' } } },
+    './services/users': { getUserProfile: async () => ({ theme: 'dark', themeUpdatedAt: new Date(2000) }) },
+  }, { localStorage: { getItem: () => cache, setItem: (_, value) => cache = value },
+    window: { setInterval: () => 1, clearInterval() {}, setTimeout, clearTimeout }, document });
+  theme.default();
+  effects.forEach(effect => effect());
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(document.documentElement.dataset.theme, 'dark');
+  assert.equal(JSON.parse(cache).savedAt, 2000);
 });
-test('a slow weather theme cannot overwrite a subsequent manual selection',async()=>{
-  let resolveFetch;const values={};
-  const theme=loadIsolated('app/lib/useThemeLoader.ts',{'./firebase':{auth:{currentUser:{uid:'u'}}},'./services/users':{},'firebase/auth':{}},
-    {localStorage:{getItem:()=>null,setItem(){}},fetch:()=>new Promise(resolve=>resolveFetch=resolve),window:{setTimeout,clearTimeout},document:{documentElement:{setAttribute:(k,v)=>values[k]=v,removeAttribute:k=>delete values[k],style:{setProperty:(k,v)=>values[k]=v}}}});
-  const pending=theme.applyTheme('weather','#36D1DC');
-  await theme.applyTheme('custom','#FF0000');
-  resolveFetch(Response.json({current:{weatherCondition:{type:'RAIN'}}}));await pending;
-  assert.equal(values['--main-gradient'],'linear-gradient(180deg, #FF0000, #000000)');
+
+test('a slow weather theme cannot overwrite a subsequent manual selection', async () => {
+  let resolveFetch;
+  const { document, values } = appearanceDocument();
+  const theme = loadIsolated('app/lib/useThemeLoader.ts', { './firebase': {}, './services/users': {}, 'firebase/auth': {} }, {
+    fetch: () => new Promise(resolve => resolveFetch = resolve), window: { setTimeout, clearTimeout }, document,
+  });
+  theme.applyAppearance({ theme: 'weather', customColor: '#36D1DC', gradientEnabled: true });
+  theme.applyAppearance({ theme: 'custom', customColor: '#FF0000', gradientEnabled: false });
+  resolveFetch(Response.json({ current: { weatherCondition: { type: 'RAIN' } } }));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(values['--custom-theme-color'], '#FF0000');
+  assert.equal(values['data-solid-theme'], true);
+  assert.equal(document.documentElement.dataset.theme, 'custom');
+  assert.equal(document.documentElement.dataset.weather, undefined);
 });
+
 test('non-admin users can view routes while admin pages retain their guard',async()=>{
   for(const redirect of [false,true]){
     const effects=[],paths=[];

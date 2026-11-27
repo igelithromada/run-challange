@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-import { applyTheme } from "../lib/useThemeLoader";
+import { readAppearanceCache, resolveAppearance, saveAppliedAppearance } from "../lib/useThemeLoader";
+import { DEFAULT_APPEARANCE, normalizeAppearance, type Appearance } from "../lib/appearance";
+import AppearanceSettings from "../components/AppearanceSettings";
 import { useRouter } from "next/navigation";
-import { HexColorPicker } from "react-colorful";
-import { Check, Palette, Sparkles, Clock3, CloudSun, SlidersHorizontal, Smartphone, Bell, Heart, MessageCircle, Moon, Sun, Users, Flag } from "lucide-react";
+import { SlidersHorizontal, Smartphone, Bell, Heart, MessageCircle, Users, Flag } from "lucide-react";
 import { useChatAvailability } from "../lib/chatLive";
 import { getChatPushStatus, registerChatPush, removeChatPush, registerTrainerPush, removeTrainerPush } from "../lib/pushNotifications";
 import { showAppToast } from "../components/AppToast";
@@ -17,21 +18,13 @@ import { setHapticsEnabled } from "../lib/haptics";
 import { invalidatePublicProfileCache } from "../lib/services/publicProfiles";
 import { getUserProfile, saveUserSettings, invalidateUserProfileCache } from "../lib/services/users";
 
-const DEFAULT_COLOR = "#36D1DC";
 const DEFAULT_ACTIVITY_KEY = "dolni-lhota-default-activity-v1";
-const SUPPORTED_THEMES = new Set(["default", "light", "dark", "auto", "weather", "custom"]);
-const normalizeTheme = (value: unknown) => {
-  if (value === "white") return "light";
-  return typeof value === "string" && SUPPORTED_THEMES.has(value) ? value : "default";
-};
 
 export default function SettingsPage() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [theme, setTheme] = useState("default");
-  const [customColor, setCustomColor] = useState(DEFAULT_COLOR);
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const [gradientEnabled, setGradientEnabled] = useState(true);
+  const [appearance, setAppearance] = useState(DEFAULT_APPEARANCE);
+  const [appearanceReady, setAppearanceReady] = useState(false);
   const [hapticsEnabled, setHapticsEnabledState] = useState(true);
   const [defaultActivity, setDefaultActivity] = useState<import("../types").ActivityType>("běh");
   const [saving, setSaving] = useState(false);
@@ -54,12 +47,6 @@ export default function SettingsPage() {
       if (cachedActivity === "běh" || cachedActivity === "chůze" || cachedActivity === "dřepy" || cachedActivity === "kliky") setDefaultActivity(cachedActivity);
       const cachedHaptics = localStorage.getItem("dolni-lhota-haptics-v1");
       if (cachedHaptics !== null) setHapticsEnabledState(cachedHaptics !== "false");
-      const cached = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
-      if (cached) {
-        setTheme(normalizeTheme(cached.theme));
-        setCustomColor(cached.customColor || DEFAULT_COLOR);
-        setGradientEnabled(cached.gradientEnabled !== false);
-      }
     } catch {}
   }, []);
 
@@ -69,32 +56,19 @@ export default function SettingsPage() {
       if (!active) return;
       if (!user) { router.replace("/login"); return; }
       setUserId(user.uid);
+      setAppearanceReady(false);
+      const cached = readAppearanceCache();
+      setAppearance(cached.uid && cached.uid !== user.uid ? DEFAULT_APPEARANCE : cached);
       try {
         const data = await getUserProfile(user.uid);
         if (active && auth.currentUser?.uid === user.uid && data) {
-          const remoteTheme = normalizeTheme(data.theme);
-          const remoteColor = data.customColor || DEFAULT_COLOR;
-          const remoteGradient = data.gradientEnabled !== false;
           const remoteHaptics = data.hapticsEnabled !== false;
           let localHaptics: boolean | null = null;
           try {
             const stored = localStorage.getItem("dolni-lhota-haptics-v1");
             if (stored !== null) localHaptics = stored !== "false";
           } catch {}
-          let cachedTheme: { theme?: string; customColor?: string; gradientEnabled?: boolean; savedAt?: number } | null = null;
-          try {
-            cachedTheme = JSON.parse(localStorage.getItem("dolni-lhota-theme-v1") || "null");
-          } catch {}
-          const cachedSavedAt = typeof cachedTheme?.savedAt === "number" ? cachedTheme.savedAt : 0;
-          const remoteSavedAt = data.themeUpdatedAt instanceof Date ? data.themeUpdatedAt.getTime() : data.themeUpdatedAt && "toDate" in data.themeUpdatedAt && typeof data.themeUpdatedAt.toDate === "function" ? data.themeUpdatedAt.toDate().getTime() : data.themeUpdatedAt && "seconds" in data.themeUpdatedAt && typeof data.themeUpdatedAt.seconds === "number" ? data.themeUpdatedAt.seconds * 1000 : Number(data.themeUpdatedAt || 0);
-          const useRemoteTheme = cachedSavedAt === 0 || remoteSavedAt >= cachedSavedAt;
-          const storedTheme = useRemoteTheme ? remoteTheme : (cachedTheme?.theme || remoteTheme);
-          const storedColor = useRemoteTheme ? remoteColor : (cachedTheme?.customColor || remoteColor);
-          const storedGradient = useRemoteTheme ? remoteGradient : (cachedTheme?.gradientEnabled !== false);
-          
-          setTheme(storedTheme);
-          setCustomColor(storedColor);
-          setGradientEnabled(storedGradient);
+          setAppearance(resolveAppearance(data, user.uid));
           const effectiveHaptics = localHaptics ?? remoteHaptics;
           setHapticsEnabledState(effectiveHaptics);
           setHapticsEnabled(effectiveHaptics);
@@ -115,6 +89,8 @@ export default function SettingsPage() {
         }
       } catch (error) {
         console.error("Nepodařilo se načíst nastavení:", error);
+      } finally {
+        if (active && auth.currentUser?.uid === user.uid) setAppearanceReady(true);
       }
     });
     return () => { active = false; unsub(); };
@@ -140,53 +116,28 @@ export default function SettingsPage() {
     }
   }
 
-  async function saveAppearance(nextTheme: string, nextColor: string, nextGradient: boolean) {
-    const currentUser = auth.currentUser;
-    if (!currentUser) throw new Error("Nejsi přihlášen.");
-    const token = await currentUser.getIdToken();
-    const response = await fetch("/api/settings/appearance", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ theme: nextTheme, customColor: nextColor, gradientEnabled: nextGradient }),
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || "Vzhled se nepodařilo uložit.");
-    invalidateUserProfileCache(currentUser.uid);
-    return auth.currentUser?.uid === currentUser.uid;
-  }
-
-  function handleThemeChange(selectedTheme: string) {
-    return runSettingsWrite(async () => {
-      if (!await saveAppearance(selectedTheme, customColor, gradientEnabled)) return;
-      setTheme(selectedTheme);
-      setShowColorPicker(false);
-      await applyTheme(selectedTheme, customColor, gradientEnabled);
+  async function handleAppearanceChange(next: Appearance) {
+    let saved = false;
+    await runSettingsWrite(async () => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Nejsi přihlášen.");
+      const token = await currentUser.getIdToken();
+      const response = await fetch("/api/settings/appearance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(next),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Vzhled se nepodařilo uložit.");
+      invalidateUserProfileCache(currentUser.uid);
+      if (auth.currentUser?.uid !== currentUser.uid) return;
+      const savedAppearance = normalizeAppearance(result);
+      saveAppliedAppearance(savedAppearance, currentUser.uid, result.savedAt ?? Date.now());
+      setAppearance(savedAppearance);
+      saved = true;
       flash("Vzhled uložen");
     }, "Vzhled se nepodařilo uložit.");
-  }
-
-  const handleCustomColorLiveChange = async (color: string) => {
-    setCustomColor(color);
-    setTheme("custom");
-    await applyTheme("custom", color, gradientEnabled);
-  };
-
-  function handleCustomColorFinalSave() {
-    return runSettingsWrite(async () => {
-      if (!await saveAppearance("custom", customColor, gradientEnabled)) return;
-      await applyTheme("custom", customColor, gradientEnabled);
-      setShowColorPicker(false);
-      flash("Vlastní vzhled uložen");
-    }, "Vlastní vzhled se nepodařilo uložit.");
-  }
-
-  function handleGradientChange(enabled: boolean) {
-    return runSettingsWrite(async () => {
-      if (!await saveAppearance(theme, customColor, enabled)) return;
-      setGradientEnabled(enabled);
-      await applyTheme(theme, customColor, enabled);
-      flash(enabled ? "Gradient zapnutý" : "Gradient vypnutý");
-    }, "Nastavení gradientu se nepodařilo uložit.");
+    return saved;
   }
 
   function handleHapticsChange(enabled: boolean) {
@@ -385,38 +336,7 @@ export default function SettingsPage() {
       <Sidebar visible={menuVisible} onClose={() => setMenuVisible(false)} />
 
       <main className="container settings-page">
-        <section className="tile">
-          <div className="settings-section-heading"><Sparkles size={21}/><div><h2>Vzhled</h2><p>Výběr se ukládá a zůstane zachovaný i po návratu do nastavení.</p></div></div>
-
-          <label className="settings-animation-toggle">
-            <span><strong>Gradient efekt</strong><small>Plynulý barevný přechod pozadí. Vypnutím zůstane jedna barva.</small></span>
-            <input type="checkbox" disabled={saving} checked={gradientEnabled} onChange={e => void handleGradientChange(e.target.checked)} />
-          </label>
-
-          <div className="theme-options">
-            <ThemeItem disabled={saving} icon={<Sun size={19}/>} color="#f4f7f9" active={theme === "light"} onClick={() => void handleThemeChange("light")} text="Světlý" />
-            <ThemeItem disabled={saving} icon={<Moon size={19}/>} color="#000000" active={theme === "dark"} onClick={() => void handleThemeChange("dark")} text="Tmavý" />
-            <ThemeItem disabled={saving} icon={<Palette size={19}/>} color="linear-gradient(180deg,#36D1DC,#5B86E5)" active={theme === "default"} onClick={() => void handleThemeChange("default")} text="Výchozí" />
-            <ThemeItem disabled={saving} icon={<Clock3 size={19}/>} color="linear-gradient(180deg,#4facfe,#1b2430)" active={theme === "auto"} onClick={() => void handleThemeChange("auto")} text="Podle času" />
-            <ThemeItem disabled={saving} icon={<CloudSun size={19}/>} color="linear-gradient(180deg,#ffd166,#4facfe)" active={theme === "weather"} onClick={() => void handleThemeChange("weather")} text="Podle počasí" />
-          </div>
-
-          <div className={`custom-theme-box ${theme === "custom" ? "active" : ""}`}>
-            <button type="button" className="custom-theme-trigger" disabled={saving} onClick={() => { setShowColorPicker(v => !v); setTheme("custom"); void applyTheme("custom", customColor, gradientEnabled); }}>
-              <span className="theme-color-dot" style={{ background: customColor }} />
-              <span><strong>Vlastní barva</strong><small>{customColor.toUpperCase()}</small></span>
-              <Check size={19} className={theme === "custom" ? "theme-check" : "theme-check hidden"} />
-            </button>
-            {showColorPicker && (
-              <div className="custom-picker">
-                <HexColorPicker color={customColor} onChange={color => { if (!saving) void handleCustomColorLiveChange(color); }} />
-                <button type="button" className="tile-button" disabled={saving} onClick={() => void handleCustomColorFinalSave()}>Uložit vlastní barvu</button>
-              </div>
-            )}
-          </div>
-
-
-        </section>
+        <AppearanceSettings appearance={appearance} disabled={saving || !appearanceReady} onSave={handleAppearanceChange} />
 
         <section className="tile">
           <div className="settings-section-heading"><SlidersHorizontal size={21}/><div><h2>Chování aplikace</h2><p>Výchozí typ aktivity pro rychlé přidávání záznamů.</p></div></div>
@@ -450,15 +370,5 @@ export default function SettingsPage() {
 
       </main>
     </>
-  );
-}
-
-function ThemeItem({ color, active, onClick, text, icon, disabled }: { disabled: boolean; color: string; active: boolean; onClick: () => void; text: string; icon?: React.ReactNode }) {
-  return (
-    <button type="button" disabled={disabled} className={`theme-option ${active ? "active" : ""}`} onClick={onClick}>
-      <span className="theme-color-dot" style={{ background: color }}>{icon}</span>
-      <span>{text}</span>
-      {active && <Check size={18} />}
-    </button>
   );
 }
