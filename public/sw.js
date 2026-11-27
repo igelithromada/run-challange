@@ -1,5 +1,5 @@
-const CACHE_NAME = "lhota-shell-v1";
-const SHELL_URLS = ["/offline.html", "/icon.svg"];
+const CACHE_NAME = "lhota-shell-v2";
+const SHELL_URLS = ["/offline.html", "/lhota-icon.svg"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL_URLS)));
@@ -18,7 +18,7 @@ self.addEventListener("fetch", event => {
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
-  if (url.pathname.startsWith("/_next/static/") || url.pathname === "/icon.svg") {
+  if (url.pathname.startsWith("/_next/static/") || url.pathname === "/lhota-icon.svg") {
     event.respondWith(
       caches.match(request).then(cached => cached || fetch(request).then(response => {
         if (response.ok) {
@@ -42,7 +42,7 @@ self.addEventListener("push", event => {
   try { data = event.data ? event.data.json() : {}; } catch {}
   event.waitUntil(self.registration.showNotification(data.title || "Dolní Lhota v pohybu", {
     body: data.body || "",
-    icon: "/icon.svg",
+    icon: "/lhota-icon-192.png",
     badge: "/icon.svg",
     tag: data.tag || "trainer-plan",
     data: { url: data.url || "/trainer" }

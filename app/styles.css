@@ -1416,10 +1416,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .auth-page { min-height:100dvh; display:grid; place-items:center; padding:1.25rem; background:var(--main-gradient,linear-gradient(180deg,#36D1DC,#5B86E5)); }
 .auth-card { width:min(100%,430px); padding:clamp(1.25rem,5vw,2rem); border:1px solid var(--ui-border); border-radius:24px; background:var(--overlay-surface); color:var(--ui-text); box-shadow:var(--ui-shadow-strong); -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px); }
-.auth-brand { display:flex; align-items:center; gap:.7rem; margin-bottom:1.7rem; }
-.auth-brand-mark { width:46px; height:46px; display:grid; place-items:center; border-radius:14px; background:rgba(255,255,255,.14); font-size:1.45rem; }
-.auth-brand strong { display:block; font-size:1.1rem; }
-.auth-eyebrow { display:block; font-size:.62rem; letter-spacing:.15em; font-weight:800; opacity:.62; }
+.auth-brand { display:flex; align-items:center; gap:.75rem; margin-bottom:1.7rem; }
+.auth-brand-mark { width:54px; height:54px; flex:none; }
+.auth-brand strong { display:block; font-size:1.15rem; line-height:1.2; }
+.auth-brand-tagline { display:block; margin-top:.15rem; color:var(--ui-muted); font-size:.9rem; font-weight:650; }
 .auth-heading h1 { margin:0; font-size:clamp(1.7rem,7vw,2.1rem); }
 .auth-heading p { margin:.4rem 0 1.25rem; color:var(--ui-muted); line-height:1.5; font-size:.88rem; }
 .auth-form { display:flex; flex-direction:column; gap:.75rem; }
@@ -5491,6 +5491,8 @@ textarea::placeholder {
   background: inherit;
 }
 
+.site-sidebar-identity { display:flex; align-items:center; gap:.65rem; min-width:0; }
+.site-sidebar-identity img { flex:none; }
 .site-sidebar-subtitle {
   display: block;
   margin-top: .15rem;

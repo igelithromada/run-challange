@@ -15,7 +15,10 @@ export const metadata: Metadata = {
   },
   description: "Běžecká a pohybová výzva Dolní Lhota.",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icon.svg" },
+  icons: {
+    icon: { url: "/lhota-icon.svg", type: "image/svg+xml" },
+    apple: { url: "/lhota-apple-touch.png", sizes: "180x180", type: "image/png" },
+  },
 };
 
 export const viewport: Viewport = {

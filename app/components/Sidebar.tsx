@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { createPortal } from "react-dom";
 import { UserRound, X } from "lucide-react";
 import { onAuthStateChanged } from "firebase/auth";
@@ -86,9 +87,12 @@ export default function Sidebar({ visible, onClose }: SidebarProps) {
     <div className="site-sidebar-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Navigační nabídka">
       <nav ref={panel} className="site-sidebar-panel" onClick={event => event.stopPropagation()} aria-label="Hlavní navigace">
         <div className="site-sidebar-header">
-          <div>
-            <span>Navigace</span>
-            <small className="site-sidebar-subtitle">{nickname || email || "Dolní Lhota v pohybu"}</small>
+          <div className="site-sidebar-identity">
+            <Image src="/lhota-icon.svg" width={32} height={32} alt="" />
+            <div>
+              <span>Navigace</span>
+              <small className="site-sidebar-subtitle">{nickname || email || "Dolní Lhota v pohybu"}</small>
+            </div>
           </div>
           <button type="button" className="site-sidebar-icon-button" onClick={onClose} aria-label="Zavřít navigaci">
             <X size={20} aria-hidden="true" />
