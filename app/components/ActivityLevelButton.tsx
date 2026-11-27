@@ -8,6 +8,7 @@ import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
 import type { RunData } from "../types";
 import ActivityPointSummary, { LevelShield } from "./ActivityPointSummary";
 import { useScoringDay } from "../lib/useScoringDay";
+import { useRunningPointsRules } from "../lib/useRunningPointsRules";
 import RunningPointsRules from "./RunningPointsRules";
 import OverlayDialog from "./OverlayDialog";
 
@@ -35,7 +36,7 @@ function LevelButton({ score, nickname, recordId }: {
           <button type="button" className="ui-icon-button" aria-label="Zavřít přehled" onClick={dismiss}><X size={18}/></button>
         </header>
         <ActivityPointSummary score={score} record={record}/>
-        <RunningPointsRules/>
+        <RunningPointsRules rules={score.rules}/>
       </section>
     </OverlayDialog>}
   </>;
@@ -45,10 +46,11 @@ function LiveLevelButton({ uid, nickname, recordId }: { uid: string; nickname: s
   const query = useMemo(() => personalHistoryQuery(uid), [uid]);
   const { data, loading, error } = useSharedFirestoreQuery<RunData>("personal-history:v2:" + uid, query);
   const day = useScoringDay();
-  if (loading || (error && !data.length)) return null;
+  const { rules } = useRunningPointsRules();
+  if (!rules || loading || (error && !data.length)) return null;
   let cached = summaryCache.get(data);
-  if (cached?.day !== day) {
-    cached = { day, score: activityPoints(data) };
+  if (cached?.day !== day || cached.score.rules !== rules) {
+    cached = { day, score: activityPoints(data, undefined, rules) };
     summaryCache.set(data, cached);
   }
   return <LevelButton score={cached.score} nickname={nickname} recordId={recordId}/>;

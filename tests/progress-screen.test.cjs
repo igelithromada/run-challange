@@ -20,11 +20,12 @@ test('available activity data remains visible in the chart during a connection e
   assert.match(html,/class="progress-distance-chart"/);assert.match(html,/6,2 km/);assert.doesNotMatch(html,/Načítám aktivity/);assert.match(html,/poslední načtené aktivity/);
 });
 test('progress has weekday labels and no introductory text, goals editor or challenges link',()=>{
-  const Page=load('app/progress/page.tsx',{'next/navigation':{useRouter:()=>({push(){}})},'firebase/auth':{onAuthStateChanged(){return()=>{};}},'../lib/firebase':{auth:{}},'../lib/useSharedFirestoreQuery':{useSharedFirestoreQuery:()=>({data:[],loading:false,error:null})},'../lib/services/runs':{personalHistoryQuery:()=>({})},'../components/Navbar':blank,'../components/Sidebar':blank,'../components/LoadingSkeleton':blank,'../components/ActivityTypeSelector':blank,'../components/ProgressChart':blank}).default;
+  const Page=load('app/progress/page.tsx',{'next/navigation':{useRouter:()=>({push(){}})},'firebase/auth':{onAuthStateChanged(){return()=>{};}},'../lib/firebase':{auth:{}},'../lib/useSharedFirestoreQuery':{useSharedFirestoreQuery:()=>({data:[],loading:false,error:null})},'../lib/services/runs':{personalHistoryQuery:()=>({})},'../lib/useRunningPointsRules':{useRunningPointsRules:()=>({rules:load('app/lib/runningPointsConfig.ts').RUN_POINTS,error:false})},'../components/Navbar':blank,'../components/Sidebar':blank,'../components/LoadingSkeleton':blank,'../components/ActivityTypeSelector':blank,'../components/ProgressChart':blank}).default;
   const html=renderToStaticMarkup(React.createElement(Page));
   assert.doesNotMatch(html,/TVŮJ POHYB|Každý kilometr|Moje cíle|Zobrazit výzvy/);
   for(const day of ['Po','Út','St','Čt','Pá','So','Ne'])assert.ok(html.includes(`<span>${day}</span>`));
   assert.match(html,/Osobní rekordy/);
+  assert.match(html,/První běžecký den týdne je bez bonusu/);
 });
 const text=n=>typeof n==='number'?String(n):typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
 function find(n,p){if(!n)return;if(Array.isArray(n)){for(const c of n){const r=find(c,p);if(r)return r;}return;}if(p(n))return n;return find(n.props?.children,p);}

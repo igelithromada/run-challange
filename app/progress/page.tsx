@@ -1,5 +1,6 @@
 "use client";
 import ActivityPointSummary from "../components/ActivityPointSummary";
+import { useRunningPointsRules } from "../lib/useRunningPointsRules";
 import { activityPoints } from "../lib/activityPoints";
 import Metric from "../components/Metric";
 import RunningPointsRules from "../components/RunningPointsRules";
@@ -78,7 +79,8 @@ export default function ProgressPage() {
   })();
 
   const scoringDay = useScoringDay();
-  const score = useMemo(() => activityPoints(personalState.data, scoringDay ? undefined : 0), [personalState.data, scoringDay]);
+  const { rules, error: rulesError } = useRunningPointsRules();
+  const score = useMemo(() => rules ? activityPoints(personalState.data, scoringDay ? undefined : 0, rules) : undefined, [personalState.data, scoringDay, rules]);
 
   return <>
     <Navbar title="Můj pokrok" onMenuClick={()=>setMenuVisible(true)} onHomeClick={()=>router.push("/")}/>
@@ -87,8 +89,10 @@ export default function ProgressPage() {
       {(!personalState.loading || personalState.data.length > 0) && (!personalState.error || personalState.data.length > 0) &&
         <section className="tile progress-point-summary" aria-labelledby="progress-points-title">
           <h2 id="progress-points-title">Body a úroveň</h2>
-          <ActivityPointSummary score={score}/>
-          <RunningPointsRules/>
+          {score ? <>
+            <ActivityPointSummary score={score}/>
+            <RunningPointsRules rules={score.rules}/>
+          </> : <p role="status">{rulesError ? "Pravidla bodování se nepodařilo načíst." : "Načítám pravidla bodování…"}</p>}
         </section>}
       <ActivityTypeSelector value={goalType} onChange={setGoalType} ariaLabel="Typ aktivity pro pokrok" />
 

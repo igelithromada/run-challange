@@ -605,3 +605,19 @@ html[data-theme="white"] .activity-point-summary {
 .running-points-rules li + li, .running-points-rules dt { margin-top: .35rem; }
 .running-points-rules dt { font-weight: 700; }
 .running-points-rules dd { margin-inline-start: 0; }
+
+.running-points-admin-form {
+  display: grid;
+  gap: .75rem;
+}
+.running-points-admin-form fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: .65rem;
+  border: 1px solid var(--hierarchy-line);
+  border-radius: 12px;
+}
+.running-points-admin-form legend { padding-inline: .3rem; font-weight: 700; }
+.running-points-admin-grid { display: grid; gap: .65rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.running-points-admin-grid label { display: grid; align-content: end; gap: .25rem; }
+.running-points-admin-grid input { width: 100%; min-width: 0; box-sizing: border-box; }

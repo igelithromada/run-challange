@@ -1,5 +1,5 @@
 import { ArrowDown, CalendarDays, MapPin, Shield } from "lucide-react";
-import { RUN_POINTS, type ActivityPoints, type RecordPoints } from "../lib/activityPoints";
+import type { ActivityPoints, RecordPoints } from "../lib/activityPoints";
 
 const number = new Intl.NumberFormat("cs-CZ");
 const counted = (value: number, forms: readonly [string, string, string]) =>
@@ -20,7 +20,7 @@ export default function ActivityPointSummary({ score, record }: {
   const { level, levelStart, nextLevelAt, rank, total } = score;
   const amounts = record ?? score;
   return <div className="activity-point-summary">
-    {record === null ? <p className="activity-point-empty">Body se počítají za běhy od {RUN_POINTS.minimumKm} km.</p> : <>
+    {record === null ? <p className="activity-point-empty">Body se počítají za běhy od {score.rules.minimumKm} km.</p> : <>
       <ul className="activity-point-sources">
         <li className="activity-point-source-card" data-point-tone="distance">
           <div className="activity-point-source-heading"><span className="activity-point-source-icon"><MapPin aria-hidden="true"/></span><strong>Vzdálenost</strong></div>

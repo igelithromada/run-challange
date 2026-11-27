@@ -1,17 +1,7 @@
 import { recordActivityType } from "./activity";
 import { parseActivityDate } from "./runData";
 
-export const RUN_POINTS = {
-  minimumKm: 1,
-  perKm: 5,
-  distanceBonusCapKm: 20,
-  distanceDivisor: 60,
-  fullDayBonusKm: 5,
-  weeklyBonuses: [5, 5, 5, 10, 15, 20, 25],
-  inactivityDays: 30,
-  inactivityPercent: 10,
-  levelFactor: 50,
-} as const;
+import { RUN_POINTS, type RunningPointsConfig } from "./runningPointsConfig";
 
 const ranks = [
   { min: 100, name: "Legenda", tone: "legend" },
@@ -38,29 +28,29 @@ export function scoringDay(date: Date) {
 export type PointRun = { id: string; km?: number | string; timestamp?: unknown; type?: string; activityType?: string; deleting?: boolean };
 export type RecordPoints = { distancePoints: number; consistencyPoints: number };
 
-export function runningDistancePoints(km: number) {
-  if (!Number.isFinite(km) || km < RUN_POINTS.minimumKm) return 0;
-  return Math.round(RUN_POINTS.perKm * km * (1 + Math.min(km, RUN_POINTS.distanceBonusCapKm) / RUN_POINTS.distanceDivisor));
+export function runningDistancePoints(km: number, rules = RUN_POINTS) {
+  if (!Number.isFinite(km) || km < rules.minimumKm) return 0;
+  return Math.round(rules.perKm * km * (1 + Math.min(km, rules.distanceBonusCapKm) / rules.distanceDivisor));
 }
 
-export function runningDayBonus(km: number, dayNumber: number) {
-  const base = RUN_POINTS.weeklyBonuses[dayNumber - 1] ?? 0;
-  if (!base || km < RUN_POINTS.minimumKm) return 0;
-  return Math.max(1, Math.round(base * Math.min(1, (km / RUN_POINTS.fullDayBonusKm) ** 2)));
+export function runningDayBonus(km: number, dayNumber: number, rules = RUN_POINTS) {
+  const base = rules.weeklyBonuses[dayNumber - 1] ?? 0;
+  if (!base || km < rules.minimumKm) return 0;
+  return Math.max(1, Math.round(base * Math.min(1, (km / rules.fullDayBonusKm) ** 2)));
 }
 
-export function levelThreshold(level: number) {
-  return RUN_POINTS.levelFactor * level * (level - 1);
+export function levelThreshold(level: number, rules = RUN_POINTS) {
+  return rules.levelFactor * level * (level - 1);
 }
 
-export function activityPoints(runs: readonly PointRun[], now = Date.now()) {
+export function activityPoints(runs: readonly PointRun[], now = Date.now(), rules: RunningPointsConfig = RUN_POINTS) {
   const seen = new Set<string>();
   const eligible = runs.flatMap(run => {
     if (run.deleting || seen.has(run.id) || recordActivityType(run) !== "běh") return [];
     const km = Number(run.km);
-    const distancePoints = runningDistancePoints(km);
+    const distancePoints = runningDistancePoints(km, rules);
     const date = parseActivityDate(run.timestamp);
-    if (!distancePoints || !date || date.getTime() > now) return [];
+    if (!Number.isFinite(km) || km < rules.minimumKm || !date || date.getTime() > now) return [];
     seen.add(run.id);
     return [{ id: run.id, time: date.getTime(), day: scoringDay(date), km, distancePoints }];
   }).sort((a, b) => a.time - b.time || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
@@ -73,8 +63,8 @@ export function activityPoints(runs: readonly PointRun[], now = Date.now()) {
 
   function applyInactivity(untilDay: number) {
     if (lastDay === undefined) return;
-    const periods = Math.floor((untilDay - lastDay) / RUN_POINTS.inactivityDays);
-    balance *= (1 - RUN_POINTS.inactivityPercent / 100) ** periods;
+    const periods = Math.floor((untilDay - lastDay) / rules.inactivityDays);
+    balance *= (1 - rules.inactivityPercent / 100) ** periods;
   }
 
   for (const run of eligible) {
@@ -89,7 +79,7 @@ export function activityPoints(runs: readonly PointRun[], now = Date.now()) {
       dayBonus = 0;
     }
     dayKm += run.km;
-    const bonus = runningDayBonus(dayKm, weeklyDays);
+    const bonus = runningDayBonus(dayKm, weeklyDays, rules);
     const addedBonus = bonus - dayBonus;
     dayBonus = bonus;
     distancePoints += run.distancePoints;
@@ -101,10 +91,10 @@ export function activityPoints(runs: readonly PointRun[], now = Date.now()) {
   applyInactivity(scoringDay(new Date(now)));
   const total = Math.round(balance);
   const deducted = distancePoints + consistencyPoints - total;
-  const level = Math.floor((1 + Math.sqrt(1 + 4 * total / RUN_POINTS.levelFactor)) / 2);
+  const level = Math.floor((1 + Math.sqrt(1 + 4 * total / rules.levelFactor)) / 2);
   const rank = ranks.find(item => level >= item.min) ?? ranks[ranks.length - 1];
-  return { distancePoints, consistencyPoints, deducted, total, level, levelStart: levelThreshold(level),
-    nextLevelAt: levelThreshold(level + 1), rank, records };
+  return { rules, distancePoints, consistencyPoints, deducted, total, level, levelStart: levelThreshold(level, rules),
+    nextLevelAt: levelThreshold(level + 1, rules), rank, records };
 }
 
 export type ActivityPoints = ReturnType<typeof activityPoints>;

@@ -175,16 +175,16 @@ test('running points, deductions and the rules fit mobile widths', async () => {
         assert.equal(await distance.getByText('Vzdálenost', { exact: true }).count(), 1);
         assert.equal(await distance.getByText('+133 bodů', { exact: true }).count(), 1);
         assert.equal(await consistency.getByText('Pravidelnost', { exact: true }).count(), 1);
-        assert.equal(await consistency.getByText('+5 bodů', { exact: true }).count(), 1);
-        assert.equal(await page.locator('.activity-point-deduction b').textContent(), '−14 bodů');
-        assert.equal(await page.locator('.activity-point-progress-values strong').textContent(), '124 bodů');
+        assert.equal(await consistency.getByText('0 bodů', { exact: true }).count(), 1);
+        assert.equal(await page.locator('.activity-point-deduction b').textContent(), '−13 bodů');
+        assert.equal(await page.locator('.activity-point-progress-values strong').textContent(), '120 bodů');
         await page.getByText('Pravidla bodování', { exact: true }).click();
         assert.equal(await page.getByText('32 bodů', { exact: true }).isVisible(), true);
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
         await show({ score, record: score.records.get('run') });
         assert.equal(await page.getByText('Za tento běh', { exact: true }).count(), 1);
-        assert.equal(await page.getByText('+138 bodů', { exact: true }).count(), 1);
-        assert.equal(await page.locator('.activity-point-deduction b').textContent(), '−14 bodů');
+        assert.equal(await page.locator('.activity-point-total').getByText('+133 bodů', { exact: true }).count(), 1);
+        assert.equal(await page.locator('.activity-point-deduction b').textContent(), '−13 bodů');
         await show({ score: activityPoints([record], Date.parse('2026-11-24T12:00:00Z')) });
         assert.equal(await page.locator('.activity-point-deduction').count(), 0);
       }
