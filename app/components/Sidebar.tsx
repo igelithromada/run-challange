@@ -88,7 +88,7 @@ export default function Sidebar({ visible, onClose }: SidebarProps) {
       <nav ref={panel} className="site-sidebar-panel" onClick={event => event.stopPropagation()} aria-label="Hlavní navigace">
         <div className="site-sidebar-header">
           <div className="site-sidebar-identity">
-            <Image src="/lhota-icon.svg" width={32} height={32} alt="" />
+            <Image src="/lhota-icon.svg" width={36} height={36} alt="" />
             <div>
               <span>Navigace</span>
               <small className="site-sidebar-subtitle">{nickname || email || "Dolní Lhota v pohybu"}</small>
