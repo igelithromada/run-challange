@@ -1417,7 +1417,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .auth-page { min-height:100dvh; display:grid; place-items:center; padding:1.25rem; background:var(--main-gradient,linear-gradient(180deg,#36D1DC,#5B86E5)); }
 .auth-card { width:min(100%,430px); padding:clamp(1.25rem,5vw,2rem); border:1px solid var(--ui-border); border-radius:24px; background:var(--overlay-surface); color:var(--ui-text); box-shadow:var(--ui-shadow-strong); -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px); }
 .auth-brand { display:flex; align-items:center; gap:.75rem; margin-bottom:1.7rem; }
-.auth-brand-mark { flex:none; }
+.app-crest {
+  display:inline-block;
+  width:36px;
+  height:36px;
+  flex:none;
+  background:currentColor;
+  mask:url("/lhota-icon.svg") center / contain no-repeat;
+}
+.app-crest.auth-brand-mark { width:60px; height:60px; }
 .auth-brand strong { display:block; font-size:1.15rem; line-height:1.2; }
 .auth-brand-tagline { display:block; margin-top:.15rem; color:var(--ui-muted); font-size:.9rem; font-weight:650; }
 .auth-heading h1 { margin:0; font-size:clamp(1.7rem,7vw,2.1rem); }
@@ -5492,7 +5500,8 @@ textarea::placeholder {
 }
 
 .site-sidebar-identity { display:flex; align-items:center; gap:.65rem; min-width:0; }
-.site-sidebar-identity img { flex:none; }
+.site-sidebar-identity > div { min-width:0; }
+.site-sidebar-name { display:block; line-height:1.2; }
 .site-sidebar-subtitle {
   display: block;
   margin-top: .15rem;

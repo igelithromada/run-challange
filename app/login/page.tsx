@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from "react";
 import { ArrowLeft, KeyRound, LogIn, UserPlus } from "lucide-react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { sendPasswordResetEmail, signInWithCustomToken, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../lib/firebase";
@@ -128,7 +127,7 @@ export default function LoginPage() {
     <main className="auth-page">
       <section className="auth-card" aria-labelledby="auth-title">
         <div className="auth-brand">
-          <Image className="auth-brand-mark" src="/lhota-icon.svg" width={60} height={60} alt="" priority />
+          <span className="app-crest auth-brand-mark" aria-hidden="true" />
           <div>
             <strong>Dolní Lhota</strong>
             <span className="auth-brand-tagline">v pohybu</span>
