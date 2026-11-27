@@ -4,8 +4,8 @@ import type { ActivityPoints, RecordPoints } from "../lib/activityPoints";
 const number = new Intl.NumberFormat("cs-CZ");
 const counted = (value: number, forms: readonly [string, string, string]) =>
   `${number.format(value)} ${forms[value === 1 ? 0 : value >= 2 && value <= 4 ? 1 : 2]}`;
-const points = (value: number) => counted(value, ["bod", "body", "bodů"]);
-const gainedPoints = (value: number) => (value > 0 ? "+" : "") + points(value);
+export const formatPoints = (value: number) => counted(value, ["bod", "body", "bodů"]);
+const gainedPoints = (value: number) => (value > 0 ? "+" : "") + formatPoints(value);
 
 export function LevelShield({ level, tone }: { level: number; tone: ActivityPoints["rank"]["tone"] }) {
   return <span className="level-shield" data-level-tone={tone} aria-hidden="true">
@@ -44,13 +44,13 @@ export default function ActivityPointSummary({ score, record }: {
         <div><strong>Úroveň {number.format(level)}</strong><span>{rank.name}</span></div>
       </div>
       <div className="activity-point-progress-values">
-        <strong>{points(total)}</strong><span>{points(nextLevelAt)}</span>
+        <strong>{formatPoints(total)}</strong><span>{formatPoints(nextLevelAt)}</span>
       </div>
       <progress value={total - levelStart} max={nextLevelAt - levelStart}
-        aria-label={`Postup do úrovně ${level + 1}`} aria-valuetext={`Zbývá ${points(nextLevelAt - total)}`} />
-      <small>Do úrovně {number.format(level + 1)} zbývá {points(nextLevelAt - total)}.</small>
+        aria-label={`Postup do úrovně ${level + 1}`} aria-valuetext={`Zbývá ${formatPoints(nextLevelAt - total)}`} />
+      <small>Do úrovně {number.format(level + 1)} zbývá {formatPoints(nextLevelAt - total)}.</small>
       {score.deducted > 0 &&
-        <p className="activity-point-deduction">Za pauzy odečteno <b>−{points(score.deducted)}</b></p>}
+        <p className="activity-point-deduction">Za pauzy odečteno <b>−{formatPoints(score.deducted)}</b></p>}
     </div>
   </div>;
 }

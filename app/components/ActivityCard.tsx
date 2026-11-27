@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { ActivityCardHeading, ActivityCardStats } from "./ActivityCardContent";
 import ActivityGallery from "./ActivityGallery";
 import type { ActivityPoints } from "../lib/activityPoints";
-import ActivityLevelButton from "./ActivityLevelButton";
+import ActivityRunHeading from "./ActivityRunHeading";
 import { auth } from "../lib/firebase";
 import { Heart, MessageCircle, Pencil, Trash2, X, Send } from "lucide-react";
 import { getPublicProfiles } from "../lib/services/publicProfiles";
@@ -250,12 +250,15 @@ export default function ActivityCard({ run, nickname, avatarUrl, teamName, teamA
     return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
   };
 
+  const heading = { nickname: resolvedNickname, avatarUrl: resolvedAvatarUrl, activityType, date,
+    onUserClick, teamName, teamAvatarUrl };
+
   return (
     <>
       <RecordCard ref={cardRef} id={`run-${run.id}`}>
-        <ActivityCardHeading nickname={resolvedNickname} avatarUrl={resolvedAvatarUrl} activityType={activityType} date={date}
-          onUserClick={onUserClick} teamName={teamName} teamAvatarUrl={teamAvatarUrl}
-          badge={activityType === "běh" && run.uid && <ActivityLevelButton key={run.uid} uid={run.uid} nickname={resolvedNickname} score={levelScore} recordId={run.id} />}/>
+        {activityType === "běh" && run.uid
+          ? <ActivityRunHeading key={run.uid} {...heading} uid={run.uid} recordId={run.id} score={levelScore}/>
+          : <ActivityCardHeading {...heading}/>}
         <ActivityCardStats run={run} activityType={activityType}/>
 
         {images.length > 0 && <ActivityGallery key={run.id} images={images} onOpen={index => onPhotosClick(images, run.imageUrl || "", index)} />}

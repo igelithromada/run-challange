@@ -92,7 +92,7 @@ export default function UserPage() {
       <main className="container user-page-modern">
         <header className="user-page-header">
           <UserAvatar name={profileName} url={userInfo.avatarUrl}/>
-          <div><span className="user-page-eyebrow">AKTIVITY UŽIVATELE</span><h1>{profileName}{id && score && !runsState.loading && (!runsState.error || runsState.data.length > 0) && <ActivityLevelButton key={id} uid={id} nickname={profileName} score={score}/>}</h1><p>{filteredRuns.length} {filteredRuns.length === 1 ? "aktivita" : filteredRuns.length < 5 ? "aktivity" : "aktivit"} · {filteredRuns.reduce((sum, run) => sum + activityAmount(run), 0).toLocaleString("cs-CZ",{maximumFractionDigits:isStrengthActivity(selectedType)?0:1})} {activityUnit(selectedType)}</p></div>
+          <div><span className="user-page-eyebrow">AKTIVITY UŽIVATELE</span><h1>{profileName}{id && score && !runsState.loading && (!runsState.error || runsState.data.length > 0) && <ActivityLevelButton key={id} nickname={profileName} score={score}/>}</h1><p>{filteredRuns.length} {filteredRuns.length === 1 ? "aktivita" : filteredRuns.length < 5 ? "aktivity" : "aktivit"} · {filteredRuns.reduce((sum, run) => sum + activityAmount(run), 0).toLocaleString("cs-CZ",{maximumFractionDigits:isStrengthActivity(selectedType)?0:1})} {activityUnit(selectedType)}</p></div>
         </header>
 
         <ActivityTypeSelector value={selectedType} onChange={setSelectedType} ariaLabel="Typ aktivity" />

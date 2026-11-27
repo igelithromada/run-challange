@@ -1,36 +1,35 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { X } from "lucide-react";
-import { activityPoints, type ActivityPoints } from "../lib/activityPoints";
-import { personalHistoryQuery } from "../lib/services/runs";
-import { useSharedFirestoreQuery } from "../lib/useSharedFirestoreQuery";
-import type { RunData } from "../types";
-import ActivityPointSummary, { LevelShield } from "./ActivityPointSummary";
-import { useScoringDay } from "../lib/useScoringDay";
-import { useRunningPointsRules } from "../lib/useRunningPointsRules";
+import { useRef, useState } from "react";
+import { ChevronRight, X } from "lucide-react";
+import type { ActivityPoints } from "../lib/activityPoints";
+import ActivityPointSummary, { formatPoints, LevelShield } from "./ActivityPointSummary";
 import RunningPointsRules from "./RunningPointsRules";
 import OverlayDialog from "./OverlayDialog";
 
-const summaryCache = new WeakMap<RunData[], { day: number; score: ActivityPoints }>();
-
-function LevelButton({ score, nickname, recordId }: {
+export default function ActivityLevelButton({ score, nickname, recordId }: {
   score: ActivityPoints; nickname: string; recordId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
   const record = recordId ? score.records.get(recordId) ?? null : undefined;
+  if (record === null) return null;
+  const gained = record ? record.distancePoints + record.consistencyPoints : 0;
+  const amount = (gained > 0 ? "+" : "") + formatPoints(gained);
   const dismiss = () => {
     setOpen(false);
     requestAnimationFrame(() => button.current?.focus());
   };
   return <>
-    <button ref={button} type="button" className="activity-awards-button activity-level-button" aria-haspopup="dialog"
+    {record ? <button ref={button} type="button" className="activity-run-points" aria-haspopup="dialog"
+      aria-label={`Body za běh, ${amount}`} onClick={() => setOpen(true)}>
+      <strong>{amount}</strong><ChevronRight size={13} aria-hidden="true"/>
+    </button> : <button ref={button} type="button" className="activity-awards-button activity-level-button" aria-haspopup="dialog"
       aria-label={`Úroveň ${score.level} uživatele ${nickname}`} title={`Úroveň ${score.level} · ${score.rank.name}`}
       onClick={() => setOpen(true)}>
       <LevelShield level={score.level} tone={score.rank.tone}/>
-    </button>
-    {open && <OverlayDialog label={`Body a úroveň uživatele ${nickname}`} className="activity-awards-dialog activity-level-dialog" onDismiss={dismiss}>
+    </button>}
+    {open && <OverlayDialog label={`${record ? "Body za běh" : "Body a úroveň"} · ${nickname}`} className="activity-awards-dialog activity-level-dialog" onDismiss={dismiss}>
       <section>
         <header><div><h2>{recordId ? "Body za běh" : "Body a úroveň"}</h2><small>{nickname}</small></div>
           <button type="button" className="ui-icon-button" aria-label="Zavřít přehled" onClick={dismiss}><X size={18}/></button>
@@ -40,41 +39,4 @@ function LevelButton({ score, nickname, recordId }: {
       </section>
     </OverlayDialog>}
   </>;
-}
-
-function LiveLevelButton({ uid, nickname, recordId }: { uid: string; nickname: string; recordId?: string }) {
-  const query = useMemo(() => personalHistoryQuery(uid), [uid]);
-  const { data, loading, error } = useSharedFirestoreQuery<RunData>("personal-history:v2:" + uid, query);
-  const day = useScoringDay();
-  const { rules } = useRunningPointsRules();
-  if (!rules || loading || (error && !data.length)) return null;
-  let cached = summaryCache.get(data);
-  if (cached?.day !== day || cached.score.rules !== rules) {
-    cached = { day, score: activityPoints(data, undefined, rules) };
-    summaryCache.set(data, cached);
-  }
-  return <LevelButton score={cached.score} nickname={nickname} recordId={recordId}/>;
-}
-
-export default function ActivityLevelButton({ uid, nickname, score, recordId }: {
-  uid: string; nickname: string; score?: ActivityPoints; recordId?: string;
-}) {
-  const [nearViewport, setNearViewport] = useState(false);
-  const anchor = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    if (score) return;
-    if (typeof IntersectionObserver === "undefined" || !anchor.current) {
-      setNearViewport(true);
-      return;
-    }
-    const observer = new IntersectionObserver(entries => {
-      setNearViewport(entries.some(entry => entry.isIntersecting));
-    }, { rootMargin: "160px" });
-    observer.observe(anchor.current);
-    return () => observer.disconnect();
-  }, [score]);
-
-  return <span ref={anchor} className="activity-awards-anchor">
-    {score ? <LevelButton score={score} nickname={nickname} recordId={recordId}/> : nearViewport && <LiveLevelButton uid={uid} nickname={nickname} recordId={recordId}/>}
-  </span>;
 }

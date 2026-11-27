@@ -191,3 +191,30 @@ test('running points, deductions and the rules fit mobile widths', async () => {
     }
   } finally { await browser.close(); }
 });
+
+test('a running record shows the level as information and a single points button beside the activity type', async () => {
+  const RunHeading = require('../app/components/ActivityRunHeading').default;
+  const { activityPoints } = require('../app/lib/activityPoints');
+  const timestamp = '2026-11-23T12:00:00Z';
+  const score = activityPoints([{ id: 'run', km: 5.3, timestamp }], Date.parse(timestamp));
+  const base = { nickname: 'Veronika s dlouhou přezdívkou', activityType: 'běh', date: new Date(timestamp), uid: 'u', score };
+  const heading = render(RunHeading, { ...base, recordId: 'run' });
+  const short = render(RunHeading, { ...base, recordId: 'short' });
+  const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+  try {
+    const page = await browser.newPage({ viewport: { width: 320, height: 720 } });
+    for (const theme of ['white', 'dark']) {
+      await page.setContent('<html data-theme="'+theme+'"><main class="container"><article class="activity-card activity-card-modern" id="scored">'+heading+'</article><article class="activity-card activity-card-modern" id="short">'+short+'</article></main></html>');
+      await page.addStyleTag({ content: css });
+      const card = page.locator('#scored');
+      assert.equal(await card.getByRole('img', { name: 'Úroveň 1', exact: true }).count(), 1);
+      assert.equal(await card.locator('.activity-level-indicator button').count(), 0);
+      const row = card.locator('.activity-kind-row');
+      assert.equal(await row.getByText('Běh', { exact: true }).count(), 1);
+      assert.equal(await row.getByRole('button', { name: 'Body za běh, +29 bodů' }).count(), 1);
+      assert.equal(await card.getByRole('button').count(), 1);
+      assert.equal(await page.locator('#short .activity-run-points').count(), 0);
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    }
+  } finally { await browser.close(); }
+});

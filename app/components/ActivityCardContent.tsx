@@ -1,5 +1,5 @@
 import UserAvatar from "./UserAvatar";
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 
 import { activityLabel, isStrengthActivity } from "../lib/activity";
 import { formatCompactActivityTime, formatMetricNumber, numberValue } from "../lib/activityMetrics";
@@ -8,17 +8,19 @@ import { ActivityTypeIcon } from "./ActivityTypeSelector";
 import { RecordMetrics } from "./RecordCard";
 import Metric from "./Metric";
 
-export function ActivityCardHeading({ nickname, avatarUrl, activityType, date, badge, teamName, teamAvatarUrl, onUserClick }: {
+export function ActivityCardHeading({ nickname, avatarUrl, activityType, date, badge, points, headingRef, teamName, teamAvatarUrl, onUserClick }: {
   nickname: string;
   avatarUrl?: string;
   activityType: string;
   date: Date | null;
   badge?: ReactNode;
+  points?: ReactNode;
+  headingRef?: Ref<HTMLElement>;
   teamName?: string | null;
   teamAvatarUrl?: string;
   onUserClick?: () => void;
 }) {
-  return <RecordCardHeading
+  return <RecordCardHeading headingRef={headingRef}
     avatar={<UserAvatar name={nickname} url={avatarUrl} onClick={onUserClick}/>}
     title={<span onClick={onUserClick} onKeyDown={e => e.key === "Enter" && onUserClick?.()} role={onUserClick ? "link" : undefined} tabIndex={onUserClick ? 0 : undefined}>{nickname}</span>}
     badge={badge}
@@ -26,19 +28,20 @@ export function ActivityCardHeading({ nickname, avatarUrl, activityType, date, b
       {date.toLocaleString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
     </time>}
   >
-    <small className="activity-kind-label">{activityLabel(activityType)}</small>
+    <div className="activity-kind-row"><small className="activity-kind-label">{activityLabel(activityType)}</small>{points}</div>
     {teamName && <small className="activity-team-line"><span className="activity-team-avatar">{teamAvatarUrl ? <img src={cloudinaryImageUrl(teamAvatarUrl, 48)} alt="" loading="lazy" decoding="async" /> : "T"}</span><b>Tým</b> · {teamName}</small>}
   </RecordCardHeading>;
 }
 
-export function RecordCardHeading({ avatar, title, badge, meta, children }: {
+export function RecordCardHeading({ avatar, title, badge, meta, children, headingRef }: {
   avatar: ReactNode;
   title: ReactNode;
   badge?: ReactNode;
   meta?: ReactNode;
   children?: ReactNode;
+  headingRef?: Ref<HTMLElement>;
 }) {
-  return <header className="activity-card-top record-card-heading">
+  return <header ref={headingRef} className="activity-card-top record-card-heading">
     {avatar}
     <div className="activity-person">
       <div className="record-card-title-row">

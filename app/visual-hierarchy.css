@@ -581,7 +581,7 @@ html[data-theme="white"] .activity-point-summary {
 .level-shield[data-level-tone="champion"] { --shield-color: var(--point-consistency, var(--hierarchy-accent)); }
 .activity-level-button .level-shield { --shield-size: 1.6rem; }
 .record-card-heading .activity-person-name:has(.activity-level-button) { align-items: center; }
-.user-page-header h1 .activity-awards-anchor { margin-inline-start: .25rem; vertical-align: middle; }
+.user-page-header h1 .activity-level-button { margin-inline-start: .25rem; vertical-align: middle; }
 .activity-level-dialog { max-height: min(86dvh, calc(var(--overlay-height, 86dvh) - 1rem)); }
 
 .activity-point-deduction {
@@ -621,3 +621,33 @@ html[data-theme="white"] .activity-point-summary {
 .running-points-admin-grid { display: grid; gap: .65rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .running-points-admin-grid label { display: grid; align-content: end; gap: .25rem; }
 .running-points-admin-grid input { width: 100%; min-width: 0; box-sizing: border-box; }
+
+.activity-kind-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .2rem .5rem;
+}
+.activity-level-indicator { display: inline-flex; flex: none; align-items: center; }
+.activity-level-indicator .level-shield { --shield-size: 1.6rem; }
+.record-card-heading .activity-person-name:has(.activity-level-indicator) { align-items: center; }
+.activity-run-points {
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+  min-height: 30px;
+  padding: .15rem .45rem;
+  border: 1px solid var(--hierarchy-line);
+  border-radius: 999px;
+  background: var(--ui-bg-soft);
+  color: var(--hierarchy-caution);
+  font: inherit;
+  font-size: .75rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.activity-run-points strong { color: inherit; }
+html[data-theme="white"] .activity-card-modern .activity-run-points strong {
+  color: var(--hierarchy-caution);
+}
+.activity-run-points:hover { border-color: var(--hierarchy-caution); }
