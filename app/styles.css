@@ -4808,9 +4808,9 @@ html[data-theme="white"] .teams-create,
 html[data-theme="white"] .routes-group,
 html[data-theme="white"] .route-card,
 html[data-theme="white"] .run-weather-recommendation {
-  background:#fff !important;
+  background:var(--card-background) !important;
   color:#17212b !important;
-  border-color:#e1e7eb !important;
+  border-color:var(--card-outline) !important;
   box-shadow:0 2px 10px rgba(18,38,52,.07) !important;
   -webkit-backdrop-filter:none !important;
   backdrop-filter:none !important;
@@ -5105,34 +5105,34 @@ html[data-theme="white"] :focus-visible {
 
 
 
-/* Finální sjednocení panelu a účtu – 2026-11-14 */
+/* Odstíny otevřené navigace. */
 .site-sidebar-panel {
-  background: color-mix(in srgb, var(--theme-accent, #36D1DC) 16%, rgba(8,14,20,.94)) !important;
-  border-color: color-mix(in srgb, var(--theme-accent, #36D1DC) 42%, rgba(255,255,255,.18)) !important;
+  background: color-mix(in srgb, var(--sidebar-tint, var(--theme-accent, #36D1DC)) 20%, #111825) !important;
+  border-color: color-mix(in srgb, var(--sidebar-tint, var(--theme-accent, #36D1DC)) 42%, rgba(255,255,255,.18)) !important;
 }
 .site-sidebar-panel .site-sidebar-profile {
-  background: color-mix(in srgb, var(--theme-accent, #36D1DC) 18%, rgba(255,255,255,.08)) !important;
-  border-color: color-mix(in srgb, var(--theme-accent, #36D1DC) 38%, rgba(255,255,255,.14)) !important;
+  background: color-mix(in srgb, var(--sidebar-tint, var(--theme-accent, #36D1DC)) 24%, #253040) !important;
+  border-color: color-mix(in srgb, var(--sidebar-tint, var(--theme-accent, #36D1DC)) 38%, rgba(255,255,255,.14)) !important;
 }
 .site-sidebar-panel .site-sidebar-profile-icon {
-  background: color-mix(in srgb, var(--theme-accent, #36D1DC) 28%, rgba(255,255,255,.08)) !important;
+  background: color-mix(in srgb, var(--sidebar-tint, var(--theme-accent, #36D1DC)) 32%, #293548) !important;
 }
-.site-sidebar-grid > .site-sidebar-item {
-  background: color-mix(in srgb, var(--theme-accent, #36D1DC) 15%, rgba(255,255,255,.08)) !important;
-  border-color: color-mix(in srgb, var(--theme-accent, #36D1DC) 35%, rgba(255,255,255,.14)) !important;
+.site-sidebar-panel .site-sidebar-grid > .site-sidebar-item {
+  background: color-mix(in srgb, var(--sidebar-tint, var(--theme-accent, #36D1DC)) 19%, #212a38) !important;
+  border-color: color-mix(in srgb, var(--sidebar-tint, var(--theme-accent, #36D1DC)) 35%, rgba(255,255,255,.14)) !important;
   min-height: 86px !important;
   padding: .75rem .45rem !important;
   font-size: clamp(.86rem, 2.8vw, 1.05rem) !important;
   box-shadow: 0 5px 14px rgba(0,0,0,.12) !important;
 }
-.site-sidebar-grid > .site-sidebar-item:hover,
-.site-sidebar-grid > .site-sidebar-item:active {
-  background: color-mix(in srgb, var(--theme-accent, #36D1DC) 24%, rgba(255,255,255,.10)) !important;
-  border-color: color-mix(in srgb, var(--theme-accent, #36D1DC) 55%, rgba(255,255,255,.18)) !important;
+.site-sidebar-panel .site-sidebar-grid > .site-sidebar-item:hover,
+.site-sidebar-panel .site-sidebar-grid > .site-sidebar-item:active {
+  background: color-mix(in srgb, var(--sidebar-tint, var(--theme-accent, #36D1DC)) 30%, #243041) !important;
+  border-color: color-mix(in srgb, var(--sidebar-tint, var(--theme-accent, #36D1DC)) 55%, rgba(255,255,255,.18)) !important;
 }
 .site-sidebar-icon-button {
-  background: color-mix(in srgb, var(--theme-accent, #36D1DC) 18%, rgba(255,255,255,.08)) !important;
-  border-color: color-mix(in srgb, var(--theme-accent, #36D1DC) 36%, rgba(255,255,255,.14)) !important;
+  background: color-mix(in srgb, var(--sidebar-tint, var(--theme-accent, #36D1DC)) 24%, #253040) !important;
+  border-color: color-mix(in srgb, var(--sidebar-tint, var(--theme-accent, #36D1DC)) 36%, rgba(255,255,255,.14)) !important;
 }
 .profile-logout-button { min-height:56px; font-size:1.02rem; }
 .profile-delete-account-button {
@@ -5739,8 +5739,8 @@ html[data-theme="white"] .tile-button .run-profile-icon { filter: brightness(0);
    Sjednocení prvků, které měly dříve napevno tmavé pozadí/barvu.
    ===================================================================== */
 html[data-theme="white"] .activity-card-modern {
-  border-color:#dbe4e9 !important;
-  background:#fff !important;
+  border-color:var(--card-outline) !important;
+  background:var(--card-background) !important;
   box-shadow:0 5px 20px rgba(23,35,43,.08) !important;
 }
 html[data-theme="white"] .activity-card-top .activity-avatar {
@@ -6066,12 +6066,20 @@ html[data-theme="white"] .social-modal input {
 }
 
 /* ===== CROSS-SCREEN QA: formuláře + navigace ===== */
-html[data-theme="white"] .site-sidebar-profile{background:#f5f8fa;border-color:#dce3e8;color:#17212b}
-html[data-theme="white"] .site-sidebar-profile-icon{background:#e8eef2}
+html[data-theme="white"] .site-sidebar-panel .site-sidebar-profile{background:var(--card-background)!important;border-color:var(--card-outline)!important;color:var(--ui-text)}
+html[data-theme="white"] .site-sidebar-panel .site-sidebar-profile-icon{background:#e0e8ee!important}
 html[data-theme="white"] .site-sidebar-profile-copy small,html[data-theme="white"] .site-sidebar-header small{color:#66737d!important}
-html[data-theme="white"] .site-sidebar-item{background:#f5f8fa;border-color:#dce3e8;color:#17212b!important}
-html[data-theme="white"] .site-sidebar-item:hover{background:#eef3f6;border-color:#c7d1d8}
-html[data-theme="white"] .site-sidebar-icon-button{background:#f5f8fa;border-color:#dce3e8;color:#17212b}
+html[data-theme="white"] .site-sidebar-grid > .site-sidebar-item,
+html[data-theme="white"] .site-sidebar-icon-button {
+  background:var(--card-background)!important;
+  border-color:var(--card-outline)!important;
+  color:var(--ui-text);
+}
+html[data-theme="white"] .site-sidebar-grid > .site-sidebar-item:hover,
+html[data-theme="white"] .site-sidebar-panel .site-sidebar-profile:hover {
+  background:#e1e9ef!important;
+  border-color:#b5c4ce!important;
+}
 html[data-theme="white"] .site-sidebar-panel{background:#fff!important;border-color:#dce3e8!important}
 html[data-theme="white"] .site-navbar-inner{background:#fff;border-color:#dce3e8;box-shadow:0 8px 24px rgba(18,38,52,.08)}
 html[data-theme="white"] .site-navbar-button{color:#17212b}
@@ -6085,10 +6093,18 @@ html[data-theme="white"] .site-navbar-button:hover{background:#f1f5f7}
 /* Aktivní položka navigace: uživatel vždy vidí, kde se právě nachází. */
 .site-sidebar-item.is-active{background:rgba(255,255,255,.22)!important;border-color:rgba(255,255,255,.34)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 6px 18px rgba(0,0,0,.12)}
 .site-sidebar-item.is-active svg{filter:drop-shadow(0 1px 4px rgba(255,255,255,.16))}
-html[data-theme="white"] .site-sidebar-item.is-active{background:#e8f1f5!important;border-color:#afc4cf!important;color:#10222a!important;box-shadow:inset 0 0 0 1px rgba(16,34,42,.04),0 5px 14px rgba(18,38,52,.08)}
+html[data-theme="white"] .site-sidebar-grid > .site-sidebar-item.is-active{background:#dcebf2!important;border-color:#afc4cf!important;color:#10222a!important;box-shadow:inset 0 0 0 1px rgba(16,34,42,.04),0 5px 14px rgba(18,38,52,.08)}
 
 .site-sidebar-profile.is-active{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3)}
-html[data-theme="white"] .site-sidebar-profile.is-active{background:#e8f1f5;border-color:#afc4cf}
+html[data-theme="white"] .site-sidebar-panel .site-sidebar-profile.is-active{background:#dcebf2!important;border-color:#afc4cf!important}
+
+html[data-theme="custom"] .site-sidebar-grid > .site-sidebar-item.is-active,
+html[data-theme="custom"] .site-sidebar-panel .site-sidebar-profile.is-active {
+  background:color-mix(in srgb, var(--sidebar-tint) 33%, #243041)!important;
+  border-color:color-mix(in srgb, var(--sidebar-tint) 62%, #8b99a8)!important;
+  color:var(--ui-text)!important;
+  box-shadow:none!important;
+}
 
 /* File inputy: nativní tlačítko nesmí mít bílý text na bílém pozadí. */
 html:not([data-theme="white"]) .teams-create-form input[type="file"]::file-selector-button,

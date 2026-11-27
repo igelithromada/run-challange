@@ -18,7 +18,7 @@ html[data-theme="dark"] {
 html[data-theme="white"] {
   --hierarchy-accent:#086b7b;
   --hierarchy-selected:#e6f3f6;
-  --hierarchy-card:#fff;
+  --hierarchy-card:var(--card-background);
   --hierarchy-line:#ccd8df;
   --hierarchy-text:#17232b;
   --hierarchy-muted:#4e6270;

@@ -296,3 +296,57 @@ test('appearance settings fit every scheme and shared surfaces keep readable con
     }
   } finally { await browser.close(); }
 });
+
+test('navigation follows the custom color and light cards stand out against the page', async () => {
+  const browser = await chromium.launch({ executablePath: process.env.CHROME_BIN || undefined, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+  try {
+    const page = await browser.newPage({ viewport: { width: 360, height: 780 } });
+    await page.setContent('<main class="container settings-page"><section class="tile">Nastavení</section>' +
+      '<article class="tile activity-card-modern">Záznam</article><article class="route-card">Trasa</article>' +
+      '<section class="progress-chart-section">Pokrok</section></main>' +
+      '<div class="site-sidebar-overlay"><nav class="site-sidebar-panel"><header class="site-sidebar-header">' +
+      '<button class="site-sidebar-icon-button">Zavřít</button></header>' +
+      '<button class="site-sidebar-profile is-active"><span class="site-sidebar-profile-icon">Ú</span>Můj účet</button>' +
+      '<div class="site-sidebar-grid"><button class="site-sidebar-item is-active">Týmy</button>' +
+      '<button class="site-sidebar-item">Výzvy</button></div></nav></div>');
+    await page.addStyleTag({ content: css + '\nhtml .site-sidebar-panel button:is(.site-sidebar-item,.site-sidebar-profile,.site-sidebar-icon-button) { transition: none !important; }' });
+    const palette = (theme, customColor) => page.evaluate(async ({ theme, customColor }) => {
+      const root = document.documentElement;
+      root.dataset.theme = theme;
+      root.style.setProperty('--custom-theme-color', customColor);
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const context = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+      const rgb = color => {
+        context.clearRect(0, 0, 1, 1);
+        context.fillStyle = color;
+        context.fillRect(0, 0, 1, 1);
+        return [...context.getImageData(0, 0, 1, 1).data];
+      };
+      const surfaces = ['.site-sidebar-panel', '.site-sidebar-profile', '.site-sidebar-profile-icon', '.site-sidebar-icon-button',
+        '.site-sidebar-item.is-active', '.site-sidebar-item:not(.is-active)'].map(selector => {
+        const { backgroundColor, color } = getComputedStyle(document.querySelector(selector));
+        return { background: rgb(backgroundColor), foreground: rgb(color) };
+      });
+      const cards = [...document.querySelector('main').children].map(el => {
+        const { backgroundColor, borderTopColor } = getComputedStyle(el);
+        return { background: rgb(backgroundColor), border: rgb(borderTopColor) };
+      });
+      return { surfaces, cards };
+    }, { theme, customColor });
+
+    const violet = await palette('custom', '#a820e0');
+    const green = await palette('custom', '#10b457');
+    violet.surfaces.forEach(({ background, foreground }, index) => {
+      assert.ok(background[2] > background[1] + 12, JSON.stringify({ index, background }));
+      assert.ok(green.surfaces[index].background[1] > green.surfaces[index].background[2], JSON.stringify({ index, green: green.surfaces[index].background }));
+      assert.ok(foreground[0] >= 240);
+    });
+    const light = await palette('white', '#a820e0');
+    assert.deepEqual(light.surfaces[0].background, [255, 255, 255, 255]);
+    for (const card of light.cards) {
+      assert.deepEqual(card.background, [237, 242, 246, 255]);
+      assert.ok(card.border[0] < 215);
+    }
+    assert.deepEqual(light.surfaces[5].background, light.cards[0].background);
+  } finally { await browser.close(); }
+});

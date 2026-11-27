@@ -13,10 +13,18 @@ html[data-theme="dark"],
 html[data-theme="white"] {
   --main-gradient: var(--page-color);
 }
-html[data-theme="white"] { color-scheme: light; --page-color: #fff; --overlay-surface: #fff; }
+html[data-theme="white"] {
+  color-scheme: light;
+  --page-color: #fff;
+  --overlay-surface: #fff;
+  --card-background: #edf2f6;
+  --card-outline: #c5d0d9;
+  --card-border: 1px solid var(--card-outline);
+}
 html[data-theme="dark"] { --page-color: #000; --overlay-surface: #171717; }
 
 html[data-theme="custom"] {
+  --sidebar-tint: var(--custom-theme-color, #36d1dc);
   --page-color: color-mix(in srgb, var(--custom-theme-color, #36d1dc) 34%, #121d29);
   --page-color-end: #10151f;
 }
