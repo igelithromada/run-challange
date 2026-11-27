@@ -1,6 +1,7 @@
 import { RUN_POINTS, activityPoints, levelThreshold } from "../lib/activityPoints";
 
 const rules = RUN_POINTS;
+const firstHigherBonusDay = rules.weeklyBonuses.findIndex(bonus => bonus > rules.weeklyBonuses[0]) + 1;
 
 function example(days: readonly number[]) {
   // Start on a Monday and fix the evaluation date to the last example day.
@@ -13,11 +14,11 @@ export default function RunningPointsRules({ detailed = false }: { detailed?: bo
   return <details className={detailed ? "tile running-points-rules running-points-rules-admin" : "running-points-rules"}>
     <summary>Pravidla bodování</summary>
     <ul>
-      <li><strong>Vzdálenost.</strong> Běh od {rules.minimumKm} km získá {rules.perKm} bodů za kilometr a bonus za délku. Bonusová sazba roste do {rules.distanceBonusCapKm} km.</li>
-      <li><strong>Pravidelnost.</strong> Bonus za běžecký den se počítá jednou denně a roste s počtem běžeckých dní od pondělí do neděle. Plný bonus získáš od {rules.fullDayBonusKm} km za den. Dny mohou být rozložené přes týden.</li>
-      <li><strong>Pauza.</strong> Za každých dokončených {rules.inactivityDays} dní bez bodovaného běhu ubude {rules.inactivityPercent} % zbývajících bodů. Novým bodovaným během začíná nová lhůta.</li>
+      <li><strong>Vzdálenost.</strong> Od {rules.minimumKm} km získáváš {rules.perKm} bodů za kilometr. Bonus za délku roste do {rules.distanceBonusCapKm} km.</li>
+      <li><strong>Pravidelnost.</strong> Jeden bonus denně. {firstHigherBonusDay > 0 && <>Sazba roste od {firstHigherBonusDay}. běžeckého dne v týdnu. </>}Plný bonus od {rules.fullDayBonusKm} km za den.</li>
+      <li><strong>Pauza.</strong> Každých {rules.inactivityDays} dní bez běhu od {rules.minimumKm} km ubude {rules.inactivityPercent} % zbývajících bodů.</li>
     </ul>
-    <p>První běh týdne na 5 km přinese {sample.distancePoints} za vzdálenost + {sample.consistencyPoints} za pravidelnost = <strong>{sample.total} bodů</strong>.</p>
+    <p>První běh týdne na 5 km · {sample.distancePoints} za vzdálenost + {sample.consistencyPoints} za pravidelnost = <strong>{sample.total} bodů</strong>.</p>
     {detailed && <>
       <dl>
         <dt>Body za jeden běh</dt>
